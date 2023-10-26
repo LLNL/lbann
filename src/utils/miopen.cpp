@@ -542,6 +542,11 @@ ConvolutionDescriptor::operator DescriptorHandle_t() const noexcept
   return desc_;
 }
 
+dnnMathType_t ConvolutionDescriptor::get_math_mode() const
+{
+  return 0;  // No math mode in MIOpen.
+}
+
 void ConvolutionDescriptor::swap(ConvolutionDescriptor& other)
 {
   std::swap(desc_, other.desc_);
@@ -1450,17 +1455,18 @@ get_bwd_filter_algo_autotune(bool deterministic,
 
 } // namespace
 
-fwd_conv_alg get_fwd_algorithm(bool autotune,
-                               bool deterministic,
-                               const TensorDescriptor& input_desc,
-                               const void* input,
-                               const FilterDescriptor& kernel_desc,
-                               const void* kernel,
-                               const ConvolutionDescriptor& conv_desc,
-                               const TensorDescriptor& output_desc,
-                               void* output,
-                               size_t ws_size,
-                               void* ws)
+fwd_conv_alg_config
+get_fwd_algorithm(bool autotune,
+                  bool deterministic,
+                  const TensorDescriptor& input_desc,
+                  const void* input,
+                  const FilterDescriptor& kernel_desc,
+                  const void* kernel,
+                  const ConvolutionDescriptor& conv_desc,
+                  const TensorDescriptor& output_desc,
+                  void* output,
+                  size_t ws_size,
+                  void* ws)
 {
   miopenConvFwdAlgorithm_t a;
   if (autotune) {
@@ -1487,10 +1493,10 @@ fwd_conv_alg get_fwd_algorithm(bool autotune,
                                ws_size,
                                ws);
   }
-  return from_miopen(a);
+  return fwd_conv_alg_config(from_miopen(a), conv_desc.get_math_mode());
 }
 
-bwd_data_conv_alg
+bwd_data_conv_alg_config
 get_bwd_data_algorithm(bool autotune,
                        bool deterministic,
                        const FilterDescriptor& kernel_desc,
@@ -1528,10 +1534,10 @@ get_bwd_data_algorithm(bool autotune,
                                     ws_size,
                                     ws);
   }
-  return from_miopen(a);
+  return bwd_data_conv_alg_config(from_miopen(a), conv_desc.get_math_mode());
 }
 
-bwd_filter_conv_alg
+bwd_filter_conv_alg_config
 get_bwd_filter_algorithm(bool autotune,
                          bool deterministic,
                          const TensorDescriptor& input_desc,
@@ -1569,7 +1575,7 @@ get_bwd_filter_algorithm(bool autotune,
                                       ws_size,
                                       ws);
   }
-  return from_miopen(a);
+  return bwd_filter_conv_alg_config(from_miopen(a), conv_desc.get_math_mode());
 }
 
 // Placeholder functions for mathtype
