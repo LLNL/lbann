@@ -164,8 +164,7 @@ struct MemUsage
 
 void memory_profiler::report_mem_usage(model* m)
 {
-  size_t total = 0, weight_mem = 0, act_mem = 0, max_act_mem = 0,
-         opt_state_mem = 0, other_mem = 0;
+  size_t total = 0, weight_mem = 0, opt_state_mem = 0, other_mem = 0;
   std::vector<MemUsage> usage;
   std::map<weights*, std::string> already_reported;
 
@@ -188,9 +187,7 @@ void memory_profiler::report_mem_usage(model* m)
 
       size_t allocated = report_dist_matrix(act, reps);
       layer_total_acts += allocated;
-      act_mem += allocated;
       layer_total += allocated;
-      max_act_mem = std::max(max_act_mem, allocated);
     }
 
     // Weight accounting
@@ -272,9 +269,6 @@ void memory_profiler::report_mem_usage(model* m)
       usage.emplace_back(MemUsage(reps.str(), layer_total));
     }
   }
-
-  // Total memory uses the maximal activation size approximation
-  total += max_act_mem;
 
   // Add extraneous weights
   for (auto& weight : m->get_weights()) {
