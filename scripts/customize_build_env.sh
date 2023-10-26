@@ -390,6 +390,8 @@ cat <<EOF  >> ${yaml}
       extra_rpaths: []
   packages:
     all:
+      require:
+        target=zen3
       providers:
         mpi: [cray-mpich]
     hipcub:
