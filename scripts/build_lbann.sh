@@ -799,7 +799,12 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
         # Find key externals that you don't want to ever rebuild
-        CMD="spack external find --not-buildable --scope env:${LBANN_ENV} bzip2 cuda cudnn git hdf5 hwloc libfabric nccl ncurses openblas openssl perl rdma-core sqlite spectrum-mpi mvapich2 openmpi netlib-lapack"
+        CMD="spack external find --not-buildable --scope env:${LBANN_ENV} bzip2 cuda cudnn git hwloc libfabric nccl ncurses openblas openssl perl rdma-core sqlite spectrum-mpi mvapich2 openmpi netlib-lapack"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+        # Find externals that you are allowed to rebuild
+        CMD="spack external find --scope env:${LBANN_ENV} hdf5"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
