@@ -1199,11 +1199,13 @@ void assert_tensor_size(Layer* l,
                         std::string const& this_layer_name,
                         std::string const& child_layer_name)
 {
-  // If the expected tensor does not have a width set, try to infer from model
-  if (expected_width == 0) {
-    model* m = l->get_model();
-    if (m != nullptr) {
-      expected_width = m->get_current_mini_batch_size();
+  // If the expected tensor does not have a width set, or is not up to date,
+  // try to infer from model
+  model* m = l->get_model();
+  if (m != nullptr) {
+    El::Int model_width = m->get_current_mini_batch_size();
+    if (expected_width == 0 || expected_width > model_width) {
+      expected_width = model_width;
     }
   }
 
