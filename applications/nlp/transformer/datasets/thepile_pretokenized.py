@@ -40,7 +40,19 @@ def get_train_sample(index):
 
 
 def get_val_sample(index):
-    return dataset_val[index]
+    # Get tokenized document
+    tokenized = dataset_val[index].astype(np.int32)
+
+    # Trim long sequences, left-pad short sequences
+    if len(tokenized) > sequence_length:
+        tokenized = tokenized[0:sequence_length]
+    if len(tokenized) < sequence_length:
+        sample_pad = np.full(sequence_length, pad_index, dtype=np.int32)
+        if len(tokenized) > 0:
+            sample_pad[-len(tokenized):] = tokenized
+        return sample_pad
+    
+    return tokenized
 
 
 def num_train_samples():

@@ -56,7 +56,7 @@ def main():
     lbann.contrib.args.add_training_arguments(parser,
                                               default_minibatch_size=32)
     parallelism.add_transformer_parallelism_arguments(parser)
-
+    trainer.add_training_arguments(parser)
     dataset_utils.add_dataset_arguments(parser, default='thepile')
 
     parser.add_argument('--optimizer',
