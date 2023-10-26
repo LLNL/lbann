@@ -38,11 +38,11 @@ namespace lbann {
  *
  * Requires the contained type have a valid operator<< implemented.
  */
-template <typename T>
-void print_vector(const std::vector<T>& v,
-                  std::ostream& os,
-                  std::string prefix = "")
-{
+template <typename T, typename A>
+void print_vector(
+  const std::vector<T, A>& v,
+  std::ostream& os,
+  std::string prefix = "") {
   os << prefix;
   os << "[";
   for (size_t i = 0; i < v.size(); ++i) {

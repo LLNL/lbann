@@ -49,11 +49,7 @@ public:
   /** Set scaling factor. */
   void set_scale(EvalType scale) { m_scale = scale; }
   /** Set the AMP scaling factor. */
-  void set_amp_scale(EvalType scale)
-  {
-    m_amp_scale =
-      scale; /*std::cout << "Set AMP scale to " << scale << std::endl;*/
-  }
+  void set_amp_scale(EvalType scale) { m_amp_scale = scale; }
   /** Get evaluated value. */
   EvalType get_value(bool scaled = true);
 

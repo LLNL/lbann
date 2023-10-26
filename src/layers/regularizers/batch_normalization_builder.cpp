@@ -93,7 +93,7 @@ std::unique_ptr<lbann::Layer> lbann::build_batch_normalization_layer_from_pbuf(
 #ifdef LBANN_HAS_GPU_FP16
     else if constexpr (std::is_same_v<T, fp16> && D == El::Device::GPU) {
       return std::make_unique<
-        batch_normalization_layer<half, data_layout::DATA_PARALLEL, D>>(
+        batch_normalization_layer<fp16, data_layout::DATA_PARALLEL, D>>(
         decay,
         epsilon,
         statistics_group_size,
