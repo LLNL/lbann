@@ -28,6 +28,7 @@
 #define LBANN_LAYER_SPLIT_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/lbann.pb.h"
 #include "lbann/utils/distconv.hpp"
@@ -161,6 +162,20 @@ protected:
       // If sub-graph parallelism is not enabled
       for (int i = 0; i < this->get_num_children(); ++i) {
         El::LockedView(this->get_activations(i), input);
+      }
+    }
+
+    if (this->get_num_children() > 1) {
+      // Register the output N-1 times
+      model* m = this->get_model();
+      if (m != nullptr) {
+        auto& refcnt = m->get_activation_reference_counter();
+        auto const& iter = lookup_pointer(refcnt, input.LockedBuffer());
+        if (iter != refcnt.end()) {
+          for (int i = 1; i < this->get_num_children(); ++i) {
+            refcnt.at(iter->first).inc();
+          }
+        }
       }
     }
   }
