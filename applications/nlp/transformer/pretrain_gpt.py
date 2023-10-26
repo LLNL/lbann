@@ -12,6 +12,7 @@ import sys
 import lbann
 import lbann.contrib.args
 from lbann.launcher.batch_script import BatchScript
+import lbann.util.amp
 
 # Local imports
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -55,6 +56,7 @@ def main():
     lbann.contrib.args.add_profiling_arguments(parser)
     lbann.contrib.args.add_training_arguments(parser,
                                               default_minibatch_size=32)
+    lbann.contrib.args.add_amp_arguments(parser)
     parallelism.add_transformer_parallelism_arguments(parser)
     trainer.add_training_arguments(parser)
     dataset_utils.add_dataset_arguments(parser, default='thepile')
@@ -118,6 +120,7 @@ def main():
         num_epochs=args.num_epochs,
         args=args,
     )
+    lbann.util.amp.enable_amp(model, args)
 
     # Construct trainer
 

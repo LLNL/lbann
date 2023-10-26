@@ -17,6 +17,8 @@ FP16_LAYERS = frozenset([
     lbann.Deconvolution,
     lbann.FullyConnected,
     lbann.ChannelwiseFullyConnected,
+    lbann.Embedding,
+    lbann.MatMul
 ])
 
 FP32_LAYERS = frozenset([
@@ -28,6 +30,8 @@ FP32_LAYERS = frozenset([
     lbann.L2Norm2,
     lbann.Softmax,
     lbann.LogSoftmax,
+    lbann.ChannelwiseSoftmax,
+    lbann.LayerNorm
 ])
 
 
