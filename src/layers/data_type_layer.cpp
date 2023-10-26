@@ -1203,10 +1203,7 @@ void assert_tensor_size(Layer* l,
   // try to infer from model
   model* m = l->get_model();
   if (m != nullptr) {
-    El::Int model_width = m->get_current_mini_batch_size();
-    if (expected_width == 0 || expected_width > model_width) {
-      expected_width = model_width;
-    }
+    expected_width = m->get_current_mini_batch_size();
   }
 
   if ((mat.Height() != expected_height) ||
