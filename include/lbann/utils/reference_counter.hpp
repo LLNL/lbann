@@ -27,6 +27,7 @@
 #ifndef LBANN_UTILS_REFERENCE_COUNTER_HPP_INCLUDED
 #define LBANN_UTILS_REFERENCE_COUNTER_HPP_INCLUDED
 
+#include <cstdlib>
 #include <map>
 #include <memory>
 
@@ -72,10 +73,14 @@ public:
   MatrixRefCounter(El::AbstractDistMatrix<T>& mat, void const* owner = nullptr)
     : emptier_{std::make_unique<MatEmptierImpl<T>>(mat)},
       rfcnt_{0},
-      owner_(owner)
+      owner_(owner),
+      disable_{false}
   {
     range_ = get_range(mat);
     this->inc();
+    const char* env = std::getenv("LBANN_DISABLE_ACT_GC");
+    if (env && env[0] == '1')
+      disable_ = true;
   }
 
   /** @brief Increments the reference count. */
@@ -85,7 +90,7 @@ public:
   void dec()
   {
     --rfcnt_;
-    if (rfcnt_ <= 0)
+    if (rfcnt_ <= 0 && !disable_)
       emptier_->empty();
   }
 
@@ -111,6 +116,7 @@ private:
   int rfcnt_;                           ///< Reference count
   PtrRange range_;    ///< (start,end) pointer range for allocated memory
   void const* owner_; ///< Used for provenance tracking (e.g., parent Layer)
+  bool disable_;      ///< If true, disables garbage collection
 };
 
 /** @brief Checks if a pointer is in range of an allocated matrix. */
