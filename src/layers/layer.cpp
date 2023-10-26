@@ -364,7 +364,8 @@ El::Int Layer::infer_mini_batch_size_from_parents() const
       inferred_mini_batch_size = parent_output.Width();
       inferred_parent_layer_name = parent.get_name();
     }
-    else if (inferred_mini_batch_size != parent_output.Width()) {
+    else if (parent_output.Width() != 0 &&
+             inferred_mini_batch_size != parent_output.Width()) {
       // Check mini-batch matrix dimensions
       LBANN_ERROR("Layer ",
                   get_name(),
