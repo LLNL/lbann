@@ -84,7 +84,7 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
     transformer, extra_model_kwargs = parallelism.apply_subgraph_parallelism(
         transformer, args)
     parallelism.apply_ffn_model_parallelism(transformer, args)
-    parallelism.apply_fsdp(transformer, [embedding_weights], args)
+    parallelism.apply_fsdp_mlp(transformer, [embedding_weights], args)
 
     # Run through transformer
     result = transformer(encoder_input, decoder_input, sequence_length - 1)
@@ -112,7 +112,7 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
         lbann.CallbackTimer(),
         lbann.CallbackGPUMemoryUsage()
     ]
-    return lbann.Model(
+    result = lbann.Model(
         args.num_epochs,
         layers=lbann.traverse_layer_graph(input_tokens),
         objective_function=loss,
@@ -120,6 +120,9 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
         callbacks=callbacks,
         **extra_model_kwargs,
     )
+
+    parallelism.apply_fsdp_allweights(result, args)
+    return result
 
 
 def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
@@ -177,7 +180,7 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
     transformer, extra_model_kwargs = parallelism.apply_subgraph_parallelism(
         transformer, args)
     parallelism.apply_ffn_model_parallelism(transformer, args)
-    parallelism.apply_fsdp(transformer, [embedding_weights], args)
+    parallelism.apply_fsdp_mlp(transformer, [embedding_weights], args)
 
     # Run through transformer with the same sequence
     result = transformer(decoder_input, decoder_input, sequence_length)
@@ -209,7 +212,7 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
         lbann.CallbackTimer(),
         lbann.CallbackGPUMemoryUsage()
     ]
-    return lbann.Model(
+    result = lbann.Model(
         num_epochs,
         layers=lbann.traverse_layer_graph(input_tokens),
         objective_function=loss,
@@ -217,6 +220,9 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
         callbacks=callbacks,
         **extra_model_kwargs,
     )
+
+    parallelism.apply_fsdp_allweights(result, args)
+    return result
 
 
 def _add_input_encoding(
