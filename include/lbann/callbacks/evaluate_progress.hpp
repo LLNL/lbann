@@ -70,14 +70,10 @@ public:
   evaluate_progress(El::Int batch_interval, std::string metric_name);
   evaluate_progress(const evaluate_progress& other);
   evaluate_progress& operator=(const evaluate_progress& other);
-  evaluate_progress* copy() const override
-  {
-    return new evaluate_progress(*this);
-  }
-  std::string name() const override { return "EVALUATE_PROGRESS"; }
+  evaluate_progress* copy() const final { return new evaluate_progress(*this); }
+  std::string name() const final { return "EVALUATE_PROGRESS"; }
 
-  void on_train_begin(model* m) override;
-  void on_batch_begin(model* m) override;
+  void on_batch_begin(model* m) final;
 
 private:
   /** Add callback specific data to prototext */
