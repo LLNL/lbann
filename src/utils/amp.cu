@@ -33,24 +33,6 @@ namespace amp {
 
 namespace {
 
-// std::isfinite does not work for half precision, so we handle that here.
-// There does not seem to be a CUDA/ROCm version of isfinite for __half, so
-// we handle it by converting to float.
-
-template <typename T>
-__host__ __device__ __forceinline__ bool amp_is_finite(T val)
-{
-  return std::isfinite(val);
-}
-
-#ifdef LBANN_HAS_GPU_FP16
-template <>
-__host__ __device__ __forceinline__ bool amp_is_finite<fp16>(fp16 val)
-{
-  return std::isfinite(static_cast<float>(val));
-}
-#endif
-
 template <typename TensorDataType>
 __global__ void is_finite_and_unscale_contiguous_kernel(
   size_t size,
@@ -60,7 +42,7 @@ __global__ void is_finite_and_unscale_contiguous_kernel(
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if (gid < size) {
     TensorDataType& val = grads[gid];
-    if (!amp_is_finite<TensorDataType>(val)) {
+    if (!gpu_lib::isfinite<TensorDataType>(val)) {
       *is_finite = 0.0f;
     }
     val *= inv_scale;
@@ -80,7 +62,7 @@ __global__ void is_finite_and_unscale_noncontiguous_kernel(
     const auto row = gid % height;
     const auto col = gid / height;
     TensorDataType& val = grads[row + col*ldim];
-    if (!amp_is_finite<TensorDataType>(val)) {
+    if (!gpu_lib::isfinite<TensorDataType>(val)) {
       *is_finite = 0.0f;
     }
     val *= inv_scale;
