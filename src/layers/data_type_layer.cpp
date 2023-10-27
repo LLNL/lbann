@@ -998,14 +998,15 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
   // upon end of use
   if (this->get_device_allocation() == El::Device::GPU) {
     const auto& arg_parser = global_argument_parser();
-    if (!arg_parser.get<bool>(
-          LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
-      for (auto& input : m_inputs) {
-        input->Matrix().SetMemoryMode(1);
-      }
-      for (auto& output : m_outputs) {
-        output->Matrix().SetMemoryMode(1);
-      }
+    int memory_mode =
+      arg_parser.get<bool>(LBANN_OPTION_USE_GPU_DIRECT_MEMORY_IN_FORWARD_PROP)
+        ? 0
+        : 1;
+    for (auto& input : m_inputs) {
+      input->Matrix().SetMemoryMode(memory_mode);
+    }
+    for (auto& output : m_outputs) {
+      output->Matrix().SetMemoryMode(memory_mode);
     }
   }
 #endif // LBANN_HAS_GPU

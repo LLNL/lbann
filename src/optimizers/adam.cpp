@@ -140,12 +140,9 @@ void adam<TensorDataType>::setup(WeightsType* w)
 #ifdef LBANN_HAS_GPU
   if (m_moment1->GetLocalDevice() == El::Device::GPU &&
       m_moment2->GetLocalDevice() == El::Device::GPU) {
-    const auto& arg_parser = global_argument_parser();
-    if (!arg_parser.get<bool>(
-          LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
-      m_moment1->Matrix().SetMemoryMode(0); // Directly-allocated memory
-      m_moment2->Matrix().SetMemoryMode(0); // Directly-allocated memory
-    }
+    int memory_mode = 0; // Direct allocation
+    m_moment1->Matrix().SetMemoryMode(memory_mode);
+    m_moment2->Matrix().SetMemoryMode(memory_mode);
   }
 #endif // LBANN_HAS_GPU
   El::Zeros(*m_moment1, gradient.Height(), gradient.Width());
