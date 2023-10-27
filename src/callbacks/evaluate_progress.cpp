@@ -31,17 +31,17 @@
 #include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
-#include "lbann/optimizers/adam.hpp"
-#include "lbann/optimizers/sgd.hpp"
+// #include "lbann/optimizers/adam.hpp"
+// #include "lbann/optimizers/sgd.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/protobuf.hpp"
-#include "lbann/utils/random_number_generators.hpp"
+// #include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
-#include "lbann/weights/data_type_weights.hpp"
+// #include "lbann/weights/data_type_weights.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
 
@@ -70,7 +70,9 @@ EvalType evaluate(model& m, const std::string& metric_name)
   dc.collect_background_data_fetch(original_mode);
 
   auto mode = execution_mode::invalid;
-  auto modes = {execution_mode::tournament, execution_mode::validation};
+  auto modes = {execution_mode::tournament,
+                execution_mode::validation,
+                execution_mode::testing};
   for (auto em : modes) {
     if (dc.is_execution_mode_valid(em)) {
       mode = em;
@@ -78,11 +80,14 @@ EvalType evaluate(model& m, const std::string& metric_name)
     }
   }
   if (mode == execution_mode::invalid) {
-    LBANN_ERROR("evaluate_progress requires ",
-                to_string(execution_mode::tournament),
-                " or ",
-                to_string(execution_mode::validation),
-                " execution modes");
+    LBANN_WARNING("evaluate_progress requires ",
+                  to_string(execution_mode::tournament),
+                  " or ",
+                  to_string(execution_mode::validation),
+                  " or ",
+                  to_string(execution_mode::testing),
+                  " execution modes");
+    return 0;
   }
 
   // Mark the data store as loading - Note that this is a temporary fix
@@ -152,30 +157,20 @@ void evaluate_progress::on_batch_begin(model* m)
     return;
   }
 
-  if (step % get_batch_interval() == get_batch_interval() - 1) {
+  // Print message
+  const auto message_prefix =
+    (std::string{} + "Evaluate progress using (" + to_string(mode) +
+     " data set) on " + "model \"" + local_model.get_name() + "\", " + "step " +
+     std::to_string(step) + "): ");
+  auto local_score = evaluate(local_model, m_metric_name);
 
-    // Print message
-    const auto message_prefix = (std::string{} + "EVALUATE_PROGRESS (" +
-                                 "model \"" + local_model.get_name() + "\", " +
-                                 "step " + std::to_string(step) + "): ");
-    if (comm.am_world_master()) {
-      std::cout << message_prefix + "starting tournament...\n";
-    }
-
-    // Evaluate local model
-    if (comm.am_world_master()) {
-      std::cout << message_prefix + "evaluating model...\n";
-    }
-    auto local_score = evaluate(local_model, m_metric_name);
-
-    // Report evaluation results
-    if (comm.am_trainer_master()) {
-      std::ostringstream msg;
-      msg << message_prefix << "trainer "
-          << "(" << to_string(mode) << ") "
-          << "= " << local_score << "\n";
-      std::cout << msg.str() << std::flush;
-    }
+  // Report evaluation results
+  if (comm.am_trainer_master()) {
+    std::ostringstream msg;
+    msg << message_prefix << "trainer "
+        << "(" << to_string(mode) << ") "
+        << "= " << local_score << "\n";
+    std::cout << msg.str() << std::flush;
   }
 }
 

@@ -35,37 +35,20 @@
 namespace lbann {
 namespace callback {
 
-/** @brief Tournament training.
+/** @brief Evaluate training progress with alternate data set.
  *
- *  This is intended to support research into the LTFB algorithm. An
- *  outline:
- *    - Divide the computational resources into multiple "trainers"
- *      that can operate in parallel.
- *    - Setup a model on each trainer and begin training independently.
- *    - Periodically launch tournaments to select "good" models. More
- *      specifically, trainers partner up and exchange their models.
- *      Each trainer evaluates a metric for its local and partner
- *      models, using its validation data set. The model with the better
- *      score is retained and the other one is discarded.
- *
- *  There are many algorithmic variations to be explored:
- *    - How is data is divvied up amongst the trainers. Is it strictly
- *      partitioned, partially shared, or completely replicated?
- *    - What model components are exchanged? Just the trainable weights,
- *      or a subset of the weights? Hyperparameters?
- *    - Can this be used to explore model architectures?
+ *    - Periodically evaluate models using a selected metric with
+ *      either the  tournament, validation, or testing data set
+ *      after a fixed number of steps.
  *
  */
 class evaluate_progress : public callback_base
 {
 public:
-  /** @brief Construct the LTFB callback
+  /** @brief Construct the evaluate progress callback
    *  @param batch_interval Number of training mini-batch steps between
-   *                        tournaments.
-   *  @param metric_name    Metric for tournament evaluation.
-   *  @param comm_algo      Inter-trainer communication scheme.
-   *  @param exchange_hyperparameters Whether to exchange hyperparameters
-   *                                  with model information.
+   *                        evaluations.
+   *  @param metric_name    Metric for evaluation.
    */
   evaluate_progress(El::Int batch_interval, std::string metric_name);
   evaluate_progress(const evaluate_progress& other);
