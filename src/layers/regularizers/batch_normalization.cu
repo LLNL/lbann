@@ -534,9 +534,9 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute()
     auto& local_mean = this->m_mean_v->Matrix();
     auto& local_var = this->m_var_v->Matrix();
     auto& local_running_mean =
-      dynamic_cast<WeightsType&>(this->get_weights(2)).get_values().Matrix();
+      dynamic_cast<WeightsType&>(this->get_weights(2)).get_values_sharded().Matrix();
     auto& local_running_var =
-      dynamic_cast<WeightsType&>(this->get_weights(3)).get_values().Matrix();
+      dynamic_cast<WeightsType&>(this->get_weights(3)).get_values_sharded().Matrix();
 
     // Compute sums and sums of squares
     El::Zero(local_mean);
