@@ -34,6 +34,7 @@
 #include "lbann/layers/transform/gaussian.hpp"
 #include "lbann/layers/transform/in_top_k.hpp"
 #include "lbann/layers/transform/permute.hpp"
+#include "lbann/layers/transform/reshape.hpp"
 #include "lbann/layers/transform/scatter.hpp"
 #include "lbann/layers/transform/slice.hpp"
 #include "lbann/layers/transform/sort.hpp"
@@ -219,6 +220,16 @@ lbann::build_permute_layer_from_pbuf(lbann_comm* /*comm*/,
 
 template <typename T, lbann::data_layout L, El::Device D>
 std::unique_ptr<lbann::Layer>
+lbann::build_reshape_layer_from_pbuf(lbann_comm* comm,
+                                     lbann_data::Layer const& proto) {
+    const auto& params = proto.reshape();
+    return std::make_unique<reshape_layer<T, L, D>>(
+      comm,
+      protobuf::to_vector<int>(params.dims()));
+}
+
+template <typename T, lbann::data_layout L, El::Device D>
+std::unique_ptr<lbann::Layer>
 lbann::build_slice_layer_from_pbuf(lbann_comm* comm,
                                    lbann_data::Layer const& proto_layer)
 {
@@ -318,6 +329,7 @@ namespace lbann {
   LBANN_LAYER_BUILDER_ETI(gaussian, T, Device);                                \
   LBANN_LAYER_BUILDER_ETI(in_top_k, T, Device);                                \
   LBANN_LAYER_BUILDER_ETI(permute, T, Device);                                 \
+  LBANN_LAYER_BUILDER_ETI(reshape, T, Device);                                 \
   LBANN_LAYER_BUILDER_ETI(scatter, T, Device);                                 \
   LBANN_LAYER_BUILDER_ETI(slice, T, Device);                                   \
   LBANN_LAYER_BUILDER_ETI(sort, T, Device);                                    \
