@@ -1332,7 +1332,7 @@ cudnn_alg_config<AlgoType> find_best_heuristic_algorithm(
     if (p.memory > max_ws_size) {
       continue;
     }
-    algos.emplace_back({p.algo, p.mathType});
+    algos.emplace_back(cudnn_alg_config<AlgoType>(p.algo, p.mathType));
   }
   if (algos.empty()) {
     LBANN_ERROR("No valid convolution algorithms.");
