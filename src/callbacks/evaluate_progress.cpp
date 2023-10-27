@@ -108,7 +108,7 @@ void evaluate_progress::on_batch_begin(model* m)
   auto& context = local_model.get_execution_context();
   auto&& comm = *local_model.get_comm();
 
-  // Check whether to start EVALUATE_PROGRESS round
+  // Check whether to evaluate the model
   const auto mode = context.get_execution_mode();
   const auto step = context.get_step();
   if (mode != execution_mode::training || step == 0) {
