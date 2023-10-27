@@ -339,8 +339,8 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
   auto learning_rate = w_dto->get_learning_rate();
   auto& Ainv = m_kronecker_inverse_A;
   auto& Ginv = m_kronecker_inverse_G;
-  auto w_grad = w_dto->get_gradient();
-  const auto& w_grads_orig = w_grad->LockedMatrix();
+  auto& w_grad = w_dto->get_gradient_sharded();
+  const auto& w_grads_orig = w_grad.LockedMatrix();
   El::Matrix<DataType, Device> w_gradients;
 
   // BVE FIXME unused variables
@@ -380,8 +380,8 @@ void kfac_block_fc_conv<Device>::compute_preconditioned_gradients(
       auto& biases = this->m_layer->get_weights(1);
       optimizer* b_optimizer = biases.get_optimizer();
       auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
-      auto b_grad = b_dto->get_gradient();
-      const auto& b_grads_orig = b_grad->LockedMatrix();
+      auto& b_grad = b_dto->get_gradient_sharded();
+      const auto& b_grads_orig = b_grad.LockedMatrix();
 
       El::Copy(w_grads_orig, w_grads_concat_weights);
       El::Copy(b_grads_orig, w_grads_concat_biases);
