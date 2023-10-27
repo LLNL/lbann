@@ -279,13 +279,47 @@ void embedding_layer<TensorDataType, Layout, Device>::setup_data(
     // FIXME (trb 06/01/2020): Assuming embedding values have data
     // type that matches this layer. In future, we should abstract
     // this or dynamically dispatch it.
-    auto& embedding_values =
-      dynamic_cast<AbsDistMatrixType&>(embeddings.get_values_sharded());
-    std::unique_ptr<AbsDistMatrixType> pad_embedding(
-      embedding_values.Construct(embedding_values.Grid(),
-                                 embedding_values.Root()));
-    El::View(*pad_embedding, embedding_values, El::ALL, El::IR(m_padding_idx));
-    El::Zero(*pad_embedding);
+    // FIXME (ndryden 27 Oct 2023): Clean up this hacky fix for the
+    // above issue.
+    auto& embedding_values = embeddings.get_values_sharded();
+    if (auto* embedding_values_f =
+        dynamic_cast<El::AbstractDistMatrix<float>*>(&embedding_values)) {
+      std::unique_ptr<El::AbstractDistMatrix<float>> pad_embedding(
+        embedding_values_f->Construct(embedding_values_f->Grid(),
+                                      embedding_values_f->Root()));
+      El::View(*pad_embedding, *embedding_values_f, El::ALL, El::IR(m_padding_idx));
+      El::Zero(*pad_embedding);
+    } else if (auto* embedding_values_d =
+        dynamic_cast<El::AbstractDistMatrix<double>*>(&embedding_values)) {
+      std::unique_ptr<El::AbstractDistMatrix<double>> pad_embedding(
+        embedding_values_d->Construct(embedding_values_d->Grid(),
+                                      embedding_values_d->Root()));
+      El::View(*pad_embedding, *embedding_values_d, El::ALL, El::IR(m_padding_idx));
+      El::Zero(*pad_embedding);
+    }
+#ifdef LBANN_HAS_HALF
+    else if (auto* embedding_values_cpufp16 =
+        dynamic_cast<El::AbstractDistMatrix<cpu_fp16>*>(&embedding_values)) {
+      std::unique_ptr<El::AbstractDistMatrix<cpu_fp16>> pad_embedding(
+        embedding_values_cpufp16->Construct(embedding_values_cpufp16->Grid(),
+                                            embedding_values_cpufp16->Root()));
+      El::View(*pad_embedding, *embedding_values_cpufp16, El::ALL, El::IR(m_padding_idx));
+      El::Zero(*pad_embedding);
+    }
+#endif
+#ifdef LBANN_HAS_GPU_FP16
+    else if (auto* embedding_values_fp16 =
+        dynamic_cast<El::AbstractDistMatrix<fp16>*>(&embedding_values)) {
+      std::unique_ptr<El::AbstractDistMatrix<fp16>> pad_embedding(
+        embedding_values_fp16->Construct(embedding_values_fp16->Grid(),
+                                         embedding_values_fp16->Root()));
+      El::View(*pad_embedding, *embedding_values_fp16, El::ALL, El::IR(m_padding_idx));
+      El::Zero(*pad_embedding);
+    }
+#endif
+    else {
+      LBANN_ERROR("Could not determine type for embedding");
+    }
   }
 }
 
