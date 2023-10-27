@@ -364,7 +364,8 @@ El::Int Layer::infer_mini_batch_size_from_parents() const
       inferred_mini_batch_size = parent_output.Width();
       inferred_parent_layer_name = parent.get_name();
     }
-    else if (inferred_mini_batch_size != parent_output.Width()) {
+    else if (parent_output.Width() != 0 &&
+             inferred_mini_batch_size != parent_output.Width()) {
       // Check mini-batch matrix dimensions
       LBANN_ERROR("Layer ",
                   get_name(),
@@ -1098,6 +1099,14 @@ bool Layer::distconv_enabled() const
   // Return immediately if distconv support is known
   if (m_distconv_enabled_set) {
     return m_distconv_enabled;
+  }
+
+  // Check if distconv is disabled in arguments
+  auto const& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(LBANN_OPTION_DISABLE_DISTCONV)) {
+    m_distconv_enabled = false;
+    m_distconv_enabled_set = true;
+    return false;
   }
 
   // Check if distconv is enabled

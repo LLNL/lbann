@@ -108,7 +108,7 @@ auto data_type_optimizer<TensorDataType>::get_gradient()
 
   // If the gradient is not sharded, return a view
   if (m_gradient->DistData() == matrix_dist) {
-    El::LockedView(*m_gradient, *result);
+    El::LockedView(*result, *m_gradient);
   }
   else {
     El::Copy(*m_gradient, *result);

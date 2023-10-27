@@ -158,11 +158,13 @@ slice_layer<TensorDataType, Layout, Device>::slice_layer(lbann_comm* comm)
     m_var_category(slice_points_mode::NA)
 #ifdef LBANN_HAS_GPU
     ,
-    m_workspace{
-      std::make_shared<hydrogen::simple_buffer<unsigned char, El::Device::CPU>>(
-        0UL,
-        hydrogen::SyncInfo<El::Device::CPU>{},
-        1U /*=pinned*/)}
+    m_workspace
+{
+  std::make_shared<hydrogen::simple_buffer<unsigned char, El::Device::CPU>>(
+    0UL,
+    hydrogen::SyncInfo<El::Device::CPU>{},
+    1U /*=pinned*/)
+}
 #endif /* LBANN_HAS_GPU */
 {
   this->m_expected_num_child_layers = -1; // No limit on children
@@ -239,6 +241,7 @@ void fp_setup_outputs_impl(
     auto& output = l.get_activations(j);
     // output.AlignWith(input);
     output.Resize(l.get_output_size(j), input.Width());
+    l.setup_reference_counter(output);
   }
 }
 

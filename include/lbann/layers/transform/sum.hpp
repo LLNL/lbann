@@ -241,6 +241,7 @@ protected:
         output.AlignWith(alignment_dist);
       }
       output.Resize(this->get_output_size(i), mini_batch_size);
+      this->setup_reference_counter(output);
     }
   }
 

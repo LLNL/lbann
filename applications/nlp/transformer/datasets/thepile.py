@@ -82,7 +82,8 @@ def get_train_sample(index):
     # Left-pad sequences if they are too short
     if len(sample) < sequence_length:
         sample_pad = np.full(sequence_length, pad_index, dtype=int)
-        sample_pad[-len(sample):] = sample
+        if len(sample) > 0:
+            sample_pad[-len(sample):] = sample
         return sample_pad
 
     return sample
@@ -91,7 +92,18 @@ def get_train_sample(index):
 def get_val_sample(index):
     """Token indices for a data sample from the validation set."""
     text = dataset_train[index]['text']
-    return tokenize(text)
+    tokenized = tokenize(text)
+
+    # Trim long sequences, left-pad short sequences
+    if len(tokenized) > sequence_length:
+        tokenized = tokenized[0:sequence_length]
+    if len(tokenized) < sequence_length:
+        sample_pad = np.full(sequence_length, pad_index, dtype=np.int32)
+        if len(tokenized) > 0:
+            sample_pad[-len(tokenized):] = tokenized
+        return sample_pad
+
+    return tokenized
 
 
 def num_train_samples():

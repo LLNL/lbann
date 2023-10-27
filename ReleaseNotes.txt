@@ -20,6 +20,11 @@ Performance optimizations:
    layer does not need its activations in the backward pass. This optimization
    can be disabled by setting the environment variable
    DISTCONV_DISABLE_MEM_OPT=1.
+ - Allow weights to be distributed across ranks by sharding them. Enable by
+   setting sharded=True in any weights object.
+ - Allow distconv to be disabled at runtime with LBANN_DISABLE_DISTCONV=1.
+ - Activations are now deallocated when no longer needed via a reference counter,
+   disable with LBANN_DISABLE_ACT_GC=1.
 
 Model portability & usability:
 

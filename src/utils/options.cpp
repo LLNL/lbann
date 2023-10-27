@@ -44,6 +44,12 @@ void construct_std_options()
     {"--disable_cuda"},
     "[STD] has no effect unless LBANN was compiled with LBANN_HAS_CUDNN");
   arg_parser.add_flag(
+    LBANN_OPTION_DISABLE_DISTCONV,
+    {"--disable_distconv"},
+    utils::ENV("LBANN_DISABLE_DISTCONV"),
+    "[STD] Disables distconv support. Has no effect unless LBANN was compiled "
+    "with LBANN_HAS_DISTCONV");
+  arg_parser.add_flag(
     LBANN_OPTION_DISABLE_SIGNAL_HANDLER,
     {"--disable_signal_handler"},
     "[STD] Disables signal handling (signal handling on by default)");
@@ -111,12 +117,12 @@ void construct_std_options()
                       {"--verbose", "--verbose_print"},
                       "[STD] Turns on verbose mode");
   arg_parser.add_flag(
-    LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP,
-    {"--use_gpu_default_memory_in_forward_prop"},
-    utils::ENV("LBANN_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP"),
-    "[STD] Use Hydrogen's default memory mode for GPU buffers in "
-    "forward prop (namely activations and weights). This will "
-    "typically use a GPU memory pool, which uses more memory than "
+    LBANN_OPTION_USE_GPU_DIRECT_MEMORY_IN_FORWARD_PROP,
+    {"--use_gpu_direct_memory_in_forward_prop"},
+    utils::ENV("LBANN_GPU_DIRECT_MEMORY_IN_FORWARD_PROP"),
+    "[STD] Use direct memory mode (i.e., non-pooled) for GPU buffers in "
+    "forward prop (namely activations and weights). "
+    "The GPU memory pool typically uses more memory than "
     "directly allocating GPU memory.");
   arg_parser.add_flag(LBANN_OPTION_INIT_SHMEM,
                       {"--init_shmem"},

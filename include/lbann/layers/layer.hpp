@@ -703,6 +703,12 @@ public:
    */
   bool runs_inplace() const { return m_runs_inplace; }
 
+  /** @brief If true, the layer creates new activations during forward
+   * computation and owns their memory. This is used to control freeing
+   * activations during model training/evaluation.
+   */
+  virtual bool owns_activations() const = 0;
+
   /** @name Serialization */
   ///@{
 

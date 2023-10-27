@@ -1556,6 +1556,9 @@ void model::forward_prop(execution_mode mode)
   LBANN_CALIPER_MARK_FUNCTION;
   do_model_forward_prop_begin_cbs(mode);
 
+  // Clear activations in reference counter
+  m_activation_refcnt.clear();
+
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
 

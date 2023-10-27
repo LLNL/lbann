@@ -4,6 +4,7 @@ modeling target. The Pile dataset reader is provided as an example task.
 """
 import argparse
 from dataclasses import dataclass
+import math
 import os
 import os.path
 import sys
@@ -55,7 +56,7 @@ def main():
     lbann.contrib.args.add_training_arguments(parser,
                                               default_minibatch_size=32)
     parallelism.add_transformer_parallelism_arguments(parser)
-
+    trainer.add_training_arguments(parser)
     dataset_utils.add_dataset_arguments(parser, default='thepile')
 
     parser.add_argument('--optimizer',
@@ -85,9 +86,21 @@ def main():
         type=float,
         default=0.0,
         help="Dropout ratio after multi-head attention (default: 0.0)")
+    parser.add_argument("--grad-clip",
+                        type=float,
+                        default=0.0,
+                        help="Clip global gradient norm (default: 0.0)")
+    parser.add_argument(
+        "--fractional-schedule",
+        action='store_true',
+        default=False,
+        help="Use dataset fraction to determine hyperparameter schedule"
+        " (default: False)")
 
     parser.set_defaults(progress=True, num_epochs=1)
     args = parser.parse_args()
+    if args.job_name == 'lbann_gpt':
+        args.job_name = f'lbann_gpt_{args.model_type}'
 
     # Load dataset
     dataset = dataset_utils.load_dataset(args.dataset)
@@ -107,7 +120,16 @@ def main():
     )
 
     # Construct trainer
-    tokens_per_step = dataset.sequence_length * args.mini_batch_size
+
+    # Training schedule
+    # GPT-3 paper used 300 billion tokens in total
+    lr_decay_ratio = 260 / 300  # 260 billion tokens used for cosine decay
+    warmup_ratio = 375 / 300000  # 375 million tokens for warmup
+    # tokens_per_step = dataset.sequence_length * args.mini_batch_size
+    sched_mult = args.dataset_fraction if args.fractional_schedule else 1.0
+    total_steps = math.ceil(sched_mult * dataset.num_train_samples() /
+                            args.mini_batch_size)
+
     train_script: BatchScript = trainer.construct_training_task(
         model,
         args,
@@ -116,11 +138,11 @@ def main():
         beta1=0.9,
         beta2=0.95,
         eps=1e-8,
-        clip_gradient=1.0,
+        clip_gradient=args.grad_clip,
         lr_decay='cosine',
-        lr_decay_steps=int((260 * 1e9) // tokens_per_step),
+        lr_decay_steps=int(lr_decay_ratio * total_steps),
         end_learning_rate=chosen_config.lr / 10,
-        warmup_steps=int((375 * 1e6) // tokens_per_step),
+        warmup_steps=int(warmup_ratio * total_steps),
         adamw_decay=0.1,
     )
 

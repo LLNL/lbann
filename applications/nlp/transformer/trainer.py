@@ -64,12 +64,13 @@ def construct_training_task(model: lbann.Model,
 # ----------------------------------------------
 # Data reader
 # ----------------------------------------------
-def make_data_reader(dataset_name, fraction):
+def make_data_reader(dataset_name: str, fraction: float, validate: bool,
+                     val_fraction: float):
     reader = lbann.reader_pb2.DataReader()
     _reader = reader.reader.add()
     _reader.name = 'python'
     _reader.role = 'train'
-    _reader.shuffle = True
+    _reader.shuffle = False if 'pretokenized' in dataset_name else True
     _reader.fraction_of_data_to_use = fraction
     _reader.python.module = dataset_name
     _reader.python.module_dir = os.path.join(
@@ -79,6 +80,20 @@ def make_data_reader(dataset_name, fraction):
     _reader.python.sample_function = 'get_train_sample'
     _reader.python.num_samples_function = 'num_train_samples'
     _reader.python.sample_dims_function = 'sample_dims'
+
+    if validate:
+        # Validation data reader
+        vreader = reader.reader.add()
+        vreader.name = 'python'
+        vreader.role = 'validate'
+        vreader.shuffle = False
+        vreader.fraction_of_data_to_use = val_fraction
+        vreader.python.module = _reader.python.module
+        vreader.python.module_dir = _reader.python.module_dir
+        vreader.python.sample_function = 'get_val_sample'
+        vreader.python.num_samples_function = 'num_val_samples'
+        vreader.python.sample_dims_function = 'sample_dims'
+
     return reader
 
 
@@ -107,7 +122,9 @@ def make_batch_script(model: lbann.Model,
     # Create LBANN trainer and data reader
     trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size,
                             training_algo=algo)
-    reader = make_data_reader(dataset_name, args.dataset_fraction)
+    reader = make_data_reader(dataset_name, args.dataset_fraction,
+                              not args.skip_validation,
+                              args.validation_set_fraction)
 
     # Optimizer with learning rate schedule
     if args.optimizer.lower() == 'adamw':
@@ -147,6 +164,10 @@ def make_batch_script(model: lbann.Model,
                 warmup_steps=warmup_steps,
             ))
 
+        print(f'Training schedule: warmup to LR={learning_rate:.6f} in '
+              f'{warmup_steps} steps, cosine decay to '
+              f'LR={end_learning_rate:.6f} in {lr_decay_steps} steps')
+
     if clip_gradient > 0:
         model.callbacks.append(
             lbann.CallbackClipGradientNorm(global_norm=True,
@@ -181,11 +202,11 @@ def make_batch_script(model: lbann.Model,
     script_params['environment'] = {
         'LBANN_USE_CUBLAS_TENSOR_OPS': 0,
         'LBANN_USE_CUDNN_TENSOR_OPS': 0,
-        # "LBANN_KEEP_ERROR_SIGNALS": 1
         "LBANN_NO_INPLACE": 1,
+        "LBANN_DISABLE_DISTCONV": 1,
     }
 
-    save_text = False
+    save_text = args.save_prototext
     filename = 'experiment.prototext' if save_text else 'experiment.protobin'
     # Create Protobuf file
     protobuf_file = os.path.join(work_dir, filename)
@@ -208,6 +229,24 @@ def make_batch_script(model: lbann.Model,
     script.add_command('echo "Finished training at $(date)"')
     script.add_command('exit ${status}')
     return script
+
+
+def add_training_arguments(parser: argparse.ArgumentParser):
+    parser.add_argument("--skip-validation",
+                        action="store_true",
+                        default=False,
+                        help="Do not run validation (default: false)")
+    parser.add_argument(
+        "--validation-set-fraction",
+        type=float,
+        default=0.01,
+        help="Fraction of the validation dataset to use (default: 0.001)")
+    parser.add_argument(
+        "--save-prototext",
+        action="store_true",
+        default=False,
+        help="Save prototext experiment file instead of protobin (slower but "
+        "debuggable) (default: false)")
 
 
 # ----------------------------------------------

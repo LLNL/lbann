@@ -66,6 +66,8 @@ public:
 
     if (local_gradient_contrib_->Width() == 0) {
       local_gradient_contrib_->Resize(height, width);
+      // If distribution is the same, have global gradient matrix view the
+      // local contributions.
       if (local_contrib_dist_ == global_dist_) {
         El::View(*global_gradient_, *local_gradient_contrib_);
       }

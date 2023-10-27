@@ -32,6 +32,7 @@ def main():
 
     modeling.add_transformer_architecture_arguments(parser)
     parallelism.add_transformer_parallelism_arguments(parser)
+    trainer.add_training_arguments(parser)
     dataset_utils.add_dataset_arguments(parser, default='wmt16')
 
     parser.add_argument('--optimizer',
@@ -52,7 +53,7 @@ def main():
         default=0.0,
         help="Dropout ratio after input encoding (default: 0.0 = disabled)")
 
-    parser.set_defaults(progress=True)
+    parser.set_defaults(progress=True, skip_validation=True)
     args = parser.parse_args()
 
     # Load dataset

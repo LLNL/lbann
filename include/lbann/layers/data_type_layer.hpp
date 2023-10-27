@@ -131,6 +131,7 @@ public:
   /** Get error signal tensor corresponding to parent layer. */
   const InputAbsDistMatrixType&
   get_error_signals(const Layer& parent) const override;
+  bool owns_activations() const override { return m_activations_created; }
 
   El::Int current_output_mini_batch_size() const override;
   El::Int
@@ -241,6 +242,9 @@ protected:
    *  distributed matrices.
    */
   void setup_data(size_t max_mini_batch_size) override;
+
+  /** Creates a new reference counter entry in the model object, if exists. */
+  void setup_reference_counter(OutputAbsDistMatrixType& mat);
 
   // ===========================================================
   // Forward prop step helper functions
@@ -418,6 +422,12 @@ private:
    *  The default behavior is dynamic allocation.
    */
   bool m_persistent_error_signals = false;
+
+  /** @brief Whether activations were creating during forward propagation.
+   * This boolean is reset in the beginning of `forward_prop()` and set in
+   * `setup_reference_counter`.
+   */
+  bool m_activations_created = false;
 
 #ifdef LBANN_HAS_DISTCONV
   friend class data_type_distconv_adapter<InputTensorDataType,

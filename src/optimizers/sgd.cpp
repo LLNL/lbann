@@ -103,11 +103,8 @@ void sgd<TensorDataType>::setup(WeightsType* w)
   m_velocity.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
 #ifdef LBANN_HAS_GPU
   if (m_velocity->GetLocalDevice() == El::Device::GPU) {
-    const auto& arg_parser = global_argument_parser();
-    if (!arg_parser.get<bool>(
-          LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
-      m_velocity->Matrix().SetMemoryMode(0); // Directly-allocated memory
-    }
+    int memory_mode = 0; // Direct allocation
+    m_velocity->Matrix().SetMemoryMode(memory_mode);
   }
 #endif // LBANN_HAS_GPU
   El::Zeros(*m_velocity, gradient.Height(), gradient.Width());

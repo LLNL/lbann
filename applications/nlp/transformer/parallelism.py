@@ -12,9 +12,10 @@ from typing import Any, Dict, Optional, List, Tuple, Union
 #############################################################################
 
 
-# Fully-sharded data parallelism
-def apply_fsdp(module: lbann.models.Transformer,
-               other_weights: List[lbann.Weights], args: argparse.Namespace):
+# Fully-sharded data parallelism (MLP only)
+def apply_fsdp_mlp(module: lbann.models.Transformer,
+                   other_weights: List[lbann.Weights],
+                   args: argparse.Namespace):
     """
     Applies a sharded-weight data-parallel strategy on every weight or
     MLP weights only.
@@ -23,7 +24,7 @@ def apply_fsdp(module: lbann.models.Transformer,
     :param other_weights: List of other weights to shard (e.g., embeddings).
     :param args: Command-line arguments.
     """
-    if not args.fsdp:
+    if not args.fsdp_mlp:
         return
     if args.ffn_parallel:
         raise ValueError('FSDP is incompatible with model parallelism')
@@ -38,6 +39,28 @@ def apply_fsdp(module: lbann.models.Transformer,
 
     for w in other_weights:
         w.sharded = True
+
+
+# Fully-sharded data parallelism (all weights)
+def apply_fsdp_allweights(model: lbann.Model, args: argparse.Namespace):
+    """
+    Applies a sharded-weight data-parallel strategy on every weight.
+
+    :param model: LBANN model to use.
+    :param args: Command-line arguments.
+    """
+    if not args.fsdp:
+        return
+    if args.ffn_parallel:
+        raise ValueError('FSDP is incompatible with model parallelism')
+
+    # Loop over all weights
+    for layer in model.layers:
+        if layer.weights:
+            # As a heuristic, only shard the first set of weights (i.e., no
+            # biases)
+            if len(layer.weights) > 0:
+                layer.weights[0].sharded = True
 
 
 # Model (FFN tensor) parallelism
@@ -227,4 +250,10 @@ def add_transformer_parallelism_arguments(parser: argparse.Namespace,
         '--fsdp',
         action='store_true',
         help='Apply Fully-Sharded Data-Parallelism (FSDP) and shard all weights'
+    )
+
+    parser.add_argument(
+        '--fsdp-mlp',
+        action='store_true',
+        help='Apply Fully-Sharded Data-Parallelism (FSDP) and shard MLP weights'
     )

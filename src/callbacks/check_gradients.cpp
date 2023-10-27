@@ -58,6 +58,7 @@ namespace {
 EvalType compute_objective_function(model& m)
 {
   const auto& c = static_cast<SGDExecutionContext&>(m.get_execution_context());
+  m.get_activation_reference_counter().clear();
 
   // Forward prop, skipping input layers
 
@@ -131,8 +132,8 @@ struct CheckWeightsFunctor : DefaultErrorReporter
   void operator()(data_type_weights<TensorDataType>& dtw)
   {
     // Get weights matrix and gradient
-    const auto& weights_matrix = dtw.get_values();
-    auto gradient = dtw.get_optimizer()->get_gradient();
+    auto const& weights_matrix = dtw.get_values_sharded();
+    auto const& gradient = dtw.get_optimizer()->get_gradient_sharded();
     // Iterate through weights matrix entries
     for (El::Int col = 0; col < weights_matrix.Width(); ++col) {
       for (El::Int row = 0; row < weights_matrix.Height(); ++row) {
@@ -170,7 +171,7 @@ struct CheckWeightsFunctor : DefaultErrorReporter
         // Note: only weight owner participates
         if (weight_is_local && weights_matrix.RedundantRank() == 0) {
           const EvalType analytical_gradient =
-            gradient->GetLocal(local_row, local_col);
+            gradient.GetLocal(local_row, local_col);
           const EvalType numerical_gradient =
             (-f_2h + 8 * f_h - 8 * f_nh + f_n2h) / (12 * step_size);
           const EvalType error =
@@ -280,6 +281,7 @@ void check_gradients::do_check_gradients(model& m) const
       opt->clear_gradient();
     }
   }
+  m.get_activation_reference_counter().clear();
 
   // Load data in input layers
   data_coordinator& dc = get_trainer().get_data_coordinator();

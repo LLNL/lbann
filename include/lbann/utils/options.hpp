@@ -40,6 +40,7 @@ namespace lbann {
 #define LBANN_OPTION_DISABLE_BACKGROUND_IO_ACTIVITY                            \
   "disable_background_io_activity"
 #define LBANN_OPTION_DISABLE_CUDA "disable_cuda"
+#define LBANN_OPTION_DISABLE_DISTCONV "disable_distconv"
 #define LBANN_OPTION_DISABLE_SIGNAL_HANDLER "disable_signal_handler"
 #define LBANN_OPTION_EXIT_AFTER_SETUP "exit_after_setup"
 #define LBANN_OPTION_GENERATE_MULTI_PROTO "generate_multi_proto"
@@ -60,8 +61,8 @@ namespace lbann {
 #define LBANN_OPTION_USE_CUDNN_TENSOR_OPS "use_cudnn_tensor_ops"
 #define LBANN_OPTION_USE_DATA_STORE "use_data_store"
 #define LBANN_OPTION_VERBOSE "verbose"
-#define LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP                    \
-  "Use Hydrogen's default memory mode for GPU buffers in forward prop"
+#define LBANN_OPTION_USE_GPU_DIRECT_MEMORY_IN_FORWARD_PROP                     \
+  "Use direct (i.e., not pooled) memory mode for GPU buffers in forward prop"
 #define LBANN_OPTION_INIT_SHMEM "Initialize SHMEM when initializing LBANN"
 #define LBANN_OPTION_INIT_NVSHMEM "Initialize NVSHMEM when initializing LBANN"
 #define LBANN_OPTION_NO_INPLACE "no_inplace"

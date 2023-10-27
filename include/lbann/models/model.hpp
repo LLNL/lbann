@@ -30,6 +30,7 @@
 #include "lbann/base.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/proto/factories.hpp"
+#include "lbann/utils/reference_counter.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 
@@ -428,6 +429,11 @@ public:
    */
   void reconcile_weight_values();
 
+  PointerRangeReferenceCounter& get_activation_reference_counter()
+  {
+    return m_activation_refcnt;
+  }
+
   // ===========================================
   // Callbacks
   // ===========================================
@@ -611,6 +617,9 @@ private:
 
    */
   El::Int m_current_mini_batch_size;
+
+  /** @brief Reference counter for activations. */
+  PointerRangeReferenceCounter m_activation_refcnt;
 
 #ifdef LBANN_HAS_DISTCONV
 private:
