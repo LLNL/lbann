@@ -45,6 +45,7 @@ set_full_path(THIS_DIR_HEADERS
   dump_outputs.hpp
   dump_weights.hpp
   early_stopping.hpp
+  evaluate_progress.hpp
   gpu_memory_usage.hpp
   gradient_clipping.hpp
   hang.hpp

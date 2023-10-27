@@ -89,6 +89,7 @@ message Callback {
     CallbackCosineDecayLearningRate cosine_decay_learning_rate = 57;
     CallbackMemoryProfiler memory_profiler = 58;
     CallbackClipGradientNorm clip_gradient_norm = 59;
+    CallbackEvaluateProgress evaluate_progress = 60;
   }
 
   message CallbackLTFB {
@@ -474,5 +475,10 @@ message Callback {
     bool global_norm = 2;  // Whether to clip according to the values
                            // of all parameters, or each one separately.
     float value = 3;       // Value to clip to.
+  }
+
+  message CallbackEvaluateProgress {
+    int64 batch_interval = 1;
+    string metric = 2;
   }
 }
