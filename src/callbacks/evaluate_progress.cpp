@@ -25,31 +25,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/evaluate_progress.hpp"
-#include "lbann/comm_impl.hpp"
+// #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/trainers/trainer.hpp"
-#include "lbann/utils/cloneable.hpp"
-#include "lbann/utils/memory.hpp"
-#include "lbann/utils/protobuf.hpp"
-#include "lbann/utils/serialize.hpp"
-#include "lbann/utils/timer.hpp"
 
 #include "lbann/proto/callbacks.pb.h"
-
-#include <algorithm>
-#include <numeric>
-#include <set>
-#include <sstream>
-#include <string>
-#include <tuple>
-#include <unordered_map>
-#include <utility>
-#include <vector>
 
 namespace lbann {
 namespace callback {
@@ -92,7 +76,7 @@ EvalType evaluate(model& m, const std::string& metric_name, execution_mode mode)
   }
 
   // Mark the data store as loaded - Note that this is a temporary fix
-  // for the current use of the tournament
+  // for the current use of the evaluation
   dc.make_data_store_preloaded(mode);
 
   // Clean up and return metric value
@@ -156,7 +140,7 @@ void evaluate_progress::on_batch_begin(model* m)
 
   // Print message
   const auto message_prefix =
-    (std::string{} + "Evaluate progress using (" + to_string(evaluation_mode) +
+    (std::string{} + "evaluate progress using (" + to_string(evaluation_mode) +
      " data set) on " + "model \"" + local_model.get_name() + "\", " + "step " +
      std::to_string(step) + "): ");
 

@@ -54,7 +54,7 @@ public:
   evaluate_progress(const evaluate_progress& other);
   evaluate_progress& operator=(const evaluate_progress& other);
   evaluate_progress* copy() const final { return new evaluate_progress(*this); }
-  std::string name() const final { return "EVALUATE_PROGRESS"; }
+  std::string name() const final { return "Evaluate Progress"; }
 
   void on_batch_begin(model* m) final;
 
