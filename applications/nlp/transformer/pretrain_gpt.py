@@ -90,6 +90,12 @@ def main():
                         type=float,
                         default=0.0,
                         help="Clip global gradient norm (default: 0.0)")
+    parser.add_argument(
+        "--fractional-schedule",
+        action='store_true',
+        default=False,
+        help="Use dataset fraction to determine hyperparameter schedule"
+        " (default: False)")
 
     parser.set_defaults(progress=True, num_epochs=1)
     args = parser.parse_args()
@@ -120,7 +126,9 @@ def main():
     lr_decay_ratio = 260 / 300  # 260 billion tokens used for cosine decay
     warmup_ratio = 375 / 300000  # 375 million tokens for warmup
     # tokens_per_step = dataset.sequence_length * args.mini_batch_size
-    total_steps = math.ceil(dataset.num_train_samples() / args.mini_batch_size)
+    sched_mult = args.dataset_fraction if args.fractional_schedule else 1.0
+    total_steps = math.ceil(sched_mult * dataset.num_train_samples() /
+                            args.mini_batch_size)
 
     train_script: BatchScript = trainer.construct_training_task(
         model,
