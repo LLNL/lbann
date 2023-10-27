@@ -42,7 +42,7 @@ namespace callback {
  *      after a fixed number of steps.
  *
  */
-class evaluate_progress : public callback_base
+class evaluate_progress final : public callback_base
 {
 public:
   /** @brief Construct the evaluate progress callback
