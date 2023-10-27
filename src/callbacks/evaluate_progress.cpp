@@ -159,12 +159,20 @@ void evaluate_progress::on_batch_begin(model* m)
     (std::string{} + "Evaluate progress using (" + to_string(evaluation_mode) +
      " data set) on " + "model \"" + local_model.get_name() + "\", " + "step " +
      std::to_string(step) + "): ");
+
+  if (comm.am_trainer_master()) {
+    std::ostringstream msg;
+    msg << "Starting to " << message_prefix << " while "
+        << "(" << to_string(mode) << ") "
+        << "\n";
+    std::cout << msg.str() << std::flush;
+  }
   auto local_score = evaluate(local_model, m_metric_name, evaluation_mode);
 
   // Report evaluation results
   if (comm.am_trainer_master()) {
     std::ostringstream msg;
-    msg << message_prefix << "trainer "
+    msg << "Finished " << message_prefix << "during "
         << "(" << to_string(mode) << ") "
         << "= " << local_score << "\n";
     std::cout << msg.str() << std::flush;
