@@ -62,14 +62,13 @@ struct array_sum
  *  Grid dimensions: (channel_size / bsize) x num_channels x 1
  */
 template <typename TensorDataType, int bdimx>
-__global__ void
-fp_sums_kernel(int mini_batch_size,
-               int num_channels,
-               int channel_size,
-               const TensorDataType* __restrict__ data,
-               int data_ldim,
-               typename BNAccT<TensorDataType>::type* __restrict__ sums,
-               typename BNAccT<TensorDataType>::type* __restrict__ sqsums)
+__global__ void fp_sums_kernel(int mini_batch_size,
+                               int num_channels,
+                               int channel_size,
+                               const TensorDataType* __restrict__ data,
+                               int data_ldim,
+                               BNAcc<TensorDataType>* __restrict__ sums,
+                               BNAcc<TensorDataType>* __restrict__ sqsums)
 {
 
   // Indices and dimensions
@@ -84,7 +83,7 @@ fp_sums_kernel(int mini_batch_size,
   for (int channel = gidy; channel < num_channels; channel += nthreadsy) {
 
     // Accumulate sums and perform block-wide reduction
-    using AccT = typename BNAccT<TensorDataType>::type;
+    using AccT = BNAcc<TensorDataType>;
     using array_t = gpu_lib::array<AccT, 2>;
     using array_sum_t = array_sum<AccT, 2>;
     array_t sum_sqsum;
@@ -119,19 +118,19 @@ fp_sums_kernel(int mini_batch_size,
  *  Grid dimensions: (num_channels / bsize) x 1 x 1
  */
 template <typename TensorDataType>
-__global__ void fp_statistics_kernel(
-  int num_sums,
-  int num_per_sum,
-  int correction,
-  typename BNAccT<TensorDataType>::type epsilon,
-  typename BNAccT<TensorDataType>::type decay,
-  typename BNAccT<TensorDataType>::type* __restrict__ global_mean,
-  typename BNAccT<TensorDataType>::type* __restrict__ global_var,
-  typename BNAccT<TensorDataType>::type* __restrict__ global_running_mean,
-  typename BNAccT<TensorDataType>::type* __restrict__ global_running_var)
+__global__ void
+fp_statistics_kernel(int num_sums,
+                     int num_per_sum,
+                     int correction,
+                     BNAcc<TensorDataType> epsilon,
+                     BNAcc<TensorDataType> decay,
+                     BNAcc<TensorDataType>* __restrict__ global_mean,
+                     BNAcc<TensorDataType>* __restrict__ global_var,
+                     BNAcc<TensorDataType>* __restrict__ global_running_mean,
+                     BNAcc<TensorDataType>* __restrict__ global_running_var)
 {
 
-  using AccT = typename BNAccT<TensorDataType>::type;
+  using AccT = BNAcc<TensorDataType>;
 
   const auto& gid = threadIdx.x + blockIdx.x * blockDim.x;
   const auto& num_threads = blockDim.x * gridDim.x;
@@ -166,22 +165,22 @@ __global__ void fp_statistics_kernel(
  *
  */
 template <typename TensorDataType>
-__global__ void fp_output_kernel(
-  int mini_batch_size,
-  int num_channels,
-  int channel_size,
-  const TensorDataType* __restrict__ global_input,
-  int input_ldim,
-  const typename BNAccT<TensorDataType>::type* __restrict__ global_mean,
-  const typename BNAccT<TensorDataType>::type* __restrict__ global_var,
-  typename BNAccT<TensorDataType>::type epsilon,
-  const typename BNAccT<TensorDataType>::type* __restrict__ global_scale,
-  const typename BNAccT<TensorDataType>::type* __restrict__ global_bias,
-  TensorDataType* __restrict__ global_output,
-  int output_ldim)
+__global__ void
+fp_output_kernel(int mini_batch_size,
+                 int num_channels,
+                 int channel_size,
+                 const TensorDataType* __restrict__ global_input,
+                 int input_ldim,
+                 const BNAcc<TensorDataType>* __restrict__ global_mean,
+                 const BNAcc<TensorDataType>* __restrict__ global_var,
+                 BNAcc<TensorDataType> epsilon,
+                 const BNAcc<TensorDataType>* __restrict__ global_scale,
+                 const BNAcc<TensorDataType>* __restrict__ global_bias,
+                 TensorDataType* __restrict__ global_output,
+                 int output_ldim)
 {
 
-  using AccT = typename BNAccT<TensorDataType>::type;
+  using AccT = BNAcc<TensorDataType>;
 
   // Indices and dimensions
   const auto& gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -233,17 +232,17 @@ __global__ void bp_statistics_grad_kernel(
   int input_ldim,
   const TensorDataType* __restrict__ global_gradient_wrt_output,
   int gradient_wrt_output_ldim,
-  const typename BNAccT<TensorDataType>::type* __restrict__ global_mean,
-  const typename BNAccT<TensorDataType>::type* __restrict__ global_var,
-  typename BNAccT<TensorDataType>::type epsilon,
-  const typename BNAccT<TensorDataType>::type* __restrict__ global_scale,
-  typename BNAccT<TensorDataType>::type* __restrict__ global_dscale,
-  typename BNAccT<TensorDataType>::type* __restrict__ global_dbias,
-  typename BNAccT<TensorDataType>::type* __restrict__ global_dmean,
-  typename BNAccT<TensorDataType>::type* __restrict__ global_dvar)
+  const BNAcc<TensorDataType>* __restrict__ global_mean,
+  const BNAcc<TensorDataType>* __restrict__ global_var,
+  BNAcc<TensorDataType> epsilon,
+  const BNAcc<TensorDataType>* __restrict__ global_scale,
+  BNAcc<TensorDataType>* __restrict__ global_dscale,
+  BNAcc<TensorDataType>* __restrict__ global_dbias,
+  BNAcc<TensorDataType>* __restrict__ global_dmean,
+  BNAcc<TensorDataType>* __restrict__ global_dvar)
 {
 
-  using AccT = typename BNAccT<TensorDataType>::type;
+  using AccT = BNAcc<TensorDataType>;
 
   // Indices and dimensions
   constexpr int bdimy = 1;
@@ -324,17 +323,17 @@ __global__ void bp_input_grad_kernel(
   int input_ldim,
   const TensorDataType* __restrict__ global_gradient_wrt_output,
   int gradient_wrt_output_ldim,
-  const typename BNAccT<TensorDataType>::type* __restrict__ global_mean,
-  const typename BNAccT<TensorDataType>::type* __restrict__ global_var,
-  typename BNAccT<TensorDataType>::type epsilon,
-  const typename BNAccT<TensorDataType>::type* __restrict__ global_scale,
-  const typename BNAccT<TensorDataType>::type* __restrict__ global_dmean,
-  const typename BNAccT<TensorDataType>::type* __restrict__ global_dvar,
+  const BNAcc<TensorDataType>* __restrict__ global_mean,
+  const BNAcc<TensorDataType>* __restrict__ global_var,
+  BNAcc<TensorDataType> epsilon,
+  const BNAcc<TensorDataType>* __restrict__ global_scale,
+  const BNAcc<TensorDataType>* __restrict__ global_dmean,
+  const BNAcc<TensorDataType>* __restrict__ global_dvar,
   TensorDataType* __restrict__ global_gradient_wrt_input,
   int gradient_wrt_input_ldim)
 {
 
-  using AccT = typename BNAccT<TensorDataType>::type;
+  using AccT = BNAcc<TensorDataType>;
 
   // Indices and dimensions
   const auto& gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -509,7 +508,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute()
   }
 #endif // LBANN_HAS_DISTCONV
 
-  using AccT = typename BNAccT<TensorDataType>::type;
+  using AccT = BNAcc<TensorDataType>;
 
   const bool is_training =
     this->m_model->get_execution_context().get_execution_mode() ==
@@ -680,7 +679,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute()
   }
 #endif // LBANN_HAS_DISTCONV
 
-  using AccT = typename BNAccT<TensorDataType>::type;
+  using AccT = BNAcc<TensorDataType>;
 
   const bool is_training =
     this->m_model->get_execution_context().get_execution_mode() ==

@@ -67,6 +67,8 @@ struct BNAccT<fp16> {
   using type = float;
 };
 #endif
+template <typename T>
+using BNAcc = typename BNAccT<T>::type;
 
 #ifdef LBANN_HAS_DISTCONV
 namespace dc {
@@ -136,7 +138,7 @@ public:
   ///@{
 
   /** @brief Accumulation type for this object. */
-  using AccT = typename BNAccT<TensorDataType>::type;
+  using AccT = BNAcc<TensorDataType>;
 
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<AccT>;
