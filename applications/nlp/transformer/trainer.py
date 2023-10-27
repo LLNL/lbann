@@ -169,7 +169,9 @@ def make_batch_script(model: lbann.Model,
 
     # Print a progress bar
     if args.progress:
-        model.callbacks.append(lbann.CallbackProgressBar(newline_interval=100))
+        model.callbacks.append(
+            lbann.CallbackProgressBar(newline_interval=100,
+                                      print_mem_usage=True))
 
     model.callbacks.extend(lbann.contrib.args.create_profile_callbacks(args))
 
@@ -179,14 +181,17 @@ def make_batch_script(model: lbann.Model,
     script_params['environment'] = {
         'LBANN_USE_CUBLAS_TENSOR_OPS': 0,
         'LBANN_USE_CUDNN_TENSOR_OPS': 0,
-        "LBANN_KEEP_ERROR_SIGNALS": 1
+        # "LBANN_KEEP_ERROR_SIGNALS": 1
+        "LBANN_NO_INPLACE": 1,
     }
 
+    save_text = False
+    filename = 'experiment.prototext' if save_text else 'experiment.protobin'
     # Create Protobuf file
-    protobuf_file = os.path.join(work_dir, 'experiment.protobin')
+    protobuf_file = os.path.join(work_dir, filename)
 
     lbann.proto.save_prototext(protobuf_file,
-                               binary=True,
+                               binary=not save_text,
                                trainer=trainer,
                                model=model,
                                data_reader=reader,

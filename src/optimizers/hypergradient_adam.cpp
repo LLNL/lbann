@@ -109,7 +109,7 @@ template <typename TensorDataType>
 void hypergradient_adam<TensorDataType>::setup(WeightsType* w)
 {
   OptimizerType::setup(w);
-  const auto& gradient = this->get_gradient();
+  const auto& gradient = this->get_gradient_sharded();
   m_moment1.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
   m_moment2.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
   m_old_gradient.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));

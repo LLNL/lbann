@@ -444,7 +444,7 @@ float optimizerwise_adaptive_learning_rate::optimizer_schedule(model* m,
 {
   auto& dto = dynamic_cast<data_type_optimizer<DataType>&>(opt);
   DataType param_norm = El::Nrm2(dto.get_weights().get_values());
-  DataType param_grad_norm = El::Nrm2(dto.get_gradient());
+  DataType param_grad_norm = El::Nrm2(dto.get_gradient_sharded());
   if (param_norm > DataType(0) && param_grad_norm > DataType(0)) {
     // TODO: Should incorporate weight decay, etc. here.
     return optimizerwise_adaptive_learning_rate::

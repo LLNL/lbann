@@ -172,7 +172,8 @@ void summary::save_histograms(model* m)
     optimizer* opt = w->get_optimizer();
     if (opt != nullptr) {
       auto* dt_opt = dynamic_cast<OptimizerType*>(opt);
-      AbsDistMatReadProxy<El::Device::CPU> gradients(dt_opt->get_gradient());
+      auto grad = dt_opt->get_gradient();
+      AbsDistMatReadProxy<El::Device::CPU> gradients(*grad);
       m_summarizer->reduce_histogram(prefix + "weights_gradient",
                                      gradients.GetLocked(),
                                      c.get_step());

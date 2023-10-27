@@ -106,20 +106,21 @@ void load_weights_from_files(model& m, std::string const& ckpt_dir)
     auto* dtw = dynamic_cast<data_type_weights<DataType>*>(w);
     LBANN_ASSERT(dtw);
 
-    auto const file = file::join_path(ckpt_dir,
-                                      build_string("model_weights_",
-                                                   w->get_name(),
-                                                   "_",
-                                                   dtw->get_values().Height(),
-                                                   "x",
-                                                   dtw->get_values().Width(),
-                                                   ".bin"));
+    auto const file =
+      file::join_path(ckpt_dir,
+                      build_string("model_weights_",
+                                   w->get_name(),
+                                   "_",
+                                   dtw->get_values_sharded().Height(),
+                                   "x",
+                                   dtw->get_values_sharded().Width(),
+                                   ".bin"));
     if (file::file_exists(file)) {
       // TODO: Replace with logging API
       if (m.get_comm()->am_trainer_master()) {
         std::cout << "Loading: " << file << std::endl;
       }
-      El::Read(dtw->get_values(), file, El::BINARY, true);
+      El::Read(dtw->get_values_sharded(), file, El::BINARY, true);
     }
     else {
       // TODO: Replace with logging API

@@ -91,3 +91,44 @@ def test_gradient_clipping_diffclip():
 @test_util.lbann_test(train=True)
 def test_gradient_clipping_local():
     return setup_tester(scale=10, global_norm=False, clip=1.0)
+
+
+# Case with global clipping and sharded weights.
+@check_gradients(global_norm=True)
+@test_util.lbann_test(train=True)
+def test_gradient_clipping_weight_sharding():
+    np.random.seed(20231023)
+    x = np.random.normal(scale=1, size=[3, 3]).astype(np.float32)
+    ref = np.zeros_like(x)
+
+    tester = test_util.ModelTester()
+    x = tester.inputs(x)
+    ref = tester.make_reference(ref)
+
+    # Add sharded weights
+    linearity_weights = lbann.Weights(
+        optimizer=lbann.SGD(),
+        initializer=lbann.GlorotNormalInitializer(),
+        sharded=True,
+        name="linearity_sharded",
+    )
+    bias_weights = lbann.Weights(
+        optimizer=lbann.SGD(),
+        initializer=lbann.ConstantInitializer(value=0),
+        sharded=True,
+        name="bias_sharded",
+    )
+
+    y = lbann.FullyConnected(x,
+                             num_neurons=3,
+                             has_bias=True,
+                             weights=[linearity_weights, bias_weights])
+
+    z = lbann.FullyConnected(y, num_neurons=3, has_bias=True)
+
+    tester.set_loss(lbann.MeanSquaredError(z, ref), tolerance=10 * 1.0**2)
+    tester.extra_callbacks = [
+        lbann.CallbackClipGradientNorm(global_norm=True, value=1.0),
+        lbann.CallbackDumpGradients(basename='gradients')
+    ]
+    return tester

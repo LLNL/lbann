@@ -169,6 +169,8 @@ lbann::proto::construct_weights(lbann_comm* comm,
     w->set_name(name);
   }
 
+  w->set_sharded(proto_weights.sharded());
+
   // Set weights initializer and optimizer
   w->set_initializer(std::move(init));
   w->set_optimizer(std::move(opt));

@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/progress_bar.hpp"
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/memory_profiler.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/models/model.hpp"
@@ -42,8 +43,11 @@
 #include <iostream>
 #include <sstream>
 
-static inline void
-print_progress(int iteration, int total, double avg_time, std::string prefix)
+static inline void print_progress(int iteration,
+                                  int total,
+                                  double avg_time,
+                                  std::string prefix,
+                                  bool mem_usage)
 {
   // Preamble
   std::cout << "Step " << (iteration + 1) << "/" << total << "    " << prefix
@@ -73,7 +77,14 @@ print_progress(int iteration, int total, double avg_time, std::string prefix)
 
     int iterations_left = (total - iteration);
     std::cout << ". ETA " << static_cast<int>(iterations_left * avg_time)
-              << " sec          "; // Extra whitespace to clear previous prompts
+              << " sec";
+
+    if (mem_usage) {
+      std::cout << ". Mem: "
+                << lbann::callback::get_used_gpu_memory() / 1048576.0 << " MiB";
+    }
+
+    std::cout << "          "; // Extra whitespace to clear previous prompts
   }
 
   if (iteration >= (total - 1))
@@ -137,6 +148,7 @@ void progress_bar::write_specific_proto(lbann_data::Callback& proto) const
   auto* msg = proto.mutable_progress_bar();
   msg->set_interval(this->m_batch_interval);
   msg->set_newline_interval(this->m_newline_interval);
+  msg->set_print_mem_usage(this->m_print_mem_usage);
 }
 
 void progress_bar::on_epoch_begin(model* m)
@@ -179,7 +191,8 @@ void progress_bar::on_forward_prop_begin(model* m)
     print_progress(m_current_iteration,
                    m_training_iterations,
                    avg_time,
-                   prefix);
+                   prefix,
+                   m_print_mem_usage);
 
     m_current_iteration += 1;
 
@@ -197,7 +210,8 @@ std::unique_ptr<callback_base> build_progress_bar_callback_from_pbuf(
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackProgressBar&>(proto_msg);
   return std::make_unique<progress_bar>(params.interval(),
-                                        params.newline_interval());
+                                        params.newline_interval(),
+                                        params.print_mem_usage());
 }
 
 } // namespace callback

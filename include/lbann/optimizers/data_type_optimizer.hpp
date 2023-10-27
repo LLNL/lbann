@@ -97,11 +97,20 @@ public:
   /** @name Gradient update management */
   ///@{
 
-  /** @brief Objective function gradient w.r.t. the weights.
+  /** @brief Get the full objective function gradient w.r.t. the weights,
+   *  synchronized across all ranks in the trainer.
    *
-   *  An allreduce may be launched and/or synchronized if needed.
+   *  A collective operation (allreduce or allgather) may be launched and/or
+   *  synchronized if needed.
    */
-  AbsDistMatrixType& get_gradient();
+  std::unique_ptr<AbsDistMatrixType> get_gradient();
+
+  /** @brief Get the raw objective function gradient w.r.t. the weights,
+   *  synchronized across all ranks in the trainer. This may be a local sharded
+   *  version and not contain the gradients of all weights, but it will
+   *  contain all contributions made to the gradients.
+   */
+  AbsDistMatrixType& get_gradient_sharded();
 
   /** @brief Optimization step. */
   void step() override;
@@ -111,6 +120,9 @@ public:
   double get_learning_rate() const final;
   /** @brief Set the scaling factor for optimization step sizes. */
   void set_learning_rate(double learning_rate) override;
+
+  /** Are parent weights sharded across ranks? */
+  bool is_sharded() const override { return m_sharded; }
 
   /** @name Checkpointing functionality */
   ///@{
@@ -133,30 +145,19 @@ protected:
                             const AbsDistMatrixType& gradient) = 0;
 
   /** @brief Get the info needed to construct a new gradient matrix.
-   *  @return Tuple of height, width, and DistData.
+   *  @return Tuple of height, width, DistData (local contributions), and
+   *  DistData (global gradient, possibly sharded).
    */
-  std::tuple<El::Int, El::Int, El::DistData> get_matrix_info() const final;
+  std::tuple<El::Int, El::Int, El::DistData, El::DistData>
+  get_matrix_info() const final;
 
 private:
   /** @brief Weights being optimized. */
   data_type_weights<TensorDataType>* m_weights = nullptr;
 
-  /** @brief Objective function gradient w.r.t. weights. */
+  /** @brief Objective function gradient w.r.t. weights (potentially sharded).
+   */
   std::unique_ptr<AbsDistMatrixType> m_gradient;
-
-  /** @brief Workspace matrix.
-   *
-   *  Helps ensure gradient contributions are in the right
-   *  distribution. Most of the time, this should just be a matrix
-   *  view.
-   */
-  std::unique_ptr<AbsDistMatrixType> m_gradient_v;
-
-  /** @brief Communication request object for gradient allreduce.
-   *
-   *  Used to synchronize non-blocking allreduce.
-   */
-  Al::request m_gradient_allreduce_req;
 
   /** @brief Scaling factor for optimization step sizes.
    *
@@ -168,6 +169,9 @@ private:
    *  @todo Consider moving this to the derived classes.
    */
   double m_learning_rate;
+
+  /** Annotates whether the parent weights are sharded across ranks. */
+  bool m_sharded;
 };
 
 #ifndef LBANN_DATA_TYPE_OPTIMIZER_INSTANTIATE

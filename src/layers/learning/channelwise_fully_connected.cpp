@@ -170,8 +170,9 @@ void channelwise_fully_connected_distconv_adapter<TensorDataType,
   auto* linearity_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(
     layer.get_weights(0).get_optimizer());
 
-  assert0(dc::tensor::View(*m_linearity_gradient,
-                           linearity_optimizer->get_gradient().Buffer()));
+  assert0(
+    dc::tensor::View(*m_linearity_gradient,
+                     linearity_optimizer->get_gradient_sharded().Buffer()));
   if (layer.m_has_bias) {
     // Get bias optimizer
     auto* bias_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(
@@ -185,8 +186,9 @@ void channelwise_fully_connected_distconv_adapter<TensorDataType,
         std::make_unique<TensorDevType>(bias_shape, loc, shared_dist);
 
       // Copy over bias gradients
-      assert0(dc::tensor::View(*m_bias_gradient,
-                               bias_optimizer->get_gradient().Buffer()));
+      assert0(
+        dc::tensor::View(*m_bias_gradient,
+                         bias_optimizer->get_gradient_sharded().Buffer()));
     }
   }
 }

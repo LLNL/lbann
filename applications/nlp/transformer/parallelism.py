@@ -12,6 +12,34 @@ from typing import Any, Dict, Optional, List, Tuple, Union
 #############################################################################
 
 
+# Fully-sharded data parallelism
+def apply_fsdp(module: lbann.models.Transformer,
+               other_weights: List[lbann.Weights], args: argparse.Namespace):
+    """
+    Applies a sharded-weight data-parallel strategy on every weight or
+    MLP weights only.
+
+    :param module: Transformer module to modify.
+    :param other_weights: List of other weights to shard (e.g., embeddings).
+    :param args: Command-line arguments.
+    """
+    if not args.fsdp:
+        return
+    if args.ffn_parallel:
+        raise ValueError('FSDP is incompatible with model parallelism')
+
+    # Loop over all encoders and decoders
+    for _, submodule in itertools.chain(enumerate(module.encoder),
+                                        enumerate(module.decoder)):
+        for w in submodule.fc1_weights:
+            w.sharded = True
+        for w in submodule.fc2_weights:
+            w.sharded = True
+
+    for w in other_weights:
+        w.sharded = True
+
+
 # Model (FFN tensor) parallelism
 def apply_ffn_model_parallelism(module: lbann.models.Transformer,
                                 args: argparse.Namespace,
@@ -70,8 +98,8 @@ def apply_lm_head_model_parallelism(lm_head: lbann.Layer,
 
 def apply_subgraph_parallelism(
     module: lbann.models.Transformer, args: argparse.Namespace
-) -> Tuple[Union[lbann.models.Transformer,
-                 lbann.models.subgraph.transformer.TransformerAllSubgraph], Dict[str, Any]]:
+) -> Tuple[Union[lbann.models.Transformer, lbann.models.subgraph.transformer.
+                 TransformerAllSubgraph], Dict[str, Any]]:
     """
     Applies a subgraph parallelism strategy on the attention heads in each
     transformer block, if requested.
@@ -194,3 +222,9 @@ def add_transformer_parallelism_arguments(parser: argparse.Namespace,
         help=
         'Apply concat operation after each transformer block (only applies if '
         '--subgraph-parallelism-all is given)')
+
+    parser.add_argument(
+        '--fsdp',
+        action='store_true',
+        help='Apply Fully-Sharded Data-Parallelism (FSDP) and shard all weights'
+    )

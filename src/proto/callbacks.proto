@@ -464,6 +464,7 @@ message Callback {
     int64 interval = 1;          // Print every n iterations
     int64 newline_interval = 2;  // Number of iterations between a newline print
                                  // (0 disables)
+    bool print_mem_usage = 3;    // If true, also prints GPU memory usage
   }
 
   message CallbackMemoryProfiler {

@@ -130,9 +130,6 @@ private:
    *  gradient w.r.t. this embedding vector is always zero.
    */
   El::Int m_padding_idx;
-
-  /** Gradient w.r.t. embedding weights. */
-  std::unique_ptr<AbsDistMatrixType> m_embeddings_grad;
 };
 
 // =========================================================
@@ -172,9 +169,7 @@ embedding_layer<TensorDataType, Layout, Device>::embedding_layer(
   : data_type_layer<TensorDataType>(other),
     m_num_embeddings{other.m_num_embeddings},
     m_embedding_dim{other.m_embedding_dim},
-    m_padding_idx{other.m_padding_idx},
-    m_embeddings_grad(other.m_embeddings_grad ? other.m_embeddings_grad->Copy()
-                                              : nullptr)
+    m_padding_idx{other.m_padding_idx}
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -186,8 +181,6 @@ embedding_layer<TensorDataType, Layout, Device>::operator=(
   m_num_embeddings = other.m_num_embeddings;
   m_embedding_dim = other.m_embedding_dim;
   m_padding_idx = other.m_padding_idx;
-  m_embeddings_grad.reset(
-    other.m_embeddings_grad ? other.m_embeddings_grad->Copy() : nullptr);
   return *this;
 }
 
@@ -287,22 +280,12 @@ void embedding_layer<TensorDataType, Layout, Device>::setup_data(
     // type that matches this layer. In future, we should abstract
     // this or dynamically dispatch it.
     auto& embedding_values =
-      dynamic_cast<AbsDistMatrixType&>(embeddings.get_values());
+      dynamic_cast<AbsDistMatrixType&>(embeddings.get_values_sharded());
     std::unique_ptr<AbsDistMatrixType> pad_embedding(
       embedding_values.Construct(embedding_values.Grid(),
                                  embedding_values.Root()));
     El::View(*pad_embedding, embedding_values, El::ALL, El::IR(m_padding_idx));
     El::Zero(*pad_embedding);
-  }
-
-  // Initialize gradient w.r.t. embeddings
-  {
-    auto& embedding_values =
-      dynamic_cast<AbsDistMatrixType&>(embeddings.get_values());
-    this->m_embeddings_grad.reset(
-      embedding_values.Construct(embedding_values.Grid(),
-                                 embedding_values.Root()));
-    m_embeddings_grad->Resize(m_embedding_dim, m_num_embeddings);
   }
 }
 

@@ -64,7 +64,7 @@ std::string get_dims_string(const std::vector<size_t>& matrix_height_dims,
 
 } // namespace
 
-weights::weights() : m_comm(nullptr), m_frozen(false)
+weights::weights() : m_comm(nullptr), m_frozen(false), m_sharded(false)
 {
 
   // Initialize weights name
@@ -114,6 +114,11 @@ description weights::get_description() const
   // Freeze state
   if (is_frozen()) {
     desc.add("Frozen");
+  }
+
+  // Sharding state
+  if (is_sharded()) {
+    desc.add("Sharded");
   }
 
   // Derived class contribution
@@ -169,8 +174,8 @@ void weights::set_dims(std::vector<size_t> matrix_height_dims,
 
 void weights::set_values(El::BaseDistMatrix const& values)
 {
-  if ((values.Height() != get_values().Height()) ||
-      (values.Width() != get_values().Width())) {
+  if ((values.Height() != get_values_sharded().Height()) ||
+      (values.Width() != get_values_sharded().Width())) {
     LBANN_ERROR("Expected matrix size ",
                 this->get_matrix_height(),
                 "x",
@@ -180,7 +185,7 @@ void weights::set_values(El::BaseDistMatrix const& values)
                 "x",
                 values.Width());
   }
-  El::Copy(values, this->get_values());
+  El::Copy(values, this->get_values_sharded());
 }
 
 El::DistData weights::get_matrix_distribution() const { return m_matrix_dist; }
@@ -235,14 +240,17 @@ void weights::setup()
 
 void weights::steal_values(weights& other)
 {
-  LBANN_ASSERT(this->get_values().Height() == other.get_values().Height());
-  LBANN_ASSERT(this->get_values().Width() == other.get_values().Width());
+  LBANN_ASSERT(this->get_values_sharded().Height() ==
+               other.get_values_sharded().Height());
+  LBANN_ASSERT(this->get_values_sharded().Width() ==
+               other.get_values_sharded().Width());
 
-  if (this->get_values().DistData() == other.get_values().DistData())
+  if (this->get_values_sharded().DistData() ==
+      other.get_values_sharded().DistData())
     this->do_steal_values_(other);
   else
     // Copy things over.
-    this->set_values(other.get_values());
+    this->set_values(other.get_values_sharded());
 }
 } // namespace lbann
 

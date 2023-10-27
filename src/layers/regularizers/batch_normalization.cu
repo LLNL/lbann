@@ -28,7 +28,7 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/layers/regularizers/batch_normalization_impl.hpp"
-#include "lbann/optimizers/optimizer_impl.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 #include "lbann/weights/weights_helpers.hpp"
 

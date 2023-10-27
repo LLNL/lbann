@@ -28,7 +28,7 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/optimizers/optimizer_impl.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/dim_helpers.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/exception.hpp"
@@ -1280,8 +1280,9 @@ void base_convolution_adapter<TensorDataType, Device>::setup_bp_tensors()
   auto* kernel_optimizer = static_cast<data_type_optimizer<TensorDataType>*>(
     l.get_weights(0).get_optimizer());
   if (kernel_optimizer != nullptr) {
-    assert0(dc::tensor::View(*m_kernel_gradient,
-                             kernel_optimizer->get_gradient().Buffer()));
+    assert0(
+      dc::tensor::View(*m_kernel_gradient,
+                       kernel_optimizer->get_gradient_sharded().Buffer()));
   }
 
   // Bias tensor. Shared by all procs
@@ -1295,8 +1296,9 @@ void base_convolution_adapter<TensorDataType, Device>::setup_bp_tensors()
         std::make_unique<TensorDevType>(bias_shape, loc, shared_dist);
       // setup_bias_gradients needs strides of the bias tensor,
       // which is set when its view is set.
-      assert0(dc::tensor::View(*m_bias_gradient,
-                               bias_optimizer->get_gradient().Buffer()));
+      assert0(
+        dc::tensor::View(*m_bias_gradient,
+                         bias_optimizer->get_gradient_sharded().Buffer()));
     }
   }
 }

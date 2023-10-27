@@ -421,7 +421,7 @@ void Layer::replace_weights(Layer const& other_layer)
   using IdxT = typename std::decay<decltype(my_num_weights)>::type;
   for (IdxT ii = 0; ii < my_num_weights; ++ii) {
     auto const& other_layer_weights = other_layer.get_weights(ii);
-    this->get_weights(ii).set_values(other_layer_weights.get_values());
+    this->get_weights(ii).set_values(other_layer_weights.get_values_sharded());
   }
 }
 
@@ -764,6 +764,11 @@ void Layer::back_prop()
   back_prop_impl_();
   propagate_error_signals_to_parents_();
   clear_prev_error_signals_();
+
+  // Release the now-unnecessary full weight views
+  for (size_t i = 0; i < this->num_weights(); ++i) {
+    this->get_weights(i).release_full_weights();
+  }
 }
 
 void Layer::write_proto(lbann_data::Layer& proto) const

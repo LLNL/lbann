@@ -28,7 +28,7 @@
 #include "lbann/comm.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
-#include "lbann/optimizers/optimizer_impl.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 #include "lbann/proto/objective_functions.pb.h"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/serialize.hpp"
@@ -98,7 +98,7 @@ void l2_weight_regularization::setup(model& m)
   // Construct accumulation variables for each device
   for (const auto& ptr : get_weights_pointers()) {
     const auto& w = dynamic_cast<const WeightsType&>(*ptr.lock());
-    const auto& device = w.get_values().GetLocalDevice();
+    const auto& device = w.get_values_sharded().GetLocalDevice();
     if (m_contributions.count(device) == 0) {
 #ifdef LBANN_HAS_GPU
       m_contributions[device].SetMemoryMode(1); // Pinned memory
@@ -237,7 +237,8 @@ void l2_weight_regularization::compute_weight_regularization()
     auto& w = *ptr.lock();
     auto* opt = w.get_optimizer();
     if (opt != nullptr) {
-      DispatcherType::Exec(AddToGrad(*opt, m_scale_factor), w.get_values());
+      DispatcherType::Exec(AddToGrad(*opt, m_scale_factor),
+                           w.get_values_sharded());
     }
   }
 }

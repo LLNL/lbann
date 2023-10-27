@@ -587,7 +587,7 @@ void model::copy_trained_weights_from(std::vector<weights*>& new_weights)
         dynamic_cast<data_type_weights<DataType>&>(*m_weights[j].get())
           .set_values(
             dynamic_cast<data_type_weights<DataType> const&>(*new_weights[i])
-              .get_values());
+              .get_values_sharded());
       }
     }
   }
@@ -1698,7 +1698,7 @@ bool model::update_layers()
 
 void model::reconcile_weight_values()
 {
-
+  LBANN_ERROR("This should not be called. Method is a candidate for removal");
   // Launch non-blocking communication to reconcile weights
   // Note: Heuristically, forward prop consumes weights in the same
   // order as m_weights. Also, weights tend to get larger as you get
