@@ -158,6 +158,7 @@ private:
   /** @brief Objective function gradient w.r.t. weights (potentially sharded).
    */
   std::unique_ptr<AbsDistMatrixType> m_gradient;
+  friend class optimizer;
 
   /** @brief Scaling factor for optimization step sizes.
    *

@@ -27,6 +27,7 @@
 #ifndef LBANN_OPTIMIZERS_OPTIMIZER_IMPL_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_OPTIMIZER_IMPL_HPP_INCLUDED
 
+#include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/profiling.hpp"
@@ -44,16 +45,23 @@ public:
                      El::Int width,
                      El::DistData dist_data,
                      El::DistData grad_dist_data,
-                     bool sharded_weights)
+                     bool sharded_weights,
+                     AbsDistMatType* mat = nullptr)
     : local_gradient_contrib_{AbsDistMatType::Instantiate(dist_data)},
       local_contrib_dist_{dist_data},
       global_gradient_{AbsDistMatType::Instantiate(grad_dist_data)},
       global_dist_{grad_dist_data},
       sharded_weights_{sharded_weights}
   {
+    if (mat != nullptr) {
+      if (sharded_weights)
+        El::View(*global_gradient_, *mat);
+      else
+        El::View(*local_gradient_contrib_, *mat);
+    }
     ensure_gradient_memory(height, width);
     El::Zeros(*local_gradient_contrib_, height, width);
-    if (grad_dist_data != dist_data) {
+    if (sharded_weights) {
       El::Zeros(*global_gradient_, height, width);
     }
   }
@@ -61,14 +69,20 @@ public:
   void ensure_gradient_memory(El::Int height, El::Int width) override
   {
 #if defined(LBANN_HAS_GPU)
-    local_gradient_contrib_->Matrix().SetMemoryMode(1);
+    static const char* e = std::getenv("LBANN_USE_DIRECT_FOR_CONTRIB");
+    if (e != nullptr && e[0] == '1') {
+      local_gradient_contrib_->Matrix().SetMemoryMode(0);
+    }
+    else {
+      local_gradient_contrib_->Matrix().SetMemoryMode(1);
+    }
 #endif // LBANN_HAS_GPU
 
     if (local_gradient_contrib_->Width() == 0) {
       local_gradient_contrib_->Resize(height, width);
       // If distribution is the same, have global gradient matrix view the
       // local contributions.
-      if (local_contrib_dist_ == global_dist_) {
+      if (!sharded_weights_) {
         El::View(*global_gradient_, *local_gradient_contrib_);
       }
     }
@@ -96,6 +110,13 @@ public:
 
   void start_sync(lbann_comm& comm) override
   {
+    // Complete outstanding synchronization of the same data type
+    static GradientHelperImpl<TensorDataType>* lastsync = nullptr;
+    if (lastsync != nullptr) {
+      lastsync->complete_sync(comm);
+      lastsync = nullptr;
+    }
+
     switch (this->get_status()) {
     case optimizer_gradient_status::sync_needed:
       // Sharded gradients are produced from a reduce-scatter on the local
@@ -122,6 +143,7 @@ public:
         */
       }
       this->set_status(optimizer_gradient_status::sync_started);
+      lastsync = this;
       break;
     case optimizer_gradient_status::ready:
     case optimizer_gradient_status::cleared:
@@ -218,11 +240,17 @@ optimizer::get_gradient_buffer(TensorDataType& buf_scale,
   // If the manager hasn't been created, let's make it.
   auto mat_info = this->get_matrix_info();
   if (!grad_mgr_ptr) {
+    El::AbstractDistMatrix<TensorDataType>* mat = nullptr;
+    if (dynamic_cast<data_type_optimizer<TensorDataType>*>(this) != nullptr) {
+      mat = dynamic_cast<data_type_optimizer<TensorDataType>*>(this)
+              ->m_gradient.get();
+    }
     grad_mgr_ptr = std::make_unique<GradMgrType>(std::get<HEIGHT>(mat_info),
                                                  std::get<WIDTH>(mat_info),
                                                  std::get<DISTDATA_L>(mat_info),
                                                  std::get<DISTDATA_G>(mat_info),
-                                                 this->is_sharded());
+                                                 this->is_sharded(),
+                                                 mat);
     grad_mgr_ptr->set_status(optimizer_gradient_status::cleared);
   }
   grad_mgr_ptr->ensure_gradient_memory(std::get<HEIGHT>(mat_info),
@@ -303,7 +331,7 @@ void optimizer::accumulate_all_gradient_contributions(
     auto const& contrib =
       dynamic_cast<AbsDistMatType const&>(grad_mgr.global_gradient());
     if (contrib.DistData() == gradient.DistData()) {
-      El::LockedView(gradient, contrib);
+      // No need to do anything, gradient already views contrib
     }
     else {
       LBANN_ERROR("Should never need this copy.");
