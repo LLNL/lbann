@@ -86,6 +86,8 @@ int main(int argc, char* argv[])
     if (dr == nullptr) {
       LBANN_ERROR("No testing data reader defined");
     }
+    auto& ds =
+      trainer.get_data_coordinator().get_dataset(execution_mode::testing);
 
     std::vector<std::unique_ptr<model>> models;
     for (auto&& pb_model : pbs) {
@@ -102,7 +104,7 @@ int main(int argc, char* argv[])
     /// Interleave the inference between the models so that they can use a
     /// shared data reader Enable shared testing data readers on the command
     /// line via --share_testing_data_readers=1
-    El::Int num_samples = dr->get_num_iterations_per_epoch();
+    El::Int num_samples = ds.get_num_iterations_per_epoch();
     if (num_samples == 0) {
       LBANN_ERROR("The testing data reader does not have any samples");
     }
