@@ -73,46 +73,14 @@ void dataset::serialize(Archive& ar)
 
   );
 
-  //  std::cout << "BVE FUBAR Here checking the restore process" << std::endl;
-  //  ar.serializeDeferments();
-  //  if constexpr (utils::IsInputArchive<Archive>) {
-  //   if constexpr (utils::IsSharedLoad<Archive>) {
-  //       auto& comm = ar.grid().Comm();
-  //       auto& trainer = get_trainer();
-  //       auto* lbann_comm = trainer.get_comm();
-  //       std::cout << "I am decompressing and m_current_pos is " <<
-  //       m_current_pos << " with a base offset of " << m_base_offset << " for
-  //       rank "<< comm.Rank(); LBANN_MSG("I am decompressing and m_current_pos
-  //       is ", m_current_pos, " with a base offset of ", m_base_offset, " for
-  //       rank ", comm.Rank());
-  // //    m_model_is_setup = false;
-
-  //       m_base_offset = lbann_comm->get_rank_in_trainer();
-  //       m_current_pos += lbann_comm->get_rank_in_trainer();
-  //   }
-
   // Ensure that the restored archives have the proper offset for the
   // ranks specific fields
   if constexpr (utils::IsLoad<Archive>) {
     auto& trainer = get_trainer();
     auto* lbann_comm = trainer.get_comm();
-    //    std::cout << "FIXME: I am decompressing and m_current_pos is " <<
-    //    m_current_pos << " with a base offset of " << m_base_offset, " for
-    //    rank ", lbann_comm->get_rank_in_trainer();
-    LBANN_WARNING("FIXME: ",
-                  m_role,
-                  " is decompressing and m_current_pos is ",
-                  m_current_pos,
-                  " with a base offset of ",
-                  m_base_offset,
-                  " for rank ",
-                  lbann_comm->get_rank_in_trainer());
     m_base_offset = lbann_comm->get_rank_in_trainer();
     m_current_pos += lbann_comm->get_rank_in_trainer();
   }
-  // BVE update the current position
-  //  m_current_pos += m_comm->get_rank_in_trainer();
-  //  m_current_pos += m_base_offset;
 }
 
 int dataset::get_next_mini_batch_size() const
@@ -158,55 +126,52 @@ void dataset::set_mini_batch_size(const int s) { m_mini_batch_size = s; }
 
 void dataset::print_config()
 {
-  LBANN_WARNING("\n",
-                " role                       = ",
-                m_role,
-                "\n",
-                " current position           = ",
-                m_current_pos,
-                "\n",
-                " mini_batch_size            = ",
-                m_mini_batch_size,
-                "\n",
-                " stride_to_next_mini_batch  = ",
-                m_stride_to_next_mini_batch,
-                "\n",
-                " base_offset                = ",
-                m_base_offset,
-                "\n",
-                " sample_stride              = ",
-                m_sample_stride,
-                "\n",
-                " last_mini_batch_size       = ",
-                m_last_mini_batch_size,
-                "\n",
-                " stride_to_last_mini_batch  = ",
-                m_stride_to_last_mini_batch,
-                "\n",
-                " current_mini_batch_idx     = ",
-                m_current_mini_batch_idx,
-                "\n",
-                " num_iterations_per_epoch   = ",
-                m_num_iterations_per_epoch,
-                "\n",
-                " initialized                = ",
-                std::to_string(m_initialized),
-                "\n",
-                " total num. samples         = ",
-                m_total_samples,
-                "\n",
-                " num. samples processed     = ",
-                m_num_samples_processed,
-                "\n");
+  LBANN_MSG("Configuration for dataset\n",
+            " role                       = ",
+            m_role,
+            "\n",
+            " current position           = ",
+            m_current_pos,
+            "\n",
+            " mini_batch_size            = ",
+            m_mini_batch_size,
+            "\n",
+            " stride_to_next_mini_batch  = ",
+            m_stride_to_next_mini_batch,
+            "\n",
+            " base_offset                = ",
+            m_base_offset,
+            "\n",
+            " sample_stride              = ",
+            m_sample_stride,
+            "\n",
+            " last_mini_batch_size       = ",
+            m_last_mini_batch_size,
+            "\n",
+            " stride_to_last_mini_batch  = ",
+            m_stride_to_last_mini_batch,
+            "\n",
+            " current_mini_batch_idx     = ",
+            m_current_mini_batch_idx,
+            "\n",
+            " num_iterations_per_epoch   = ",
+            m_num_iterations_per_epoch,
+            "\n",
+            " initialized                = ",
+            std::to_string(m_initialized),
+            "\n",
+            " total num. samples         = ",
+            m_total_samples,
+            "\n",
+            " num. samples processed     = ",
+            m_num_samples_processed,
+            "\n");
 }
 
 bool dataset::update()
 {
   m_current_mini_batch_idx++;
-
-  // if (is_active_reader) {
   m_current_pos = get_next_position();
-  // }
 
   if (m_current_mini_batch_idx == m_num_iterations_per_epoch) {
     // for working with 1B jag samples, we may not process all the data

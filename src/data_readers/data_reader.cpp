@@ -212,7 +212,8 @@ int lbann::generic_data_reader::fetch(
   }
 #endif
 
-  if (!(current_position_in_data_set < get_num_data()) /*position_valid()*/) {
+  if (!(current_position_in_data_set < get_num_data())) {
+    // @todo BVE FIXME check to see if this is still necessary
     if (current_position_in_data_set >=
         get_num_data() /*position_is_overrun()*/) {
       return 0;
@@ -323,35 +324,12 @@ bool lbann::generic_data_reader::fetch_data_block(
   El::Int mb_size,
   El::Matrix<El::Int>& indices_fetched)
 {
-  // locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
-
-  //  std::thread::id this_id = std::this_thread::get_id();
-  //  CPUMat& X
-  // LBANN_WARNING("[", this_id, "]",
-  //     "I am fetching a data block and I think that the current position is ",
-  //     current_position_in_data_set,
-  //     " instead of ",
-  //               m_current_pos,
-  //               " with block offset ", block_offset,
-  //               " and block stride ", block_stride);
   for (int s = block_offset; s < mb_size; s += block_stride) {
     locked_io_rng_ref io_rng = set_io_generators_local_index(s);
     int n = current_position_in_data_set + (s * sample_stride);
     int index = m_shuffled_indices[n];
     indices_fetched.Set(s, 0, index);
 
-    // LBANN_WARNING("[", this_id, "]", "fetch data block is getting s = ",
-    //           s,
-    //           " with block offset = ",
-    //           block_offset,
-    //           " block stride = ",
-    //           block_stride,
-    //           " current_position ",
-    //           current_position_in_data_set,
-    //           " n = ",
-    //           n,
-    //           " and index = ",
-    //           index);
     for (auto& [data_field, buf] : input_buffers) {
       bool valid = false;
       if (data_field == INPUT_DATA_TYPE_SAMPLES) {
@@ -427,37 +405,17 @@ bool lbann::generic_data_reader::fetch_data_block_conduit(
   El::Int mb_size,
   El::Matrix<El::Int>& indices_fetched)
 {
-  // locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
-
   if (static_cast<size_t>(mb_size) > samples.size()) {
     LBANN_ERROR("unable to fetch data to conduit nodes, vector length ",
                 samples.size(),
                 " is smaller than mini-batch size",
                 mb_size);
   }
-  //  CPUMat& X
-  // LBANN_MSG(
-  //   "I am fetching a data block (condui) and I think that the current
-  //   position is ", current_position_in_data_set, " instead of ",
-  //   m_current_pos);
   for (int s = block_offset; s < mb_size; s += block_stride) {
     locked_io_rng_ref io_rng = set_io_generators_local_index(s);
     int n = current_position_in_data_set + (s * sample_stride);
     int index = m_shuffled_indices[n];
     indices_fetched.Set(s, 0, index);
-
-    // LBANN_MSG("fetch data block (conduit) is getting s = ",
-    //           s,
-    //           " with offset = ",
-    //           block_offset,
-    //           " stride = ",
-    //           block_stride,
-    //           " current_position ",
-    //           m_current_pos,
-    //           " n = ",
-    //           n,
-    //           " and index = ",
-    //           index);
 
     auto& sample = samples[s];
     bool valid = fetch_conduit_node(sample, index);
@@ -468,31 +426,16 @@ bool lbann::generic_data_reader::fetch_data_block_conduit(
   return true;
 }
 
-void generic_data_reader::update(
-  bool epoch_complete /*is_active_reade, size_t current_position*/)
+void generic_data_reader::update(bool epoch_complete)
 {
-  //  bool reader_not_done = true; // BVE The sense of this should be fixed
-
-  // if (m_current_mini_batch_idx >= m_num_iterations_per_epoch) {
-  //   //  if (m_loaded_mini_batch_idx >= m_num_iterations_per_epoch) {
-  //   reader_not_done = false;
-  // }
-  // if (/*(size_t)m_current_pos*/ current_position >=
-  // m_shuffled_indices.size()) {
-  //   reader_not_done = false;
-  // }
-  if (
-    epoch_complete /*m_current_mini_batch_idx == m_num_iterations_per_epoch*/) {
-
+  if (epoch_complete) {
     shuffle_indices();
     if (m_data_store != nullptr && priming_data_store()) {
       m_data_store->set_shuffled_indices(&m_shuffled_indices);
     }
-
-    //    set_initial_position();
   }
 
-  return; // reader_not_done;
+  return;
 }
 
 int generic_data_reader::get_linearized_size(
@@ -703,9 +646,6 @@ bool lbann::generic_data_reader::load_from_checkpoint_shared(
                                                        "_dr.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   );
-  // Adjust current position to deal with fact that it was just loaded to all
-  // ranks from rank 0 (differs by rank #)
-  //  m_current_pos += m_comm->get_rank_in_trainer();
   return true;
 }
 
@@ -1017,15 +957,12 @@ void generic_data_reader::preload_data_store()
 
 void generic_data_reader::print_config()
 {
-  // if (!get_comm()->am_world_master()) {
-  //   return;
-  // }
-  LBANN_MSG("\n",
+  LBANN_MSG("Data reader configuration \n",
             " role                       = ",
             m_role,
-            " has ",
+            "\n",
+            " num samples                = ",
             get_num_data(),
-            " samples"
             "\n");
 }
 

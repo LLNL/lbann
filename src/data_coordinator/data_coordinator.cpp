@@ -92,19 +92,11 @@ void data_coordinator::setup(
 
   m_data_readers = data_readers;
 
-  LBANN_MSG("DID I get here with a mini batch size of ", max_mini_batch_size);
   // Initialize the data sets
   for (auto m : execution_mode_iterator()) {
     if (this->m_data_readers.count(m)) {
-      // this->m_datasets[m].total_samples() =
-      // m_data_readers[m]->get_num_data();
-      // this->m_datasets[m].set_role(m_data_readers[m]->get_role());
       this->m_datasets[m].setup(m_data_readers[m]->get_num_data(),
                                 m_data_readers[m]->get_role());
-      // BVE this should merge to include
-      // setting the total number of samples
-      // }else {
-      //   this->m_datasets[m].setup(0, to_string(m));
     }
   }
 
@@ -120,19 +112,10 @@ void data_coordinator::setup(
   /** Calculate how many iterations are required for training, testing,
    *  and validation given a specified mini-batch size.
    */
-  //  for (auto& ds : m_datasets) {
   for (auto& [mode, dataset] : m_datasets) {
-    // LBANN_MSG("foo I am going to setup the data set for mode ",
-    // to_string(mode));
     if (!dataset.initialized())
       continue;
-    LBANN_MSG("I am going to setup the data set for mode ", to_string(mode));
     calculate_num_iterations_per_epoch(max_mini_batch_size, dataset);
-    dataset.print_config();
-    // if (!ds.second.initialized())
-    //   continue;
-    // calculate_num_iterations_per_epoch(max_mini_batch_size, ds.second);
-    // ds.second.print_config();
   }
 
   auto& arg_parser = global_argument_parser();
@@ -158,19 +141,8 @@ void data_coordinator::setup(
   }
   for (auto& [mode, dataset] : m_datasets) {
     if (!dataset.initialized())
-      if (this->m_comm->am_world_master()) {
-        LBANN_WARNING("Printing the configuration for each data set");
-        dataset.print_config();
-      }
+      dataset.print_config();
   }
-  // for (auto& ds : m_datasets) {
-  //   if (!ds.second.initialized())
-  //     continue;
-  //   if (this->m_comm->am_world_master()) {
-  //     LBANN_WARNING("Printing the configuration for each data set");
-  //     ds.second.print_config();
-  //   }
-  // }
 }
 
 void data_coordinator::calculate_num_iterations_per_epoch(
@@ -180,11 +152,10 @@ void data_coordinator::calculate_num_iterations_per_epoch(
   if (!dataset.initialized()) {
     return;
   }
-  // dataset.print_config();
+
   // If the data reader does not have any data bail out (e.g. unused validation
   // reader)
   if (dataset.get_num_data() == 0) {
-    // LBANN_WARNING("why am I here");
     return;
   }
 
@@ -230,7 +201,6 @@ void data_coordinator::calculate_num_iterations_per_epoch(
   dataset.set_last_mini_batch_size(last_mini_batch_size);
   dataset.set_stride_to_last_mini_batch(
     dataset.get_stride_to_next_mini_batch());
-  // dataset.print_config();
   return;
 }
 
@@ -520,14 +490,7 @@ void data_coordinator::calculate_num_iterations_per_epoch(int mini_batch_size)
     if (!dataset.initialized())
       continue;
     calculate_num_iterations_per_epoch(mini_batch_size, dataset);
-    dataset.print_config();
   }
-  // for (auto& ds : m_datasets) {
-  //   if (!ds.second.initialized())
-  //     continue;
-  //   calculate_num_iterations_per_epoch(mini_batch_size, ds.second);
-  //   ds.second.print_config();
-  // }
 }
 
 bool data_coordinator::at_new_epoch(execution_mode mode) const
@@ -615,7 +578,6 @@ bool data_coordinator::save_to_checkpoint_shared(persist& p) const
       (it->second)->save_to_checkpoint_shared(p, execution_mode::validation);
     }
 
-    // BVE FIXME do we need to explicitly save the data sets
     // if (this->m_comm->am_trainer_master()) {
     //   write_cereal_archive<const data_coordinator>(*this, p,
     //   execution_mode::training, "_dc.xml");
@@ -627,12 +589,6 @@ bool data_coordinator::save_to_checkpoint_shared(persist& p) const
 // reload state of IO from a checkpoint
 bool data_coordinator::load_from_checkpoint_shared(persist& p)
 {
-
-  LBANN_MSG("I am restoring from a ahred checkpount");
-  for (auto& [mode, dataset] : m_datasets) {
-    LBANN_MSG("I have data sets for ", to_string(mode));
-    dataset.print_config();
-  }
   // save state of data readers from input layer
   data_reader_map_t::const_iterator it;
   if (p.get_cb_type() == callback_type::execution_context_only ||

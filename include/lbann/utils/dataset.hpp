@@ -87,8 +87,7 @@ public:
   {
     int end_pos = get_num_data();
     return (m_current_pos >= end_pos &&
-            (m_current_pos - end_pos) <
-              m_sample_stride /*m_comm->get_procs_per_trainer()*/);
+            (m_current_pos - end_pos) < m_sample_stride);
   }
   /// True if the data reader is at the start of an epoch.
   bool at_new_epoch() const { return (m_current_mini_batch_idx == 0); }
