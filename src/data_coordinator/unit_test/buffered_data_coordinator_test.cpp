@@ -63,8 +63,8 @@ public:
   test_data_reader(int num_mini_batches, int mini_batch_size)
     : generic_data_reader(), m_counter(0), m_lastbatch(num_mini_batches - 1)
   {
-    this->m_mini_batch_size = mini_batch_size;
-    this->m_num_iterations_per_epoch = num_mini_batches;
+    m_mini_batch_size = mini_batch_size;
+    m_num_iterations_per_epoch = num_mini_batches;
     this->m_shuffle = false;
     this->m_use_data_store = false;
   }
@@ -132,6 +132,8 @@ public:
 private:
   int m_counter;
   int m_lastbatch;
+  int m_mini_batch_size;
+  int m_num_iterations_per_epoch;
   // int m_mbsize;
   El::DistMatrix<lbann::DataType,
                  El::STAR,
@@ -158,7 +160,7 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
   std::map<lbann::execution_mode, lbann::generic_data_reader*> readers;
   //  readers[mode] = new lbann::data_reader_synthetic(10, 1, false, true);
   readers[mode] = new test_data_reader(num_mini_batches, mini_batch_size);
-  readers[mode]->set_mini_batch_size(mini_batch_size);
+  // readers[mode]->set_mini_batch_size(mini_batch_size);
   //  world_comm.set_procs_per_trainer
   readers[mode]->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
   readers[mode]->set_comm(&world_comm);

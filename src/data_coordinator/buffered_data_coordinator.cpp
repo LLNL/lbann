@@ -146,6 +146,7 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
   int buffer_id)
 {
   generic_data_reader* dr = get_data_reader(mode);
+  dataset& ds = get_dataset(mode);
 
   std::string prof_title =
     ("fetch_to_local_matrix " + std::to_string(buffer_id));
@@ -174,10 +175,11 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
     const int end_pos = std::min(
       static_cast<size_t>(relative_base_position + loaded_mini_batch_size),
       dr->m_shuffled_indices.size());
-    const int local_mini_batch_size = std::min(
-      El::Int{((end_pos - relative_base_position) + dr->m_sample_stride - 1) /
-              dr->m_sample_stride},
-      local_input_buffers[INPUT_DATA_TYPE_SAMPLES]->Width());
+    const int local_mini_batch_size =
+      std::min(El::Int{((end_pos - relative_base_position) +
+                        ds.get_sample_stride() - 1) /
+                       ds.get_sample_stride()},
+               local_input_buffers[INPUT_DATA_TYPE_SAMPLES]->Width());
 
     /** @brief Each rank will fetch a mini-batch worth of data into its buffer
      */
@@ -186,6 +188,7 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
       buf.m_num_samples_fetched = dr->fetch(samples,
                                             buf.m_indices_fetched_per_mb,
                                             relative_base_position,
+                                            ds.get_sample_stride(),
                                             local_mini_batch_size);
       data_packer::extract_data_fields_from_samples(samples,
                                                     local_input_buffers);
@@ -194,6 +197,7 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
       buf.m_num_samples_fetched = dr->fetch(local_input_buffers,
                                             buf.m_indices_fetched_per_mb,
                                             relative_base_position,
+                                            ds.get_sample_stride(),
                                             local_mini_batch_size);
     }
 
@@ -300,26 +304,20 @@ void buffered_data_coordinator<TensorDataType>::fetch_active_batch_synchronous(
   //               &active_buffer
   //               );
 
-  generic_data_reader* dr = get_data_reader(mode);
+  //  generic_data_reader* dr = get_data_reader(mode);
+  dataset& ds = get_dataset(mode);
   //************************************************************************
   // Get the current mini-batch from the data reader
-  El::Int loaded_mini_batch_size = dr->get_current_mini_batch_size();
+  El::Int loaded_mini_batch_size = ds.get_current_mini_batch_size();
   // LBANN_WARNING(to_string(mode),
   //           " fetch active data ",
   //           " for index ",
   //           idx,
   //           " thinks that for iteration ",
   //           "current ",
-  //           dr->get_current_mini_batch_index(),
+  //           ds.get_current_mini_batch_index(),
   //           " index and mb size ",
-  //           dr->get_current_mini_batch_size(),
-  //           " loaded ",
-  //           dr->get_loaded_mini_batch_index(),
-  //           " (",
-  //           dr->get_loaded_mini_batch_index(),
-  //           " +",
-  //           dr->get_iteration_stride(),
-  //           ")",
+  //           ds.get_current_mini_batch_size(),
   //           " the loaded mini-batch size will be ",
   //           loaded_mini_batch_size);
 
@@ -331,13 +329,15 @@ void buffered_data_coordinator<TensorDataType>::fetch_active_batch_synchronous(
     // Store the size of the current mini-batch so that others can obtain it
     // without worrying about where the data reader is currently at.
     m_current_mini_batch_size[buffer_id][mode] = loaded_mini_batch_size;
-    El::Int relative_base_position = dr->m_current_pos;
+    El::Int relative_base_position = ds.get_position(); // dr->m_current_pos;
 
     // Start data store exchange if necessary (this should be moved
     // earlier as a future optimization)
     get_data_reader(mode)->start_data_store_mini_batch_exchange(
-      relative_base_position,
-      loaded_mini_batch_size);
+      // Use the relative position of the mini-batch (adjusted for rank)
+      relative_base_position - ds.get_base_offset(),
+      loaded_mini_batch_size,
+      ds.at_new_epoch());
     // Finish data store exchange before accessing samples
     get_data_reader(mode)->finish_data_store_mini_batch_exchange();
 
@@ -393,26 +393,20 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode)
     current_buffer.set_background_fetching_in_progress(false);
   }
 
-  generic_data_reader* dr = get_data_reader(mode);
+  //  generic_data_reader* dr = get_data_reader(mode);
+  dataset& ds = get_dataset(mode);
   //************************************************************************
   // Get the next mini-batchs size from the data reader
-  El::Int next_mini_batch_size = dr->get_next_mini_batch_size();
+  El::Int next_mini_batch_size = ds.get_next_mini_batch_size();
   // LBANN_WARNING(to_string(mode),
   //           " fetch data thinks that for iteration ",
   //           " for index ",
   //           this->get_next_buffer_idx(mode),
   //           " thinks that for iteration ",
   //           "current ",
-  //           dr->get_current_mini_batch_index(),
+  //           ds.get_current_mini_batch_index(),
   //           " index and mb size ",
-  //           dr->get_current_mini_batch_size(),
-  //           " loaded ",
-  //           dr->get_loaded_mini_batch_index() + dr->get_iteration_stride(),
-  //           " (",
-  //           dr->get_loaded_mini_batch_index(),
-  //           " + ",
-  //           dr->get_iteration_stride(),
-  //           ")",
+  //           ds.get_current_mini_batch_size(),
   //           ", the next mini-batch size will be ",
   //           next_mini_batch_size);
   // If the projected mini-batch will not run past the epoch boundary
@@ -426,13 +420,15 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode)
     // Store the size of the current mini-batch so that others can obtain it
     // without worrying about where the data reader is currently at.
     m_current_mini_batch_size[next_buffer_id][mode] = next_mini_batch_size;
-    El::Int relative_base_position = dr->get_next_position();
+    El::Int relative_base_position = ds.get_next_position();
 
     // Start data store exchange if necessary (this should be moved
     // earlier as a future optimization)
     get_data_reader(mode)->start_data_store_mini_batch_exchange(
-      relative_base_position,
-      next_mini_batch_size);
+      // Use the relative position of the mini-batch (adjusted for rank)
+      relative_base_position - ds.get_base_offset(),
+      next_mini_batch_size,
+      ds.at_new_epoch());
     // Finish data store exchange before accessing samples
     get_data_reader(mode)->finish_data_store_mini_batch_exchange();
 
@@ -631,12 +627,14 @@ bool buffered_data_coordinator<TensorDataType>::update_data_set(
   generic_data_reader* data_reader,
   execution_mode mode)
 {
-  int num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
+  dataset& ds = get_dataset(mode);
+  int num_iterations_per_epoch = ds.get_num_iterations_per_epoch();
   int current_step_in_epoch =
-    data_reader->get_current_step_in_epoch(); // Get the current step before the
-                                              // update function increments it
+    ds.get_current_step_in_epoch(); // Get the current step before the
+                                    // update function increments it
 
-  data_reader->update(true);
+  bool epoch_complete = ds.update();
+  data_reader->update(epoch_complete /*ds.get_next_position(), */);
 
   if (current_step_in_epoch == (num_iterations_per_epoch - 1)) {
     return true;

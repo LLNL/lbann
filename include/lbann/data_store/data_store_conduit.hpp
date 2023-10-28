@@ -247,7 +247,9 @@ public:
    */
   void preload_local_cache();
 
-  void start_exchange_mini_batch_data(size_t current_pos, size_t mb_size);
+  void start_exchange_mini_batch_data(size_t current_pos,
+                                      size_t mb_size,
+                                      bool at_new_epoch);
   void finish_exchange_mini_batch_data();
 
   void set_node_sizes_vary() { m_node_sizes_vary = true; }

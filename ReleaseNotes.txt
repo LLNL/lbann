@@ -52,8 +52,8 @@ I/O & data readers:
    is now indexed by the sample ID in the load sequence, rather than the
    I/O thread ID.  This eliminates variablility when using different
    numbers of I/O threads.
- - BVE TBD: remove m_current_pos, disable background I/O flag, cleanup
- buffer array of structs versus struct of arrays.
+ - Moved state tracking current position in a data set from the data
+   reader to the dataset class.
 
 Build system:
  - Updated build script to use CachedCMakeProject mode, which should

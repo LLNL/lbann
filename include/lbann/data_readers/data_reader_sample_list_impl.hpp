@@ -31,6 +31,7 @@
 #include "lbann/data_readers/data_reader_sample_list.hpp"
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_open_files_impl.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/vectorwrapbuf.hpp"
@@ -75,9 +76,11 @@ template <typename SampleListT>
 void data_reader_sample_list<SampleListT>::shuffle_indices(rng_gen& gen)
 {
   generic_data_reader::shuffle_indices(gen);
-  if (get_mini_batch_size() != 0) {
+  // BVE FIXME get_mini_batch_size()
+  auto mini_batch_size = get_trainer().get_max_mini_batch_size();
+  if (mini_batch_size != 0) {
     m_sample_list.compute_epochs_file_usage(get_shuffled_indices(),
-                                            get_mini_batch_size(),
+                                            mini_batch_size,
                                             *m_comm);
   }
 }

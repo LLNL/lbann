@@ -104,9 +104,10 @@ int data_reader_jag_conduit::get_local_id(const std::string role) const
 void data_reader_jag_conduit::shuffle_indices(rng_gen& gen)
 {
   generic_data_reader::shuffle_indices(gen);
-  m_sample_list.compute_epochs_file_usage(get_shuffled_indices(),
-                                          get_mini_batch_size(),
-                                          *m_comm);
+  m_sample_list.compute_epochs_file_usage(
+    get_shuffled_indices(),
+    get_trainer().get_max_mini_batch_size(), // get_mini_batch_size(),
+    *m_comm);
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(bool shuffle)
@@ -1681,7 +1682,9 @@ bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx)
               // model
     // mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) :
     // Y.Set(m_gan_label_value,mb_idx,1);
-    mb_idx < (get_current_mini_batch_size() / 2)
+    mb_idx < ((int)get_trainer()
+                .get_max_mini_batch_size() /*get_current_mini_batch_size()*/
+              / 2)
       ? Y.Set(1, mb_idx, 1)
       : Y.Set(m_gan_label_value, mb_idx, 1);
   }

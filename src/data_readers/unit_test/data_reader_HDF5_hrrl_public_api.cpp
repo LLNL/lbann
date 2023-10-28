@@ -230,6 +230,9 @@ TEST_CASE("Data reader hdf5 conduit fetch tests",
 
   El::Int num_samples = 1;
 
+  lbann::dataset dataset;
+  dataset.setup(num_samples, "training");
+
   auto data_store = new lbann::data_store_conduit(hdf5_dr);
   hdf5_dr->set_data_store(data_store);
   // Take the sample and place it into the data store
@@ -258,8 +261,11 @@ TEST_CASE("Data reader hdf5 conduit fetch tests",
     std::vector<conduit::Node> samples(1);
     El::Matrix<El::Int> indices_fetched;
     indices_fetched.Resize(1, 1);
-    auto valid =
-      hdf5_dr->fetch(samples, indices_fetched, hdf5_dr->get_position(), 1);
+    auto valid = hdf5_dr->fetch(samples,
+                                indices_fetched,
+                                dataset.get_position(),
+                                dataset.get_sample_stride(),
+                                1);
     REQUIRE(valid > 0);
 
     // Check the primary data fields
@@ -323,8 +329,11 @@ TEST_CASE("Data reader hdf5 conduit fetch tests",
     std::vector<conduit::Node> samples;
     El::Matrix<El::Int> indices_fetched;
     indices_fetched.Resize(1, 1);
-    CHECK_THROWS(
-      hdf5_dr->fetch(samples, indices_fetched, hdf5_dr->get_position(), 1));
+    CHECK_THROWS(hdf5_dr->fetch(samples,
+                                indices_fetched,
+                                dataset.get_position(),
+                                dataset.get_sample_stride(),
+                                1));
   }
 
   SECTION("fetch conduit node - mini-batch too large")
@@ -332,7 +341,10 @@ TEST_CASE("Data reader hdf5 conduit fetch tests",
     std::vector<conduit::Node> samples(1);
     El::Matrix<El::Int> indices_fetched;
     indices_fetched.Resize(1, 1);
-    CHECK_THROWS(
-      hdf5_dr->fetch(samples, indices_fetched, hdf5_dr->get_position(), 2));
+    CHECK_THROWS(hdf5_dr->fetch(samples,
+                                indices_fetched,
+                                dataset.get_position(),
+                                dataset.get_sample_stride(),
+                                2));
   }
 }

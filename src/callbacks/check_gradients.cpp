@@ -385,8 +385,8 @@ void check_gradients::do_check_gradients(model& m) const
 
   // Clean up
   // TODO: Why
-  auto&& reader = dc.get_data_reader(mode);
-  reader->set_initial_position();
+  auto&& dataset = dc.get_dataset(mode);
+  dataset.set_initial_position();
   m.get_objective_function()->reset_statistics(mode);
   for (auto&& met : m.get_metrics()) {
     met->reset_statistics(mode);

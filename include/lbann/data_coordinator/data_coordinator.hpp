@@ -240,6 +240,9 @@ public:
 
   /** @name Helper functions to access the dataset statistics */
   ///@{
+  /** @brief Return if the dataset for the given execution mode exists. */
+  bool dataset_exists(execution_mode m) const;
+
   /** @brief Return the dataset for the given execution mode. */
   dataset& get_dataset(execution_mode m);
 
@@ -249,7 +252,7 @@ public:
    * Return the first dataset with a valid (non-null) datareader.
    * Returns null if none are valid.
    */
-  dataset* select_first_valid_dataset();
+  dataset& select_first_valid_dataset();
 
   long get_num_samples(execution_mode m) const;
 
@@ -269,7 +272,7 @@ public:
   //************************************************************************
 
   void calculate_num_iterations_per_epoch(int max_mini_batch_size,
-                                          generic_data_reader* data_reader);
+                                          dataset& dataset);
   void calculate_num_iterations_per_epoch(int mini_batch_size);
 
   bool at_new_epoch(execution_mode mode) const;

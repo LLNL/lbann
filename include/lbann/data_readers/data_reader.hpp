@@ -84,15 +84,6 @@ public:
     : m_verbose(global_argument_parser().get<bool>(LBANN_OPTION_VERBOSE)),
       m_data_store(nullptr),
       m_comm(nullptr),
-      m_mini_batch_size(0),
-      m_current_pos(0),
-      m_stride_to_next_mini_batch(0),
-      m_base_offset(0),
-      m_sample_stride(1),
-      m_last_mini_batch_size(0),
-      m_stride_to_last_mini_batch(0),
-      m_current_mini_batch_idx(0),
-      m_num_iterations_per_epoch(0),
       m_max_files_to_load(0),
       m_file_dir(""),
       m_data_sample_list(""),
@@ -299,11 +290,13 @@ public:
   int fetch(std::map<data_field_type, CPUMat*>& input_buffers,
             El::Matrix<El::Int>& indices_fetched,
             El::Int current_position_in_data_set,
+            El::Int sample_stride,
             size_t mb_size);
 
   int fetch(std::vector<conduit::Node>& samples,
             El::Matrix<El::Int>& indices_fetched,
             El::Int current_position_in_data_set,
+            El::Int sample_stride,
             size_t mb_size);
 
   /** @brief Check to see if the data reader supports this specific data field
@@ -347,7 +340,8 @@ public:
 
   void
   start_data_store_mini_batch_exchange(El::Int current_position_in_data_set,
-                                       El::Int current_mini_batch_size);
+                                       El::Int current_mini_batch_size,
+                                       bool at_new_epoch);
   void finish_data_store_mini_batch_exchange();
 
   /**
@@ -355,7 +349,7 @@ public:
    * advanced the current position pointer.  If the pointer wraps
    * around, then reshuffle the data indicies.
    */
-  virtual bool update(bool is_active_reader);
+  virtual void update(bool epoch_complete);
 
   /**
    * This is called at the end of update; it permits data readers to
@@ -392,77 +386,6 @@ public:
     return {};
   }
 
-  /// True if the data reader's current position is valid.
-  virtual bool position_valid() const
-  {
-    return (m_current_pos < get_num_data());
-  }
-  /// True if the data reader's current position is not valid but within # ranks
-  /// per model of the end of the data set (e.g. it is a rank with no valid data
-  /// on the last iteration)
-  virtual bool position_is_overrun() const
-  {
-    int end_pos = (int)m_shuffled_indices.size();
-    return (m_current_pos >= end_pos &&
-            (m_current_pos - end_pos) < m_comm->get_procs_per_trainer());
-  }
-  /// True if the data reader is at the start of an epoch.
-  bool at_new_epoch() const { return (m_current_mini_batch_idx == 0); }
-  /// Set the mini batch size
-  void set_mini_batch_size(const int s);
-  /// Get the mini batch size
-  int get_mini_batch_size() const { return m_mini_batch_size; }
-  /// Get the size of the next mini-batch that will be loaded by an
-  /// asynchronous, background, I/O thread (one fetch in the future)
-  int get_next_mini_batch_size() const;
-  /// Get the current mini-batch size.
-  int get_current_mini_batch_size() const;
-  /// Return the full mini_batch_size.
-  int get_mini_batch_max() const { return m_mini_batch_size; }
-  /// Set the mini batch stride
-  void set_stride_to_next_mini_batch(const int s)
-  {
-    m_stride_to_next_mini_batch = s;
-  }
-  /// Return the mini batch stride.
-  int get_stride_to_next_mini_batch() const
-  {
-    return m_stride_to_next_mini_batch;
-  }
-  /// Set the sample stride
-  void set_sample_stride(const int s) { m_sample_stride = s; }
-  /// Return the sample stride.
-  int get_sample_stride() const { return m_sample_stride; }
-  /// Return the base offset.
-  virtual void set_base_offset(const int s) { m_base_offset = s; }
-  /// Return the base offset.
-  int get_base_offset() const { return m_base_offset; }
-  /// Set the last mini batch size
-  void set_last_mini_batch_size(const int s) { m_last_mini_batch_size = s; }
-  /// Return the last mini batch size
-  int get_last_mini_batch_size() const { return m_last_mini_batch_size; }
-  /// Set the last mini batch stride
-  void set_stride_to_last_mini_batch(const int s)
-  {
-    m_stride_to_last_mini_batch = s;
-  }
-  /// Return the last mini batch stride
-  int get_stride_to_last_mini_batch() const
-  {
-    return m_stride_to_last_mini_batch;
-  }
-  /// Return the current mini-batch index for the epoch
-  int get_current_mini_batch_index() const { return m_current_mini_batch_idx; }
-  /// Set the current position based on the base and model offsets
-  void set_initial_position()
-  {
-    m_current_pos = m_base_offset;
-    m_current_mini_batch_idx = 0;
-  }
-  /// Get the current position in the data reader.
-  int get_position() const { return m_current_pos; }
-  /// Get the next position in the data reader.
-  int get_next_position() const;
   /// Get a pointer to the start of the shuffled indices.
   int* get_indices() { return &m_shuffled_indices[0]; }
   /// Get the number of samples in this dataset.
@@ -474,24 +397,6 @@ public:
   int* get_unused_data(execution_mode m);
 
   const std::vector<int>& get_unused_indices(execution_mode m);
-
-  /// Set the number of iterations in each epoch.
-  void set_num_iterations_per_epoch(int num_iterations_per_epoch)
-  {
-    m_num_iterations_per_epoch =
-      num_iterations_per_epoch; /// @todo BVE FIXME merge this with alternate
-                                /// approach
-  }
-  /// Get the number of iterations in each epoch.
-  int get_num_iterations_per_epoch() const
-  {
-    return m_num_iterations_per_epoch; /// @todo BVE FIXME merge this with
-                                       /// alternate approach
-  }
-
-  /// Return the index of the current iteration step in the epoch (also the
-  /// mini-batch index)
-  int get_current_step_in_epoch() const { return m_current_mini_batch_idx; }
 
   /**
    * Optionally resizes the shuffled indices based on the data reader
@@ -619,6 +524,7 @@ protected:
                    El::Int current_position_in_data_set,
                    El::Int block_offset,
                    El::Int block_stride,
+                   El::Int sample_stride,
                    El::Int mb_size,
                    El::Matrix<El::Int>& indices_fetched);
 
@@ -626,6 +532,7 @@ protected:
                                 El::Int current_position_in_data_set,
                                 El::Int block_offset,
                                 El::Int block_stride,
+                                El::Int sample_stride,
                                 El::Int mb_size,
                                 El::Matrix<El::Int>& indices_fetched);
 
@@ -718,29 +625,9 @@ protected:
   virtual void shuffle_indices(rng_gen& gen);
 
 public:
-  int m_mini_batch_size;
-  int m_current_pos;
-  /// Batch Stride is typically batch_size, but may be a multiple of batch size
-  /// if there are multiple readers
-  int m_stride_to_next_mini_batch;
-  /// If there are multiple instances of the reader,
-  /// then it may not reset to zero
-  int m_base_offset;
-  /// Sample stride is used when a mini-batch is finely interleaved across a
-  /// DATA_PARALLEL distribution.
-  int m_sample_stride;
-
   std::vector<int> m_shuffled_indices;
   /// Record of the indicies that are not being used for training
   unused_index_map_t m_unused_indices;
-
-  int m_last_mini_batch_size;
-  int m_stride_to_last_mini_batch;
-  /// The index of the current mini-batch that is being processed
-  /// (train/test/validate)
-  int m_current_mini_batch_idx;
-  int
-    m_num_iterations_per_epoch; /// How many iterations all readers will execute
 
   size_t m_max_files_to_load;
   std::string m_file_dir;

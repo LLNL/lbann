@@ -115,6 +115,7 @@ bool python_reader::fetch_data_block(
   El::Int current_position_in_data_set,
   El::Int block_offset,
   El::Int block_stride,
+  El::Int sample_stride,
   El::Int mb_size,
   El::Matrix<El::Int>& indices_fetched)
 {
@@ -143,7 +144,7 @@ bool python_reader::fetch_data_block(
   python::object args_list = PyList_New(0);
   for (El::Int i = 0; i < mb_size; ++i) {
     El::Int sample_index =
-      m_shuffled_indices[current_position_in_data_set + i * m_sample_stride];
+      m_shuffled_indices[current_position_in_data_set + i * sample_stride];
     El::Int array_offset = sample_size * i;
     PyList_Append(
       args_list,

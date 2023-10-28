@@ -872,6 +872,7 @@ sample_list_open_files<sample_name_t, file_handle_t>::compute_epochs_file_usage(
   int mini_batch_size,
   const lbann_comm& comm)
 {
+  // auto mini_batch_size = get_trainer().get_max_mini_batch_size();
   if (mini_batch_size == 0) {
     LBANN_WARNING("Unable to compute file usage with empty mini-batch size");
     return;
