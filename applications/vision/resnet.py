@@ -13,6 +13,7 @@ desc = ('Construct and run ResNet on ImageNet-1K data. '
         'Running the experiment is only supported on LC systems.')
 parser = argparse.ArgumentParser(description=desc)
 lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_resnet')
+lbann.contrib.args.add_training_arguments(parser)
 lbann.contrib.args.add_profiling_arguments(parser)
 lbann.contrib.args.add_amp_arguments(parser)
 parser.add_argument(
@@ -38,12 +39,6 @@ parser.add_argument(
           '(default: 1)'))
 parser.add_argument(
     '--warmup', action='store_true', help='use a linear warmup')
-parser.add_argument(
-    '--mini-batch-size', action='store', default=256, type=int,
-    help='mini-batch size (default: 256)', metavar='NUM')
-parser.add_argument(
-    '--num-epochs', action='store', default=90, type=int,
-    help='number of epochs (default: 90)', metavar='NUM')
 parser.add_argument(
     '--num-classes', action='store', default=1000, type=int,
     help='number of ImageNet classes (default: 1000)', metavar='NUM')
@@ -133,6 +128,10 @@ if args.warmup:
         lbann.CallbackLinearGrowthLearningRate(
             target=0.1 * args.mini_batch_size / 256, num_epochs=5))
 callbacks.extend(lbann.contrib.args.create_profile_callbacks(args))
+if args.progress:
+    callbacks.append(
+        lbann.CallbackProgressBar(newline_interval=100,
+                                  print_mem_usage=True))
 model = lbann.Model(args.num_epochs,
                     layers=layers,
                     objective_function=obj,
