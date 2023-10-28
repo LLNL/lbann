@@ -34,6 +34,15 @@
 
 namespace lbann {
 
+#if defined (LBANN_HAS_ROCM) && defined (LBANN_HAS_GPU_FP16)
+namespace {
+bool isfinite(fp16 const& x)
+{
+  return std::isfinite(float(x));
+}
+}
+#endif
+
 template <typename TensorDataType>
 adam<TensorDataType>::adam(TensorDataType learning_rate,
                            TensorDataType beta1,
@@ -83,7 +92,7 @@ description adam<TensorDataType>::get_description() const
   desc.add("beta1", m_beta1);
   desc.add("beta2", m_beta2);
   desc.add("eps", m_eps);
-  if (m_adamw_weight_decay != 0) {
+  if (m_adamw_weight_decay != El::To<TensorDataType>(0)) {
     desc.add("AdamW weight decay", m_adamw_weight_decay);
   }
   return desc;
@@ -217,7 +226,7 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
     for (size_t i = 0; i < local_size; ++i) {
       auto& x = values_buffer[i];
       const auto& g = gradient_buffer[i] + m_eps; // Avoid denormalized floats
-      if (std::isinf(g) || std::isnan(g)) {
+      if (!isfinite(g)) {
         continue;
       }
       auto& m1 = moment1_buffer[i];
@@ -241,7 +250,7 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
         auto& x = values_buffer[row + col * values_ldim];
         const auto& g = gradient_buffer[row + col * gradient_ldim] +
                         m_eps; // Avoid denormalized floats
-        if (std::isinf(g) || std::isnan(g)) {
+        if (!isfinite(g)) {
           continue;
         }
         auto& m1 = moment1_buffer[row + col * moment1_ldim];
