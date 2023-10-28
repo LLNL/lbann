@@ -12,6 +12,7 @@ import os.path
 import random
 import re
 import sys
+import pytest
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
