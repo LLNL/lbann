@@ -224,7 +224,7 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
 #endif // LBANN_HAS_GPU
 
   if (get_trainer().background_io_activity_allowed()) {
-    dc.fetch_data(execution_mode::training);
+    dc.fetch_data_asynchronous(execution_mode::training);
   }
   else {
     dc.fetch_active_batch_synchronous(execution_mode::training);
@@ -366,7 +366,7 @@ bool SGDTrainingAlgorithm::evaluate_mini_batch(SGDExecutionContext& c,
   dc.reset_mode(c);
   do_batch_begin_cbs(model, mode, ScopeTimer{timer, "batch_begin callbacks"});
   if (get_trainer().background_io_activity_allowed()) {
-    dc.fetch_data(mode);
+    dc.fetch_data_asynchronous(mode);
   }
   else {
     dc.fetch_active_batch_synchronous(mode);

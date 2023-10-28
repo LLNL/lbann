@@ -139,7 +139,7 @@ public:
   /** @brief Ensures the active buffer contains usable data for forward
    *  propagation. May initiate fetching of more data in the background.
    */
-  virtual void fetch_data(execution_mode mode) = 0;
+  virtual void fetch_data_asynchronous(execution_mode mode) = 0;
 
   /** @brief Signals to the coordinator that the active buffer can now be
    * overridden. Returns true if the epoch is complete after this active buffer.

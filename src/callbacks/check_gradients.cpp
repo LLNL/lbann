@@ -285,7 +285,6 @@ void check_gradients::do_check_gradients(model& m) const
 
   // Load data in input layers
   data_coordinator& dc = get_trainer().get_data_coordinator();
-  // dc.fetch_data(mode);
   dc.fetch_active_batch_synchronous(mode);
   El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
   m.set_current_mini_batch_size(current_mini_batch_size);

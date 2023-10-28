@@ -373,7 +373,8 @@ void buffered_data_coordinator<TensorDataType>::fetch_active_batch_synchronous(
 }
 
 template <typename TensorDataType>
-void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode)
+void buffered_data_coordinator<TensorDataType>::fetch_data_asynchronous(
+  execution_mode mode)
 {
   data_buffer<IODataType>& current_buffer = get_active_buffer(mode);
   data_buffer<IODataType>& next_buffer = get_next_buffer(mode);

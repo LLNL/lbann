@@ -142,7 +142,7 @@ public:
   /** @brief fetch data will check to make sure that the active buffer
    *   is ready to go and queue work to fetch the next buffer of data.
    */
-  void fetch_data(execution_mode mode) override;
+  void fetch_data_asynchronous(execution_mode mode) override;
   void fetch_active_batch_synchronous(execution_mode mode) override;
 
   const data_buffer_map_t& get_active_buffer_map(execution_mode mode) const;

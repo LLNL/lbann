@@ -205,7 +205,6 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
     // Test subsequent num_mini_batches for continuity
     for (; remaining_num_mini_batches >= 2; --remaining_num_mini_batches) {
       REQUIRE_NOTHROW(bdc.fetch_active_batch_synchronous(mode));
-      //    REQUIRE_NOTHROW(bdc.fetch_data(mode));
       REQUIRE_NOTHROW(
         bdc.distribute_from_local_matrix(mode, "samples", samples));
       REQUIRE_NOTHROW(epoch_done = bdc.ready_for_next_fetch(mode));
@@ -220,7 +219,6 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
 
     // Test last minibatch
     REQUIRE_NOTHROW(bdc.fetch_active_batch_synchronous(mode));
-    //  REQUIRE_NOTHROW(bdc.fetch_data(mode));
     REQUIRE_NOTHROW(bdc.distribute_from_local_matrix(mode, "samples", samples));
     REQUIRE_NOTHROW(epoch_done = bdc.ready_for_next_fetch(mode));
     CHECK(epoch_done == true);
@@ -239,7 +237,7 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
 
     // Test subsequent num_mini_batches for continuity
     for (; remaining_num_mini_batches >= 1; --remaining_num_mini_batches) {
-      REQUIRE_NOTHROW(bdc.fetch_data(mode));
+      REQUIRE_NOTHROW(bdc.fetch_data_asynchronous(mode));
       REQUIRE_NOTHROW(
         bdc.distribute_from_local_matrix(mode, "samples", samples));
       REQUIRE_NOTHROW(epoch_done = bdc.ready_for_next_fetch(mode));
@@ -269,7 +267,7 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
 
     // Test subsequent num_mini_batches for continuity
     while (!epoch_done) {
-      REQUIRE_NOTHROW(bdc.fetch_data(mode));
+      REQUIRE_NOTHROW(bdc.fetch_data_asynchronous(mode));
       REQUIRE_NOTHROW(
         bdc.distribute_from_local_matrix(mode, "samples", samples));
       REQUIRE_NOTHROW(epoch_done = bdc.ready_for_next_fetch(mode));
