@@ -101,6 +101,8 @@ public:
   /** @brief Human-readable description. */
   virtual description get_description() const;
 
+  virtual size_t get_state_size() const = 0;
+
   virtual double get_learning_rate() const = 0;
   virtual void set_learning_rate(double) = 0;
 

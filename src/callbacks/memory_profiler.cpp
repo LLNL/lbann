@@ -99,6 +99,27 @@ static inline size_t report_dist_matrix(const El::AbstractDistMatrix<T>& m,
   return allocated;
 }
 
+/**
+ * @brief Print and get maximal activation/error signal size for a layer.
+ */
+template <typename T>
+static inline size_t
+get_activation_and_error_signal_size(data_type_layer<T>* dtl,
+                                     std::stringstream& reps)
+{
+  size_t allocated = 0;
+  for (int i = 0; i < dtl->get_num_children(); ++i) {
+    auto const& act = dtl->get_activations(i);
+    if (dtl->get_num_children() == 1)
+      reps << "    Activations: ";
+    else
+      reps << "    Activations (" << i << "): ";
+
+    allocated += report_dist_matrix(act, reps);
+  }
+  return allocated;
+}
+
 memory_profiler::memory_profiler(bool detailed_first_step)
   : callback_base(), m_detailed_first_step(detailed_first_step)
 {
@@ -180,15 +201,29 @@ void memory_profiler::report_mem_usage(model* m)
          << "):" << std::endl;
 
     // Get maximal activation/error signal size (suboptimal approximation)
-    auto& dtl = dynamic_cast<data_type_layer<DataType>&>(*layer);
-    for (int i = 0; i < dtl.get_num_children(); ++i) {
-      auto const& act = dtl.get_activations(i);
-      if (dtl.get_num_children() == 1)
-        reps << "    Activations: ";
-      else
-        reps << "    Activations (" << i << "): ";
-
-      size_t allocated = report_dist_matrix(act, reps);
+    // TODO: Clean up this dispatching.
+    {
+      size_t allocated = 0;
+      if (auto* dtl_f = dynamic_cast<data_type_layer<float>*>(layer)) {
+        allocated = get_activation_and_error_signal_size(dtl_f, reps);
+      }
+      else if (auto* dtl_d = dynamic_cast<data_type_layer<double>*>(layer)) {
+        allocated = get_activation_and_error_signal_size(dtl_d, reps);
+      }
+#ifdef LBANN_HAS_HALF
+      else if (auto* dtl_cpufp16 =
+                 dynamic_cast<data_type_layer<cpu_fp16>*>(layer)) {
+        allocated = get_activation_and_error_signal_size(dtl_cpufp16, reps);
+      }
+#endif
+#ifdef LBANN_HAS_GPU_FP16
+      else if (auto* dtl_fp16 = dynamic_cast<data_type_layer<fp16>*>(layer)) {
+        allocated = get_activation_and_error_signal_size(dtl_fp16, reps);
+      }
+#endif
+      else {
+        LBANN_ERROR("Could not determine layer data type");
+      }
       layer_total_acts += allocated;
       layer_total += allocated;
     }
@@ -217,15 +252,36 @@ void memory_profiler::report_mem_usage(model* m)
         }
 
         // Report weight tensor
-        auto* dtw = dynamic_cast<data_type_weights<DataType>*>(w);
-        size_t allocated = report_dist_matrix(dtw->get_values_sharded(), reps);
+        // TODO: Clean up this dispatching.
+        size_t allocated = 0;
+        if (auto* dtw_f = dynamic_cast<data_type_weights<float>*>(w)) {
+          allocated = report_dist_matrix(dtw_f->get_values_sharded(), reps);
+        }
+        else if (auto* dtw_d = dynamic_cast<data_type_weights<double>*>(w)) {
+          allocated = report_dist_matrix(dtw_d->get_values_sharded(), reps);
+        }
+#ifdef LBANN_HAS_HALF
+        else if (auto* dtw_cpufp16 =
+                   dynamic_cast<data_type_weights<cpu_fp16>*>(w)) {
+          allocated =
+            report_dist_matrix(dtw_cpufp16->get_values_sharded(), reps);
+        }
+#endif
+#ifdef LBANN_HAS_GPU_FP16
+        else if (auto* dtw_fp16 = dynamic_cast<data_type_weights<fp16>*>(w)) {
+          allocated = report_dist_matrix(dtw_fp16->get_values_sharded(), reps);
+        }
+#endif
+        else {
+          LBANN_ERROR("Could not determine weights type");
+        }
 
         weight_mem += allocated;
         layer_total += allocated;
         already_reported[w] = layer->get_name();
 
         // Optimizer state accounting
-        auto* opt = dtw->get_optimizer();
+        auto* opt = w->get_optimizer();
         if (opt != nullptr) {
           allocated = opt->get_state_size();
           if (allocated > 0) {
@@ -281,15 +337,36 @@ void memory_profiler::report_mem_usage(model* m)
       reps << "  DETACHED weight " << weight->get_name() << ": ";
 
       // Report weight tensor
-      auto* dtw = dynamic_cast<data_type_weights<DataType>*>(weight);
-      size_t allocated = report_dist_matrix(dtw->get_values_sharded(), reps);
+      // TODO: Clean up this dispatching.
+      size_t allocated = 0;
+      if (auto* dtw_f = dynamic_cast<data_type_weights<float>*>(weight)) {
+        allocated = report_dist_matrix(dtw_f->get_values_sharded(), reps);
+      }
+      else if (auto* dtw_d = dynamic_cast<data_type_weights<double>*>(weight)) {
+        allocated = report_dist_matrix(dtw_d->get_values_sharded(), reps);
+      }
+#ifdef LBANN_HAS_HALF
+      else if (auto* dtw_cpufp16 =
+                 dynamic_cast<data_type_weights<cpu_fp16>*>(weight)) {
+        allocated = report_dist_matrix(dtw_cpufp16->get_values_sharded(), reps);
+      }
+#endif
+#ifdef LBANN_HAS_GPU_FP16
+      else if (auto* dtw_fp16 =
+                 dynamic_cast<data_type_weights<fp16>*>(weight)) {
+        allocated = report_dist_matrix(dtw_fp16->get_values_sharded(), reps);
+      }
+#endif
+      else {
+        LBANN_ERROR("Could not determine weights type");
+      }
       weight_mem += allocated;
       weight_total += allocated;
       already_reported[weight] = weight->get_name();
       reps << std::endl;
 
       // Optimizer state accounting
-      auto* opt = dtw->get_optimizer();
+      auto* opt = weight->get_optimizer();
       if (opt != nullptr) {
         allocated = opt->get_state_size();
         if (allocated > 0) {
