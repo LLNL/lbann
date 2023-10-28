@@ -188,6 +188,11 @@ def make_batch_script(model: lbann.Model,
                 epoch_interval=1,
             ))
 
+    if args.validate_every > 0:
+        model.callbacks.append(
+            lbann.CallbackEvaluateProgress(batch_interval=args.validate_every,
+                                           metric='loss'))
+
     # Print a progress bar
     if args.progress:
         model.callbacks.append(
@@ -248,6 +253,10 @@ def add_training_arguments(parser: argparse.ArgumentParser):
         default=False,
         help="Save prototext experiment file instead of protobin (slower but "
         "debuggable) (default: false)")
+    parser.add_argument("--validate-every",
+                        type=int,
+                        default=100,
+                        help="Run validation every N steps (default: 100)")
 
 
 # ----------------------------------------------
