@@ -114,9 +114,6 @@ void init_data_readers(
       set_transform_pipeline = false;
       auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
       const lbann_data::Model& pb_model = p.model();
-      // const lbann_data::Trainer& pb_trainer = p.trainer();
-      // reader->set_mini_batch_size(
-      //   static_cast<int>(pb_trainer.mini_batch_size()));
       reader->set_data_sample_list(readme.sample_list());
       reader_jag_conduit->set_list_per_trainer(
         readme.sample_list_per_trainer());

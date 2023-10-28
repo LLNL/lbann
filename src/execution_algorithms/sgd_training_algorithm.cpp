@@ -373,8 +373,6 @@ bool SGDTrainingAlgorithm::evaluate_mini_batch(SGDExecutionContext& c,
   }
   El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
   model.set_current_mini_batch_size(current_mini_batch_size);
-  // LBANN_MSG("evaluate mb thinks that the current mini-batch is ",
-  //           current_mini_batch_size);
   model.forward_prop(mode);
   bool const finished = dc.ready_for_next_fetch(mode);
 
