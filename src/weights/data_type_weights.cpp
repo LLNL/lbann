@@ -303,7 +303,6 @@ template <typename TensorDataType>
 auto data_type_weights<TensorDataType>::get_values() const
   -> const AbsDistMatrixType&
 {
-  auto matrix_dist = this->get_matrix_distribution();
   // If the weights are not sharded, return m_values directly
   if (!this->is_sharded()) {
     return *m_values;
