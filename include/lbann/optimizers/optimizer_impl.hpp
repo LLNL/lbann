@@ -51,7 +51,7 @@ public:
   {
     ensure_gradient_memory(height, width);
     El::Zeros(*local_gradient_contrib_, height, width);
-    if (sharded_weights) {
+    if (sharded_weights_) {
       El::Zeros(*global_gradient_, height, width);
     }
   }
