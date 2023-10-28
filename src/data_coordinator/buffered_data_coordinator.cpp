@@ -109,9 +109,9 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(
 
   // Check to see if there are any data fields with unallocated buffers
   for (auto& data_field : m_active_data_fields) {
-    for (/*const*/ auto& buf_map : m_data_buffers) {
-      /*const*/ data_buffer_map_t& buffer_map = buf_map;
-      for (/*const*/ auto& [mode, data_buffer] : buffer_map) {
+    for (const auto& buf_map : m_data_buffers) {
+      const data_buffer_map_t& buffer_map = buf_map;
+      for (auto& [mode, data_buffer] : buffer_map) {
         auto& phase_io_buffer = data_buffer->m_input_buffers[data_field];
         // Check to see if a buffer has already been allocated.  If
         // not, resize and zero it

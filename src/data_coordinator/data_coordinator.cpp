@@ -133,16 +133,15 @@ void data_coordinator::setup(
       r.second->setup_data_store(max_mini_batch_size);
     }
   }
-  for (auto&& dr : m_data_readers) {
-    if (!dr.second)
-      continue;
-    LBANN_WARNING("Printing the configuration for each data reader");
-    dr.second->print_config();
-  }
-  for (auto& [mode, dataset] : m_datasets) {
-    if (!dataset.initialized())
-      dataset.print_config();
-  }
+  // for (auto&& dr : m_data_readers) {
+  //   if (!dr.second)
+  //     continue;
+  //   dr.second->print_config();
+  // }
+  // for (auto& [mode, dataset] : m_datasets) {
+  //   if (!dataset.initialized())
+  //     dataset.print_config();
+  // }
 }
 
 void data_coordinator::calculate_num_iterations_per_epoch(

@@ -39,22 +39,6 @@
 
 using lbann::generic_data_reader;
 
-namespace {
-
-// void fill_matrix(CPUMat& mat)
-// {
-//   std::normal_distribution<DataType> dist(DataType(0), DataType(1));
-//   const El::Int height = mat.Height(); // Width is 1.
-//   DataType* __restrict__ buf = mat.Buffer();
-//   for (El::Int i = 0; i < height; ++i) {
-//     buf[i] = m_sample[i];
-//     LBANN_MSG("synthetic data reader is filling a matrix with buf[", i, "]=",
-//     buf[i]);
-//   }
-// }
-
-} // anonymous namespace
-
 // Minimal test data reader that returns numbers in sequence until the last
 // minibatch, which is of size 1
 class test_data_reader : public generic_data_reader
@@ -158,20 +142,14 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
   io_thread_pool->launch_threads(1);
 
   std::map<lbann::execution_mode, lbann::generic_data_reader*> readers;
-  //  readers[mode] = new lbann::data_reader_synthetic(10, 1, false, true);
   readers[mode] = new test_data_reader(num_mini_batches, mini_batch_size);
-  // readers[mode]->set_mini_batch_size(mini_batch_size);
-  //  world_comm.set_procs_per_trainer
   readers[mode]->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
   readers[mode]->set_comm(&world_comm);
   readers[mode]->load();
-  //  readers[mode]->set_initial_position();
-  //  readers[mode] = new test_data_reader(num_mini_batches, mini_batch_size);
   lbann::buffered_data_coordinator<lbann::DataType> bdc(&world_comm);
 
   // Set up the data coordinator
   bdc.setup(*io_thread_pool, mini_batch_size, readers);
-  //  REQUIRE_NOTHROW(bdc.setup(*io_thread_pool, mini_batch_size, readers));
   REQUIRE_NOTHROW(bdc.register_active_data_field("samples", {1}));
   REQUIRE_NOTHROW(bdc.setup_data_fields(mini_batch_size));
   readers[mode]->print_config();

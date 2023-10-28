@@ -112,8 +112,6 @@ void debug_io::print_phase_start(model* m, execution_mode mode)
 {
   const auto& c = m->get_execution_context();
   const data_coordinator& dc = get_const_trainer().get_data_coordinator();
-  // Get data reader from first input layer in model
-  //  generic_data_reader* data_reader = dc.get_data_reader(mode);
   const dataset& ds = dc.get_dataset(mode);
   const auto& step = c.get_step();
 

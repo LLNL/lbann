@@ -82,12 +82,6 @@ public:
    */
   void inc_step() noexcept { ++m_step; }
 
-  /** @brief Current position in the data set
-   *  @details Counts the number of samples that have been processed
-   *  modulo the size of the data set.
-   */
-  size_t get_current_position() const noexcept { return m_current_position; }
-
   /** @name Checkpointing and Serialization */
   ///@{
 
@@ -122,11 +116,6 @@ private:
    *  algorithm's internal state
    */
   size_t m_step = 0UL;
-
-  /** @brief Current position in a data set
-   *  @details Position within a zero-indexed data set
-   */
-  El::Int m_current_position = 0;
 };
 
 /** @brief Specifies when to stop a training algorithm.
