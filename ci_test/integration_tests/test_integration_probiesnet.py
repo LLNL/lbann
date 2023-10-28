@@ -89,10 +89,9 @@ def setup_experiment(lbann, weekly):
         lbann (module): Module for LBANN Python frontend
 
     """
-    if True:
-      message = f'{os.path.basename(__file__)} is lost a necessary file from the testing data set, disable for now'
-      print('Skip - ' + message)
-      pytest.skip(message)
+    message = f'{os.path.basename(__file__)} is lost a necessary file from the testing data set, disable for now'
+    print('Skip - ' + message)
+    pytest.skip(message)
 
     if tools.system(lbann) != 'lassen' and tools.system(lbann) != 'pascal':
       message = f'{os.path.basename(__file__)} is only supported on lassen and pascal systems'
