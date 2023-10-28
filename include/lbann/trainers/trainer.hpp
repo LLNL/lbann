@@ -352,6 +352,11 @@ trainer& get_trainer();
  */
 trainer const& get_const_trainer();
 
+/** @brief Check to see if a trainer visible to this rank has been
+ *         created.  This should only be not true in some catch tests.
+ */
+bool trainer_exists();
+
 } // namespace lbann
 
 #endif // LBANN_TRAINER_HPP

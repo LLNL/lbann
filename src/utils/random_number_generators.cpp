@@ -119,7 +119,7 @@ locked_io_rng_ref set_io_generators_local_index(size_t idx)
   if (!::io_generators_inited) {
     LBANN_ERROR("I/O RNG seed not set");
   }
-  return locked_io_rng_ref(::io_generators[idx]);
+  return locked_io_rng_ref(::io_generators[::local_io_generators_index]);
 }
 
 rng_gen& get_io_generator()

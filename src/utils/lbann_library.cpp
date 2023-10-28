@@ -128,6 +128,16 @@ trainer const& get_const_trainer()
   return *global_trainer_;
 }
 
+bool trainer_exists()
+{
+  if (global_trainer_ == nullptr) {
+    return false;
+  }
+  else {
+    return true;
+  }
+}
+
 void finalize_trainer() { global_trainer_.reset(); }
 
 /// Construct a trainer that contains a lbann comm object and threadpool
