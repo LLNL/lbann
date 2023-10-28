@@ -168,6 +168,40 @@ template <typename ArchiveT, typename ResultT = int>
 using WhenNotTextArchive =
   EnableWhen<!IsTextArchive<ArchiveT> && IsBuiltinArchive<ArchiveT>, ResultT>;
 
+template <typename ArchiveT>
+struct IsRootedArchiveT : std::false_type
+{
+};
+
+template <typename ArchiveT>
+inline constexpr bool IsSave = IsOutputArchive<ArchiveT>;
+
+template <typename ArchiveT>
+inline constexpr bool IsLoad = IsInputArchive<ArchiveT>;
+
+template <typename ArchiveT>
+inline constexpr bool IsRooted = IsRootedArchiveT<ArchiveT>::value;
+
+template <typename ArchiveT>
+inline constexpr bool IsShared = IsRooted<ArchiveT>;
+
+template <typename ArchiveT>
+inline constexpr bool IsDistributed = !IsRooted<ArchiveT>;
+
+template <typename ArchiveT>
+inline constexpr bool IsSharedSave = IsShared<ArchiveT> && IsSave<ArchiveT>;
+
+template <typename ArchiveT>
+inline constexpr bool IsSharedLoad = IsShared<ArchiveT> && IsLoad<ArchiveT>;
+
+template <typename ArchiveT>
+inline constexpr bool IsDistributedSave =
+  IsDistributed<ArchiveT> && IsSave<ArchiveT>;
+
+template <typename ArchiveT>
+inline constexpr bool IsDistributedLoad =
+  IsDistributed<ArchiveT> && IsLoad<ArchiveT>;
+
 } // namespace utils
 } // namespace lbann
 #endif // !(defined __CUDACC__ || defined __HIPCC__)

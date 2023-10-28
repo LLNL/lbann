@@ -185,6 +185,16 @@ private:
   El::Int root_;
 }; // RootedInputArchiveAdaptor
 
+template <typename T>
+struct utils::IsRootedArchiveT<RootedOutputArchiveAdaptor<T>> : std::true_type
+{
+};
+
+template <typename T>
+struct utils::IsRootedArchiveT<RootedInputArchiveAdaptor<T>> : std::true_type
+{
+};
+
 #ifdef LBANN_HAS_CEREAL_BINARY_ARCHIVES
 using RootedBinaryInputArchive =
   RootedInputArchiveAdaptor<cereal::BinaryInputArchive>;
