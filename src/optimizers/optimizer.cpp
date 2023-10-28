@@ -67,7 +67,7 @@ optimizer::get_raw_gradients() {
     if (grad_mgr.get_status() != optimizer_gradient_status::ready) {
       LBANN_ERROR("Optimizer gradient not ready");
     }
-    auto& grad = grad_mgr.local_gradient();
+    auto& grad = grad_mgr.global_gradient();
     grads.push_back(grad);
   }
   return grads;
