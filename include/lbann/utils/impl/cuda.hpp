@@ -149,7 +149,7 @@ __device__ __forceinline__ T gpu_lib::block_reduce(T val)
 template <>
 __device__ __forceinline__ bool gpu_lib::isfinite(__half const& x)
 {
-  return !(::__isnan(x) || ::__hisinf(x));
+  return !(::__hisnan(x) || ::__hisinf(x));
 }
 template <>
 __device__ __forceinline__ bool gpu_lib::isinf(__half const& x)
