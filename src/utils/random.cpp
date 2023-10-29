@@ -94,10 +94,10 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed)
     // respectively
     execution_mode mode;
     if (i < get_num_io_generators() / 2) {
-      mode == execution_mode::training;
+      mode = execution_mode::training;
     }
     else {
-      mode == execution_mode::validation;
+      mode = execution_mode::validation;
     }
     locked_io_rng_ref io_rng = set_io_generators_local_index(i, mode);
     rng_io << get_io_generator();
@@ -224,10 +224,10 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm)
     // respectively
     execution_mode mode;
     if (i < get_num_io_generators() / 2) {
-      mode == execution_mode::training;
+      mode = execution_mode::training;
     }
     else {
-      mode == execution_mode::validation;
+      mode = execution_mode::validation;
     }
     locked_io_rng_ref io_rng = set_io_generators_local_index(i, mode);
     rng_io >> get_io_generator();
