@@ -54,6 +54,8 @@ I/O & data readers:
    numbers of I/O threads.
  - Moved state tracking current position in a data set from the data
    reader to the dataset class.
+ - Split the I/O RNGs into two banks one for training and one for all
+   other execution modes.
 
 Build system:
  - Updated build script to use CachedCMakeProject mode, which should

@@ -25,10 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_RANDOM_INSTANTIATE
+#include "lbann/utils/random.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/utils/hash.hpp"
 #include "lbann/utils/profiling.hpp"
-#include "lbann/utils/random.hpp"
 
 #include <thread>
 
@@ -89,7 +89,17 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed)
       LBANN_ERROR("Failed to open ", rng_name);
     }
 
-    locked_io_rng_ref io_rng = set_io_generators_local_index(i);
+    // Note that the I/O generators are split into two halves, the
+    // lower and upper that are used for training and everything else,
+    // respectively
+    execution_mode mode;
+    if (i < get_num_io_generators() / 2) {
+      mode == execution_mode::training;
+    }
+    else {
+      mode == execution_mode::validation;
+    }
+    locked_io_rng_ref io_rng = set_io_generators_local_index(i, mode);
     rng_io << get_io_generator();
     rng_fast_io << get_fast_io_generator();
 
@@ -209,7 +219,17 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm)
       LBANN_ERROR("Failed to open ", rng_name);
     }
 
-    locked_io_rng_ref io_rng = set_io_generators_local_index(i);
+    // Note that the I/O generators are split into two halves, the
+    // lower and upper that are used for training and everything else,
+    // respectively
+    execution_mode mode;
+    if (i < get_num_io_generators() / 2) {
+      mode == execution_mode::training;
+    }
+    else {
+      mode == execution_mode::validation;
+    }
+    locked_io_rng_ref io_rng = set_io_generators_local_index(i, mode);
     rng_io >> get_io_generator();
     rng_fast_io >> get_fast_io_generator();
   }

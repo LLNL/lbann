@@ -87,7 +87,8 @@ int lbann::generic_data_reader::fetch(std::vector<conduit::Node>& samples,
                                       El::Matrix<El::Int>& indices_fetched,
                                       El::Int current_position_in_data_set,
                                       El::Int sample_stride,
-                                      size_t mb_size)
+                                      size_t mb_size,
+                                      const execution_mode mode)
 {
   // Check to make sure that a valid map was passed
   if (samples.empty()) {
@@ -135,7 +136,8 @@ int lbann::generic_data_reader::fetch(std::vector<conduit::Node>& samples,
                   m_io_thread_pool->get_num_threads(),
                   sample_stride,
                   mb_size,
-                  std::ref(indices_fetched)));
+                  std::ref(indices_fetched),
+                  mode));
     }
   }
   fetch_data_block_conduit(samples,
@@ -144,7 +146,8 @@ int lbann::generic_data_reader::fetch(std::vector<conduit::Node>& samples,
                            m_io_thread_pool->get_num_threads(),
                            sample_stride,
                            mb_size,
-                           indices_fetched);
+                           indices_fetched,
+                           mode);
 
   // Wait for all of the threads to finish
   m_io_thread_pool->finish_work_group();
@@ -164,7 +167,8 @@ int lbann::generic_data_reader::fetch(
   El::Matrix<El::Int>& indices_fetched,
   El::Int current_position_in_data_set,
   El::Int sample_stride,
-  size_t mb_size)
+  size_t mb_size,
+  const execution_mode mode)
 {
   // Check to make sure that a valid map was passed
   if (input_buffers.empty()) {
@@ -264,7 +268,8 @@ int lbann::generic_data_reader::fetch(
                   m_io_thread_pool->get_num_threads(),
                   sample_stride,
                   mb_size,
-                  std::ref(indices_fetched)));
+                  std::ref(indices_fetched),
+                  mode));
     }
   }
   fetch_data_block(input_buffers,
@@ -273,7 +278,8 @@ int lbann::generic_data_reader::fetch(
                    m_io_thread_pool->get_num_threads(),
                    sample_stride,
                    mb_size,
-                   indices_fetched);
+                   indices_fetched,
+                   mode);
 
   // Wait for all of the threads to finish
   m_io_thread_pool->finish_work_group();
@@ -322,10 +328,11 @@ bool lbann::generic_data_reader::fetch_data_block(
   El::Int block_stride,
   El::Int sample_stride,
   El::Int mb_size,
-  El::Matrix<El::Int>& indices_fetched)
+  El::Matrix<El::Int>& indices_fetched,
+  execution_mode mode)
 {
   for (int s = block_offset; s < mb_size; s += block_stride) {
-    locked_io_rng_ref io_rng = set_io_generators_local_index(s);
+    locked_io_rng_ref io_rng = set_io_generators_local_index(s, mode);
     int n = current_position_in_data_set + (s * sample_stride);
     int index = m_shuffled_indices[n];
     indices_fetched.Set(s, 0, index);
@@ -403,7 +410,8 @@ bool lbann::generic_data_reader::fetch_data_block_conduit(
   El::Int block_stride,
   El::Int sample_stride,
   El::Int mb_size,
-  El::Matrix<El::Int>& indices_fetched)
+  El::Matrix<El::Int>& indices_fetched,
+  execution_mode mode)
 {
   if (static_cast<size_t>(mb_size) > samples.size()) {
     LBANN_ERROR("unable to fetch data to conduit nodes, vector length ",
@@ -412,7 +420,7 @@ bool lbann::generic_data_reader::fetch_data_block_conduit(
                 mb_size);
   }
   for (int s = block_offset; s < mb_size; s += block_stride) {
-    locked_io_rng_ref io_rng = set_io_generators_local_index(s);
+    locked_io_rng_ref io_rng = set_io_generators_local_index(s, mode);
     int n = current_position_in_data_set + (s * sample_stride);
     int index = m_shuffled_indices[n];
     indices_fetched.Set(s, 0, index);

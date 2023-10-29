@@ -113,9 +113,19 @@ rng_gen& get_data_seq_generator()
 
 int get_num_io_generators() { return ::io_generators.size(); }
 
-locked_io_rng_ref set_io_generators_local_index(size_t idx)
+locked_io_rng_ref set_io_generators_local_index(size_t idx, execution_mode mode)
 {
-  ::local_io_generators_index = idx % io_generators.size();
+  // Map training ranks to the lower half of the generator range and
+  // all other execution modes use the upper half of the bank.
+  // Keep this as one vector to make it easier to serialize and split
+  // it between training and everything else to improve determinism
+  auto bank_split = io_generators.size() / 2;
+  if (mode == execution_mode::training) {
+    ::local_io_generators_index = idx % bank_split;
+  }
+  else {
+    ::local_io_generators_index = bank_split + (idx % bank_split);
+  }
   if (!::io_generators_inited) {
     LBANN_ERROR("I/O RNG seed not set");
   }

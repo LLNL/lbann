@@ -117,7 +117,8 @@ bool python_reader::fetch_data_block(
   El::Int block_stride,
   El::Int sample_stride,
   El::Int mb_size,
-  El::Matrix<El::Int>& indices_fetched)
+  El::Matrix<El::Int>& indices_fetched,
+  const execution_mode mode)
 {
 
   CPUMat& X = *(input_buffers[INPUT_DATA_TYPE_SAMPLES]);

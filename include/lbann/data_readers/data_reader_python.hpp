@@ -59,13 +59,15 @@ public:
   void load() override;
 
 protected:
-  bool fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers,
-                        El::Int current_position_in_data_set,
-                        El::Int block_offset,
-                        El::Int block_stride,
-                        El::Int sample_stride,
-                        El::Int mb_size,
-                        El::Matrix<El::Int>& indices_fetched) override;
+  bool
+  fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers,
+                   El::Int current_position_in_data_set,
+                   El::Int block_offset,
+                   El::Int block_stride,
+                   El::Int sample_stride,
+                   El::Int mb_size,
+                   El::Matrix<El::Int>& indices_fetched,
+                   execution_mode mode = execution_mode::training) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
 private:

@@ -181,7 +181,8 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
                                             buf.m_indices_fetched_per_mb,
                                             relative_base_position,
                                             ds.get_sample_stride(),
-                                            local_mini_batch_size);
+                                            local_mini_batch_size,
+                                            mode);
       data_packer::extract_data_fields_from_samples(samples,
                                                     local_input_buffers);
     }
@@ -190,7 +191,8 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
                                             buf.m_indices_fetched_per_mb,
                                             relative_base_position,
                                             ds.get_sample_stride(),
-                                            local_mini_batch_size);
+                                            local_mini_batch_size,
+                                            mode);
     }
 
     bool data_valid = (buf.m_num_samples_fetched > 0);
