@@ -196,8 +196,8 @@ void construct_std_options()
     {"--max_io_thread_rngs"},
     utils::ENV("LBANN_MAX_IO_RNG_BANKS"),
     "[STD] Maximum number of random number generator banks available to "
-    "both I/O and initial data transformations for each rank. (Default: 256)",
-    256);
+    "both I/O and initial data transformations for each rank. (Default: 128)",
+    128);
   arg_parser.add_option(
     LBANN_OPTION_OMP_NUM_THREADS,
     {"--omp_num_threads"},

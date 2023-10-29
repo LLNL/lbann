@@ -292,14 +292,14 @@ public:
             El::Int current_position_in_data_set,
             El::Int sample_stride,
             size_t mb_size,
-            execution_mode mode = execution_mode::training);
+            execution_mode mode = execution_mode::invalid);
 
   int fetch(std::vector<conduit::Node>& samples,
             El::Matrix<El::Int>& indices_fetched,
             El::Int current_position_in_data_set,
             El::Int sample_stride,
             size_t mb_size,
-            execution_mode mode = execution_mode::training);
+            execution_mode mode = execution_mode::invalid);
 
   /** @brief Check to see if the data reader supports this specific data field
    */
@@ -529,7 +529,7 @@ protected:
                    El::Int sample_stride,
                    El::Int mb_size,
                    El::Matrix<El::Int>& indices_fetched,
-                   execution_mode mode = execution_mode::training);
+                   execution_mode mode = execution_mode::invalid);
 
   bool fetch_data_block_conduit(std::vector<conduit::Node>& samples,
                                 El::Int current_position_in_data_set,
@@ -538,7 +538,7 @@ protected:
                                 El::Int sample_stride,
                                 El::Int mb_size,
                                 El::Matrix<El::Int>& indices_fetched,
-                                execution_mode mode = execution_mode::training);
+                                execution_mode mode = execution_mode::invalid);
 
   /** @brief Called by fetch_data, fetch_label, fetch_response
    *

@@ -258,7 +258,8 @@ trainer& construct_trainer(lbann_comm* comm,
 
   // Initialize the general RNGs and the data sequence RNGs
   int max_io_rng_banks = arg_parser.get<int>(LBANN_OPTION_MAX_IO_RNG_BANKS);
-  init_random(random_seed, max_io_rng_banks);
+  // Create a set of RNG banks for both training and validation type phases
+  init_random(random_seed, max_io_rng_banks * 2);
   init_data_seq_random(data_seq_random_seed);
   init_ltfb_random(root_random_seed);
   global_trainer_->set_random_seeds(root_random_seed,

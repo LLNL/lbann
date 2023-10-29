@@ -115,7 +115,7 @@ int get_num_io_generators();
 /** @brief Sets the local index for a thread to access the correct I/O RNGs. */
 locked_io_rng_ref
 set_io_generators_local_index(size_t idx,
-                              execution_mode mode = execution_mode::training);
+                              execution_mode mode = execution_mode::invalid);
 
 /**
  * Return a reference to the global LBANN random number generator used
