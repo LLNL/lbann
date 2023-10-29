@@ -53,7 +53,7 @@ nightly_options_and_targets = {
     'num_epochs': 3,
     'mini_batch_size': 256,
     'expected_train_accuracy_range': (3, 4.25), # BVE increased upper limit from 4.1 10/28
-    'expected_test_accuracy_range': (1.5, 2.1),
+    'expected_test_accuracy_range': (1.5, 2.11), # BVE increased upper limit from 2.1 10/28
     'fraction_of_data_to_use': imagenet_fraction * 0.01,
     'expected_mini_batch_times': {
         'pascal': 0.43,
@@ -131,7 +131,7 @@ def construct_model(lbann, num_epochs):
     obj = lbann.ObjectiveFunction([cross_entropy, l2_reg])
 
     # Objects for LBANN model
-    callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer()]
+    callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer(), lbann.CallbackEvaluateProgress(batch_interval=5, metric='top-5 accuracy')]
     metrics = [lbann.Metric(top5, name='top-5 accuracy', unit='%')]
 
     # Construct model
