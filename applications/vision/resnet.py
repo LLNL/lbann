@@ -13,7 +13,7 @@ desc = ('Construct and run ResNet on ImageNet-1K data. '
         'Running the experiment is only supported on LC systems.')
 parser = argparse.ArgumentParser(description=desc)
 lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_resnet')
-lbann.contrib.args.add_training_arguments(parser)
+lbann.contrib.args.add_training_arguments(parser, default_epochs=90)
 lbann.contrib.args.add_profiling_arguments(parser)
 lbann.contrib.args.add_amp_arguments(parser)
 parser.add_argument(
