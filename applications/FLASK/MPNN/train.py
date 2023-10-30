@@ -8,6 +8,8 @@ import argparse
 
 desc = " Training a MPNN Model using LBANN"
 parser = argparse.ArgumentParser(description=desc)
+lbann.contrib.args.add_scheduler_arguments(parser, 'ChemProp')
+lbann.contrib.args.add_optimizer_arguments(parser)
 
 args = parser.parse_args()
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)

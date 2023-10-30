@@ -64,19 +64,29 @@ class MPNEncoder(Module):
         """ """
         messages = self.W_i(bond_features)
         for depth in range(self.depth - 1):
-            nei_message = lbann.Gather(messages, atom2bond_sources_mapping, axis=0)
+            nei_message = lbann.Gather(messages, atom2bond_target_mapping, axis=0)
 
             a_message = lbann.Scatter(
                 nei_message,
-                atom2bond_target_mapping,
+                atom2bond_sources_mapping,
                 dims=[self.max_atoms, self.hidden_size],
                 axis=0,
             )
 
-            bond_message = lbann.Gather(a_message, bond2atom_mapping)
-            rev_message = lbann.Gather(messages, bond2revbond_mapping)
+            bond_message = lbann.Gather(
+                a_message,
+                bond2atom_mapping,
+                axis=0,
+                name=self.name + f"_bond_messages_{depth}",
+            )
+            rev_message = lbann.Gather(
+                messages,
+                bond2revbond_mapping,
+                axis=0,
+                name=self.name + f"_rev_bond_messages_{depth}",
+            )
 
-            messages = lbann.SubtractOperator(bond_message, rev_message)
+            messages = lbann.Subtract(bond_message, rev_message)
             messages = self.W_h(messages)
 
         return messages
@@ -90,16 +100,25 @@ class MPNEncoder(Module):
             dims=[self.max_atoms, self.hidden_size],
         )
 
-        atoms_hidden = lbann.Concatentate([atom_messages, a_messages], dim=0)
+        atoms_hidden = lbann.Concatenation(
+            [atom_messages, a_messages], axis=1, name=self.name + "atom_hidden_concat"
+        )
         return self.W_o(atoms_hidden)
 
     def readout(self, atom_encoded_features, graph_mask, num_atoms):
         """ """
         mol_encoding = lbann.Scatter(
-            atom_encoded_features, graph_mask, name=self.name + "graph_scatter"
+            atom_encoded_features, graph_mask, name=self.name + "graph_scatter", axis=0,
+            dims=[1, self.hidden_size]
         )
-        mol_encoding = lbann.DivideOperator(
-            mol_encoding, lbann.Tessallate(num_atoms, dims=[self.max_atoms, 1])
+        num_atoms = lbann.Reshape(num_atoms, dims=[1, 1])
+
+        mol_encoding = lbann.Divide(
+            mol_encoding,
+            lbann.Tessellate(
+                num_atoms, dims=[1, self.hidden_size], name=self.name + "expand_num_nodes"
+            ),
+            name=self.name + "_reduce",
         )
         return mol_encoding
 
@@ -113,7 +132,6 @@ class MPNEncoder(Module):
         bond2revbond_mapping,
         graph_mask,
         num_atoms,
-        max_atoms,
     ):
         """ """
         bond_messages = self.message(
