@@ -65,12 +65,13 @@ def construct_training_task(model: lbann.Model,
 # Data reader
 # ----------------------------------------------
 def make_data_reader(dataset_name: str, fraction: float, validate: bool,
-                     val_fraction: float):
+                     val_fraction: float, always_shuffle: bool):
     reader = lbann.reader_pb2.DataReader()
     _reader = reader.reader.add()
     _reader.name = 'python'
     _reader.role = 'train'
-    _reader.shuffle = False if 'pretokenized' in dataset_name else True
+    _reader.shuffle = (True if always_shuffle
+                       or 'pretokenized' not in dataset_name else False)
     _reader.fraction_of_data_to_use = fraction
     _reader.python.module = dataset_name
     _reader.python.module_dir = os.path.join(
@@ -124,7 +125,8 @@ def make_batch_script(model: lbann.Model,
                             training_algo=algo)
     reader = make_data_reader(dataset_name, args.dataset_fraction,
                               not args.skip_validation,
-                              args.validation_set_fraction)
+                              args.validation_set_fraction,
+                              args.always_shuffle)
 
     # Optimizer with learning rate schedule
     if args.optimizer.lower() == 'adamw':
@@ -242,6 +244,13 @@ def add_training_arguments(parser: argparse.ArgumentParser):
                         action="store_true",
                         default=False,
                         help="Do not run validation (default: false)")
+    parser.add_argument(
+        "--always-shuffle",
+        action="store_true",
+        default=False,
+        help=
+        "Always shuffle training dataset, even if pretokenized (default: false)"
+    )
     parser.add_argument(
         "--validation-set-fraction",
         type=float,
