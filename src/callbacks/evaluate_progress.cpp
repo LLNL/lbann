@@ -75,7 +75,6 @@ EvalType evaluate(model& m, const std::string& metric_name, execution_mode mode)
                     "\"");
     }
   }
-  */
 
   // Mark the data store as loaded - Note that this is a temporary fix
   // for the current use of the evaluation
@@ -84,8 +83,7 @@ EvalType evaluate(model& m, const std::string& metric_name, execution_mode mode)
   // Clean up and return metric value
   m.reset_mode(c, original_mode);
   dc.reset_mode(c);
-  return -1.0;
-  // return metric_value;
+  return metric_value;
 }
 
 } // namespace
