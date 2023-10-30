@@ -27,7 +27,6 @@
 #ifndef LBANN_OPTIMIZERS_OPTIMIZER_IMPL_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_OPTIMIZER_IMPL_HPP_INCLUDED
 
-#include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/profiling.hpp"
@@ -240,17 +239,16 @@ optimizer::get_gradient_buffer(TensorDataType& buf_scale,
   // If the manager hasn't been created, let's make it.
   auto mat_info = this->get_matrix_info();
   if (!grad_mgr_ptr) {
-    El::AbstractDistMatrix<TensorDataType>* mat = nullptr;
-    if (dynamic_cast<data_type_optimizer<TensorDataType>*>(this) != nullptr) {
-      mat = dynamic_cast<data_type_optimizer<TensorDataType>*>(this)
-              ->m_gradient.get();
-    }
+    // If our optimizer contains a gradient of the same data type, reuse (view)
+    // it in the gradient manager
+    El::BaseDistMatrix* grad = this->get_raw_gradient_pointer();
+    auto* matptr = dynamic_cast<El::AbstractDistMatrix<TensorDataType>*>(grad);
     grad_mgr_ptr = std::make_unique<GradMgrType>(std::get<HEIGHT>(mat_info),
                                                  std::get<WIDTH>(mat_info),
                                                  std::get<DISTDATA_L>(mat_info),
                                                  std::get<DISTDATA_G>(mat_info),
                                                  this->is_sharded(),
-                                                 mat);
+                                                 matptr);
     grad_mgr_ptr->set_status(optimizer_gradient_status::cleared);
   }
   grad_mgr_ptr->ensure_gradient_memory(std::get<HEIGHT>(mat_info),
