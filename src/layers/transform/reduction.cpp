@@ -125,7 +125,7 @@ void reduction_layer<TensorDataType, Layout, Device>::fp_compute()
     break;
   case reduction_mode::AVERAGE:
     El::Gemv(El::TRANSPOSE,
-             one / El::To<TensorDataType>(input.Height()),
+             El::To<TensorDataType>(one / El::To<TensorDataType>(input.Height())),
              input.LockedMatrix(),
              ones,
              zero,
@@ -186,7 +186,7 @@ void reduction_layer<TensorDataType, Layout, Device>::bp_compute()
   case reduction_mode::AVERAGE:
     El::Gemm(El::NORMAL,
              El::NORMAL,
-             one / El::To<TensorDataType>(input_grad.Height()),
+             El::To<TensorDataType>(one / El::To<TensorDataType>(input_grad.Height())),
              ones,
              local_output_grad,
              zero,

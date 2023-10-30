@@ -272,11 +272,12 @@ description uniform_initializer<TensorDataType>::get_description() const
 template <typename TensorDataType>
 void uniform_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix)
 {
+  typedef TensorDataType T;
   uniform_fill(matrix,
                matrix.Height(),
                matrix.Width(),
-               (m_max + m_min) / El::To<TensorDataType>(2),
-               (m_max - m_min) / El::To<TensorDataType>(2));
+               El::To<T>((m_max + m_min) / El::To<T>(2)),
+               El::To<T>((m_max - m_min) / El::To<T>(2)));
 }
 
 template <typename TensorDataType>
@@ -365,7 +366,7 @@ build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg)
     dynamic_cast<lbann_data::Initializer::UniformInitializer const&>(msg);
   const auto& min = El::To<TensorDataType>(params.min());
   const auto& max = El::To<TensorDataType>(params.max());
-  if (min != 0.0 || max != 0.0) {
+  if (min != El::To<TensorDataType>(0.0) || max != El::To<TensorDataType>(0.0)) {
     return std::make_unique<uniform_initializer<TensorDataType>>(min, max);
   }
   else {
@@ -377,12 +378,13 @@ template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_normal_initializer_from_pbuf(google::protobuf::Message const& msg)
 {
+  typedef TensorDataType T;
   const auto& params =
     dynamic_cast<lbann_data::Initializer::NormalInitializer const&>(msg);
   const auto& mean = El::To<TensorDataType>(params.mean());
   const auto& standard_deviation =
     El::To<TensorDataType>(params.standard_deviation());
-  if (mean != 0.0 || standard_deviation != 0.0) {
+  if (mean != El::To<T>(0.0) || standard_deviation != El::To<T>(0.0)) {
     return std::make_unique<normal_initializer<TensorDataType>>(
       mean,
       standard_deviation);

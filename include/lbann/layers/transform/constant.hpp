@@ -77,7 +77,7 @@ protected:
 
   void fp_compute() override
   {
-    if (m_value == EvalType(0)) {
+    if (m_value == El::To<TensorDataType>(0.0)) {
       El::Zero(this->get_activations());
     }
     else {

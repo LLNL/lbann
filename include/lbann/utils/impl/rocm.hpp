@@ -155,7 +155,7 @@ __device__ __forceinline__ T gpu_lib::block_reduce(T val)
 #define WRAP_UNARY_ROCM_HALF_CAST_TO_FLOAT_MATH_FUNCTION(func)                 \
   __device__ __forceinline__ __half gpu_lib::func(__half const& x)             \
   {                                                                            \
-    return ::func(float(x));                                                   \
+    return gpu_lib::func(float(x));                                            \
   }
 
 WRAP_UNARY_ROCM_HALF_CAST_TO_FLOAT_MATH_FUNCTION(round)
@@ -197,7 +197,28 @@ WRAP_UNARY_ROCM_HALF_CAST_TO_FLOAT_MATH_FUNCTION(tanh)
 WRAP_UNARY_ROCM_HALF_CAST_TO_FLOAT_MATH_FUNCTION(acosh)
 WRAP_UNARY_ROCM_HALF_CAST_TO_FLOAT_MATH_FUNCTION(asinh)
 WRAP_UNARY_ROCM_HALF_CAST_TO_FLOAT_MATH_FUNCTION(atanh)
+
+WRAP_UNARY_ROCM_HALF_CAST_TO_FLOAT_MATH_FUNCTION(erf)
+WRAP_UNARY_ROCM_HALF_CAST_TO_FLOAT_MATH_FUNCTION(erfinv)
 #undef WRAP_UNARY_ROCM_HALF_MATH_FUNCTION
+
+template <>
+__device__ __forceinline__ bool gpu_lib::isnan(__half const& x)
+{
+  return __hisnan(x);
+}
+
+template <>
+__device__ __forceinline__ bool gpu_lib::isinf(__half const& x)
+{
+  return __hisinf(x);
+}
+
+template <>
+__device__ __forceinline__ bool gpu_lib::isfinite(__half const& x)
+{
+  return !(__hisnan(x) || __hisinf(x));
+}
 
 // Binary math functions
 __device__ __forceinline__ __half gpu_lib::min(const __half& x, const __half& y)

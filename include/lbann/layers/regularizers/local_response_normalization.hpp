@@ -399,11 +399,10 @@ private:
     const int num_per_channel = this->get_output_size() / num_channels;
 
     // Check if LRN is using default beta parameter
+    typedef TensorDataType T;
     const bool default_beta =
-      (std::fabs((m_beta - El::To<TensorDataType>(0.75)) /
-                 El::To<TensorDataType>(0.75)) <
-       El::To<TensorDataType>(2) *
-         std::numeric_limits<TensorDataType>::epsilon());
+      (El::Abs((m_beta - El::To<T>(0.75)) / El::To<T>(0.75)) <
+       El::To<T>(2) * std::numeric_limits<T>::epsilon());
 
     ////////////////////////////////////////////////////////////////
     // error_signal(i)

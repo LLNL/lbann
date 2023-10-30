@@ -167,7 +167,7 @@ void selu_dropout<T, L, D>::fp_compute()
 {
   if (this->m_model->get_execution_context().get_execution_mode() !=
         execution_mode::training ||
-      m_keep_prob < 0.0f) {
+      m_keep_prob < El::To<T>(0.0f)) {
     // Do nothing if dropout is disabled
     El::Copy(this->get_prev_activations(), this->get_activations());
   }
@@ -203,7 +203,7 @@ void selu_dropout<T, L, D>::bp_compute()
 {
   if (this->m_model->get_execution_context().get_execution_mode() !=
         execution_mode::training ||
-      m_keep_prob < 0.0f) {
+      m_keep_prob < El::To<T>(0.0f)) {
     El::Copy(this->get_prev_error_signals(), this->get_error_signals());
   }
   else {
