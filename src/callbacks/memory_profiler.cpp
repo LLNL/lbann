@@ -58,7 +58,7 @@ template <typename T>
 using UnaryConstDTL = const data_type_layer<T,T>;
 
 template <typename T>
-using ConstADM = const El::AbstractDistMatrix<T>;
+using ConstADM = std::add_const_t<El::AbstractDistMatrix<T>>;
 
 using LayerTypes = h2::meta::tlist::ExpandTL<UnaryConstDTL, Datatypes>;
 using DistMatrixTypes = h2::meta::tlist::ExpandTL<ConstADM, Datatypes>;
