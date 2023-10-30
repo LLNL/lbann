@@ -79,7 +79,7 @@ void data_reader_sample_list<SampleListT>::shuffle_indices(rng_gen& gen)
   // BVE FIXME get_mini_batch_size()
   auto mini_batch_size = 1;
   if (trainer_exists()) {
-    get_trainer().get_max_mini_batch_size();
+    mini_batch_size = get_trainer().get_max_mini_batch_size();
   }
   if (mini_batch_size != 0) {
     m_sample_list.compute_epochs_file_usage(get_shuffled_indices(),
