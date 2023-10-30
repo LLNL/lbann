@@ -120,6 +120,8 @@ public:
 
   virtual bool has_conduit_output() { return false; }
 
+  virtual bool supports_background_io() { return true; }
+
   // These non-virtual methods are used to specify where data is, how much to
   // load, etc.
 
