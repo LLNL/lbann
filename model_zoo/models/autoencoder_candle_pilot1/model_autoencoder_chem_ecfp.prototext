@@ -1,5 +1,4 @@
 trainer {
-  num_parallel_readers: 1
 }
 model {
   ### Model description and network architecture taken from:

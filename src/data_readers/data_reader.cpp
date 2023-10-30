@@ -59,10 +59,7 @@ generic_data_reader::~generic_data_reader()
 template <class Archive>
 void generic_data_reader::serialize(Archive& ar)
 {
-  ar(CEREAL_NVP(m_current_mini_batch_idx),
-     CEREAL_NVP(m_current_pos),
-     CEREAL_NVP(m_shuffled_indices),
-     CEREAL_NVP(m_supported_input_types));
+  ar(CEREAL_NVP(m_shuffled_indices), CEREAL_NVP(m_supported_input_types));
 }
 
 void generic_data_reader::shuffle_indices()
@@ -81,15 +78,6 @@ void generic_data_reader::shuffle_indices(rng_gen& gen)
 void generic_data_reader::setup(int num_io_threads,
                                 observer_ptr<thread_pool> io_thread_pool)
 {
-  m_base_offset = 0;
-  m_sample_stride = 1;
-  m_stride_to_next_mini_batch = 0;
-  m_stride_to_last_mini_batch = 0;
-  m_current_mini_batch_idx = 0;
-  m_num_iterations_per_epoch = 0;
-
-  set_initial_position();
-
   shuffle_indices();
 
   m_io_thread_pool = io_thread_pool;
@@ -97,23 +85,28 @@ void generic_data_reader::setup(int num_io_threads,
 
 int lbann::generic_data_reader::fetch(std::vector<conduit::Node>& samples,
                                       El::Matrix<El::Int>& indices_fetched,
-                                      size_t mb_size)
+                                      El::Int current_position_in_data_set,
+                                      El::Int sample_stride,
+                                      size_t mb_size,
+                                      const execution_mode mode)
 {
   // Check to make sure that a valid map was passed
   if (samples.empty()) {
     LBANN_ERROR("fetch function called with no valid buffers");
   }
 
-  if (!position_valid()) {
-    if (position_is_overrun()) {
+  // BVE FIXME
+  if (!(current_position_in_data_set < get_num_data()) /*position_valid()*/) {
+    if (current_position_in_data_set >=
+        get_num_data() /*position_is_overrun()*/) {
       return 0;
     }
     else {
-      LBANN_ERROR(std::string{} +
-                  "generic data reader load error: !position_valid" +
-                  " -- current pos = " + std::to_string(m_current_pos) +
-                  " and there are " +
-                  std::to_string(m_shuffled_indices.size()) + " indices");
+      LBANN_ERROR(
+        std::string{} + "generic data reader load error: !position_valid" +
+        " -- current pos = " + std::to_string(current_position_in_data_set) +
+        " and there are " + std::to_string(m_shuffled_indices.size()) +
+        " indices");
     }
   }
 
@@ -138,17 +131,23 @@ int lbann::generic_data_reader::fetch(std::vector<conduit::Node>& samples,
         std::bind(&generic_data_reader::fetch_data_block_conduit,
                   this,
                   std::ref(samples),
+                  current_position_in_data_set,
                   t,
                   m_io_thread_pool->get_num_threads(),
+                  sample_stride,
                   mb_size,
-                  std::ref(indices_fetched)));
+                  std::ref(indices_fetched),
+                  mode));
     }
   }
   fetch_data_block_conduit(samples,
+                           current_position_in_data_set,
                            m_io_thread_pool->get_local_thread_id(),
                            m_io_thread_pool->get_num_threads(),
+                           sample_stride,
                            mb_size,
-                           indices_fetched);
+                           indices_fetched,
+                           mode);
 
   // Wait for all of the threads to finish
   m_io_thread_pool->finish_work_group();
@@ -166,7 +165,10 @@ int lbann::generic_data_reader::fetch(std::vector<conduit::Node>& samples,
 int lbann::generic_data_reader::fetch(
   std::map<data_field_type, CPUMat*>& input_buffers,
   El::Matrix<El::Int>& indices_fetched,
-  size_t mb_size)
+  El::Int current_position_in_data_set,
+  El::Int sample_stride,
+  size_t mb_size,
+  const execution_mode mode)
 {
   // Check to make sure that a valid map was passed
   if (input_buffers.empty()) {
@@ -214,16 +216,18 @@ int lbann::generic_data_reader::fetch(
   }
 #endif
 
-  if (!position_valid()) {
-    if (position_is_overrun()) {
+  if (!(current_position_in_data_set < get_num_data())) {
+    // @todo BVE FIXME check to see if this is still necessary
+    if (current_position_in_data_set >=
+        get_num_data() /*position_is_overrun()*/) {
       return 0;
     }
     else {
-      LBANN_ERROR(std::string{} +
-                  "generic data reader load error: !position_valid" +
-                  " -- current pos = " + std::to_string(m_current_pos) +
-                  " and there are " +
-                  std::to_string(m_shuffled_indices.size()) + " indices");
+      LBANN_ERROR(
+        std::string{} + "generic data reader load error: !position_valid" +
+        " -- current pos = " + std::to_string(current_position_in_data_set) +
+        " and there are " + std::to_string(m_shuffled_indices.size()) +
+        " indices");
     }
   }
 
@@ -259,17 +263,23 @@ int lbann::generic_data_reader::fetch(
         std::bind(&generic_data_reader::fetch_data_block,
                   this,
                   std::ref(input_buffers),
+                  current_position_in_data_set,
                   t,
                   m_io_thread_pool->get_num_threads(),
+                  sample_stride,
                   mb_size,
-                  std::ref(indices_fetched)));
+                  std::ref(indices_fetched),
+                  mode));
     }
   }
   fetch_data_block(input_buffers,
+                   current_position_in_data_set,
                    m_io_thread_pool->get_local_thread_id(),
                    m_io_thread_pool->get_num_threads(),
+                   sample_stride,
                    mb_size,
-                   indices_fetched);
+                   indices_fetched,
+                   mode);
 
   // Wait for all of the threads to finish
   m_io_thread_pool->finish_work_group();
@@ -284,16 +294,18 @@ int lbann::generic_data_reader::fetch(
   return mb_size;
 }
 
-void lbann::generic_data_reader::start_data_store_mini_batch_exchange()
+void lbann::generic_data_reader::start_data_store_mini_batch_exchange(
+  El::Int current_position_in_data_set,
+  El::Int current_mini_batch_size,
+  bool at_new_epoch)
 {
-  int loaded_batch_size = get_loaded_mini_batch_size();
-
   // Make sure that every rank participates in the data store prior
   // to seeing if the local rank's position is valid.  Note that
   // every rank will hold data that may be used in the last mini-batch
   if (data_store_active()) {
-    m_data_store->start_exchange_mini_batch_data(m_current_pos - m_base_offset,
-                                                 loaded_batch_size);
+    m_data_store->start_exchange_mini_batch_data(current_position_in_data_set,
+                                                 current_mini_batch_size,
+                                                 at_new_epoch);
   }
   return;
 }
@@ -311,16 +323,17 @@ void lbann::generic_data_reader::finish_data_store_mini_batch_exchange()
 
 bool lbann::generic_data_reader::fetch_data_block(
   std::map<data_field_type, CPUMat*>& input_buffers,
+  El::Int current_position_in_data_set,
   El::Int block_offset,
   El::Int block_stride,
+  El::Int sample_stride,
   El::Int mb_size,
-  El::Matrix<El::Int>& indices_fetched)
+  El::Matrix<El::Int>& indices_fetched,
+  execution_mode mode)
 {
-  locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
-
-  //  CPUMat& X
   for (int s = block_offset; s < mb_size; s += block_stride) {
-    int n = m_current_pos + (s * m_sample_stride);
+    locked_io_rng_ref io_rng = set_io_generators_local_index(s, mode);
+    int n = current_position_in_data_set + (s * sample_stride);
     int index = m_shuffled_indices[n];
     indices_fetched.Set(s, 0, index);
 
@@ -392,22 +405,23 @@ bool lbann::generic_data_reader::fetch_data_block(
 
 bool lbann::generic_data_reader::fetch_data_block_conduit(
   std::vector<conduit::Node>& samples,
+  El::Int current_position_in_data_set,
   El::Int block_offset,
   El::Int block_stride,
+  El::Int sample_stride,
   El::Int mb_size,
-  El::Matrix<El::Int>& indices_fetched)
+  El::Matrix<El::Int>& indices_fetched,
+  execution_mode mode)
 {
-  locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
-
   if (static_cast<size_t>(mb_size) > samples.size()) {
     LBANN_ERROR("unable to fetch data to conduit nodes, vector length ",
                 samples.size(),
                 " is smaller than mini-batch size",
                 mb_size);
   }
-  //  CPUMat& X
   for (int s = block_offset; s < mb_size; s += block_stride) {
-    int n = m_current_pos + (s * m_sample_stride);
+    locked_io_rng_ref io_rng = set_io_generators_local_index(s, mode);
+    int n = current_position_in_data_set + (s * sample_stride);
     int index = m_shuffled_indices[n];
     indices_fetched.Set(s, 0, index);
 
@@ -420,48 +434,16 @@ bool lbann::generic_data_reader::fetch_data_block_conduit(
   return true;
 }
 
-bool generic_data_reader::update(bool is_active_reader)
+void generic_data_reader::update(bool epoch_complete)
 {
-  bool reader_not_done = true; // BVE The sense of this should be fixed
-  m_current_mini_batch_idx++;
-
-  if (is_active_reader) {
-    m_current_pos = get_next_position();
-    m_loaded_mini_batch_idx += m_iteration_stride;
-  }
-  if (m_loaded_mini_batch_idx >= m_num_iterations_per_epoch) {
-    reader_not_done = false;
-  }
-  if ((size_t)m_current_pos >= m_shuffled_indices.size()) {
-    reader_not_done = false;
-  }
-  if (m_current_mini_batch_idx == m_num_iterations_per_epoch) {
-    // for working with 1B jag samples, we may not process all the data
-    if ((m_comm->get_rank_in_trainer() < m_num_parallel_readers) &&
-        (m_current_pos < (int)m_shuffled_indices.size())) {
-      throw lbann_exception(
-        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-        " :: generic data reader update error: the epoch is complete," +
-        " but not all of the data has been used -- current pos = " +
-        std::to_string(m_current_pos) + " and there are " +
-        std::to_string(m_shuffled_indices.size()) + " indices" +
-        " : iteration=" + std::to_string(m_current_mini_batch_idx) + "C [" +
-        std::to_string(m_loaded_mini_batch_idx) + "L] of " +
-        std::to_string(m_num_iterations_per_epoch) + "+" +
-        std::to_string(m_iteration_stride) + " : " +
-        " index stride=" + std::to_string(m_stride_to_next_mini_batch) + "/" +
-        std::to_string(m_stride_to_last_mini_batch));
-    }
-
+  if (epoch_complete) {
     shuffle_indices();
-    if (priming_data_store()) {
+    if (m_data_store != nullptr && priming_data_store()) {
       m_data_store->set_shuffled_indices(&m_shuffled_indices);
     }
-
-    set_initial_position();
   }
 
-  return reader_not_done;
+  return;
 }
 
 int generic_data_reader::get_linearized_size(
@@ -483,40 +465,6 @@ int generic_data_reader::get_linearized_size(
     LBANN_ERROR("Unknown data_field_type value provided: " + data_field);
   }
   return 0;
-}
-
-int generic_data_reader::get_loaded_mini_batch_size() const
-{
-  if (m_loaded_mini_batch_idx >= (m_num_iterations_per_epoch - 1)) {
-    return m_last_mini_batch_size;
-  }
-  else {
-    return m_mini_batch_size;
-  }
-}
-
-int generic_data_reader::get_current_mini_batch_size() const
-{
-  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch - 1)) {
-    return m_last_mini_batch_size;
-  }
-  else {
-    return m_mini_batch_size;
-  }
-}
-
-int generic_data_reader::get_next_position() const
-{
-  /// If the next mini-batch for this rank is going to be the last
-  /// mini-batch, take the proper (possibly reduced) step to
-  /// setup for the last mini-batch
-  if ((m_current_mini_batch_idx + m_iteration_stride - 1) ==
-      (m_num_iterations_per_epoch - 1)) {
-    return m_current_pos + m_stride_to_last_mini_batch;
-  }
-  else {
-    return m_current_pos + m_stride_to_next_mini_batch;
-  }
 }
 
 int generic_data_reader::get_num_unused_data(execution_mode m) const
@@ -706,9 +654,6 @@ bool lbann::generic_data_reader::load_from_checkpoint_shared(
                                                        "_dr.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   );
-  // Adjust current position to deal with fact that it was just loaded to all
-  // ranks from rank 0 (differs by rank #)
-  m_current_pos += m_comm->get_rank_in_trainer();
   return true;
 }
 
@@ -938,7 +883,10 @@ void generic_data_reader::setup_data_store(int mini_batch_size)
 
 bool generic_data_reader::data_store_active() const
 {
-  if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
+  if (m_data_store == nullptr) {
+    return false;
+  }
+  if (m_data_store->is_fully_loaded()) {
     return true;
   }
 
@@ -946,8 +894,7 @@ bool generic_data_reader::data_store_active() const
     get_trainer().get_data_coordinator().get_execution_context());
   /// Use the data store for all modes except testing
   /// i.e. training, validation, tournament
-  return (m_data_store != nullptr &&
-          (((c.get_execution_mode() == execution_mode::training) &&
+  return ((((c.get_execution_mode() == execution_mode::training) &&
             c.get_epoch() > 0) ||
            ((c.get_execution_mode() == execution_mode::validation) &&
             c.get_epoch() > 0)));
@@ -955,11 +902,11 @@ bool generic_data_reader::data_store_active() const
 
 bool generic_data_reader::priming_data_store() const
 {
-  const auto& c = static_cast<const SGDExecutionContext&>(
-    get_trainer().get_data_coordinator().get_execution_context());
   if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
     return false;
   }
+  const auto& c = static_cast<const SGDExecutionContext&>(
+    get_trainer().get_data_coordinator().get_execution_context());
 
   /// Use the data store for all modes except testing
   /// i.e. training, validation, tournament
@@ -977,11 +924,6 @@ void generic_data_reader::set_data_store(data_store_conduit* g)
     delete m_data_store;
   }
   m_data_store = g;
-}
-
-void generic_data_reader::set_mini_batch_size(const int s)
-{
-  m_mini_batch_size = s;
 }
 
 void generic_data_reader::set_role(std::string role) { m_role = role; }
@@ -1019,6 +961,17 @@ void generic_data_reader::preload_data_store()
     do_preload_data_store();
     m_data_store->set_loading_is_complete();
   }
+}
+
+void generic_data_reader::print_config()
+{
+  LBANN_MSG("Data reader configuration \n",
+            " role                       = ",
+            m_role,
+            "\n",
+            " num samples                = ",
+            get_num_data(),
+            "\n");
 }
 
 void generic_data_reader::print_get_methods(const std::string filename)

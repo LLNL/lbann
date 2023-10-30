@@ -25,10 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_RANDOM_INSTANTIATE
+#include "lbann/utils/random.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/utils/hash.hpp"
 #include "lbann/utils/profiling.hpp"
-#include "lbann/utils/random.hpp"
 
 #include <thread>
 

@@ -176,6 +176,9 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
 
   El::Int num_samples = 1;
 
+  lbann::dataset dataset;
+  dataset.setup(num_samples, "training");
+
   auto data_store = new lbann::data_store_conduit(hdf5_dr);
   hdf5_dr->set_data_store(data_store);
   // Take the sample and place it into the data store
@@ -196,7 +199,6 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
   auto io_thread_pool = lbann::make_unique<lbann::thread_pool>();
   io_thread_pool->launch_pinned_threads(1, 1);
   hdf5_dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
-  hdf5_dr->set_num_parallel_readers(1);
 
   hdf5_dr->m_shuffled_indices.emplace_back(0);
 
@@ -205,7 +207,11 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
     std::vector<conduit::Node> samples(1);
     El::Matrix<El::Int> indices_fetched;
     indices_fetched.Resize(1, 1);
-    hdf5_dr->fetch(samples, indices_fetched, 1);
+    hdf5_dr->fetch(samples,
+                   indices_fetched,
+                   dataset.get_position(),
+                   dataset.get_sample_stride(),
+                   1);
     //    auto valid = hdf5_dr->fetch(samples, indices_fetched, 2);
 
     //    lbann::CPUMat X;
@@ -270,7 +276,11 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
     std::vector<conduit::Node> samples;
     El::Matrix<El::Int> indices_fetched;
     indices_fetched.Resize(1, 1);
-    CHECK_THROWS(hdf5_dr->fetch(samples, indices_fetched, 1));
+    CHECK_THROWS(hdf5_dr->fetch(samples,
+                                indices_fetched,
+                                dataset.get_position(),
+                                dataset.get_sample_stride(),
+                                1));
   }
 
   SECTION("fetch conduit node - mini-batch too large")
@@ -278,6 +288,10 @@ TEST_CASE("Data Coordinator hdf5 conduit fetch tests",
     std::vector<conduit::Node> samples(1);
     El::Matrix<El::Int> indices_fetched;
     indices_fetched.Resize(1, 1);
-    CHECK_THROWS(hdf5_dr->fetch(samples, indices_fetched, 2));
+    CHECK_THROWS(hdf5_dr->fetch(samples,
+                                indices_fetched,
+                                dataset.get_position(),
+                                dataset.get_sample_stride(),
+                                2));
   }
 }

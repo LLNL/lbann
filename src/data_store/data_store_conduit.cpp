@@ -1815,18 +1815,19 @@ void data_store_conduit::profile_timing()
 }
 
 void data_store_conduit::start_exchange_mini_batch_data(size_t current_pos,
-                                                        size_t mb_size)
+                                                        size_t mb_size,
+                                                        bool at_new_epoch)
 {
   if (is_local_cache() && is_fully_loaded()) {
     return;
   }
 
-  if (m_reader->at_new_epoch() && is_local_cache() && is_explicitly_loading()) {
+  if (at_new_epoch && is_local_cache() && is_explicitly_loading()) {
     exchange_local_caches();
     return;
   }
 
-  if (m_reader->at_new_epoch()) {
+  if (at_new_epoch) {
     PROFILE("\nExchange_mini_batch_data");
     PROFILE("  is_explicitly_loading(): ", is_explicitly_loading());
     PROFILE("  is_local_cache(): ", is_local_cache());
@@ -1839,7 +1840,7 @@ void data_store_conduit::start_exchange_mini_batch_data(size_t current_pos,
   double tm1 = get_time();
 
   // when not running in preload mode, exchange owner maps after the 1st epoch
-  if (m_reader->at_new_epoch() && !is_preloading() && !is_local_cache()) {
+  if (at_new_epoch && !is_preloading() && !is_local_cache()) {
     PROFILE("calling exchange_owner_maps");
     if (!m_owner_maps_were_exchanged) {
       exchange_owner_maps();

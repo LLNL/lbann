@@ -95,7 +95,8 @@ void data_coordinator::setup(
   // Initialize the data sets
   for (auto m : execution_mode_iterator()) {
     if (this->m_data_readers.count(m)) {
-      this->m_datasets[m].total_samples() = m_data_readers[m]->get_num_data();
+      this->m_datasets[m].setup(m_data_readers[m]->get_num_data(),
+                                m_data_readers[m]->get_role());
     }
   }
 
@@ -111,10 +112,10 @@ void data_coordinator::setup(
   /** Calculate how many iterations are required for training, testing,
    *  and validation given a specified mini-batch size.
    */
-  for (auto&& dr : m_data_readers) {
-    if (!dr.second)
+  for (auto& [mode, dataset] : m_datasets) {
+    if (!dataset.initialized())
       continue;
-    calculate_num_iterations_per_epoch(max_mini_batch_size, dr.second);
+    calculate_num_iterations_per_epoch(max_mini_batch_size, dataset);
   }
 
   auto& arg_parser = global_argument_parser();
@@ -132,39 +133,33 @@ void data_coordinator::setup(
       r.second->setup_data_store(max_mini_batch_size);
     }
   }
+  // for (auto&& dr : m_data_readers) {
+  //   if (!dr.second)
+  //     continue;
+  //   dr.second->print_config();
+  // }
+  // for (auto& [mode, dataset] : m_datasets) {
+  //   if (!dataset.initialized())
+  //     dataset.print_config();
+  // }
 }
 
 void data_coordinator::calculate_num_iterations_per_epoch(
   int max_mini_batch_size,
-  generic_data_reader* data_reader)
+  dataset& dataset)
 {
-  if (data_reader == nullptr) {
+  if (!dataset.initialized()) {
     return;
   }
+
   // If the data reader does not have any data bail out (e.g. unused validation
   // reader)
-  if (data_reader->get_num_data() == 0) {
+  if (dataset.get_num_data() == 0) {
     return;
   }
 
-  if (max_mini_batch_size > data_reader->get_num_data()) {
-    max_mini_batch_size = data_reader->get_num_data();
-  }
-
-  /// Check to make sure that there is enough data for all of the parallel
-  /// readers
-  int num_parallel_readers_per_model =
-    compute_max_num_parallel_readers(data_reader->get_num_data(),
-                                     max_mini_batch_size,
-                                     this->m_comm->get_procs_per_trainer());
-  data_reader->set_num_parallel_readers(num_parallel_readers_per_model);
-  if (num_parallel_readers_per_model == 0 ||
-      (num_parallel_readers_per_model !=
-         this->m_comm->get_procs_per_trainer() &&
-       num_parallel_readers_per_model != max_mini_batch_size)) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: generic_data_distribution: number of parallel readers is zero");
+  if (max_mini_batch_size > dataset.get_num_data()) {
+    max_mini_batch_size = dataset.get_num_data();
   }
 
 #ifdef LBANN_HAS_DISTCONV
@@ -182,30 +177,29 @@ void data_coordinator::calculate_num_iterations_per_epoch(
     dc::get_input_rank(*(this->m_comm)) / dc::get_number_of_io_partitions();
 #endif
   /// Set mini-batch size and stride
-  data_reader->set_mini_batch_size(max_mini_batch_size);
-  data_reader->set_stride_to_next_mini_batch(batch_stride);
+  dataset.set_mini_batch_size(max_mini_batch_size);
+  dataset.set_stride_to_next_mini_batch(batch_stride);
 #ifdef LBANN_HAS_DISTCONV
-  data_reader->set_sample_stride(num_parallel_readers_per_model /
-                                 dc::get_number_of_io_partitions());
+  dataset.set_sample_stride(this->m_comm->get_procs_per_trainer() /
+                            dc::get_number_of_io_partitions());
 #else
-  data_reader->set_sample_stride(num_parallel_readers_per_model);
+  dataset.set_sample_stride(this->m_comm->get_procs_per_trainer());
 #endif
-  data_reader->set_iteration_stride(1);
   /// Set data reader base offset and model offset
-  data_reader->set_base_offset(base_offset);
-  data_reader->set_initial_position();
+  dataset.set_base_offset(base_offset);
+  dataset.set_initial_position();
 
   /// By default each data reader will plan to process the entire data set
   int num_iterations_per_epoch =
-    ceil((float)data_reader->get_num_data() / (float)max_mini_batch_size);
-  int last_mini_batch_size = data_reader->get_num_data() % max_mini_batch_size;
+    ceil((float)dataset.get_num_data() / (float)max_mini_batch_size);
+  int last_mini_batch_size = dataset.get_num_data() % max_mini_batch_size;
   if (last_mini_batch_size == 0) {
     last_mini_batch_size = max_mini_batch_size;
   }
-  data_reader->set_num_iterations_per_epoch(num_iterations_per_epoch);
-  data_reader->set_last_mini_batch_size(last_mini_batch_size);
-  data_reader->set_stride_to_last_mini_batch(
-    data_reader->get_stride_to_next_mini_batch());
+  dataset.set_num_iterations_per_epoch(num_iterations_per_epoch);
+  dataset.set_last_mini_batch_size(last_mini_batch_size);
+  dataset.set_stride_to_last_mini_batch(
+    dataset.get_stride_to_next_mini_batch());
   return;
 }
 
@@ -419,13 +413,18 @@ void data_coordinator::reset_mode(ExecutionContext& context)
   m_execution_context = static_cast<observer_ptr<ExecutionContext>>(&context);
 }
 
+bool data_coordinator::dataset_exists(execution_mode m) const
+{
+  return m_datasets.count(m) > 0;
+}
+
 dataset& data_coordinator::get_dataset(execution_mode m)
 {
   if (m_datasets.count(m)) {
     return m_datasets.at(m);
   }
   else {
-    LBANN_ERROR("get_dataset: invalid execution mode");
+    LBANN_ERROR("get_dataset: invalid execution mode ", to_string(m));
   }
 }
 
@@ -435,33 +434,35 @@ const dataset& data_coordinator::get_dataset(execution_mode m) const
     return m_datasets.at(m);
   }
   else {
-    LBANN_ERROR("get_dataset: invalid execution mode");
+    LBANN_ERROR("get_dataset: invalid execution mode: ", to_string(m));
   }
 }
 
-dataset* data_coordinator::select_first_valid_dataset()
+dataset& data_coordinator::select_first_valid_dataset()
 {
   for (auto m : execution_mode_iterator()) {
-    if (m_datasets.count(m)) {
-      return &m_datasets.at(m);
+    if (m_datasets.count(m) && m_datasets.at(m).initialized()) {
+      return m_datasets.at(m);
     }
   }
-  return nullptr;
+  LBANN_ERROR("select_first_valid_dataset: no valid execution modes found");
 }
 
 long data_coordinator::get_num_samples(execution_mode m) const
 {
-  if (m_datasets.count(m)) {
+  if (m_datasets.count(m) && m_datasets.at(m).initialized()) {
     return m_datasets.at(m).get_num_samples_processed();
   }
   else {
+    LBANN_WARNING(
+      "I am getting the number of smaples and it is defaulting to 0");
     return 0;
   }
 }
 
 long data_coordinator::get_total_num_samples(execution_mode m) const
 {
-  if (m_datasets.count(m)) {
+  if (m_datasets.count(m) && m_datasets.at(m).initialized()) {
     return m_datasets.at(m).get_total_samples();
   }
   else {
@@ -484,69 +485,17 @@ bool data_coordinator::is_execution_mode_valid(execution_mode mode) const
 
 void data_coordinator::calculate_num_iterations_per_epoch(int mini_batch_size)
 {
-  for (auto&& dr : m_data_readers) {
-    if (!dr.second)
+  for (auto& [mode, dataset] : m_datasets) {
+    if (!dataset.initialized())
       continue;
-    calculate_num_iterations_per_epoch(mini_batch_size, dr.second);
+    calculate_num_iterations_per_epoch(mini_batch_size, dataset);
   }
-}
-
-int data_coordinator::compute_max_num_parallel_readers(
-  long data_set_size,
-  int mini_batch_size,
-  int requested_num_parallel_readers) const
-{
-  return compute_max_num_parallel_readers(data_set_size,
-                                          mini_batch_size,
-                                          requested_num_parallel_readers,
-                                          this->m_comm);
-}
-
-int data_coordinator::compute_max_num_parallel_readers(
-  long data_set_size,
-  int mini_batch_size,
-  int requested_num_parallel_readers,
-  const lbann_comm* comm)
-{
-  int num_parallel_readers = requested_num_parallel_readers;
-
-  if (comm->get_procs_per_trainer() != num_parallel_readers) {
-    if (comm->am_trainer_master()) {
-      std::cout << "Warning the requested number of parallel readers "
-                << num_parallel_readers << " does not match the grid size "
-                << comm->get_procs_per_trainer()
-                << " OVERRIDING requested number of parallel readers."
-                << std::endl;
-    }
-    num_parallel_readers = comm->get_procs_per_trainer();
-  }
-
-#if 0
-  if(mini_batch_size < num_parallel_readers) {
-    if (comm->am_trainer_master()) {
-      std::cout << "Warning the requested number of parallel readers "
-                << num_parallel_readers
-                << " is larger than the requested mini-batch size "
-                << mini_batch_size
-                << " OVERRIDING requested number of parallel readers."
-                << std::endl;
-    }
-    num_parallel_readers = mini_batch_size;
-  }
-#endif
-  return num_parallel_readers;
-}
-
-int data_coordinator::get_num_parallel_readers(execution_mode mode) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_num_parallel_readers() : 0;
 }
 
 bool data_coordinator::at_new_epoch(execution_mode mode) const
 {
-  const generic_data_reader* dr = get_data_reader(mode);
-  return (dr != nullptr && dr->at_new_epoch());
+  const dataset& ds = get_dataset(mode);
+  return (ds.initialized() && ds.at_new_epoch());
 }
 
 bool data_coordinator::at_new_epoch() const
@@ -564,35 +513,47 @@ void data_coordinator::register_active_data_field(
 
 size_t data_coordinator::get_num_iterations_per_epoch(execution_mode mode) const
 {
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_num_iterations_per_epoch()
-                                  : 0;
+  if (!dataset_exists(mode)) {
+    return 0;
+  }
+  const dataset& dataset = get_dataset(mode);
+  return (dataset.initialized()) ? dataset.get_num_iterations_per_epoch() : 0;
 }
 
 int data_coordinator::get_current_step_in_epoch(execution_mode mode) const
 {
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_current_step_in_epoch()
-                                  : 0;
+  if (!dataset_exists(mode)) {
+    return 0;
+  }
+  const dataset& dataset = get_dataset(mode);
+  return (dataset.initialized()) ? dataset.get_current_step_in_epoch() : 0;
 }
 
 int data_coordinator::get_mini_batch_size(execution_mode mode) const
 {
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_mini_batch_size() : 0;
+  if (!dataset_exists(mode)) {
+    return 0;
+  }
+  const dataset& dataset = get_dataset(mode);
+  return (dataset.initialized()) ? dataset.get_mini_batch_size() : 0;
 }
 
 int data_coordinator::get_last_mini_batch_size(execution_mode mode) const
 {
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_last_mini_batch_size() : 0;
+  if (!dataset_exists(mode)) {
+    return 0;
+  }
+  const dataset& dataset = get_dataset(mode);
+  return (dataset.initialized()) ? dataset.get_last_mini_batch_size() : 0;
 }
 
 int data_coordinator::get_current_mini_batch_size(execution_mode mode) const
 {
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_current_mini_batch_size()
-                                  : 0;
+  if (!dataset_exists(mode)) {
+    return 0;
+  }
+  const dataset& dataset = get_dataset(mode);
+  return (dataset.initialized()) ? dataset.get_current_mini_batch_size() : 0;
 }
 
 // save state of IO to a checkpoint
@@ -660,7 +621,6 @@ bool data_coordinator::load_from_checkpoint_shared(persist& p)
     //   unpack_cereal_archive_binary_string<data_coordinator>(*this, buf);
     // }
   }
-
   return true;
 }
 

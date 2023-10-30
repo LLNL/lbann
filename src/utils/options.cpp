@@ -38,7 +38,8 @@ void construct_std_options()
   arg_parser.add_flag(
     LBANN_OPTION_DISABLE_BACKGROUND_IO_ACTIVITY,
     {"--disable_background_io_activity"},
-    "[STD] prevent the input layers from fetching data in the background");
+    utils::ENV("LBANN_DISABLE_BACKGROUND_IO_ACTIVITY"),
+    "[STD] prevent the data coordinator from fetching data in the background");
   arg_parser.add_flag(
     LBANN_OPTION_DISABLE_CUDA,
     {"--disable_cuda"},
@@ -183,16 +184,28 @@ void construct_std_options()
                         {"--num_epochs"},
                         "[STD] Number of epochs to train model",
                         -1);
-  arg_parser.add_option(LBANN_OPTION_NUM_IO_THREADS,
-                        {"--num_io_threads"},
-                        utils::ENV("LBANN_NUM_IO_THREADS"),
-                        "[STD] Number of threads available to both I/O and "
-                        "initial data transformations for each rank.",
-                        64);
-  arg_parser.add_option(LBANN_OPTION_NUM_PARALLEL_READERS,
-                        {"--num_parallel_readers"},
-                        "[STD] The number of parallel data readers",
-                        1);
+  arg_parser.add_option(
+    LBANN_OPTION_NUM_IO_THREADS,
+    {"--num_io_threads"},
+    utils::ENV("LBANN_NUM_IO_THREADS"),
+    "[STD] Number of threads available to both I/O and "
+    "initial data transformations for each rank. (Default: 4)",
+    4);
+  arg_parser.add_option(
+    LBANN_OPTION_MAX_IO_RNG_BANKS,
+    {"--max_io_thread_rngs"},
+    utils::ENV("LBANN_MAX_IO_RNG_BANKS"),
+    "[STD] Maximum number of random number generator banks available to "
+    "both I/O and initial data transformations for each rank. (Default: 128)",
+    128);
+  arg_parser.add_option(
+    LBANN_OPTION_OMP_NUM_THREADS,
+    {"--omp_num_threads"},
+    utils::ENV("OMP_NUM_THREADS"), // Use the standard environment
+                                   // variable if available
+    "[STD] Number of OpenMP (OMP) threads available for "
+    "CPU layers. (Default: 4)",
+    4);
   arg_parser.add_option(LBANN_OPTION_OPTIMIZER,
                         {"--optimizer"},
                         "[STD] Optimizer input file",

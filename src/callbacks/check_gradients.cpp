@@ -285,9 +285,9 @@ void check_gradients::do_check_gradients(model& m) const
 
   // Load data in input layers
   data_coordinator& dc = get_trainer().get_data_coordinator();
+  dc.fetch_active_batch_synchronous(mode);
   El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
   m.set_current_mini_batch_size(current_mini_batch_size);
-  dc.fetch_data(mode);
 
   // checking subgrpah parallelism
   if (m.is_subgraph_parallelism_enabled()) {
@@ -384,8 +384,8 @@ void check_gradients::do_check_gradients(model& m) const
 
   // Clean up
   // TODO: Why
-  auto&& reader = dc.get_data_reader(mode);
-  reader->set_initial_position();
+  auto&& dataset = dc.get_dataset(mode);
+  dataset.set_initial_position();
   m.get_objective_function()->reset_statistics(mode);
   for (auto&& met : m.get_metrics()) {
     met->reset_statistics(mode);

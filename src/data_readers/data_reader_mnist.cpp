@@ -28,6 +28,7 @@
 
 #include "lbann/data_readers/data_reader_mnist.hpp"
 #include "lbann/data_readers/sample_list_impl.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include <cstdio>
 
@@ -82,7 +83,7 @@ bool mnist_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx)
            // model
       // mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) :
       // Y.Set(m_gan_label_value,mb_idx,1);
-      mb_idx < (get_current_mini_batch_size() / 2)
+      mb_idx < ((int)get_trainer().get_max_mini_batch_size() / 2)
         ? Y.Set(1, mb_idx, 1)
         : Y.Set(m_gan_label_value, mb_idx, 1);
     }

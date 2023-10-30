@@ -434,7 +434,7 @@ def test_bad_extra_lbann_flags_invalid_flag():
         expected = ("Invalid Usage: extra_lbann_flags includes invalid"
                     " flag=invalid_flag. Flags must"
                     " be in ['hydrogen_block_size', 'procs_per_trainer',"
-                    " 'num_parallel_readers', 'num_io_threads', 'serialize_io',"
+                    " 'num_io_threads', 'serialize_io',"
                     " 'disable_background_io_activity', 'disable_cuda',"
                     " 'random_seed', 'objective_function', 'data_layout',"
                     " 'print_affinity', 'use_data_store', 'preload_data_store',"

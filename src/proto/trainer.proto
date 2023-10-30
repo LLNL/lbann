@@ -40,9 +40,6 @@ message Trainer {
 
   // I/O threads per parallel process
   //
-  // These threads are typically used to perform data ingestion in the
-  // background.
-  int64 num_parallel_readers = 3;
   bool serialize_io = 101;
 
   repeated Callback callback = 20;

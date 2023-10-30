@@ -121,6 +121,9 @@ TEST_CASE("Synthetic data reader public API tests",
   El::Matrix<El::Int> indices_fetched;
   El::Zeros_seq(indices_fetched, num_samples, 1);
 
+  lbann::dataset ds;
+  ds.setup(num_samples, "training");
+
   SECTION("fetch data fields")
   {
     std::unique_ptr<lbann::data_reader_synthetic> dr;
@@ -143,13 +146,16 @@ TEST_CASE("Synthetic data reader public API tests",
     }
     dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
     dr->set_comm(&comm);
-    dr->set_num_parallel_readers(1);
     dr->load();
-    dr->set_mini_batch_size(num_samples);
-    dr->set_last_mini_batch_size(num_samples);
-    dr->set_initial_position();
+    ds.set_mini_batch_size(num_samples);
+    ds.set_last_mini_batch_size(num_samples);
+    ds.set_initial_position();
 
-    dr->fetch(local_input_buffers, indices_fetched, num_samples);
+    dr->fetch(local_input_buffers,
+              indices_fetched,
+              ds.get_position(),
+              ds.get_sample_stride(),
+              num_samples);
 
     // Check all of the results that were fetched.  Ensure that the
     // data fields are accessed in the same order that they are in the map
@@ -228,6 +234,9 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
   El::Matrix<El::Int> indices_fetched;
   El::Zeros_seq(indices_fetched, num_samples, 1);
 
+  lbann::dataset ds;
+  ds.setup(num_samples, "training");
+
   SECTION("fetch arbitrary data fields")
   {
     auto dr = std::make_unique<lbann::data_reader_synthetic>(num_samples,
@@ -235,13 +244,16 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
                                                              false);
     dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
     dr->set_comm(&comm);
-    dr->set_num_parallel_readers(1);
     dr->load();
-    dr->set_mini_batch_size(num_samples);
-    dr->set_last_mini_batch_size(num_samples);
-    dr->set_initial_position();
+    ds.set_mini_batch_size(num_samples);
+    ds.set_last_mini_batch_size(num_samples);
+    ds.set_initial_position();
 
-    dr->fetch(local_input_buffers, indices_fetched, num_samples);
+    dr->fetch(local_input_buffers,
+              indices_fetched,
+              ds.get_position(),
+              ds.get_sample_stride(),
+              num_samples);
 
     // Check all of the results that were fetched.  Ensure that the
     // data fields are accessed in the same order that they are in the map
@@ -275,13 +287,16 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
                                                              false);
     dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
     dr->set_comm(&comm);
-    dr->set_num_parallel_readers(1);
     dr->load();
-    dr->set_mini_batch_size(num_samples);
-    dr->set_last_mini_batch_size(num_samples);
-    dr->set_initial_position();
+    ds.set_mini_batch_size(num_samples);
+    ds.set_last_mini_batch_size(num_samples);
+    ds.set_initial_position();
 
-    CHECK_THROWS(dr->fetch(local_input_buffers, indices_fetched, num_samples));
+    CHECK_THROWS(dr->fetch(local_input_buffers,
+                           indices_fetched,
+                           ds.get_position(),
+                           ds.get_sample_stride(),
+                           num_samples));
 
     // All data buffers should be empty since it will have thrown an exception
     for (El::Int j = 0; j < num_samples; j++) {
@@ -310,13 +325,16 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
                                                              false);
     dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
     dr->set_comm(&comm);
-    dr->set_num_parallel_readers(1);
     dr->load();
-    dr->set_mini_batch_size(num_samples);
-    dr->set_last_mini_batch_size(num_samples);
-    dr->set_initial_position();
+    ds.set_mini_batch_size(num_samples);
+    ds.set_last_mini_batch_size(num_samples);
+    ds.set_initial_position();
 
-    dr->fetch(test_local_input_buffers, indices_fetched, num_samples);
+    dr->fetch(test_local_input_buffers,
+              indices_fetched,
+              ds.get_position(),
+              ds.get_sample_stride(),
+              num_samples);
 
     // Check all of the results that were fetched.  Ensure that the
     // data fields are accessed in the same order that they are in the map
@@ -350,17 +368,20 @@ TEST_CASE("Synthetic data reader public API tests - arbitrary field",
                                                              false);
     dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
     dr->set_comm(&comm);
-    dr->set_num_parallel_readers(1);
     dr->load();
-    dr->set_mini_batch_size(num_samples);
-    dr->set_last_mini_batch_size(num_samples);
-    dr->set_initial_position();
+    ds.set_mini_batch_size(num_samples);
+    ds.set_last_mini_batch_size(num_samples);
+    ds.set_initial_position();
 
     for (auto const& data_field : data_fields) {
       dr->set_has_data_field(data_field, false);
     }
 
-    CHECK_THROWS(dr->fetch(local_input_buffers, indices_fetched, num_samples));
+    CHECK_THROWS(dr->fetch(local_input_buffers,
+                           indices_fetched,
+                           ds.get_position(),
+                           ds.get_sample_stride(),
+                           num_samples));
 
     // All data buffers should be empty since it will have thrown an exception
     for (El::Int j = 0; j < num_samples; j++) {

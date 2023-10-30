@@ -135,6 +135,15 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
     LBANN_CALIPER_LOOP_BEGIN(
       train_batch,
       (epoch == 0UL ? "train_minibatch_epoch_0" : "train_minibatch"));
+
+    if (get_trainer().background_io_activity_allowed()) {
+      // Fetch the first batch
+      dc.fetch_active_batch_synchronous(execution_mode::training);
+      El::Int current_mini_batch_size =
+        dc.get_current_mini_batch_size(execution_mode::training);
+      model.set_current_mini_batch_size(current_mini_batch_size);
+    }
+
     bool end_of_epoch = false;
     while (!term(c) && !end_of_epoch) {
       LBANN_CALIPER_LOOP_ITER(train_batch, c.get_step());
@@ -214,10 +223,16 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
   m_data_prefetch_sync_event.synchronize();
 #endif // LBANN_HAS_GPU
 
+  if (get_trainer().background_io_activity_allowed()) {
+    dc.fetch_data_asynchronous(execution_mode::training);
+  }
+  else {
+    dc.fetch_active_batch_synchronous(execution_mode::training);
+  }
+
   El::Int current_mini_batch_size =
     dc.get_current_mini_batch_size(execution_mode::training);
   model.set_current_mini_batch_size(current_mini_batch_size);
-  dc.fetch_data(execution_mode::training);
 
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
   LBANN_OMP_PARALLEL
@@ -249,9 +264,8 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
       }
       model.get_objective_function()->compute_weight_regularization();
 
-      // check if the data coordinator has finished the epoch and kickoff
-      // background I/O
-      finished = dc.epoch_complete(execution_mode::training);
+      // Swap buffers in data coordinator
+      finished = dc.ready_for_next_fetch(execution_mode::training);
 
       // Finish evaluation.
       model.get_objective_function()->finish_evaluation(
@@ -321,6 +335,12 @@ void SGDTrainingAlgorithm::evaluate(SGDExecutionContext& c,
                         mode,
                         ScopeTimer{eval_timer, "eval_begin callbacks"});
   LBANN_CALIPER_LOOP_BEGIN(eval_batch, loop_label(mode));
+  if (get_trainer().background_io_activity_allowed()) {
+    // Fetch the first step in an evaluation
+    dc.fetch_active_batch_synchronous(mode);
+    El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
+    model.set_current_mini_batch_size(current_mini_batch_size);
+  }
   while (!term(c)) {
     LBANN_CALIPER_LOOP_ITER(eval_batch, c.get_step());
     if (evaluate_mini_batch(c,
@@ -345,13 +365,16 @@ bool SGDTrainingAlgorithm::evaluate_mini_batch(SGDExecutionContext& c,
   model.reset_mode(c, mode);
   dc.reset_mode(c);
   do_batch_begin_cbs(model, mode, ScopeTimer{timer, "batch_begin callbacks"});
+  if (get_trainer().background_io_activity_allowed()) {
+    dc.fetch_data_asynchronous(mode);
+  }
+  else {
+    dc.fetch_active_batch_synchronous(mode);
+  }
   El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
   model.set_current_mini_batch_size(current_mini_batch_size);
-  dc.fetch_data(mode);
   model.forward_prop(mode);
-  // check if the data coordinator has finished the epoch and kickoff
-  // background I/O
-  const bool finished = dc.epoch_complete(mode);
+  bool const finished = dc.ready_for_next_fetch(mode);
 
   model.get_objective_function()->start_evaluation(mode,
                                                    current_mini_batch_size);

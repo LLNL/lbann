@@ -78,6 +78,9 @@ public:
   void copy_members(const hdf5_reader& rhs);
 
   std::string get_type() const override { return "data_reader_hdf5_images"; }
+
+  bool supports_background_io() override { return false; }
+
   // void set_input_params(int width, int height, int depth, int num_ch, int
   // num_labels);
   void load() override;
@@ -124,7 +127,10 @@ public:
     }
     return m_all_responses.size();
   }
-  const std::vector<El::Int> get_data_dims() const override { return m_data_dims; }
+  const std::vector<El::Int> get_data_dims() const override
+  {
+    return m_data_dims;
+  }
 
 #ifdef LBANN_HAS_DISTCONV
   bool is_tensor_shuffle_required() const override { return false; }

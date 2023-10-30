@@ -25,6 +25,8 @@ Performance optimizations:
  - Allow distconv to be disabled at runtime with LBANN_DISABLE_DISTCONV=1.
  - Activations are now deallocated when no longer needed via a reference counter,
    disable with LBANN_DISABLE_ACT_GC=1.
+ - Added option for LBANN to set the number of OMP threads to modest
+   default (4) if the environment doesn't specify anything.
 
 Model portability & usability:
 
@@ -42,6 +44,18 @@ I/O & data readers:
  - DataReaderMetaData, training_dr_linearized_data_size, and num_parallel_readers
    were removed from the model and layer API, and instead reside in the data
    ingestion pipeline.
+ - Fixed implementation of background I/O to achive better decoupling
+   of background data fetch. Can be enabled / disabled with runtime
+   flag.
+ - Set the default number of I/O threads to 4
+ - Changed the I/O and transform pipeline to use a bank of RNGs that
+   is now indexed by the sample ID in the load sequence, rather than the
+   I/O thread ID.  This eliminates variablility when using different
+   numbers of I/O threads.
+ - Moved state tracking current position in a data set from the data
+   reader to the dataset class.
+ - Split the I/O RNGs into two banks one for training and one for all
+   other execution modes.
 
 Build system:
  - Updated build script to use CachedCMakeProject mode, which should
@@ -65,6 +79,10 @@ Retired features:
  - Remove the cached value of the current mini-batch size from the SGD
    execution context.  It is now only cached in the model.
  - Removed the imcomm "inter-model" callback
+ - Removed the num-parallel-readers parameter to the I/O subsystem.
+   This eliminates an older version of I/O parallelism that relied on
+   a non-data-parallel I/O buffer and had different ranks fetching
+   entire mini-batches.  It is superseded by standard data-parallel I/O.
 
 ============================== Release Notes: v0.103 ==============================
 C++ API:

@@ -80,7 +80,8 @@ void trainer::serialize(Archive& ar)
      CEREAL_NVP(m_max_mini_batch_size),
      CEREAL_NVP(m_root_random_seed),
      CEREAL_NVP(m_random_seed),
-     CEREAL_NVP(m_data_seq_random_seed));
+     CEREAL_NVP(m_data_seq_random_seed),
+     CEREAL_NVP(m_background_io_allowed));
 }
 
 ////////////////////////////////////////////////////////////
@@ -122,6 +123,12 @@ void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool,
   m_data_coordinator.get()->setup(*m_io_thread_pool.get(),
                                   get_max_mini_batch_size(),
                                   data_readers);
+
+  for (auto& [mode, reader] : data_readers) {
+    if (!reader->supports_background_io()) {
+      allow_background_io_activity(false);
+    }
+  }
 
   // Set up callbacks first - allow checkpoint / restart to reload state
   for (auto& cb : m_callbacks) {
