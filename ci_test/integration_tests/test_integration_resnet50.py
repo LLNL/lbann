@@ -131,7 +131,7 @@ def construct_model(lbann, num_epochs):
     obj = lbann.ObjectiveFunction([cross_entropy, l2_reg])
 
     # Objects for LBANN model
-    callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer(), lbann.CallbackEvaluateProgress(batch_interval=5, metric='top-5 accuracy')]
+    callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer()]
     metrics = [lbann.Metric(top5, name='top-5 accuracy', unit='%')]
 
     # Construct model
