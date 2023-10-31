@@ -55,23 +55,25 @@ EvalType evaluate(model& m, const std::string& metric_name, execution_mode mode)
   // Evaluate model on validation set
   get_trainer().evaluate(&m, mode);
 
-  // Get metric value
-  bool found_metric = false;
   EvalType metric_value = 0;
-  for (const auto& met : m.get_metrics()) {
-    if (met->name() == metric_name) {
-      found_metric = true;
-      metric_value = met->get_mean_value(mode);
-      break;
+  if (metric_name != "") {
+    // Get metric value
+    bool found_metric = false;
+    for (const auto& met : m.get_metrics()) {
+      if (met->name() == metric_name) {
+        found_metric = true;
+        metric_value = met->get_mean_value(mode);
+        break;
+      }
     }
-  }
-  if (!found_metric) {
-    LBANN_ERROR("could not find metric \"",
-                metric_name,
-                "\" ",
-                "in model \"",
-                m.get_name(),
-                "\"");
+    if (!found_metric) {
+      LBANN_WARNING("could not find metric \"",
+                    metric_name,
+                    "\" ",
+                    "in model \"",
+                    m.get_name(),
+                    "\"");
+    }
   }
 
   // Mark the data store as loaded - Note that this is a temporary fix
@@ -156,8 +158,13 @@ void evaluate_progress::on_batch_begin(model* m)
   if (comm.am_trainer_master()) {
     std::ostringstream msg;
     msg << "Finished " << message_prefix << "during "
-        << "(" << to_string(mode) << ") "
-        << "= " << local_score << "\n";
+        << "(" << to_string(mode) << ")";
+    if (m_metric_name != "") {
+      msg << " = " << local_score << "\n";
+    }
+    else {
+      msg << "\n";
+    }
     std::cout << msg.str() << std::flush;
   }
 }

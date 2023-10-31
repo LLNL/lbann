@@ -50,7 +50,7 @@ public:
    *                        evaluations.
    *  @param metric_name    Metric for evaluation.
    */
-  evaluate_progress(El::Int batch_interval, std::string metric_name);
+  evaluate_progress(El::Int batch_interval, std::string metric_name = "");
   evaluate_progress(const evaluate_progress& other);
   evaluate_progress& operator=(const evaluate_progress& other);
   evaluate_progress* copy() const final { return new evaluate_progress(*this); }
