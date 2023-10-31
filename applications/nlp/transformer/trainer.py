@@ -192,8 +192,7 @@ def make_batch_script(model: lbann.Model,
 
     if args.validate_every > 0:
         model.callbacks.append(
-            lbann.CallbackEvaluateProgress(batch_interval=args.validate_every,
-                                           metric='loss'))
+            lbann.CallbackEvaluateProgress(batch_interval=args.validate_every))
 
     # Print a progress bar
     if args.progress:
