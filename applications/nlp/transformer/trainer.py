@@ -219,6 +219,7 @@ def make_batch_script(model: lbann.Model,
                                optimizer=opt)
 
     # Create batch script
+    script_params.pop('setup_only', None)  # Drop this argument.
     script = lbann.contrib.launcher.make_batch_script(**script_params)
     script.add_command('echo "Started training at $(date)"')
     script.add_parallel_command([

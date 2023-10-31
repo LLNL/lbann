@@ -147,7 +147,8 @@ def main():
     )
 
     # Run trainer
-    train_script.run(overwrite=True)
+    if not args.setup_only:
+        train_script.run(overwrite=True)
 
 
 if __name__ == '__main__':
