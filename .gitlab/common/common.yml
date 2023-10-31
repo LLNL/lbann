@@ -116,7 +116,10 @@
 # Cleanup any build directories and spack environments older than 5 days since last use
 .cleanup old spack environment:
   script:
-    - echo "== REMOVING NEW BUILD RESOURCES =="
+    - echo "== CLEAN BUILD DIRECTORY =="
+    - [[ -e "spack-ci-env-name.sh" ]] && source spack-ci-env-name.sh
+    - [[ -n ${LBANN_BUILD_PARENT_DIR} ]] && cmake --build ${LBANN_BUILD_PARENT_DIR}/build -t clean
+    - echo "== REMOVING BUILD RESOURCES =="
     - find ${CI_PROJECT_DIR}/builds -maxdepth 1 -mtime +2 -name "lbann_*" -type d -print -exec rm -r {} \;
     - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +2 -name "LBANN_*_setup_build_tools.sh" -type f -print -exec rm {} \;
     - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +2 -name "LBANN_*.cmake" -type f -print -exec rm {} \;
