@@ -1573,10 +1573,11 @@ void model::clear_gradients()
   }
 }
 
-void model::forward_prop(execution_mode mode)
+void model::forward_prop(execution_mode mode, bool skip_callbacks)
 {
   LBANN_CALIPER_MARK_FUNCTION;
-  do_model_forward_prop_begin_cbs(mode);
+  if (!skip_callbacks)
+    do_model_forward_prop_begin_cbs(mode);
 
   // Clear activations in reference counter
   m_activation_refcnt.clear();
@@ -1586,9 +1587,11 @@ void model::forward_prop(execution_mode mode)
 
     if (this->is_subgraph_parallelism_enabled()) {
       if (l.get_run_layer_in_subgraph()) {
-        do_layer_forward_prop_begin_cbs(mode, &l);
+        if (!skip_callbacks)
+          do_layer_forward_prop_begin_cbs(mode, &l);
         l.forward_prop();
-        do_layer_forward_prop_end_cbs(mode, &l);
+        if (!skip_callbacks)
+          do_layer_forward_prop_end_cbs(mode, &l);
       }
       else {
         // To Do: Fix last batch problem in sub-graph parallelism
@@ -1596,15 +1599,18 @@ void model::forward_prop(execution_mode mode)
       }
     }
     else {
-      do_layer_forward_prop_begin_cbs(mode, &l);
+      if (!skip_callbacks)
+        do_layer_forward_prop_begin_cbs(mode, &l);
       l.forward_prop();
-      do_layer_forward_prop_end_cbs(mode, &l);
+      if (!skip_callbacks)
+        do_layer_forward_prop_end_cbs(mode, &l);
     }
   }
-  do_model_forward_prop_end_cbs(mode);
+  if (!skip_callbacks)
+    do_model_forward_prop_end_cbs(mode);
 }
 
-void model::backward_prop(bool compute_weight_grads_only)
+void model::backward_prop(bool compute_weight_grads_only, bool skip_callbacks)
 {
   LBANN_CALIPER_MARK_FUNCTION;
 
@@ -1614,7 +1620,8 @@ void model::backward_prop(bool compute_weight_grads_only)
   bool const envvar_disable_layers =
     !arg_parser.get<bool>(LBANN_OPTION_NO_BACKPROP_DISABLE);
 
-  do_model_backward_prop_begin_cbs();
+  if (!skip_callbacks)
+    do_model_backward_prop_begin_cbs();
 
   for (El::Int i = get_num_layers() - 1; i >= 0; --i) {
 
@@ -1644,10 +1651,12 @@ void model::backward_prop(bool compute_weight_grads_only)
 
     if (this->is_subgraph_parallelism_enabled()) {
       if (l.get_run_layer_in_subgraph()) {
-        do_layer_backward_prop_begin_cbs(&l);
+        if (!skip_callbacks)
+          do_layer_backward_prop_begin_cbs(&l);
         if (enable_layer)
           l.back_prop();
-        do_layer_backward_prop_end_cbs(&l);
+        if (!skip_callbacks)
+          do_layer_backward_prop_end_cbs(&l);
       }
       else {
         // To Do: Fix last batch problem in sub-graph parallelism
@@ -1655,10 +1664,12 @@ void model::backward_prop(bool compute_weight_grads_only)
       }
     }
     else {
-      do_layer_backward_prop_begin_cbs(&l);
+      if (!skip_callbacks)
+        do_layer_backward_prop_begin_cbs(&l);
       if (enable_layer)
         l.back_prop();
-      do_layer_backward_prop_end_cbs(&l);
+      if (!skip_callbacks)
+        do_layer_backward_prop_end_cbs(&l);
     }
 
     // Terminate early if all gradients have been computed
@@ -1683,7 +1694,8 @@ void model::backward_prop(bool compute_weight_grads_only)
     }
   }
 
-  do_model_backward_prop_end_cbs();
+  if (!skip_callbacks)
+    do_model_backward_prop_end_cbs();
 }
 
 void model::update_weights()

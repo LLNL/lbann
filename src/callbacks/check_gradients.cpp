@@ -58,30 +58,12 @@ namespace {
 EvalType compute_objective_function(model& m)
 {
   const auto& c = static_cast<SGDExecutionContext&>(m.get_execution_context());
-  m.get_activation_reference_counter().clear();
-
-  // Forward prop, skipping input layers
-
-  if (m.is_subgraph_parallelism_enabled()) {
-    for (auto&& l : m.get_layers()) {
-      if (dynamic_cast<input_layer<DataType>*>(l) == nullptr &&
-          l->get_run_layer_in_subgraph()) {
-        l->forward_prop();
-      }
-    }
-  }
-  else // sub-graph parallelism not enabled
-  {
-    for (auto&& l : m.get_layers()) {
-      if (dynamic_cast<input_layer<DataType>*>(l) == nullptr) {
-        l->forward_prop();
-      }
-    }
-  }
+  const auto mode = c.get_execution_mode();
 
   // Get objective function value
+  m.forward_prop(mode, true);
   auto&& obj = m.get_objective_function();
-  const auto mode = c.get_execution_mode();
+
   const auto mini_batch_size = m.get_current_mini_batch_size();
   obj->start_evaluation(mode, mini_batch_size);
   return obj->finish_evaluation(mode, mini_batch_size);
@@ -134,6 +116,7 @@ struct CheckWeightsFunctor : DefaultErrorReporter
     // Get weights matrix and gradient
     auto const& weights_matrix = dtw.get_values_sharded();
     auto const& gradient = dtw.get_optimizer()->get_gradient_sharded();
+
     // Iterate through weights matrix entries
     for (El::Int col = 0; col < weights_matrix.Width(); ++col) {
       for (El::Int row = 0; row < weights_matrix.Height(); ++row) {
@@ -275,13 +258,7 @@ void check_gradients::do_check_gradients(model& m) const
   for (auto&& met : m.get_metrics()) {
     met->reset_statistics(mode);
   }
-  for (auto&& w : m.get_weights()) {
-    auto&& opt = w->get_optimizer();
-    if (opt != nullptr) {
-      opt->clear_gradient();
-    }
-  }
-  m.get_activation_reference_counter().clear();
+  m.clear_gradients();
 
   // Load data in input layers
   data_coordinator& dc = get_trainer().get_data_coordinator();
@@ -289,25 +266,15 @@ void check_gradients::do_check_gradients(model& m) const
   El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
   m.set_current_mini_batch_size(current_mini_batch_size);
 
-  // checking subgrpah parallelism
-  if (m.is_subgraph_parallelism_enabled()) {
-    for (auto&& l : m.get_layers()) {
-      if (dynamic_cast<input_layer<DataType>*>(l) != nullptr &&
-          l->get_run_layer_in_subgraph()) {
-        l->forward_prop();
-      }
-    }
-  }
-  else {
-    for (auto&& l : m.get_layers()) {
-      if (dynamic_cast<input_layer<DataType>*>(l) != nullptr) {
-        l->forward_prop();
-      }
-    }
-  }
-
   // Compute objective function
   const EvalType objective = compute_objective_function(m);
+
+  // Compute gradients
+  m.get_objective_function()->differentiate();
+  m.get_objective_function()->compute_weight_regularization();
+
+  // Compute analytical gradients through model
+  m.backward_prop(false, /*skip_callbacks=*/true);
 
   // Choose finite difference step
   // Note: Consider a central difference scheme:
@@ -323,30 +290,13 @@ void check_gradients::do_check_gradients(model& m) const
   // epsilon based on the minimum step size of the float data type
   const EvalType epsilon =
     std::pow(std::numeric_limits<DataType>::epsilon(), 0.9);
-  const EvalType step_size =
+  const EvalType step_size = std::max(
+    std::numeric_limits<EvalType>::epsilon(),
     (m_step_size > EvalType{0} ? m_step_size
-                               : std::fabs(objective) * El::Sqrt(epsilon));
+                               : std::fabs(objective) * El::Sqrt(epsilon)));
   EvalType expected_error =
     std::pow((epsilon * objective / step_size + std::pow(step_size, 4) / 18),
              0.9);
-
-  // Compute gradients
-  m.get_objective_function()->differentiate();
-  m.get_objective_function()->compute_weight_regularization();
-
-  // checking subgraph parallelism
-  if (m.is_subgraph_parallelism_enabled()) {
-    for (El::Int i = layers.size() - 1; i >= 0; --i) {
-      if (layers[i]->get_run_layer_in_subgraph()) {
-        layers[i]->back_prop();
-      }
-    }
-  }
-  else {
-    for (El::Int i = layers.size() - 1; i >= 0; --i) {
-      layers[i]->back_prop();
-    }
-  }
 
   // Print objective function value
   if (comm.am_world_master()) {
@@ -383,7 +333,6 @@ void check_gradients::do_check_gradients(model& m) const
   }
 
   // Clean up
-  // TODO: Why
   auto&& dataset = dc.get_dataset(mode);
   dataset.set_initial_position();
   m.get_objective_function()->reset_statistics(mode);

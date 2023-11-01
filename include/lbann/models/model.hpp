@@ -399,9 +399,10 @@ public:
   void reset_epoch_statistics(execution_mode mode);
 
   /** @brief Forward propagation step. */
-  void forward_prop(execution_mode mode);
+  void forward_prop(execution_mode mode, bool skip_callbacks = false);
   /** @brief Backward propagation step. */
-  void backward_prop(bool compute_weight_grads_only = true);
+  void backward_prop(bool compute_weight_grads_only = true,
+                     bool skip_callbacks = false);
   /** Evaluate any metrics in the model */
   void evaluate_metrics(execution_mode mode, uint64_t current_mini_batch_size);
   /** @brief Clear each optimizer's gradient.
