@@ -151,11 +151,6 @@ protected:
   std::tuple<El::Int, El::Int, El::DistData, El::DistData>
   get_matrix_info() const final;
 
-  El::BaseDistMatrix* get_raw_gradient_pointer() override
-  {
-    return m_gradient.get();
-  }
-
 private:
   /** @brief Weights being optimized. */
   data_type_weights<TensorDataType>* m_weights = nullptr;

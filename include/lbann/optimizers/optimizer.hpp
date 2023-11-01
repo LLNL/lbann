@@ -281,11 +281,6 @@ public:
    */
   void finish_gradient_sync();
 
-protected:
-  /** @brief Returns the raw gradient pointer, if exists.
-   */
-  virtual El::BaseDistMatrix* get_raw_gradient_pointer() { return nullptr; }
-
 private:
   /** @brief LBANN communicator. */
   lbann_comm* m_comm;

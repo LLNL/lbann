@@ -44,20 +44,11 @@ public:
                      El::Int width,
                      El::DistData dist_data,
                      El::DistData grad_dist_data,
-                     bool sharded_weights,
-                     AbsDistMatType* mat = nullptr)
+                     bool sharded_weights)
     : local_gradient_contrib_{AbsDistMatType::Instantiate(dist_data)},
-      local_contrib_dist_{dist_data},
       global_gradient_{AbsDistMatType::Instantiate(grad_dist_data)},
-      global_dist_{grad_dist_data},
       sharded_weights_{sharded_weights}
   {
-    if (mat != nullptr) {
-      if (sharded_weights)
-        El::View(*global_gradient_, *mat);
-      else
-        El::View(*local_gradient_contrib_, *mat);
-    }
     ensure_gradient_memory(height, width);
     El::Zeros(*local_gradient_contrib_, height, width);
     if (sharded_weights) {
@@ -187,19 +178,19 @@ public:
   void clear() override
   {
     this->set_status(optimizer_gradient_status::cleared);
+    local_gradient_contrib_->Empty();
+    global_gradient_->Empty();
   }
 
 private:
   /** Matches the distribution of gathered (unsharded) weights in backprop. */
   std::unique_ptr<AbsDistMatType> local_gradient_contrib_;
-  El::DistData local_contrib_dist_;
 
   /** Matches the distribution of data_type_optimizer<T>::m_gradient (i.e.,
    *  post synchronization). Will view said matrix if only one data type
    *  exists.
    */
   std::unique_ptr<AbsDistMatType> global_gradient_;
-  El::DistData global_dist_;
 
   Al::request sync_req_;
   bool sharded_weights_;
@@ -241,14 +232,11 @@ optimizer::get_gradient_buffer(TensorDataType& buf_scale,
   if (!grad_mgr_ptr) {
     // If our optimizer contains a gradient of the same data type, reuse (view)
     // it in the gradient manager
-    El::BaseDistMatrix* grad = this->get_raw_gradient_pointer();
-    auto* matptr = dynamic_cast<El::AbstractDistMatrix<TensorDataType>*>(grad);
     grad_mgr_ptr = std::make_unique<GradMgrType>(std::get<HEIGHT>(mat_info),
                                                  std::get<WIDTH>(mat_info),
                                                  std::get<DISTDATA_L>(mat_info),
                                                  std::get<DISTDATA_G>(mat_info),
-                                                 this->is_sharded(),
-                                                 matptr);
+                                                 this->is_sharded());
     grad_mgr_ptr->set_status(optimizer_gradient_status::cleared);
   }
   grad_mgr_ptr->ensure_gradient_memory(std::get<HEIGHT>(mat_info),
@@ -329,7 +317,7 @@ void optimizer::accumulate_all_gradient_contributions(
     auto const& contrib =
       dynamic_cast<AbsDistMatType const&>(grad_mgr.global_gradient());
     if (contrib.DistData() == gradient.DistData()) {
-      // No need to do anything, gradient already views contrib
+      El::LockedView(gradient, contrib);
     }
     else {
       LBANN_ERROR("Should never need this copy.");
@@ -345,13 +333,13 @@ void optimizer::accumulate_all_gradient_contributions(
   // Handle the case that only 1 update of a different type is needed.
   if (num_updates == 1UL &&
       this->m_local_gradient_contributions.size() == 1UL) {
-    auto const& grad_mgr =
-      *(this->m_local_gradient_contributions.begin()->second);
+    auto& grad_mgr = *(this->m_local_gradient_contributions.begin()->second);
     if (grad_mgr.get_status() != optimizer_gradient_status::ready) {
       LBANN_ERROR("Expected ready status. Got: ",
                   to_string(grad_mgr.get_status()));
     }
     El::Copy(grad_mgr.global_gradient(), gradient);
+    grad_mgr.clear();
   }
   else if (this->m_local_gradient_contributions.size() > 1UL) {
     // Need a temporary matrix for the type-casted copy.
@@ -361,7 +349,7 @@ void optimizer::accumulate_all_gradient_contributions(
     for (auto const& grad_mgr_v : this->m_local_gradient_contributions) {
       if (grad_mgr_v.first == this_type_idx)
         continue;
-      auto const& grad_mgr = *(grad_mgr_v.second);
+      auto& grad_mgr = *(grad_mgr_v.second);
       if (grad_mgr.get_status() != optimizer_gradient_status::ready) {
         LBANN_ERROR("Expected ready status. Got: ",
                     to_string(grad_mgr.get_status()));
@@ -369,6 +357,7 @@ void optimizer::accumulate_all_gradient_contributions(
       auto const& grad_base = grad_mgr.global_gradient();
       El::Copy(grad_base, *tmp);
       El::Axpy(one, *tmp, gradient);
+      grad_mgr.clear();
     }
   }
 }
