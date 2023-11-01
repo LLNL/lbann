@@ -56,9 +56,11 @@ def apply_fsdp_allweights(model: lbann.Model, args: argparse.Namespace):
 
     # Loop over all weights
     for layer in model.layers:
+        # As a heuristic, only shard the first set of weights (i.e., no
+        # biases) and skip layer normalization
+        if 'LayerNorm' in str(type(layer)):
+            continue
         if layer.weights:
-            # As a heuristic, only shard the first set of weights (i.e., no
-            # biases)
             if len(layer.weights) > 0:
                 layer.weights[0].sharded = True
 

@@ -329,6 +329,11 @@ void data_type_layer<InputTensorDataType,
   }
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
+  // Release the now-unnecessary full weight views
+  for (size_t i = 0; i < this->num_weights(); ++i) {
+    this->get_weights(i).release_full_weights();
+  }
+
   // Release activation memory as necessary
   model* m = this->get_model();
   if (m != nullptr) {
