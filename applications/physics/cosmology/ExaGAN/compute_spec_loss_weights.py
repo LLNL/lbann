@@ -13,7 +13,7 @@ def inv_transform(x):
 dim = samples.shape[-1]
 ki = np.fft.fftfreq(dim)
 k = np.sqrt(ki[:,None,None]**2 + ki[None,:,None]**2 + ki[None,None,:]**2)
-bins = np.linspace(0, 1, 65)
+bins = np.linspace(0, 1, samples.shape[-1]+1)
 counts = np.histogram(k.ravel(), bins)[0]
 
 def compute_pk(i):
