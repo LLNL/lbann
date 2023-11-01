@@ -1617,6 +1617,12 @@ dnnDataType_t get_convolution_data_type<fp16>() {
   return get_data_type<float>();
 }
 #endif
+#ifdef LBANN_HAS_HALF
+template <>
+dnnDataType_t get_convolution_data_type<half_float::half>() {
+  return get_data_type<float>();
+}
+#endif
 template <>
 dnnDataType_t get_convolution_data_type<float>() {
   return get_data_type<float>();

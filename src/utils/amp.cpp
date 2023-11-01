@@ -30,6 +30,10 @@
 
 #include <cmath>
 
+namespace {
+bool isfinite(__half x) { return std::isfinite((float) x); }
+}
+
 namespace lbann {
 namespace amp {
 
@@ -126,7 +130,7 @@ void is_finite_and_unscale_cpu(
     LBANN_OMP_PARALLEL_FOR_ARGS(reduction(&& : is_finite))
     for (size_t i = 0; i < local_size; ++i) {
       auto& val = buf[i];
-      if (!std::isfinite(val)) {
+      if (!isfinite(val)) {
         is_finite = false;
       }
       val *= inv_scale;
@@ -140,7 +144,7 @@ void is_finite_and_unscale_cpu(
     for (size_t col = 0; col < width; ++col) {
       for (size_t row = 0; row < height; ++row) {
         auto& val = buf[row + col*ldim];
-        if (!std::isfinite(val)) {
+        if (!isfinite(val)) {
           is_finite = false;
         }
         val *= inv_scale;
