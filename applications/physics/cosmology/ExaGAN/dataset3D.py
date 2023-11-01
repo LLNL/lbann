@@ -12,15 +12,18 @@ w  = [input_width]*3
 w.insert(0,1)
 dims = np.prod(w)
 #Total sample is 101251 X 1 64 64 64
-nsamples = 11000 #for 128^3
-samples = None
+samples = np.load(data_dir, mmap_mode='r', allow_pickle=True)
+nsamples = len(samples)
 
 # Sample access functions
 def get_sample(index):
-    global samples
-    if samples is None:
-      samples = np.load(data_dir, mmap_mode='r', allow_pickle=True)[:nsamples]
-    return samples[index].flatten()
+    transpose_inds = [0] + np.random.permutation([1, 2, 3]).tolist()
+    flip_axes = []
+    for i in range(1, 4):
+        if np.random.uniform() < 0.5:
+            flip_axes.append(i)
+    sample = np.flip(np.transpose(samples[index], transpose_inds), flip_axes)
+    return sample.flatten()
 
 def num_samples():
     return nsamples
