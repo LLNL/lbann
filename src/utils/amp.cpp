@@ -30,9 +30,11 @@
 
 #include <cmath>
 
+#ifdef LBANN_HAS_HALF
 namespace {
 bool isfinite(__half x) { return std::isfinite((float) x); }
 }
+#endif
 
 namespace lbann {
 namespace amp {
