@@ -45,19 +45,38 @@ namespace lbann {
 __device__ __forceinline__ __half gpu_lib::atomic_add(__half* address,
                                                       __half val)
 {
-  unsigned int* address_as_uint = (unsigned int*)address;
-  unsigned int old = *address_as_uint;
-  __half* old_as_half = (__half*)&old;
-  unsigned int assumed;
-  unsigned int updated;
-  __half* updated_as_half = (__half*)&updated;
-  do {
-    assumed = old;
-    updated = old;
-    *updated_as_half += val;
-    old = atomicCAS(address_as_uint, assumed, updated);
-  } while (assumed != old);
-  return *old_as_half;
+  if (((uintptr_t)address) % 4 > 0) // odd-indexed element
+  {
+    // Previous element
+    unsigned int* prv_address_as_uint = (unsigned int*)(address - 1);
+    unsigned int old = *prv_address_as_uint;
+    unsigned int assumed, updated;
+    __half* old_as_half = ((__half*)&old)+1;
+    __half* updated_as_half = ((__half*)&updated)+1;
+    do {
+      assumed = old;
+      updated = old;
+      *updated_as_half += val;
+      old = atomicCAS(prv_address_as_uint, assumed, updated);
+    } while (assumed != old);
+    return *old_as_half;
+  }
+  else
+  {
+    unsigned int* address_as_uint = (unsigned int*)address;
+    unsigned int old = *address_as_uint;
+    __half* old_as_half = (__half*)&old;
+    unsigned int assumed;
+    unsigned int updated;
+    __half* updated_as_half = (__half*)&updated;
+    do {
+      assumed = old;
+      updated = old;
+      *updated_as_half += val;
+      old = atomicCAS(address_as_uint, assumed, updated);
+    } while (assumed != old);
+    return *old_as_half;
+  }
 }
 __device__ __forceinline__ float gpu_lib::atomic_add(float* address, float val)
 {
