@@ -29,7 +29,7 @@
 #include "lbann/callbacks/gradient_clipping.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
-#include "lbann/layers/loss/l2_norm2.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/utils/protobuf.hpp"
@@ -38,6 +38,7 @@
 
 #include "callback_helpers.hpp"
 #include "lbann/proto/callbacks.pb.h"
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 #include <vector>
 
@@ -84,27 +85,92 @@ void clip_gradient_norm::write_specific_proto(lbann_data::Callback& proto) const
   msg->set_value(m_value);
 }
 
+struct NormComputer
+{
+  model& m;
+  DataType* global_norm_ptr;
+  bool compute_global_norm;
+  float norm_value;
+
+  NormComputer(model& arg_m,
+               DataType* arg_global_norm_ptr,
+               bool arg_compute_global_norm,
+               float arg_norm_value)
+    : m(arg_m),
+      global_norm_ptr(arg_global_norm_ptr),
+      compute_global_norm(arg_compute_global_norm),
+      norm_value(arg_norm_value)
+  {}
+
+  template <typename... Ts>
+  void DispatchError(Ts&&...)
+  {
+    LBANN_ERROR("Unable to dispatch functor.");
+  }
+
+  template <typename... Ts>
+  void DeductionError(Ts&&...)
+  {
+    LBANN_ERROR("Unable to deduce an argument type.");
+  }
+
+  template <typename TensorDataType>
+  void operator()(data_type_weights<TensorDataType>& dtw)
+  {
+    data_type_optimizer<TensorDataType>* opt = dtw.get_optimizer();
+    auto& grad = opt->get_gradient_sharded();
+    if (!compute_global_norm) {
+      TensorDataType norm;
+
+      // The following call may incur communication (e.g., with sharded weights)
+      norm = El::Nrm2(grad);
+      if (norm > norm_value) {
+        El::Scale(norm_value / norm, grad);
+      }
+    }
+    else {
+      const auto& gradmat = grad.LockedMatrix();
+      TensorDataType local_norm = TensorDataType(0);
+      if ((gradmat.GetDevice() == El::Device::CPU)) {
+        const auto& gradmatrix =
+          static_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(
+            gradmat);
+        local_norm = El::Nrm2(gradmatrix);
+#ifdef LBANN_HAS_GPU
+      }
+      else if ((gradmat.GetDevice() == El::Device::GPU)) {
+        const auto& gradmatrix =
+          static_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(
+            gradmat);
+        hydrogen::gpu_blas::Nrm2(
+          size_t(gradmatrix.Width() * gradmatrix.Height()),
+          gradmatrix.LockedBuffer(),
+          size_t(1),
+          &local_norm,
+          El::SyncInfoFromMatrix(gradmatrix));
+#endif // LBANN_HAS_GPU
+      }
+      *global_norm_ptr += local_norm * local_norm;
+    }
+  }
+};
+
 void clip_gradient_norm::on_backward_prop_end(model* m)
 {
+  using WeightsTypes =
+    h2::meta::tlist::ExpandTL<data_type_weights, supported_layer_data_type>;
+  using Dispatcher = h2::multimethods::
+    SwitchDispatcher<NormComputer, void, weights, WeightsTypes>;
   DataType global_norm = 0;
   for (weights* w : this->m_weights) {
-    optimizer* opt = w->get_optimizer();
-    if (opt != nullptr) {
-      DataType norm;
-      auto* dt_opt = dynamic_cast<data_type_optimizer<DataType>*>(opt);
-      auto& grad = dt_opt->get_gradient_sharded();
-      norm = El::Nrm2(grad);
-
-      if (!m_global_norm && norm > this->m_value) {
-        El::Scale(this->m_value / norm, grad);
-      }
-      else if (m_global_norm) {
-        global_norm += norm * norm;
-      }
+    if (w->get_optimizer() != nullptr) {
+      Dispatcher::Exec(NormComputer(*m, &global_norm, m_global_norm, m_value),
+                       *w);
     }
   }
 
   if (m_global_norm) {
+    global_norm = m->get_comm()->trainer_allreduce(global_norm);
     global_norm = std::sqrt(global_norm);
     if (global_norm > this->m_value) {
       DataType scale = this->m_value / global_norm;
