@@ -94,16 +94,14 @@ def add_weights(model: lbann.Model) -> None:
     their datatype will be set to FP32.
 
     """
-    # TODO: There may be an edge case where a layer with a bias has
-    # had only one of its weights added.
     for layer in model.layers:
         layer_type = type(layer)
-        if layer.weights:
-            # Set weights to FP32 if they don't have a datatype set.
-            for weight in layer.weights:
-                if weight.datatype is None:
-                    weight.datatype = lbann.DataType.FLOAT
-        elif layer_type in NUM_WEIGHTS:
+        # Set weights to FP32 if they don't have a datatype set.
+        for weight in layer.weights:
+            if weight.datatype is None:
+                weight.datatype = lbann.DataType.FLOAT
+        # If only some weights are present, add the remainder.
+        if layer_type in NUM_WEIGHTS:
             num_weights = NUM_WEIGHTS[layer_type](layer)
             initializer_types = WEIGHTS_INITIALIZERS[layer_type]
             has_optimizer = WEIGHTS_OPTIMIZERS.get(layer_type, [])
@@ -114,6 +112,8 @@ def add_weights(model: lbann.Model) -> None:
                 initializer=initializer_types[i](),
                 optimizer=(has_optimizer[i]() if len(has_optimizer) > i else None))
                        for i in range(num_weights)]
+            # Drop existing weights.
+            weights = weights[len(layer.weights):]
             layer.add_weights(weights)
             model.weights.update(weights)
 
