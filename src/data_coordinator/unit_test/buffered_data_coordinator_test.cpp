@@ -207,7 +207,7 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
   SECTION("Asynchronous I/O (Background) - Dead Reckoning")
   {
     // Test first minibatch
-    int remaining_num_mini_batches = num_mini_batches, data = 0;
+    uint64_t remaining_num_mini_batches = num_mini_batches, data = 0;
     bool epoch_done = false;
 
     // For background data fetching, start with a synchronous request.
@@ -224,7 +224,7 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
         // Last mini-batch should be only a single sample
         current_mini_batch_size = 1;
       }
-      CHECK(samples.Width() == current_mini_batch_size);
+      CHECK((uint64_t)samples.Width() == current_mini_batch_size);
       for (uint64_t i = 0; i < current_mini_batch_size; ++i) {
         CHECK(samples.LockedMatrix()(0, i) == data);
         ++data;
@@ -237,7 +237,7 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
   SECTION("Asynchronous I/O (Background)")
   {
     // Test first minibatch
-    int data = 0;
+    uint64_t data = 0;
     bool epoch_done = false;
 
     // For background data fetching, start with a synchronous request.
@@ -254,7 +254,7 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
         // Last mini-batch should be only a single sample
         current_mini_batch_size = 1;
       }
-      CHECK(samples.Width() == current_mini_batch_size);
+      CHECK((uint64_t)samples.Width() == current_mini_batch_size);
       for (uint64_t i = 0; i < current_mini_batch_size; ++i) {
         CHECK(samples.LockedMatrix()(0, i) == data);
         ++data;
