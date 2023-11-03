@@ -51,7 +51,7 @@ void mnist_reader::set_defaults()
   m_supported_input_types[INPUT_DATA_TYPE_LABELS] = true;
 }
 
-bool mnist_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx)
+bool mnist_reader::fetch_datum(CPUMat& X, uint64_t data_id, uint64_t mb_idx)
 {
   int pixelcount = m_image_width * m_image_height;
   std::vector<unsigned char>& tmp = m_image_data[data_id];
@@ -68,7 +68,7 @@ bool mnist_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx)
   return true;
 }
 
-bool mnist_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx)
+bool mnist_reader::fetch_label(CPUMat& Y, uint64_t data_id, uint64_t mb_idx)
 {
   if (!m_gan_labelling) { // default
     unsigned char label = m_image_data[data_id][0];
@@ -83,7 +83,7 @@ bool mnist_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx)
            // model
       // mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) :
       // Y.Set(m_gan_label_value,mb_idx,1);
-      mb_idx < ((int)get_trainer().get_max_mini_batch_size() / 2)
+      mb_idx < (get_trainer().get_max_mini_batch_size() / 2)
         ? Y.Set(1, mb_idx, 1)
         : Y.Set(m_gan_label_value, mb_idx, 1);
     }

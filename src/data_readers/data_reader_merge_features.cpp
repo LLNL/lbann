@@ -111,7 +111,9 @@ void data_reader_merge_features::setup(int num_io_threads,
   }
 }
 
-bool data_reader_merge_features::fetch_datum(CPUMat& X, int data_id, int mb_idx)
+bool data_reader_merge_features::fetch_datum(CPUMat& X,
+                                             uint64_t data_id,
+                                             uint64_t mb_idx)
 {
   int start = 0;
   for (auto&& reader : m_data_readers) {
@@ -123,14 +125,16 @@ bool data_reader_merge_features::fetch_datum(CPUMat& X, int data_id, int mb_idx)
   return true;
 }
 
-bool data_reader_merge_features::fetch_label(CPUMat& Y, int data_id, int mb_idx)
+bool data_reader_merge_features::fetch_label(CPUMat& Y,
+                                             uint64_t data_id,
+                                             uint64_t mb_idx)
 {
   return m_label_reader->fetch_label(Y, data_id, mb_idx);
 }
 
 bool data_reader_merge_features::fetch_response(CPUMat& Y,
-                                                int data_id,
-                                                int mb_idx)
+                                                uint64_t data_id,
+                                                uint64_t mb_idx)
 {
   return m_label_reader->fetch_response(Y, data_id, mb_idx);
 }

@@ -85,7 +85,7 @@ void data_coordinator::serialize(Archive& ar)
 
 void data_coordinator::setup(
   thread_pool& io_thread_pool,
-  int max_mini_batch_size,
+  uint64_t max_mini_batch_size,
   std::map<execution_mode, generic_data_reader*> data_readers)
 {
   m_io_thread_pool = &io_thread_pool;
@@ -145,7 +145,7 @@ void data_coordinator::setup(
 }
 
 void data_coordinator::calculate_num_iterations_per_epoch(
-  int max_mini_batch_size,
+  uint64_t max_mini_batch_size,
   dataset& dataset)
 {
   if (!dataset.initialized()) {
@@ -483,7 +483,8 @@ bool data_coordinator::is_execution_mode_valid(execution_mode mode) const
   return (get_total_num_samples(mode) != static_cast<long>(0));
 }
 
-void data_coordinator::calculate_num_iterations_per_epoch(int mini_batch_size)
+void data_coordinator::calculate_num_iterations_per_epoch(
+  uint64_t mini_batch_size)
 {
   for (auto& [mode, dataset] : m_datasets) {
     if (!dataset.initialized())
@@ -511,7 +512,8 @@ void data_coordinator::register_active_data_field(
   m_active_data_fields_dim_map[data_field] = data_field_dim_map;
 }
 
-size_t data_coordinator::get_num_iterations_per_epoch(execution_mode mode) const
+uint64_t
+data_coordinator::get_num_iterations_per_epoch(execution_mode mode) const
 {
   if (!dataset_exists(mode)) {
     return 0;
@@ -520,7 +522,7 @@ size_t data_coordinator::get_num_iterations_per_epoch(execution_mode mode) const
   return (dataset.initialized()) ? dataset.get_num_iterations_per_epoch() : 0;
 }
 
-int data_coordinator::get_current_step_in_epoch(execution_mode mode) const
+uint64_t data_coordinator::get_current_step_in_epoch(execution_mode mode) const
 {
   if (!dataset_exists(mode)) {
     return 0;
@@ -529,7 +531,7 @@ int data_coordinator::get_current_step_in_epoch(execution_mode mode) const
   return (dataset.initialized()) ? dataset.get_current_step_in_epoch() : 0;
 }
 
-int data_coordinator::get_mini_batch_size(execution_mode mode) const
+uint64_t data_coordinator::get_mini_batch_size(execution_mode mode) const
 {
   if (!dataset_exists(mode)) {
     return 0;
@@ -538,7 +540,7 @@ int data_coordinator::get_mini_batch_size(execution_mode mode) const
   return (dataset.initialized()) ? dataset.get_mini_batch_size() : 0;
 }
 
-int data_coordinator::get_last_mini_batch_size(execution_mode mode) const
+uint64_t data_coordinator::get_last_mini_batch_size(execution_mode mode) const
 {
   if (!dataset_exists(mode)) {
     return 0;
@@ -547,7 +549,8 @@ int data_coordinator::get_last_mini_batch_size(execution_mode mode) const
   return (dataset.initialized()) ? dataset.get_last_mini_batch_size() : 0;
 }
 
-int data_coordinator::get_current_mini_batch_size(execution_mode mode) const
+uint64_t
+data_coordinator::get_current_mini_batch_size(execution_mode mode) const
 {
   if (!dataset_exists(mode)) {
     return 0;

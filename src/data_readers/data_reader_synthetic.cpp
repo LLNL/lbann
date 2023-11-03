@@ -107,8 +107,8 @@ data_reader_synthetic::data_reader_synthetic(
 
 bool data_reader_synthetic::fetch_data_field(data_field_type data_field,
                                              CPUMat& X,
-                                             int data_id,
-                                             int mb_idx)
+                                             uint64_t data_id,
+                                             uint64_t mb_idx)
 {
   if (m_synthetic_data_fields.find(data_field) ==
       m_synthetic_data_fields.end()) {
@@ -120,14 +120,18 @@ bool data_reader_synthetic::fetch_data_field(data_field_type data_field,
   return true;
 }
 
-bool data_reader_synthetic::fetch_datum(CPUMat& X, int data_id, int mb_idx)
+bool data_reader_synthetic::fetch_datum(CPUMat& X,
+                                        uint64_t data_id,
+                                        uint64_t mb_idx)
 {
   auto X_v = El::View(X, El::ALL, El::IR(mb_idx, mb_idx + 1));
   fill_matrix(X_v);
   return true;
 }
 
-bool data_reader_synthetic::fetch_label(CPUMat& Y, int data_id, int mb_idx)
+bool data_reader_synthetic::fetch_label(CPUMat& Y,
+                                        uint64_t data_id,
+                                        uint64_t mb_idx)
 {
   if (m_num_labels == 0) {
     LBANN_ERROR("Synthetic data reader does not have labels");
@@ -137,7 +141,9 @@ bool data_reader_synthetic::fetch_label(CPUMat& Y, int data_id, int mb_idx)
   return true;
 }
 
-bool data_reader_synthetic::fetch_response(CPUMat& Y, int data_id, int mb_idx)
+bool data_reader_synthetic::fetch_response(CPUMat& Y,
+                                           uint64_t data_id,
+                                           uint64_t mb_idx)
 {
   if (m_response_dimensions.empty()) {
     LBANN_ERROR("Synthetic data reader does not have responses");

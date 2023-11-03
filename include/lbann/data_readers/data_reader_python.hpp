@@ -60,14 +60,14 @@ public:
 
 protected:
   bool fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers,
-                        El::Int current_position_in_data_set,
-                        El::Int block_offset,
-                        El::Int block_stride,
-                        El::Int sample_stride,
-                        El::Int mb_size,
+                        uint64_t current_position_in_data_set,
+                        uint64_t block_offset,
+                        uint64_t block_stride,
+                        uint64_t sample_stride,
+                        uint64_t mb_size,
                         El::Matrix<El::Int>& indices_fetched,
                         execution_mode mode = execution_mode::invalid) override;
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_label(CPUMat& Y, uint64_t data_id, uint64_t mb_idx) override;
 
 private:
   /** @brief Dimensions of data sample tensor. */

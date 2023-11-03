@@ -45,7 +45,7 @@ public:
 
 public:
   /** Number of samples in the current mini-batch */
-  int m_num_samples_fetched;
+  uint64_t m_num_samples_fetched;
   /** Distributed matrix used to stage local data to layer output */
   std::map<data_field_type, std::unique_ptr<AbsDistMatrixType>> m_input_buffers;
   std::atomic<bool> m_fetch_data_in_background;
@@ -54,7 +54,7 @@ public:
   El::Matrix<El::Int> m_indices_fetched_per_mb;
   // Once samples are fetched, track if the data fields are pulled out
   // of the buffer
-  std::map<data_field_type, El::Int> m_num_samples_per_field_distributed;
+  std::map<data_field_type, uint64_t> m_num_samples_per_field_distributed;
 
   data_buffer(lbann_comm* comm)
     : m_num_samples_fetched(0), m_fetch_data_in_background(false)
@@ -119,7 +119,7 @@ public:
     return &m_indices_fetched_per_mb;
   }
 
-  int num_samples_ready() const { return m_num_samples_fetched; }
+  uint64_t num_samples_ready() const { return m_num_samples_fetched; }
 
   void set_data_fetch_future(std::future<void> future)
   {

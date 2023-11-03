@@ -114,8 +114,8 @@ public:
   virtual void close_samples_file_handle(const size_t i,
                                          bool check_if_in_use = false);
 
-  void compute_epochs_file_usage(const std::vector<int>& shufled_indices,
-                                 int mini_batch_size,
+  void compute_epochs_file_usage(const std::vector<uint64_t>& shufled_indices,
+                                 uint64_t mini_batch_size,
                                  const lbann_comm& comm);
 
   virtual bool is_file_handle_valid(const file_handle_t& h) const = 0;

@@ -32,9 +32,9 @@
 #include "lbann/utils/dataset.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 
-#ifdef LBANN_HAS_DISTCONV
-#include "lbann/data_readers/data_reader_hdf5_legacy.hpp"
-#endif // LBANN_HAS_DISTCONV
+// #ifdef LBANN_HAS_DISTCONV
+// #include "lbann/data_readers/data_reader_hdf5_legacy.hpp"
+// #endif // LBANN_HAS_DISTCONV
 
 /** Design docs:
  * IO buffers should go away and be rolled into the data coordinator.
@@ -88,14 +88,14 @@ public:
   /** Setup the thread pool and data readers within the data coordinator */
   virtual void
   setup(thread_pool& io_thread_pool,
-        int max_mini_batch_size,
+        uint64_t max_mini_batch_size,
         std::map<execution_mode, generic_data_reader*> data_readers);
 
   /** Once all of the models that are served by this data coordinator are
    *  setup and have registered which data fields are required, setup the local
    *  buffers in the data coordinator for each data field.
    */
-  virtual void setup_data_fields(int max_mini_batch_size) = 0;
+  virtual void setup_data_fields(uint64_t max_mini_batch_size) = 0;
 
   void set_trainer(trainer& trainer) { m_trainer = &trainer; }
 
@@ -170,15 +170,15 @@ public:
   virtual El::Matrix<El::Int>*
   get_sample_indices_per_mb(execution_mode mode) = 0;
 
-  virtual size_t get_num_iterations_per_epoch(execution_mode mode) const;
+  virtual uint64_t get_num_iterations_per_epoch(execution_mode mode) const;
 
-  virtual int get_current_step_in_epoch(execution_mode mode) const;
+  virtual uint64_t get_current_step_in_epoch(execution_mode mode) const;
 
-  virtual int get_mini_batch_size(execution_mode mode) const;
+  virtual uint64_t get_mini_batch_size(execution_mode mode) const;
 
-  virtual int get_last_mini_batch_size(execution_mode mode) const;
+  virtual uint64_t get_last_mini_batch_size(execution_mode mode) const;
 
-  virtual int get_current_mini_batch_size(execution_mode mode) const;
+  virtual uint64_t get_current_mini_batch_size(execution_mode mode) const;
 
   //************************************************************************
   // Helper functions to access the data readers
@@ -271,9 +271,9 @@ public:
   //
   //************************************************************************
 
-  void calculate_num_iterations_per_epoch(int max_mini_batch_size,
+  void calculate_num_iterations_per_epoch(uint64_t max_mini_batch_size,
                                           dataset& dataset);
-  void calculate_num_iterations_per_epoch(int mini_batch_size);
+  void calculate_num_iterations_per_epoch(uint64_t mini_batch_size);
 
   bool at_new_epoch(execution_mode mode) const;
 

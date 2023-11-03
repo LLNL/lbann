@@ -103,9 +103,9 @@ void variable_minibatch::on_epoch_end(model* m)
   }
 
   lbann_comm* comm = m->get_comm();
-  size_t new_mbsize = 0;
+  uint64_t new_mbsize = 0;
   float new_lr = 0.0f;
-  size_t ramp_time = 0;
+  uint64_t ramp_time = 0;
   if (schedule(m, new_mbsize, new_lr, ramp_time)) {
     if (new_mbsize > t.get_max_mini_batch_size()) {
       if (comm->am_trainer_master()) {
@@ -184,9 +184,9 @@ step_minibatch::step_minibatch(size_t starting_mbsize,
 {}
 
 bool step_minibatch::schedule(model* m,
-                              size_t& new_mbsize,
+                              uint64_t& new_mbsize,
                               float& new_lr,
-                              size_t& ramp_time)
+                              uint64_t& ramp_time)
 {
   const auto& c =
     static_cast<const SGDExecutionContext&>(m->get_execution_context());

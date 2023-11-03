@@ -113,7 +113,7 @@ public:
 
   void load() override;
 
-  bool fetch_conduit_node(conduit::Node& sample, int data_id) override;
+  bool fetch_conduit_node(conduit::Node& sample, uint64_t data_id) override;
 
   /** @brief Sets the name of the yaml experiment file */
   void set_experiment_schema_filename(std::string fn)
@@ -192,7 +192,8 @@ private:
   /** filled in by construct_linearized_size_lookup_tables;
    *  used by get_data_dims()
    */
-  std::unordered_map<std::string, std::vector<El::Int>> m_data_dims_lookup_table;
+  std::unordered_map<std::string, std::vector<El::Int>>
+    m_data_dims_lookup_table;
 
   /** filled in by construct_linearized_size_lookup_tables;
    *  used by get_linearized_size()

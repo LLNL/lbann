@@ -881,7 +881,7 @@ void data_reader_jag_conduit::load()
 void data_reader_jag_conduit::preload_helper(const hid_t& h,
                                              const std::string& sample_name,
                                              const std::string& field_name,
-                                             int data_id,
+                                             uint64_t data_id,
                                              conduit::Node& node)
 {
   const std::string path = sample_name + field_name;
@@ -1244,10 +1244,10 @@ std::vector<El::Int> data_reader_jag_conduit::get_slice_points_dependent() const
   return get_slice_points_impl(m_dependent_groups);
 }
 
-int data_reader_jag_conduit::get_num_data() const
+uint64_t data_reader_jag_conduit::get_num_data() const
 {
 
-  return (int)m_shuffled_indices.size();
+  return m_shuffled_indices.size();
 }
 
 int data_reader_jag_conduit::get_num_labels() const { return m_num_labels; }
@@ -1521,7 +1521,7 @@ data_reader_jag_conduit::get_inputs(const size_t sample_id,
 std::vector<CPUMat>
 data_reader_jag_conduit::create_datum_views(CPUMat& X,
                                             const std::vector<size_t>& sizes,
-                                            const int mb_idx) const
+                                            const uint64_t mb_idx) const
 {
   std::vector<CPUMat> X_v(sizes.size());
   El::Int h = 0;
@@ -1536,10 +1536,10 @@ data_reader_jag_conduit::create_datum_views(CPUMat& X,
 
 bool data_reader_jag_conduit::fetch(
   CPUMat& X,
-  int data_id,
+  uint64_t data_id,
   conduit::Node& sample,
-  int mb_idx,
-  int tid,
+  uint64_t mb_idx,
+  uint64_t tid,
   const data_reader_jag_conduit::variable_t vt,
   const std::string tag)
 {
@@ -1614,7 +1614,9 @@ bool data_reader_jag_conduit::fetch(
   return true;
 }
 
-bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx)
+bool data_reader_jag_conduit::fetch_datum(CPUMat& X,
+                                          uint64_t data_id,
+                                          uint64_t mb_idx)
 {
   int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_data_sizes();
@@ -1646,7 +1648,9 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx)
   return ok;
 }
 
-bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx)
+bool data_reader_jag_conduit::fetch_response(CPUMat& X,
+                                             uint64_t data_id,
+                                             uint64_t mb_idx)
 {
   const auto& c = static_cast<const SGDExecutionContext&>(
     get_trainer().get_data_coordinator().get_execution_context());
@@ -1672,7 +1676,9 @@ bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx)
   return ok;
 }
 
-bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx)
+bool data_reader_jag_conduit::fetch_label(CPUMat& Y,
+                                          uint64_t data_id,
+                                          uint64_t mb_idx)
 {
   if (m_gan_label_value)
     Y.Set(m_gan_label_value,
@@ -1682,7 +1688,7 @@ bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx)
               // model
     // mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) :
     // Y.Set(m_gan_label_value,mb_idx,1);
-    mb_idx < ((int)get_trainer()
+    mb_idx < (get_trainer()
                 .get_max_mini_batch_size() /*get_current_mini_batch_size()*/
               / 2)
       ? Y.Set(1, mb_idx, 1)

@@ -76,7 +76,7 @@ void mesh_reader::setup(int num_io_threads,
   }
 }
 
-bool mesh_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx)
+bool mesh_reader::fetch_datum(CPUMat& X, uint64_t data_id, uint64_t mb_idx)
 {
   if (m_random_flips) {
     fast_rng_gen& gen = get_fast_io_generator();
@@ -94,14 +94,16 @@ bool mesh_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx)
   return true;
 }
 
-bool mesh_reader::fetch_response(CPUMat& Y, int data_id, int mb_idx)
+bool mesh_reader::fetch_response(CPUMat& Y, uint64_t data_id, uint64_t mb_idx)
 {
   Mat Y_view = El::View(Y, El::ALL, El::IR(mb_idx));
   load_file(data_id, m_target_name, Y_view);
   return true;
 }
 
-void mesh_reader::load_file(int data_id, const std::string channel, Mat& mat)
+void mesh_reader::load_file(uint64_t data_id,
+                            const std::string channel,
+                            Mat& mat)
 {
   const std::string filename = construct_filename(channel, data_id);
   std::ifstream f(filename, std::ios::binary);
@@ -134,7 +136,8 @@ void mesh_reader::load_file(int data_id, const std::string channel, Mat& mat)
   }
 }
 
-std::string mesh_reader::construct_filename(std::string channel, int data_id)
+std::string mesh_reader::construct_filename(std::string channel,
+                                            uint64_t data_id)
 {
   std::string filename = get_file_dir() + channel + m_suffix + "/" + channel;
   char idx[m_index_length + 1];

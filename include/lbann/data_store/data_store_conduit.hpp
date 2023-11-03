@@ -93,12 +93,12 @@ public:
   void set_data_reader_ptr(generic_data_reader* reader);
 
   //! convenience handle
-  void set_shuffled_indices(const std::vector<int>* indices);
+  void set_shuffled_indices(const std::vector<uint64_t>* indices);
 
   /** @brief Returns the number of samples summed over all ranks */
   size_t get_num_global_indices() const;
 
-  void setup(int mini_batch_size);
+  void setup(uint64_t mini_batch_size);
 
   // TODO FIXME
   void check_mem_capacity(lbann_comm* comm,
@@ -107,27 +107,28 @@ public:
                           size_t offset);
 
   /** @brief Returns the conduit Node associated with the data_id */
-  const conduit::Node& get_conduit_node(int data_id) const;
+  const conduit::Node& get_conduit_node(uint64_t data_id) const;
 
   /** @brief Set a conduit node in the data store
    *
    * if 'already_have = true' then the passed 'node' was obtained by a call to
    * get_empty_node(); note, we do this to prevent copying the node
    */
-  void set_conduit_node(int data_id,
+  void set_conduit_node(uint64_t data_id,
                         const conduit::Node& node,
                         bool already_have = false);
 
-  void set_preloaded_conduit_node(int data_id, const conduit::Node& node);
+  void set_preloaded_conduit_node(uint64_t data_id, const conduit::Node& node);
 
-  void spill_preloaded_conduit_node(int data_id, const conduit::Node& node);
+  void spill_preloaded_conduit_node(uint64_t data_id,
+                                    const conduit::Node& node);
 
   const conduit::Node& get_random_node() const;
 
   const conduit::Node& get_random_node(const std::string& field) const;
 
   /// returns an empty node
-  conduit::Node& get_empty_node(int data_id);
+  conduit::Node& get_empty_node(uint64_t data_id);
 
   //=================================================================
   // methods for setting and querying the data store's mode
@@ -247,14 +248,14 @@ public:
    */
   void preload_local_cache();
 
-  void start_exchange_mini_batch_data(size_t current_pos,
-                                      size_t mb_size,
+  void start_exchange_mini_batch_data(uint64_t current_pos,
+                                      uint64_t mb_size,
                                       bool at_new_epoch);
   void finish_exchange_mini_batch_data();
 
   void set_node_sizes_vary() { m_node_sizes_vary = true; }
 
-  bool has_conduit_node(int data_id) const;
+  bool has_conduit_node(uint64_t data_id) const;
 
   /// only used for debugging; pass --debug on cmd line to get
   /// each data store to print to a different file. This is made
@@ -481,7 +482,7 @@ private:
   mutable map_pssi_t m_owner;
 
   /// convenience handle
-  const std::vector<int>* m_shuffled_indices;
+  const std::vector<uint64_t>* m_shuffled_indices;
 
   /** @brief Contains the conduit nodes that are "owned" by this rank
    *
@@ -489,7 +490,7 @@ private:
    * Must be mutable since rhs.m_owner may be modified in copy_members,
    * in which rhs is const.
    */
-  mutable std::unordered_map<int, conduit::Node> m_data;
+  mutable std::unordered_map<uint64_t, conduit::Node> m_data;
 
   /** @brief Contains a cache of the conduit nodes that are
    * "owned" by this rank
@@ -498,15 +499,15 @@ private:
    * during the first epoch, if we're running in local cache mode
    * and explicitly loading
    */
-  std::unordered_map<int, conduit::Node> m_data_cache;
+  std::unordered_map<uint64_t, conduit::Node> m_data_cache;
 
   /// Contains the list of data IDs that will be received
-  std::vector<int> m_recv_data_ids;
+  std::vector<uint64_t> m_recv_data_ids;
   map_ii_t m_recv_sample_sizes;
 
   /// This vector contains Nodes that this processor needs for
   /// the current minibatch; this is filled in by exchange_data()
-  std::unordered_map<int, conduit::Node> m_minibatch_data;
+  std::unordered_map<uint64_t, conduit::Node> m_minibatch_data;
 
   /// work space; used in exchange_data
   std::vector<conduit::Node> m_send_buffer;
@@ -530,11 +531,11 @@ private:
   /// maps processor id -> set of indices (whose associated samples)
   /// this proc needs to send. (formerly called "proc_to_indices);
   /// this is filled in by build_indices_i_will_send()
-  std::vector<std::unordered_set<int>> m_indices_to_send;
+  std::vector<std::unordered_set<uint64_t>> m_indices_to_send;
 
   /// maps processor id -> set of indices (whose associated samples)
   /// this proc needs to recv from others. (formerly called "needed")
-  std::vector<std::unordered_set<int>> m_indices_to_recv;
+  std::vector<std::unordered_set<uint64_t>> m_indices_to_recv;
 
   //=========================================================================
   // methods follow
@@ -554,13 +555,13 @@ private:
 
   /// fills in m_indices_to_send and returns the number of samples
   /// that will be sent
-  int build_indices_i_will_send(int current_pos, int mb_size);
+  int build_indices_i_will_send(uint64_t current_pos, uint64_t mb_size);
 
   /// fills in m_indices_to_recv and returns the number of samples
   /// that will be received
-  int build_indices_i_will_recv(int current_pos, int mb_size);
+  int build_indices_i_will_recv(uint64_t current_pos, uint64_t mb_size);
 
-  void error_check_compacted_node(const conduit::Node& nd, int data_id);
+  void error_check_compacted_node(const conduit::Node& nd, uint64_t data_id);
 
   /** @brief All ranks exchange their cached data */
   void exchange_local_caches();

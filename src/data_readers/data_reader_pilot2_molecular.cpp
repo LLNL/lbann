@@ -126,7 +126,9 @@ void pilot2_molecular_reader::load()
   select_subset_of_data();
 }
 
-bool pilot2_molecular_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx)
+bool pilot2_molecular_reader::fetch_datum(CPUMat& X,
+                                          uint64_t data_id,
+                                          uint64_t mb_idx)
 {
 
   const int frame = get_frame(data_id);
@@ -170,9 +172,9 @@ bool pilot2_molecular_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx)
 }
 
 void pilot2_molecular_reader::fetch_molecule(CPUMat& X,
-                                             int data_id,
+                                             uint64_t data_id,
                                              int idx,
-                                             int mb_idx)
+                                             uint64_t mb_idx)
 {
   const int frame = get_frame(data_id);
   // Compute the offset in features for this frame.

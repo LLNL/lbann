@@ -877,7 +877,8 @@ void hdf5_data_reader::repack_image(conduit::Node& node,
   }
 }
 
-const std::vector<El::Int> hdf5_data_reader::get_data_dims(std::string name) const
+const std::vector<El::Int>
+hdf5_data_reader::get_data_dims(std::string name) const
 {
   std::unordered_map<std::string, std::vector<El::Int>>::const_iterator iter =
     m_data_dims_lookup_table.find(name);
@@ -976,7 +977,8 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables(
   }
 }
 
-bool hdf5_data_reader::fetch_conduit_node(conduit::Node& sample, int data_id)
+bool hdf5_data_reader::fetch_conduit_node(conduit::Node& sample,
+                                          uint64_t data_id)
 {
   // get the pathname to the data, and verify it exists in the conduit::Node
   const conduit::Node& node = get_data_store().get_conduit_node(data_id);

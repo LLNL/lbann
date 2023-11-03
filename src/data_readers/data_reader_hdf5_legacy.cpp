@@ -149,7 +149,7 @@ void hdf5_reader<TensorDataType>::read_hdf5_hyperslab(hsize_t h_data,
 }
 
 template <typename TensorDataType>
-void hdf5_reader<TensorDataType>::read_hdf5_sample(int data_id,
+void hdf5_reader<TensorDataType>::read_hdf5_sample(uint64_t data_id,
                                                    TensorDataType* sample,
                                                    TensorDataType* labels)
 {
@@ -268,7 +268,8 @@ void hdf5_reader<TensorDataType>::load()
 }
 
 template <typename TensorDataType>
-void hdf5_reader<TensorDataType>::load_sample(conduit::Node& node, int data_id)
+void hdf5_reader<TensorDataType>::load_sample(conduit::Node& node,
+                                              uint64_t data_id)
 {
   const std::string conduit_key = LBANN_DATA_ID_STR(data_id);
   auto& conduit_obj = node[conduit_key + "/slab"];
@@ -297,7 +298,9 @@ void hdf5_reader<TensorDataType>::load_sample(conduit::Node& node, int data_id)
 }
 
 template <typename TensorDataType>
-bool hdf5_reader<TensorDataType>::fetch_label(Mat& Y, int data_id, int mb_idx)
+bool hdf5_reader<TensorDataType>::fetch_label(Mat& Y,
+                                              uint64_t data_id,
+                                              uint64_t mb_idx)
 {
   if (!this->has_labels()) {
     return generic_data_reader::fetch_label(Y, data_id, mb_idx);
@@ -325,8 +328,8 @@ bool hdf5_reader<TensorDataType>::fetch_label(Mat& Y, int data_id, int mb_idx)
 template <typename TensorDataType>
 bool hdf5_reader<TensorDataType>::fetch_data_field(data_field_type data_field,
                                                    CPUMat& Y,
-                                                   int data_id,
-                                                   int mb_idx)
+                                                   uint64_t data_id,
+                                                   uint64_t mb_idx)
 {
   if (data_field != INPUT_DATA_TYPE_LABEL_RECONSTRUCTION) {
     NOT_IMPLEMENTED(data_field);
@@ -363,7 +366,9 @@ bool hdf5_reader<TensorDataType>::fetch_data_field(data_field_type data_field,
 }
 
 template <typename TensorDataType>
-bool hdf5_reader<TensorDataType>::fetch_datum(Mat& X, int data_id, int mb_idx)
+bool hdf5_reader<TensorDataType>::fetch_datum(Mat& X,
+                                              uint64_t data_id,
+                                              uint64_t mb_idx)
 {
   prof_region_begin("fetch_datum", prof_colors[0], false);
 
@@ -395,7 +400,7 @@ bool hdf5_reader<TensorDataType>::fetch_datum(Mat& X, int data_id, int mb_idx)
 }
 
 template <typename TensorDataType>
-void hdf5_reader<TensorDataType>::fetch_datum_conduit(Mat& X, int data_id)
+void hdf5_reader<TensorDataType>::fetch_datum_conduit(Mat& X, uint64_t data_id)
 {
   const std::string conduit_key = LBANN_DATA_ID_STR(data_id);
   // Create a node to hold all of the data
@@ -425,8 +430,8 @@ void hdf5_reader<TensorDataType>::fetch_datum_conduit(Mat& X, int data_id)
 // get from a cached response
 template <typename TensorDataType>
 bool hdf5_reader<TensorDataType>::fetch_response(Mat& Y,
-                                                 int data_id,
-                                                 int mb_idx)
+                                                 uint64_t data_id,
+                                                 uint64_t mb_idx)
 {
   if (!this->has_responses()) {
     return generic_data_reader::fetch_response(Y, data_id, mb_idx);

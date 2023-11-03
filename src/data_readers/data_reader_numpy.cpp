@@ -130,7 +130,7 @@ void numpy_reader::load()
   select_subset_of_data();
 }
 
-bool numpy_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
+bool numpy_reader::fetch_datum(Mat& X, uint64_t data_id, uint64_t mb_idx)
 {
   int features_size = m_num_features;
   if (m_supported_input_types[INPUT_DATA_TYPE_LABELS] ||
@@ -152,7 +152,7 @@ bool numpy_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
   return true;
 }
 
-bool numpy_reader::fetch_label(Mat& Y, int data_id, int mb_idx)
+bool numpy_reader::fetch_label(Mat& Y, uint64_t data_id, uint64_t mb_idx)
 {
   if (!m_supported_input_types[INPUT_DATA_TYPE_LABELS]) {
     throw lbann_exception("numpy_reader: do not have labels");
@@ -170,7 +170,7 @@ bool numpy_reader::fetch_label(Mat& Y, int data_id, int mb_idx)
   return true;
 }
 
-bool numpy_reader::fetch_response(Mat& Y, int data_id, int mb_idx)
+bool numpy_reader::fetch_response(Mat& Y, uint64_t data_id, uint64_t mb_idx)
 {
   if (!m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
     throw lbann_exception("numpy_reader: do not have responses");

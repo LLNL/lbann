@@ -75,7 +75,7 @@ class persist;
 class generic_data_reader
 {
 public:
-  using unused_index_map_t = std::map<execution_mode, std::vector<int>>;
+  using unused_index_map_t = std::map<execution_mode, std::vector<uint64_t>>;
 
   /**
    * ctor
@@ -214,7 +214,7 @@ public:
    * Set shuffled indices; primary use is for testing
    * and reproducibility
    */
-  void set_shuffled_indices(const std::vector<int>& indices)
+  void set_shuffled_indices(const std::vector<uint64_t>& indices)
   {
     m_shuffled_indices = indices;
   }
@@ -222,7 +222,7 @@ public:
   /**
    * Returns the shuffled indices; primary use is for testing.
    */
-  const std::vector<int>& get_shuffled_indices() const
+  const std::vector<uint64_t>& get_shuffled_indices() const
   {
     return m_shuffled_indices;
   }
@@ -240,7 +240,7 @@ public:
    * Sets the absolute number of data samples that will be used for training or
    * testing.
    */
-  void set_absolute_sample_count(size_t s);
+  void set_absolute_sample_count(uint64_t s);
 
   /**
    * Set the fraction of the data set to use for training and validation or
@@ -289,19 +289,19 @@ public:
 
   /** @brief Fetch a mini-batch worth of data, including samples, labels,
    * responses (as appropriate) */
-  int fetch(std::map<data_field_type, CPUMat*>& input_buffers,
-            El::Matrix<El::Int>& indices_fetched,
-            El::Int current_position_in_data_set,
-            El::Int sample_stride,
-            size_t mb_size,
-            execution_mode mode = execution_mode::invalid);
+  uint64_t fetch(std::map<data_field_type, CPUMat*>& input_buffers,
+                 El::Matrix<El::Int>& indices_fetched,
+                 uint64_t current_position_in_data_set,
+                 uint64_t sample_stride,
+                 uint64_t mb_size,
+                 execution_mode mode = execution_mode::invalid);
 
-  int fetch(std::vector<conduit::Node>& samples,
-            El::Matrix<El::Int>& indices_fetched,
-            El::Int current_position_in_data_set,
-            El::Int sample_stride,
-            size_t mb_size,
-            execution_mode mode = execution_mode::invalid);
+  uint64_t fetch(std::vector<conduit::Node>& samples,
+                 El::Matrix<El::Int>& indices_fetched,
+                 uint64_t current_position_in_data_set,
+                 uint64_t sample_stride,
+                 uint64_t mb_size,
+                 execution_mode mode = execution_mode::invalid);
 
   /** @brief Check to see if the data reader supports this specific data field
    */
@@ -343,8 +343,8 @@ public:
   }
 
   void
-  start_data_store_mini_batch_exchange(El::Int current_position_in_data_set,
-                                       El::Int current_mini_batch_size,
+  start_data_store_mini_batch_exchange(uint64_t current_position_in_data_set,
+                                       uint64_t current_mini_batch_size,
                                        bool at_new_epoch);
   void finish_data_store_mini_batch_exchange();
 
@@ -391,16 +391,16 @@ public:
   }
 
   /// Get a pointer to the start of the shuffled indices.
-  int* get_indices() { return &m_shuffled_indices[0]; }
+  uint64_t* get_indices() { return &m_shuffled_indices[0]; }
   /// Get the number of samples in this dataset.
-  virtual int get_num_data() const { return (int)m_shuffled_indices.size(); }
+  virtual uint64_t get_num_data() const { return m_shuffled_indices.size(); }
   /// Get the number of unused samples in this dataset.
-  int get_num_unused_data(execution_mode m) const;
+  size_t get_num_unused_data(execution_mode m) const;
 
   /// Get a pointer to the start of the unused sample indices.
-  int* get_unused_data(execution_mode m);
+  uint64_t* get_unused_data(execution_mode m);
 
-  const std::vector<int>& get_unused_indices(execution_mode m);
+  const std::vector<uint64_t>& get_unused_indices(execution_mode m);
 
   /**
    * Optionally resizes the shuffled indices based on the data reader
@@ -504,7 +504,7 @@ protected:
    * Return the absolute number of data samples that will be used for training
    * or testing.
    */
-  size_t get_absolute_sample_count() const;
+  uint64_t get_absolute_sample_count() const;
 
   /**
    * Returns the fraction of the dataset to be used for training or testing.
@@ -525,20 +525,20 @@ protected:
 
   virtual bool
   fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers,
-                   El::Int current_position_in_data_set,
-                   El::Int block_offset,
-                   El::Int block_stride,
-                   El::Int sample_stride,
-                   El::Int mb_size,
+                   uint64_t current_position_in_data_set,
+                   uint64_t block_offset,
+                   uint64_t block_stride,
+                   uint64_t sample_stride,
+                   uint64_t mb_size,
                    El::Matrix<El::Int>& indices_fetched,
                    execution_mode mode = execution_mode::invalid);
 
   bool fetch_data_block_conduit(std::vector<conduit::Node>& samples,
-                                El::Int current_position_in_data_set,
-                                El::Int block_offset,
-                                El::Int block_stride,
-                                El::Int sample_stride,
-                                El::Int mb_size,
+                                uint64_t current_position_in_data_set,
+                                uint64_t block_offset,
+                                uint64_t block_stride,
+                                uint64_t sample_stride,
+                                uint64_t mb_size,
                                 El::Matrix<El::Int>& indices_fetched,
                                 execution_mode mode = execution_mode::invalid);
 
@@ -556,14 +556,14 @@ protected:
    */
   virtual bool fetch_data_field(data_field_type data_field,
                                 CPUMat& Y,
-                                int data_id,
-                                int mb_idx)
+                                uint64_t data_id,
+                                uint64_t mb_idx)
   {
     NOT_IMPLEMENTED("fetch_data_field");
     return false;
   }
 
-  virtual bool fetch_conduit_node(conduit::Node& sample, int data_id)
+  virtual bool fetch_conduit_node(conduit::Node& sample, uint64_t data_id)
   {
     NOT_IMPLEMENTED("fetch_conduit_node");
     return false;
@@ -575,7 +575,7 @@ protected:
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_datum(CPUMat& X, int data_id, int mb_idx)
+  virtual bool fetch_datum(CPUMat& X, uint64_t data_id, uint64_t mb_idx)
   {
     NOT_IMPLEMENTED("fetch_dataum");
     return false;
@@ -587,7 +587,7 @@ protected:
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_label(CPUMat& Y, int data_id, int mb_idx)
+  virtual bool fetch_label(CPUMat& Y, uint64_t data_id, uint64_t mb_idx)
   {
     NOT_IMPLEMENTED("fetch_label");
     return false;
@@ -599,7 +599,7 @@ protected:
    * @param data_id The index of the datum to fetch.
    * @param mb_idx The index within the mini-batch.
    */
-  virtual bool fetch_response(CPUMat& Y, int data_id, int mb_idx)
+  virtual bool fetch_response(CPUMat& Y, uint64_t data_id, uint64_t mb_idx)
   {
     NOT_IMPLEMENTED("fetch_response");
     return false;
@@ -611,7 +611,7 @@ protected:
    * @param mb_idx The index within the mini-batch.
    * @return Single column view of the input matrix
    */
-  inline CPUMat create_datum_view(CPUMat& X, const int mb_idx)
+  inline CPUMat create_datum_view(CPUMat& X, const uint64_t mb_idx)
   {
     return El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
   }
@@ -631,7 +631,7 @@ protected:
   virtual void shuffle_indices(rng_gen& gen);
 
 public:
-  std::vector<int> m_shuffled_indices;
+  std::vector<uint64_t> m_shuffled_indices;
   /// Record of the indicies that are not being used for training
   unused_index_map_t m_unused_indices;
 
@@ -642,7 +642,7 @@ public:
   std::string m_data_fn;
   std::string m_label_fn;
   bool m_shuffle;
-  size_t m_absolute_sample_count;
+  uint64_t m_absolute_sample_count;
   std::map<execution_mode, double> m_execution_mode_split_fraction;
   double m_use_fraction;
   int m_first_n;
@@ -661,7 +661,7 @@ public:
    * Returns the number of the shuffled indices that are to be
    * used. Code in this method was formerly in select_subset_of_data()
    */
-  size_t get_num_indices_to_use() const;
+  uint64_t get_num_indices_to_use() const;
 
   friend class data_reader_merge_features;
   friend class data_reader_merge_samples;
@@ -705,7 +705,7 @@ protected:
 
 template <typename T>
 inline void set_minibatch_item(Mat& M,
-                               const int mb_idx,
+                               const uint64_t mb_idx,
                                const T* const ptr,
                                const size_t count)
 {

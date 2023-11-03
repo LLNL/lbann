@@ -180,7 +180,7 @@ void numpy_npz_reader::load()
   select_subset_of_data();
 }
 
-bool numpy_npz_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
+bool numpy_npz_reader::fetch_datum(Mat& X, uint64_t data_id, uint64_t mb_idx)
 {
   Mat X_v = El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
 
@@ -207,7 +207,7 @@ bool numpy_npz_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
   return true;
 }
 
-bool numpy_npz_reader::fetch_label(Mat& Y, int data_id, int mb_idx)
+bool numpy_npz_reader::fetch_label(Mat& Y, uint64_t data_id, uint64_t mb_idx)
 {
   if (!m_supported_input_types[INPUT_DATA_TYPE_LABELS]) {
     throw lbann_exception("numpy_npz_reader: do not have labels");
@@ -217,7 +217,7 @@ bool numpy_npz_reader::fetch_label(Mat& Y, int data_id, int mb_idx)
   return true;
 }
 
-bool numpy_npz_reader::fetch_response(Mat& Y, int data_id, int mb_idx)
+bool numpy_npz_reader::fetch_response(Mat& Y, uint64_t data_id, uint64_t mb_idx)
 {
   if (!m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
     throw lbann_exception("numpy_npz_reader: do not have responses");

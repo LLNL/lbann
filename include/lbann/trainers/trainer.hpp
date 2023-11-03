@@ -192,7 +192,7 @@ public:
   persist& get_persist_obj() noexcept { return m_persist; }
 
   /** @brief Get the trainer's maximum mini-batch size. */
-  size_t get_max_mini_batch_size() const noexcept
+  uint64_t get_max_mini_batch_size() const noexcept
   {
     return m_max_mini_batch_size;
   }
@@ -327,7 +327,7 @@ private:
    *  @note This field will eventually be local to the particular,
    *        instance of the training context.
    */
-  size_t m_max_mini_batch_size;
+  uint64_t m_max_mini_batch_size;
 
   /** @brief Root of the random seed tree.
    *  @details Either default or user supplied.

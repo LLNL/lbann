@@ -112,11 +112,11 @@ int python_reader::get_linearized_label_size() const
 
 bool python_reader::fetch_data_block(
   std::map<data_field_type, CPUMat*>& input_buffers,
-  El::Int current_position_in_data_set,
-  El::Int block_offset,
-  El::Int block_stride,
-  El::Int sample_stride,
-  El::Int mb_size,
+  uint64_t current_position_in_data_set,
+  uint64_t block_offset,
+  uint64_t block_stride,
+  uint64_t sample_stride,
+  uint64_t mb_size,
   El::Matrix<El::Int>& indices_fetched,
   const execution_mode mode)
 {
@@ -130,8 +130,8 @@ bool python_reader::fetch_data_block(
   python::global_interpreter_lock gil;
 
   // Check that shared memory array is large enough
-  const El::Int sample_size = get_linearized_data_size();
-  const El::Int array_size = PyObject_Length(m_shared_memory_array);
+  const uint64_t sample_size = get_linearized_data_size();
+  const uint64_t array_size = PyObject_Length(m_shared_memory_array);
   if (array_size < sample_size * mb_size) {
     std::stringstream err;
     err << "Python data reader attempted to load "
@@ -143,7 +143,7 @@ bool python_reader::fetch_data_block(
 
   // Get arguments for sample access function
   python::object args_list = PyList_New(0);
-  for (El::Int i = 0; i < mb_size; ++i) {
+  for (uint64_t i = 0; i < mb_size; ++i) {
     El::Int sample_index =
       m_shuffled_indices[current_position_in_data_set + i * sample_stride];
     El::Int array_offset = sample_size * i;
@@ -170,7 +170,7 @@ bool python_reader::fetch_data_block(
   return true;
 }
 
-bool python_reader::fetch_label(CPUMat& Y, int data_id, int col)
+bool python_reader::fetch_label(CPUMat& Y, uint64_t data_id, uint64_t col)
 {
   return true;
 }

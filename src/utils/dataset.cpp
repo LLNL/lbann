@@ -30,7 +30,7 @@
 
 namespace lbann {
 
-void dataset::setup(long total_samples, std::string role)
+void dataset::setup(uint64_t total_samples, std::string role)
 {
   m_base_offset = 0;
   m_sample_stride = 1;
@@ -50,7 +50,8 @@ void dataset::setup(long total_samples, std::string role)
 template <class Archive>
 void dataset::serialize(Archive& ar)
 {
-  ar(CEREAL_NVP(m_num_samples_processed),
+  ar(CEREAL_NVP(m_role),
+     CEREAL_NVP(m_num_samples_processed),
      CEREAL_NVP(m_total_samples),
      CEREAL_NVP(m_current_mini_batch_idx),
 
@@ -68,8 +69,7 @@ void dataset::serialize(Archive& ar)
 
      CEREAL_NVP(m_num_iterations_per_epoch),
 
-     CEREAL_NVP(m_initialized),
-     CEREAL_NVP(m_role)
+     CEREAL_NVP(m_initialized)
 
   );
 
@@ -83,7 +83,7 @@ void dataset::serialize(Archive& ar)
   }
 }
 
-int dataset::get_next_mini_batch_size() const
+uint64_t dataset::get_next_mini_batch_size() const
 {
   if (m_current_mini_batch_idx + 1 > (m_num_iterations_per_epoch - 1)) {
     return 0;
@@ -96,7 +96,7 @@ int dataset::get_next_mini_batch_size() const
   }
 }
 
-int dataset::get_current_mini_batch_size() const
+uint64_t dataset::get_current_mini_batch_size() const
 {
   if (m_current_mini_batch_idx > (m_num_iterations_per_epoch - 1)) {
     return 0;
@@ -109,7 +109,7 @@ int dataset::get_current_mini_batch_size() const
   }
 }
 
-int dataset::get_next_position() const
+uint64_t dataset::get_next_position() const
 {
   /// If the next mini-batch for this rank is going to be the last
   /// mini-batch, take the proper (possibly reduced) step to
@@ -122,7 +122,7 @@ int dataset::get_next_position() const
   }
 }
 
-void dataset::set_mini_batch_size(const int s) { m_mini_batch_size = s; }
+void dataset::set_mini_batch_size(const uint64_t s) { m_mini_batch_size = s; }
 
 void dataset::print_config()
 {

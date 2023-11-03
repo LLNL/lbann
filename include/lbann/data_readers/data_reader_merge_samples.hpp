@@ -84,9 +84,9 @@ public:
   const std::vector<int>& get_num_samples_psum() { return m_num_samples_psum; }
 
 protected:
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_datum(CPUMat& X, uint64_t data_id, uint64_t mb_idx) override;
+  bool fetch_label(CPUMat& Y, uint64_t data_id, uint64_t mb_idx) override;
+  bool fetch_response(CPUMat& Y, uint64_t data_id, uint64_t mb_idx) override;
 
   /// Partial sums of the number of samples in each reader.
   std::vector<int> m_num_samples_psum;

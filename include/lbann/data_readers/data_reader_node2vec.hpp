@@ -84,11 +84,11 @@ public:
 
 protected:
   bool fetch_data_block(CPUMat& X,
-                        El::Int block_offset,
-                        El::Int block_stride,
-                        El::Int mb_size,
+                        uint64_t block_offset,
+                        uint64_t block_stride,
+                        uint64_t mb_size,
                         El::Matrix<El::Int>& indices_fetched) override;
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_label(CPUMat& Y, uint64_t data_id, uint64_t mb_idx) override;
 
 private:
   /** Perform random walks, starting from random local vertices.

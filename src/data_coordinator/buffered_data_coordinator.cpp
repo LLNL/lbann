@@ -58,7 +58,7 @@ void buffered_data_coordinator<TensorDataType>::register_active_data_field(
 
 template <typename TensorDataType>
 void buffered_data_coordinator<TensorDataType>::setup_data_fields(
-  int max_mini_batch_size)
+  uint64_t max_mini_batch_size)
 {
   if (m_active_data_fields.size() == 0) {
     LBANN_ERROR(
@@ -76,12 +76,13 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(
   }
 #endif // LBANN_HAS_DISTCONV
 
-  El::Int local_mini_batch_size =
+  uint64_t local_mini_batch_size =
     max_mini_batch_size / this->m_comm->get_procs_per_trainer();
-  El::Int partial_mini_batch_size =
+  uint64_t partial_mini_batch_size =
     max_mini_batch_size % this->m_comm->get_procs_per_trainer();
   if (partial_mini_batch_size > 0 &&
-      this->m_comm->get_rank_in_trainer() < partial_mini_batch_size) {
+      static_cast<uint64_t>(this->m_comm->get_rank_in_trainer()) <
+        partial_mini_batch_size) {
     local_mini_batch_size++;
   }
 
@@ -139,8 +140,8 @@ template <typename TensorDataType>
 int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
   const execution_mode mode,
   data_buffer<IODataType>& buf,
-  El::Int loaded_mini_batch_size,
-  El::Int relative_base_position,
+  uint64_t loaded_mini_batch_size,
+  uint64_t relative_base_position,
   int buffer_id)
 {
   generic_data_reader* dr = get_data_reader(mode);
@@ -164,14 +165,14 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
     }
 
     // Compute the size of the current local mini-batch
-    const int end_pos = std::min(
-      static_cast<size_t>(relative_base_position + loaded_mini_batch_size),
-      dr->m_shuffled_indices.size());
-    const int local_mini_batch_size =
-      std::min(El::Int{((end_pos - relative_base_position) +
-                        ds.get_sample_stride() - 1) /
-                       ds.get_sample_stride()},
-               local_input_buffers[INPUT_DATA_TYPE_SAMPLES]->Width());
+    const uint64_t end_pos =
+      std::min(relative_base_position + loaded_mini_batch_size,
+               dr->m_shuffled_indices.size());
+    const uint64_t local_mini_batch_size = std::min(
+      ((end_pos - relative_base_position) + ds.get_sample_stride() - 1) /
+        ds.get_sample_stride(),
+      static_cast<uint64_t>(
+        local_input_buffers[INPUT_DATA_TYPE_SAMPLES]->Width()));
 
     /** @brief Each rank will fetch a mini-batch worth of data into its buffer
      */
@@ -208,7 +209,7 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
 template <typename TensorDataType>
 void buffered_data_coordinator<TensorDataType>::fp_setup_data(
   data_buffer<IODataType>& buffer,
-  El::Int cur_mini_batch_size)
+  uint64_t cur_mini_batch_size)
 {
 #ifdef LBANN_HAS_DISTCONV
   cur_mini_batch_size *= dc::get_number_of_io_partitions();
@@ -222,8 +223,8 @@ template <typename TensorDataType>
 void buffered_data_coordinator<TensorDataType>::fetch_data_in_background(
   int future_active_buffer,
   data_buffer<IODataType>& buf,
-  El::Int loaded_mini_batch_size,
-  El::Int relative_base_position,
+  uint64_t loaded_mini_batch_size,
+  uint64_t relative_base_position,
   execution_mode mode)
 {
   int active_buffer_idx = future_active_buffer % m_data_buffers.size();
@@ -237,7 +238,7 @@ void buffered_data_coordinator<TensorDataType>::fetch_data_in_background(
 }
 
 template <typename TensorDataType>
-int buffered_data_coordinator<TensorDataType>::get_current_mini_batch_size(
+uint64_t buffered_data_coordinator<TensorDataType>::get_current_mini_batch_size(
   execution_mode mode) const
 {
   // Get the mini-batch size from the active buffer
@@ -272,7 +273,7 @@ void buffered_data_coordinator<TensorDataType>::fetch_active_batch_synchronous(
   dataset& ds = get_dataset(mode);
   //************************************************************************
   // Get the current mini-batch from the data reader
-  El::Int loaded_mini_batch_size = ds.get_current_mini_batch_size();
+  uint64_t loaded_mini_batch_size = ds.get_current_mini_batch_size();
 
   // If there is no valid data and there is not already a background
   // thread to fetch the data, queue up the background thread
@@ -281,7 +282,7 @@ void buffered_data_coordinator<TensorDataType>::fetch_active_batch_synchronous(
     // Store the size of the current mini-batch so that others can obtain it
     // without worrying about where the data reader is currently at.
     m_current_mini_batch_size[buffer_id][mode] = loaded_mini_batch_size;
-    El::Int relative_base_position = ds.get_position(); // dr->m_current_pos;
+    uint64_t relative_base_position = ds.get_position();
 
     // Start data store exchange if necessary (this should be moved
     // earlier as a future optimization)
@@ -333,7 +334,7 @@ void buffered_data_coordinator<TensorDataType>::fetch_data_asynchronous(
   dataset& ds = get_dataset(mode);
   //************************************************************************
   // Get the next mini-batchs size from the data reader
-  El::Int next_mini_batch_size = ds.get_next_mini_batch_size();
+  uint64_t next_mini_batch_size = ds.get_next_mini_batch_size();
 
   // If there is no valid data and there is not already a background
   // thread to fetch the data, queue up the background thread
@@ -342,7 +343,7 @@ void buffered_data_coordinator<TensorDataType>::fetch_data_asynchronous(
     // Store the size of the current mini-batch so that others can obtain it
     // without worrying about where the data reader is currently at.
     m_current_mini_batch_size[next_buffer_id][mode] = next_mini_batch_size;
-    El::Int relative_base_position = ds.get_next_position();
+    uint64_t relative_base_position = ds.get_next_position();
 
     // Start data store exchange if necessary (this should be moved
     // earlier as a future optimization)
@@ -411,7 +412,7 @@ bool buffered_data_coordinator<TensorDataType>::update_data_reader(
 {
   // Use the size of the mini-batch to update the data reader how much
   // to advance
-  int num_samples_in_batch = get_current_mini_batch_size(mode);
+  uint64_t num_samples_in_batch = get_current_mini_batch_size(mode);
   update_num_samples_processed(mode, num_samples_in_batch);
 
   // Returns true if the epoch will be complete
@@ -520,8 +521,8 @@ bool buffered_data_coordinator<TensorDataType>::update_data_set(
   execution_mode mode)
 {
   dataset& ds = get_dataset(mode);
-  int num_iterations_per_epoch = ds.get_num_iterations_per_epoch();
-  int current_step_in_epoch =
+  uint64_t num_iterations_per_epoch = ds.get_num_iterations_per_epoch();
+  uint64_t current_step_in_epoch =
     ds.get_current_step_in_epoch(); // Get the current step before the
                                     // update function increments it
 

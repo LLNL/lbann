@@ -80,9 +80,9 @@ public:
   }
 
 protected:
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_datum(CPUMat& X, uint64_t data_id, uint64_t mb_idx) override;
+  bool fetch_label(CPUMat& Y, uint64_t data_id, uint64_t mb_idx) override;
+  bool fetch_response(CPUMat& Y, uint64_t data_id, uint64_t mb_idx) override;
 
   /// Reader providing label data.
   generic_data_reader* m_label_reader;

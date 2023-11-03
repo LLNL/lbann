@@ -53,9 +53,10 @@ public:
                         std::vector<El::Int> dims,
                         std::vector<El::Int> response_dims,
                         bool shuffle = true);
-  data_reader_synthetic(int num_samples,
-                        std::map<data_field_type, std::vector<El::Int>> data_fields,
-                        bool shuffle = true);
+  data_reader_synthetic(
+    int num_samples,
+    std::map<data_field_type, std::vector<El::Int>> data_fields,
+    bool shuffle = true);
   data_reader_synthetic(const data_reader_synthetic&) = default;
   data_reader_synthetic& operator=(const data_reader_synthetic&) = default;
   ~data_reader_synthetic() override {}
@@ -86,7 +87,10 @@ public:
     return get_linear_size(m_response_dimensions);
   }
 
-  const std::vector<El::Int> get_data_dims() const override { return m_dimensions; }
+  const std::vector<El::Int> get_data_dims() const override
+  {
+    return m_dimensions;
+  }
 
   int get_num_labels() const override { return m_num_labels; }
   int get_num_responses() const override
@@ -97,11 +101,11 @@ public:
 protected:
   bool fetch_data_field(data_field_type data_field,
                         CPUMat& Y,
-                        int data_id,
-                        int mb_idx) override;
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
+                        uint64_t data_id,
+                        uint64_t mb_idx) override;
+  bool fetch_datum(CPUMat& X, uint64_t data_id, uint64_t mb_idx) override;
+  bool fetch_label(CPUMat& Y, uint64_t data_id, uint64_t mb_idx) override;
+  bool fetch_response(CPUMat& Y, uint64_t data_id, uint64_t mb_idx) override;
 
   // Designate a whitebox testing friend
   friend class ::DataReaderSyntheticWhiteboxTester;

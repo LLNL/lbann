@@ -99,7 +99,10 @@ public:
 
   /// Return the frame data_id is in.
   /// (made public to support data_store_pilot2_molecular)
-  int get_frame(int data_id) const { return data_id / m_num_samples_per_frame; }
+  int get_frame(uint64_t data_id) const
+  {
+    return data_id / m_num_samples_per_frame;
+  }
 
   /// support for data_store_pilot2_molecular
   int get_num_samples_per_frame() const { return m_num_samples_per_frame; }
@@ -115,9 +118,9 @@ public:
 
 protected:
   /// Fetch a molecule and its neighbors.
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
+  bool fetch_datum(CPUMat& X, uint64_t data_id, uint64_t mb_idx) override;
   /// Fetch molecule data_id into X at molecule offset idx.
-  void fetch_molecule(CPUMat& X, int data_id, int idx, int mb_idx);
+  void fetch_molecule(CPUMat& X, uint64_t data_id, int idx, uint64_t mb_idx);
 
   /// Number of samples.
   int m_num_samples = 0;

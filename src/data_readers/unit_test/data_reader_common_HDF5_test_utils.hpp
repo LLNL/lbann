@@ -98,8 +98,8 @@ public:
   bool fetch_data_field(lbann::hdf5_data_reader& dr,
                         lbann::data_field_type data_field,
                         lbann::CPUMat& X,
-                        int data_id,
-                        int mb_idx)
+                        uint64_t data_id,
+                        uint64_t mb_idx)
   {
     conduit::Node sample;
     dr.fetch_conduit_node(sample, data_id);
@@ -111,8 +111,8 @@ public:
 
   bool fetch_datum(lbann::hdf5_data_reader& dr,
                    lbann::CPUMat& X,
-                   int data_id,
-                   int mb_idx)
+                   uint64_t data_id,
+                   uint64_t mb_idx)
   {
     conduit::Node sample;
     dr.fetch_conduit_node(sample, data_id);
@@ -125,8 +125,8 @@ public:
 
   bool fetch_response(lbann::hdf5_data_reader& dr,
                       lbann::CPUMat& X,
-                      int data_id,
-                      int mb_idx)
+                      uint64_t data_id,
+                      uint64_t mb_idx)
   {
     conduit::Node sample;
     dr.fetch_conduit_node(sample, data_id);
@@ -139,8 +139,8 @@ public:
 
   bool fetch_label(lbann::hdf5_data_reader& dr,
                    lbann::CPUMat& X,
-                   int data_id,
-                   int mb_idx)
+                   uint64_t data_id,
+                   uint64_t mb_idx)
   {
     conduit::Node sample;
     dr.fetch_conduit_node(sample, data_id);

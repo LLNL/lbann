@@ -134,10 +134,10 @@ public:
   /** @brief After a data field has been registered with the data
    *  coordinator setup its buffers. Note this can be called after
    *  each call to register_active_data_field. */
-  void setup_data_fields(int max_mini_batch_size) override;
+  void setup_data_fields(uint64_t max_mini_batch_size) override;
 
   void fp_setup_data(data_buffer<IODataType>& buffer,
-                     El::Int cur_mini_batch_size);
+                     uint64_t cur_mini_batch_size);
 
   /** @brief fetch data will check to make sure that the active buffer
    *   is ready to go and queue work to fetch the next buffer of data.
@@ -174,14 +174,14 @@ public:
 protected:
   int fetch_to_local_matrix(const execution_mode mode,
                             data_buffer<IODataType>& buf,
-                            El::Int loaded_mini_batch_size,
-                            El::Int relative_base_position,
+                            uint64_t loaded_mini_batch_size,
+                            uint64_t relative_base_position,
                             int buffer_id);
 
   void fetch_data_in_background(int future_active_buffer,
                                 data_buffer<IODataType>& buf,
-                                El::Int loaded_mini_batch_size,
-                                El::Int relative_base_position,
+                                uint64_t loaded_mini_batch_size,
+                                uint64_t relative_base_position,
                                 execution_mode mode);
 
   const data_buffer<IODataType>& get_next_buffer(execution_mode mode) const;
@@ -213,7 +213,7 @@ protected:
 
   bool update_data_set(generic_data_reader* data_reader, execution_mode mode);
 
-  int get_current_mini_batch_size(execution_mode mode) const override;
+  uint64_t get_current_mini_batch_size(execution_mode mode) const override;
 
   //************************************************************************
   //
@@ -246,7 +246,7 @@ protected:
   /**
    * Stores each buffer mini-batch size as it was returned from the data reader.
    */
-  std::vector<std::map<execution_mode, int>> m_current_mini_batch_size;
+  std::vector<std::map<execution_mode, uint64_t>> m_current_mini_batch_size;
 };
 
 } // namespace lbann

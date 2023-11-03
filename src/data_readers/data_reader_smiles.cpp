@@ -308,7 +308,7 @@ std::set<int> smiles_data_reader::get_my_indices() const
   return s;
 }
 
-bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
+bool smiles_data_reader::fetch_datum(Mat& X, uint64_t data_id, uint64_t mb_idx)
 {
   if (!data_store_active()) {
     LBANN_ERROR(
@@ -329,13 +329,15 @@ bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
   return true;
 }
 
-bool smiles_data_reader::fetch_label(Mat& Y, int data_id, int mb_idx)
+bool smiles_data_reader::fetch_label(Mat& Y, uint64_t data_id, uint64_t mb_idx)
 {
   LBANN_ERROR("smiles_data_reader::fetch_label is not implemented");
   return true;
 }
 
-bool smiles_data_reader::fetch_response(Mat& Y, int data_id, int mb_idx)
+bool smiles_data_reader::fetch_response(Mat& Y,
+                                        uint64_t data_id,
+                                        uint64_t mb_idx)
 {
   LBANN_ERROR("smiles_data_reader::fetch_response is not implemented");
   return true;

@@ -316,7 +316,9 @@ data types, from python+numpy:
   }
 }
 
-bool ras_lipid_conduit_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
+bool ras_lipid_conduit_data_reader::fetch_datum(Mat& X,
+                                                uint64_t data_id,
+                                                uint64_t mb_idx)
 {
   const conduit::Node& node = m_data_store->get_conduit_node(data_id);
   const double* data =
@@ -353,7 +355,9 @@ bool ras_lipid_conduit_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
 
 std::map<double, int> m2;
 
-bool ras_lipid_conduit_data_reader::fetch_label(Mat& Y, int data_id, int mb_idx)
+bool ras_lipid_conduit_data_reader::fetch_label(Mat& Y,
+                                                uint64_t data_id,
+                                                uint64_t mb_idx)
 {
   const conduit::Node node = m_data_store->get_conduit_node(data_id);
   const int* labels = node[LBANN_DATA_ID_STR(data_id) + "/states"].value();
@@ -364,8 +368,8 @@ bool ras_lipid_conduit_data_reader::fetch_label(Mat& Y, int data_id, int mb_idx)
 }
 
 bool ras_lipid_conduit_data_reader::fetch_response(Mat& Y,
-                                                   int data_id,
-                                                   int mb_idx)
+                                                   uint64_t data_id,
+                                                   uint64_t mb_idx)
 {
   LBANN_ERROR("ras_lipid_conduit_data_reader: do not have responses");
   return true;
@@ -655,7 +659,7 @@ void ras_lipid_conduit_data_reader::load_the_next_sample(
 
 void ras_lipid_conduit_data_reader::construct_multi_sample(
   std::vector<conduit::Node>& work,
-  int data_id,
+  uint64_t data_id,
   conduit::Node& node)
 {
   node.reset();

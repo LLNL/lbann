@@ -144,9 +144,11 @@ void image_data_reader::set_input_params(const int width,
   }
 }
 
-bool image_data_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx)
+bool image_data_reader::fetch_label(CPUMat& Y,
+                                    uint64_t data_id,
+                                    uint64_t mb_idx)
 {
-  if (static_cast<size_t>(data_id) >= m_labels.size()) {
+  if (data_id >= m_labels.size()) {
     LBANN_ERROR("Cannot find label for sample " + std::to_string(data_id) +
                 ".");
   }
@@ -340,7 +342,7 @@ bool image_data_reader::load_conduit_nodes_from_file(
   return true;
 }
 
-void image_data_reader::load_conduit_node_from_file(int data_id,
+void image_data_reader::load_conduit_node_from_file(uint64_t data_id,
                                                     conduit::Node& node)
 {
   node.reset();

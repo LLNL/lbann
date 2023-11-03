@@ -288,7 +288,9 @@ bool numpy_npz_conduit_reader::load_numpy_npz_from_file(
   return true;
 }
 
-bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
+bool numpy_npz_conduit_reader::fetch_datum(Mat& X,
+                                           uint64_t data_id,
+                                           uint64_t mb_idx)
 {
   LBANN_CALIPER_MARK_SCOPE("numpy_npz_conduit_reader::fetch_datum");
   Mat X_v = El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
@@ -343,7 +345,9 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
   return true;
 }
 
-bool numpy_npz_conduit_reader::fetch_label(Mat& Y, int data_id, int mb_idx)
+bool numpy_npz_conduit_reader::fetch_label(Mat& Y,
+                                           uint64_t data_id,
+                                           uint64_t mb_idx)
 {
   if (!m_supported_input_types[INPUT_DATA_TYPE_LABELS]) {
     LBANN_ERROR("numpy_npz_conduit_reader: do not have labels");
@@ -364,7 +368,9 @@ bool numpy_npz_conduit_reader::fetch_label(Mat& Y, int data_id, int mb_idx)
   return true;
 }
 
-bool numpy_npz_conduit_reader::fetch_response(Mat& Y, int data_id, int mb_idx)
+bool numpy_npz_conduit_reader::fetch_response(Mat& Y,
+                                              uint64_t data_id,
+                                              uint64_t mb_idx)
 {
   if (!m_supported_input_types[INPUT_DATA_TYPE_RESPONSES]) {
     LBANN_ERROR("numpy_npz_conduit_reader: do not have responses");
@@ -430,7 +436,7 @@ void numpy_npz_conduit_reader::fill_in_metadata()
     std::cout << "num samples: " << m_num_samples << "\n";
   }
 
-  int data_id = 0; // meaningless
+  uint64_t data_id = 0; // meaningless
   conduit::Node node;
   load_npz(m_filenames[my_file], data_id, node);
 
@@ -488,7 +494,7 @@ void numpy_npz_conduit_reader::fill_in_metadata()
 }
 
 void numpy_npz_conduit_reader::load_conduit_node(const std::string filename,
-                                                 int data_id,
+                                                 uint64_t data_id,
                                                  conduit::Node& output,
                                                  bool reset)
 {
@@ -540,7 +546,7 @@ void numpy_npz_conduit_reader::load_conduit_node(const std::string filename,
 }
 
 void numpy_npz_conduit_reader::load_npz(const std::string filename,
-                                        int data_id,
+                                        uint64_t data_id,
                                         conduit::Node& output)
 {
 

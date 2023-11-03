@@ -74,21 +74,23 @@ public:
   }
   const std::vector<El::Int> get_data_dims() const override
   {
-    return {static_cast<El::Int>(m_channels.size()), m_data_height, m_data_width};
+    return {static_cast<El::Int>(m_channels.size()),
+            m_data_height,
+            m_data_width};
   }
 
 protected:
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_datum(CPUMat& X, uint64_t data_id, uint64_t mb_idx) override;
+  bool fetch_response(CPUMat& Y, uint64_t data_id, uint64_t mb_idx) override;
 
   /**
    * Load filename into mat.
    * This may do datatype conversion if DataType is not float.
    * mat should be of size (m_data_height, m_data_width).
    */
-  void load_file(int data_id, const std::string channel, Mat& mat);
+  void load_file(uint64_t data_id, const std::string channel, Mat& mat);
   /// Return the full path to the data file for datum data_id's channel.
-  std::string construct_filename(std::string channel, int data_id);
+  std::string construct_filename(std::string channel, uint64_t data_id);
 
   /// Flip mat horizontally (i.e. about its vertical axis).
   void horizontal_flip(CPUMat& mat);

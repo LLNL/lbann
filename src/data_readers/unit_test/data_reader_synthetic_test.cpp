@@ -47,30 +47,30 @@ class DataReaderSyntheticWhiteboxTester
 public:
   bool fetch_datum(lbann::data_reader_synthetic& dr,
                    lbann::CPUMat& X,
-                   int data_id,
-                   int mb_idx)
+                   uint64_t data_id,
+                   uint64_t mb_idx)
   {
     return dr.fetch_datum(X, data_id, mb_idx);
   }
   bool fetch_label(lbann::data_reader_synthetic& dr,
                    lbann::CPUMat& Y,
-                   int data_id,
-                   int mb_idx)
+                   uint64_t data_id,
+                   uint64_t mb_idx)
   {
     return dr.fetch_label(Y, data_id, mb_idx);
   }
   bool fetch_response(lbann::data_reader_synthetic& dr,
                       lbann::CPUMat& Y,
-                      int data_id,
-                      int mb_idx)
+                      uint64_t data_id,
+                      uint64_t mb_idx)
   {
     return dr.fetch_response(Y, data_id, mb_idx);
   }
   bool fetch_data_field(lbann::data_reader_synthetic& dr,
                         lbann::data_field_type data_field,
                         lbann::CPUMat& X,
-                        int data_id,
-                        int mb_idx)
+                        uint64_t data_id,
+                        uint64_t mb_idx)
   {
     return dr.fetch_data_field(data_field, X, data_id, mb_idx);
   }

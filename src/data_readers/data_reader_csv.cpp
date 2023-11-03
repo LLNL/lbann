@@ -285,7 +285,7 @@ void csv_reader::setup(int num_io_threads,
   setup_ifstreams();
 }
 
-bool csv_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx)
+bool csv_reader::fetch_datum(CPUMat& X, uint64_t data_id, uint64_t mb_idx)
 {
   auto line = fetch_line_label_response(data_id);
   // TODO: Avoid unneeded copies.
@@ -295,19 +295,19 @@ bool csv_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx)
   return true;
 }
 
-bool csv_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx)
+bool csv_reader::fetch_label(CPUMat& Y, uint64_t data_id, uint64_t mb_idx)
 {
   Y(m_labels[data_id], mb_idx) = 1;
   return true;
 }
 
-bool csv_reader::fetch_response(CPUMat& Y, int data_id, int mb_idx)
+bool csv_reader::fetch_response(CPUMat& Y, uint64_t data_id, uint64_t mb_idx)
 {
   Y(0, mb_idx) = m_responses[data_id];
   return true;
 }
 
-std::vector<DataType> csv_reader::fetch_line(int data_id)
+std::vector<DataType> csv_reader::fetch_line(uint64_t data_id)
 {
   std::string line = fetch_raw_line(data_id);
   std::vector<DataType> parsed_line;
@@ -337,7 +337,7 @@ std::vector<DataType> csv_reader::fetch_line(int data_id)
   return parsed_line;
 }
 
-std::vector<DataType> csv_reader::fetch_line_label_response(int data_id)
+std::vector<DataType> csv_reader::fetch_line_label_response(uint64_t data_id)
 {
   std::string line = fetch_raw_line(data_id);
   std::vector<DataType> parsed_line;
@@ -374,7 +374,7 @@ std::vector<DataType> csv_reader::fetch_line_label_response(int data_id)
   return parsed_line;
 }
 
-std::string csv_reader::fetch_raw_line(int data_id)
+std::string csv_reader::fetch_raw_line(uint64_t data_id)
 {
   static int n = 0;
   std::ifstream& ifs = *m_ifstreams[m_io_thread_pool->get_local_thread_id()];

@@ -140,23 +140,23 @@ public:
    * present in the vector.
    * (Made public to support data store functionality)
    */
-  std::vector<DataType> fetch_line_label_response(int data_id);
+  std::vector<DataType> fetch_line_label_response(uint64_t data_id);
 
 protected:
   /**
    * Fetch the data associated with data_id.
    * Note this does *not* normalize the data.
    */
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
+  bool fetch_datum(CPUMat& X, uint64_t data_id, uint64_t mb_idx) override;
   /// Fetch the label associated with data_id.
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_label(CPUMat& Y, uint64_t data_id, uint64_t mb_idx) override;
   /// Fetch the response associated with data_id.
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_response(CPUMat& Y, uint64_t data_id, uint64_t mb_idx) override;
 
   /**
    * Return the parsed CSV line. This does not extract the label/response.
    */
-  std::vector<DataType> fetch_line(int data_id);
+  std::vector<DataType> fetch_line(uint64_t data_id);
 
   /// Skip rows in an ifstream.
   void skip_rows(std::ifstream& s, int rows);
@@ -167,7 +167,7 @@ protected:
   /** Return a raw line from the CSV file.
    *  (Made public to support data store functionality)
    */
-  std::string fetch_raw_line(int data_id);
+  std::string fetch_raw_line(uint64_t data_id);
 
   /// String value that separates data.
   char m_separator = ',';

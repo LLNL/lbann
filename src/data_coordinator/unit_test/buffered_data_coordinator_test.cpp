@@ -44,7 +44,7 @@ using lbann::generic_data_reader;
 class test_data_reader : public generic_data_reader
 {
 public:
-  test_data_reader(int num_mini_batches, int mini_batch_size)
+  test_data_reader(uint64_t num_mini_batches, uint64_t mini_batch_size)
     : generic_data_reader(), m_counter(0), m_lastbatch(num_mini_batches - 1)
   {
     m_mini_batch_size = mini_batch_size;
@@ -58,13 +58,13 @@ public:
   }
   //  void load() override {}
   std::string get_type() const override { return "test_data_reader"; }
-  int get_num_data() const override
+  uint64_t get_num_data() const override
   {
     return m_lastbatch * m_mini_batch_size + 1;
   }
   int get_linearized_data_size() const override { return 1; }
 
-  bool fetch_datum(lbann::CPUMat& X, int data_id, int mb_idx) override
+  bool fetch_datum(lbann::CPUMat& X, uint64_t data_id, uint64_t mb_idx) override
   {
     LBANN_MSG("fetch datum is fetching data id ",
               data_id,
@@ -114,10 +114,10 @@ public:
   }
 
 private:
-  int m_counter;
-  int m_lastbatch;
-  int m_mini_batch_size;
-  int m_num_iterations_per_epoch;
+  uint64_t m_counter;
+  uint64_t m_lastbatch;
+  uint64_t m_mini_batch_size;
+  uint64_t m_num_iterations_per_epoch;
   // int m_mbsize;
   El::DistMatrix<lbann::DataType,
                  El::STAR,
@@ -130,8 +130,8 @@ private:
 using unit_test::utilities::IsValidPtr;
 TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
 {
-  constexpr int mini_batch_size = 2;
-  constexpr int num_mini_batches = 5;
+  constexpr uint64_t mini_batch_size = 2;
+  constexpr uint64_t num_mini_batches = 5;
   constexpr auto mode = lbann::execution_mode::training;
 
   auto& world_comm = unit_test::utilities::current_world_comm();
@@ -165,7 +165,7 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
   SECTION("Synchronous I/O")
   {
     // Test first minibatch
-    int remaining_num_mini_batches = num_mini_batches, data = 0;
+    uint64_t remaining_num_mini_batches = num_mini_batches, data = 0;
     bool epoch_done = false;
     REQUIRE_NOTHROW(bdc.fetch_active_batch_synchronous(mode));
     REQUIRE_NOTHROW(bdc.distribute_from_local_matrix(mode, "samples", samples));

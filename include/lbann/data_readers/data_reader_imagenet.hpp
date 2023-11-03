@@ -46,8 +46,8 @@ public:
 
 protected:
   void set_defaults() override;
-  virtual CPUMat create_datum_view(CPUMat& X, const int mb_idx) const;
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
+  virtual CPUMat create_datum_view(CPUMat& X, const uint64_t mb_idx) const;
+  bool fetch_datum(CPUMat& X, uint64_t data_id, uint64_t mb_idx) override;
 };
 
 } // namespace lbann

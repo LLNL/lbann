@@ -215,7 +215,7 @@ public:
   /// Return the dimension of data
   const std::vector<El::Int> get_data_dims() const override;
 
-  int get_num_data() const override;
+  uint64_t get_num_data() const override;
   int get_num_labels() const override;
   int get_linearized_label_size() const override;
 
@@ -297,20 +297,20 @@ protected:
   virtual std::vector<CPUMat>
   create_datum_views(CPUMat& X,
                      const std::vector<size_t>& sizes,
-                     const int mb_idx) const;
+                     const uint64_t mb_idx) const;
 
   /// Export cached data minibatch
 
   bool fetch(CPUMat& X,
-             int data_id,
+             uint64_t data_id,
              conduit::Node& sample,
-             int mb_idx,
-             int tid,
+             uint64_t mb_idx,
+             uint64_t tid,
              const variable_t vt,
              const std::string tag);
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
-  bool fetch_label(CPUMat& X, int data_id, int mb_idx) override;
+  bool fetch_datum(CPUMat& X, uint64_t data_id, uint64_t mb_idx) override;
+  bool fetch_response(CPUMat& Y, uint64_t data_id, uint64_t mb_idx) override;
+  bool fetch_label(CPUMat& X, uint64_t data_id, uint64_t mb_idx) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   using generic_data_reader::shuffle_indices;
@@ -458,9 +458,9 @@ protected:
   CPUMat m_data_cache;
   CPUMat m_response_cache;
   CPUMat m_label_cache;
-  int m_cached_data_mb_size;
-  int m_cached_response_mb_size;
-  int m_cached_label_mb_size;
+  uint64_t m_cached_data_mb_size;
+  uint64_t m_cached_response_mb_size;
+  uint64_t m_cached_label_mb_size;
 
   /// temporary normalization parameters based on linear transforms
   std::vector<linear_transform_t> m_image_normalization_params;
@@ -475,7 +475,7 @@ protected:
   void preload_helper(const hid_t& h,
                       const std::string& sample_name,
                       const std::string& field_name,
-                      int data_id,
+                      uint64_t data_id,
                       conduit::Node& node);
 };
 

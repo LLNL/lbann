@@ -50,12 +50,13 @@ void imagenet_reader::set_defaults()
   m_supported_input_types[INPUT_DATA_TYPE_LABELS] = true;
 }
 
-CPUMat imagenet_reader::create_datum_view(CPUMat& X, const int mb_idx) const
+CPUMat imagenet_reader::create_datum_view(CPUMat& X,
+                                          const uint64_t mb_idx) const
 {
   return El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
 }
 
-bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx)
+bool imagenet_reader::fetch_datum(CPUMat& X, uint64_t data_id, uint64_t mb_idx)
 {
   El::Matrix<uint8_t> image;
   std::vector<size_t> dims;

@@ -124,9 +124,9 @@ int node2vec_reader::get_linearized_label_size() const
 }
 
 bool node2vec_reader::fetch_data_block(CPUMat& X,
-                                       El::Int block_offset,
-                                       El::Int block_stride,
-                                       El::Int mb_size,
+                                       uint64_t block_offset,
+                                       uint64_t block_stride,
+                                       uint64_t mb_size,
                                        El::Matrix<El::Int>& indices_fetched)
 {
 
@@ -187,7 +187,7 @@ bool node2vec_reader::fetch_data_block(CPUMat& X,
   return true;
 }
 
-bool node2vec_reader::fetch_label(CPUMat& Y, int data_id, int col)
+bool node2vec_reader::fetch_label(CPUMat& Y, uint64_t data_id, int col)
 {
   return true;
 }

@@ -125,7 +125,9 @@ void data_reader_merge_samples::load()
   setup_indices(global_num_samples);
 }
 
-bool data_reader_merge_samples::fetch_datum(CPUMat& X, int data_id, int mb_idx)
+bool data_reader_merge_samples::fetch_datum(CPUMat& X,
+                                            uint64_t data_id,
+                                            uint64_t mb_idx)
 {
   // Find the right data reader to delegate to.
   for (size_t i = 0; i < m_data_readers.size(); ++i) {
@@ -138,7 +140,9 @@ bool data_reader_merge_samples::fetch_datum(CPUMat& X, int data_id, int mb_idx)
                         std::to_string(data_id));
 }
 
-bool data_reader_merge_samples::fetch_label(CPUMat& Y, int data_id, int mb_idx)
+bool data_reader_merge_samples::fetch_label(CPUMat& Y,
+                                            uint64_t data_id,
+                                            uint64_t mb_idx)
 {
   // Find the right data reader to delegate to.
   for (size_t i = 0; i < m_data_readers.size(); ++i) {
@@ -152,8 +156,8 @@ bool data_reader_merge_samples::fetch_label(CPUMat& Y, int data_id, int mb_idx)
 }
 
 bool data_reader_merge_samples::fetch_response(CPUMat& Y,
-                                               int data_id,
-                                               int mb_idx)
+                                               uint64_t data_id,
+                                               uint64_t mb_idx)
 {
   // Find the right data reader to delegate to.
   for (size_t i = 0; i < m_data_readers.size(); ++i) {

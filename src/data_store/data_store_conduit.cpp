@@ -258,7 +258,7 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs)
   open_informational_files();
 }
 
-void data_store_conduit::setup(int mini_batch_size)
+void data_store_conduit::setup(uint64_t mini_batch_size)
 {
   PROFILE("starting setup(); m_owner.size(): ", m_owner.size());
   m_owner_map_mb_size = mini_batch_size;
@@ -277,7 +277,7 @@ void data_store_conduit::setup_data_store_buffers()
   m_recv_buffer.resize(m_np_in_trainer);
 }
 
-void data_store_conduit::spill_preloaded_conduit_node(int data_id,
+void data_store_conduit::spill_preloaded_conduit_node(uint64_t data_id,
                                                       const conduit::Node& node)
 {
   // note: at this point m_data[data_id] = node
@@ -302,7 +302,7 @@ void data_store_conduit::spill_preloaded_conduit_node(int data_id,
   }
 }
 
-void data_store_conduit::set_preloaded_conduit_node(int data_id,
+void data_store_conduit::set_preloaded_conduit_node(uint64_t data_id,
                                                     const conduit::Node& node)
 {
   // note: at this point m_data[data_id] = node
@@ -343,7 +343,7 @@ void data_store_conduit::set_preloaded_conduit_node(int data_id,
 }
 
 void data_store_conduit::error_check_compacted_node(const conduit::Node& nd,
-                                                    int data_id)
+                                                    uint64_t data_id)
 {
   if (m_node_sizes_vary) {
     return;
@@ -383,7 +383,7 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node& nd,
 
 // n.b. Do not put any PROFILE or DEBUG_DS statements in this method,
 //      since the threading from the data_reader will cause you grief
-void data_store_conduit::set_conduit_node(int data_id,
+void data_store_conduit::set_conduit_node(uint64_t data_id,
                                           const conduit::Node& node,
                                           bool already_have)
 {
@@ -475,9 +475,11 @@ void data_store_conduit::set_conduit_node(int data_id,
   }
 }
 
-const conduit::Node& data_store_conduit::get_conduit_node(int data_id) const
+const conduit::Node&
+data_store_conduit::get_conduit_node(uint64_t data_id) const
 {
-  using iterator_t = std::unordered_map<int, conduit::Node>::const_iterator;
+  using iterator_t =
+    std::unordered_map<uint64_t, conduit::Node>::const_iterator;
   if (is_local_cache()) {
     std::lock_guard<std::mutex> lock(m_mutex);
     iterator_t t3 = m_data.find(data_id);
@@ -551,8 +553,8 @@ void data_store_conduit::build_node_for_sending(const conduit::Node& node_in,
   }
 }
 
-void data_store_conduit::start_exchange_data_by_sample(size_t current_pos,
-                                                       size_t mb_size)
+void data_store_conduit::start_exchange_data_by_sample(uint64_t current_pos,
+                                                       uint64_t mb_size)
 {
   if (!m_is_setup) {
     LBANN_ERROR("setup(mb_size) has not been called");
@@ -602,7 +604,7 @@ void data_store_conduit::start_exchange_data_by_sample(size_t current_pos,
     std::lock_guard<std::mutex> lock(m_mutex);
     size_t ss = 0;
     for (int p = 0; p < m_np_in_trainer; p++) {
-      const std::unordered_set<int>& indices = m_indices_to_send[p];
+      const std::unordered_set<uint64_t>& indices = m_indices_to_send[p];
       for (auto index : indices) {
         if (m_data.find(index) == m_data.end()) {
           LBANN_ERROR("failed to find data_id: ",
@@ -643,7 +645,7 @@ void data_store_conduit::start_exchange_data_by_sample(size_t current_pos,
         m_comm->nb_tagged_send<El::byte>(s,
                                          sz,
                                          p,
-                                         index,
+                                         (int)index, // BVE FIXME
                                          m_send_requests[ss++],
                                          m_comm->get_trainer_comm());
       }
@@ -661,7 +663,7 @@ void data_store_conduit::start_exchange_data_by_sample(size_t current_pos,
     ss = 0;
 
     for (int p = 0; p < m_np_in_trainer; p++) {
-      const std::unordered_set<int>& indices = m_indices_to_recv[p];
+      const std::unordered_set<uint64_t>& indices = m_indices_to_recv[p];
       int sanity = 0;
       for (auto index : indices) {
         ++sanity;
@@ -754,12 +756,13 @@ void data_store_conduit::finish_exchange_data_by_sample()
   }
 }
 
-int data_store_conduit::build_indices_i_will_recv(int current_pos, int mb_size)
+int data_store_conduit::build_indices_i_will_recv(uint64_t current_pos,
+                                                  uint64_t mb_size)
 {
   m_indices_to_recv.clear();
   m_indices_to_recv.resize(m_np_in_trainer);
   int k = 0;
-  for (int i = current_pos; i < current_pos + mb_size; ++i) {
+  for (uint64_t i = current_pos; i < current_pos + mb_size; ++i) {
     auto index = (*m_shuffled_indices)[i];
 #ifdef LBANN_HAS_DISTCONV
     int num_ranks_in_partition = dc::get_number_of_io_partitions();
@@ -778,7 +781,8 @@ int data_store_conduit::build_indices_i_will_recv(int current_pos, int mb_size)
   return k;
 }
 
-int data_store_conduit::build_indices_i_will_send(int current_pos, int mb_size)
+int data_store_conduit::build_indices_i_will_send(uint64_t current_pos,
+                                                  uint64_t mb_size)
 {
   m_indices_to_send.clear();
   m_indices_to_send.resize(m_np_in_trainer);
@@ -789,7 +793,7 @@ int data_store_conduit::build_indices_i_will_send(int current_pos, int mb_size)
            mb_size,
            " m_data.size: ",
            m_data.size());
-  for (int i = current_pos; i < current_pos + mb_size; i++) {
+  for (uint64_t i = current_pos; i < current_pos + mb_size; i++) {
     auto index = (*m_shuffled_indices)[i];
     /// If this rank owns the index send it to the (i%m_np)'th rank
     bool is_mine = false;
@@ -873,7 +877,7 @@ data_store_conduit::get_random_node(const std::string& field) const
   return node[field];
 }
 
-conduit::Node& data_store_conduit::get_empty_node(int data_id)
+conduit::Node& data_store_conduit::get_empty_node(uint64_t data_id)
 {
   std::lock_guard<std::mutex> lock(m_mutex);
   if (m_data.find(data_id) != m_data.end()) {
@@ -1080,15 +1084,16 @@ void data_store_conduit::check_mem_capacity(lbann_comm* comm,
   comm->trainer_barrier();
 }
 
-bool data_store_conduit::has_conduit_node(int data_id) const
+bool data_store_conduit::has_conduit_node(uint64_t data_id) const
 {
   std::lock_guard<std::mutex> lock(m_mutex);
-  std::unordered_map<int, conduit::Node>::const_iterator t =
+  std::unordered_map<uint64_t, conduit::Node>::const_iterator t =
     m_data.find(data_id);
   return t != m_data.end();
 }
 
-void data_store_conduit::set_shuffled_indices(const std::vector<int>* indices)
+void data_store_conduit::set_shuffled_indices(
+  const std::vector<uint64_t>* indices)
 {
   m_shuffled_indices = indices;
 }

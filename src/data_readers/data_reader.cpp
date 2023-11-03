@@ -83,12 +83,13 @@ void generic_data_reader::setup(int num_io_threads,
   m_io_thread_pool = io_thread_pool;
 }
 
-int lbann::generic_data_reader::fetch(std::vector<conduit::Node>& samples,
-                                      El::Matrix<El::Int>& indices_fetched,
-                                      El::Int current_position_in_data_set,
-                                      El::Int sample_stride,
-                                      size_t mb_size,
-                                      const execution_mode mode)
+uint64_t
+lbann::generic_data_reader::fetch(std::vector<conduit::Node>& samples,
+                                  El::Matrix<El::Int>& indices_fetched,
+                                  uint64_t current_position_in_data_set,
+                                  uint64_t sample_stride,
+                                  uint64_t mb_size,
+                                  const execution_mode mode)
 {
   // Check to make sure that a valid map was passed
   if (samples.empty()) {
@@ -162,12 +163,12 @@ int lbann::generic_data_reader::fetch(std::vector<conduit::Node>& samples,
   return mb_size;
 }
 
-int lbann::generic_data_reader::fetch(
+uint64_t lbann::generic_data_reader::fetch(
   std::map<data_field_type, CPUMat*>& input_buffers,
   El::Matrix<El::Int>& indices_fetched,
-  El::Int current_position_in_data_set,
-  El::Int sample_stride,
-  size_t mb_size,
+  uint64_t current_position_in_data_set,
+  uint64_t sample_stride,
+  uint64_t mb_size,
   const execution_mode mode)
 {
   // Check to make sure that a valid map was passed
@@ -208,7 +209,7 @@ int lbann::generic_data_reader::fetch(
       std::cout << "role: " << get_role()
                 << " model: " << get_trainer().get_name()
                 << " shuffled indices: ";
-      for (size_t j = 0; j < 15; j++) {
+      for (uint64_t j = 0; j < 15; j++) {
         std::cout << m_shuffled_indices[j] << " ";
       }
       std::cout << "\n";
@@ -295,8 +296,8 @@ int lbann::generic_data_reader::fetch(
 }
 
 void lbann::generic_data_reader::start_data_store_mini_batch_exchange(
-  El::Int current_position_in_data_set,
-  El::Int current_mini_batch_size,
+  uint64_t current_position_in_data_set,
+  uint64_t current_mini_batch_size,
   bool at_new_epoch)
 {
   // Make sure that every rank participates in the data store prior
@@ -323,15 +324,15 @@ void lbann::generic_data_reader::finish_data_store_mini_batch_exchange()
 
 bool lbann::generic_data_reader::fetch_data_block(
   std::map<data_field_type, CPUMat*>& input_buffers,
-  El::Int current_position_in_data_set,
-  El::Int block_offset,
-  El::Int block_stride,
-  El::Int sample_stride,
-  El::Int mb_size,
+  uint64_t current_position_in_data_set,
+  uint64_t block_offset,
+  uint64_t block_stride,
+  uint64_t sample_stride,
+  uint64_t mb_size,
   El::Matrix<El::Int>& indices_fetched,
   execution_mode mode)
 {
-  for (int s = block_offset; s < mb_size; s += block_stride) {
+  for (uint64_t s = block_offset; s < mb_size; s += block_stride) {
     locked_io_rng_ref io_rng = set_io_generators_local_index(s, mode);
     int n = current_position_in_data_set + (s * sample_stride);
     int index = m_shuffled_indices[n];
@@ -405,21 +406,21 @@ bool lbann::generic_data_reader::fetch_data_block(
 
 bool lbann::generic_data_reader::fetch_data_block_conduit(
   std::vector<conduit::Node>& samples,
-  El::Int current_position_in_data_set,
-  El::Int block_offset,
-  El::Int block_stride,
-  El::Int sample_stride,
-  El::Int mb_size,
+  uint64_t current_position_in_data_set,
+  uint64_t block_offset,
+  uint64_t block_stride,
+  uint64_t sample_stride,
+  uint64_t mb_size,
   El::Matrix<El::Int>& indices_fetched,
   execution_mode mode)
 {
-  if (static_cast<size_t>(mb_size) > samples.size()) {
+  if (mb_size > samples.size()) {
     LBANN_ERROR("unable to fetch data to conduit nodes, vector length ",
                 samples.size(),
                 " is smaller than mini-batch size",
                 mb_size);
   }
-  for (int s = block_offset; s < mb_size; s += block_stride) {
+  for (uint64_t s = block_offset; s < mb_size; s += block_stride) {
     locked_io_rng_ref io_rng = set_io_generators_local_index(s, mode);
     int n = current_position_in_data_set + (s * sample_stride);
     int index = m_shuffled_indices[n];
@@ -467,17 +468,17 @@ int generic_data_reader::get_linearized_size(
   return 0;
 }
 
-int generic_data_reader::get_num_unused_data(execution_mode m) const
+size_t generic_data_reader::get_num_unused_data(execution_mode m) const
 {
   if (m_unused_indices.count(m)) {
-    return (int)m_unused_indices.at(m).size();
+    return m_unused_indices.at(m).size();
   }
   else {
     LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
   }
 }
 /// Get a pointer to the start of the unused sample indices.
-int* generic_data_reader::get_unused_data(execution_mode m)
+uint64_t* generic_data_reader::get_unused_data(execution_mode m)
 {
   if (m_unused_indices.count(m)) {
     return &(m_unused_indices[m][0]);
@@ -486,7 +487,7 @@ int* generic_data_reader::get_unused_data(execution_mode m)
     LBANN_ERROR("Invalid execution mode ", to_string(m), " for unused indices");
   }
 }
-const std::vector<int>&
+const std::vector<uint64_t>&
 generic_data_reader::get_unused_indices(execution_mode m)
 {
   if (m_unused_indices.count(m)) {
@@ -499,7 +500,7 @@ generic_data_reader::get_unused_indices(execution_mode m)
 
 void generic_data_reader::error_check_counts() const
 {
-  size_t count = get_absolute_sample_count();
+  uint64_t count = get_absolute_sample_count();
   double use_fraction = get_use_fraction();
   if (count == 1 and use_fraction == 0.0) {
     LBANN_ERROR("get_use_fraction() and get_absolute_sample_count() are both "
@@ -510,21 +511,21 @@ void generic_data_reader::error_check_counts() const
                 "non-zero; exactly one must be zero");
   }
   if (count != 0) {
-    if (count > static_cast<size_t>(get_num_data())) {
+    if (count > get_num_data()) {
       LBANN_ERROR("absolute_sample_count=" + std::to_string(count) +
                   " is > get_num_data=" + std::to_string(get_num_data()));
     }
   }
 }
 
-size_t generic_data_reader::get_num_indices_to_use() const
+uint64_t generic_data_reader::get_num_indices_to_use() const
 {
   error_check_counts();
   // note: exactly one of the following is guaranteed to be non-zero
-  size_t count = get_absolute_sample_count();
+  uint64_t count = get_absolute_sample_count();
   double use_fraction = get_use_fraction();
 
-  size_t r = 0.;
+  uint64_t r = 0.;
   if (count) {
     r = count;
   }
@@ -552,7 +553,7 @@ size_t generic_data_reader::get_num_indices_to_use() const
 
 void generic_data_reader::resize_shuffled_indices()
 {
-  size_t num_indices = get_num_indices_to_use();
+  uint64_t num_indices = get_num_indices_to_use();
   shuffle_indices();
   m_shuffled_indices.resize(num_indices);
 }
@@ -590,8 +591,9 @@ void generic_data_reader::select_subset_of_data()
         LBANN_ERROR(
           "Split range exceeds the maximun numbrer of shuffled indices");
       }
-      m_unused_indices[m] = std::vector<int>(starting_unused_offset,
-                                             starting_unused_offset + split);
+      m_unused_indices[m] =
+        std::vector<uint64_t>(starting_unused_offset,
+                              starting_unused_offset + split);
       starting_unused_offset += split;
     }
   }
@@ -619,7 +621,7 @@ void generic_data_reader::use_unused_index_set(execution_mode m)
     m_data_store->set_shuffled_indices(&m_shuffled_indices);
   }
   m_unused_indices[m].clear();
-  std::vector<int>().swap(
+  std::vector<uint64_t>().swap(
     m_unused_indices[m]); // Trick to force memory reallocation
 }
 
@@ -780,12 +782,12 @@ std::string generic_data_reader::get_label_filename() const
 
 void generic_data_reader::set_first_n(int n) { m_first_n = n; }
 
-void generic_data_reader::set_absolute_sample_count(size_t s)
+void generic_data_reader::set_absolute_sample_count(uint64_t s)
 {
   m_absolute_sample_count = s;
 }
 
-size_t generic_data_reader::get_absolute_sample_count() const
+uint64_t generic_data_reader::get_absolute_sample_count() const
 {
   return m_absolute_sample_count;
 }

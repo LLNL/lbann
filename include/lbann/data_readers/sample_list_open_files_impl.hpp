@@ -868,8 +868,8 @@ sample_list_open_files<sample_name_t, file_handle_t>::all_gather_packed_lists(
 template <typename sample_name_t, typename file_handle_t>
 inline void
 sample_list_open_files<sample_name_t, file_handle_t>::compute_epochs_file_usage(
-  const std::vector<int>& shuffled_indices,
-  int mini_batch_size,
+  const std::vector<uint64_t>& shuffled_indices,
+  uint64_t mini_batch_size,
   const lbann_comm& comm)
 {
   if (mini_batch_size == 0) {
@@ -885,7 +885,7 @@ sample_list_open_files<sample_name_t, file_handle_t>::compute_epochs_file_usage(
   // Once all of the file handles are closed, clear the priority queue
   m_open_fd_pq.clear();
   for (size_t i = 0; i < shuffled_indices.size(); i++) {
-    int idx = shuffled_indices[i];
+    uint64_t idx = shuffled_indices[i];
     const auto& s = this->m_sample_list[idx];
     sample_file_id_t index = s.first;
 

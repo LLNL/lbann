@@ -153,9 +153,9 @@ private:
 
   void do_preload_data_store() override;
 
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
-  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_datum(CPUMat& X, uint64_t data_id, uint64_t mb_idx) override;
+  bool fetch_label(CPUMat& Y, uint64_t data_id, uint64_t mb_idx) override;
+  bool fetch_response(CPUMat& Y, uint64_t data_id, uint64_t mb_idx) override;
 
   /** @brief Populates in m_datum_shapes, m_datum_num_bytes, m_datum_word_sizes
    */
@@ -192,7 +192,7 @@ private:
                             std::map<std::string, cnpy::NpyArray>& data);
 
   void construct_multi_sample(std::vector<conduit::Node>& work,
-                              int data_id,
+                              uint64_t data_id,
                               conduit::Node& node);
 };
 

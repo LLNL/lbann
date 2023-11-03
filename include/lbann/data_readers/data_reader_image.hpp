@@ -92,7 +92,7 @@ public:
 
   void do_preload_data_store() override;
 
-  void load_conduit_node_from_file(int data_id, conduit::Node& node);
+  void load_conduit_node_from_file(uint64_t data_id, conduit::Node& node);
 
 protected:
   void copy_members(const image_data_reader& rhs);
@@ -100,7 +100,7 @@ protected:
   /// Set the default values for the width, the height, the number of channels,
   /// and the number of labels of an image
   virtual void set_defaults();
-  bool fetch_label(Mat& Y, int data_id, int mb_idx) override;
+  bool fetch_label(Mat& Y, uint64_t data_id, uint64_t mb_idx) override;
   void set_linearized_image_size();
 
   /** Dump the image list file in which each line consists of the file name
