@@ -81,7 +81,10 @@ public:
   }
 
   /// support for data store functionality
-  const std::vector<int>& get_num_samples_psum() { return m_num_samples_psum; }
+  const std::vector<uint64_t>& get_num_samples_psum()
+  {
+    return m_num_samples_psum;
+  }
 
 protected:
   bool fetch_datum(CPUMat& X, uint64_t data_id, uint64_t mb_idx) override;
@@ -89,10 +92,10 @@ protected:
   bool fetch_response(CPUMat& Y, uint64_t data_id, uint64_t mb_idx) override;
 
   /// Partial sums of the number of samples in each reader.
-  std::vector<int> m_num_samples_psum;
+  std::vector<uint64_t> m_num_samples_psum;
 
   /// code common to both load() and load_using_data_store()
-  void setup_indices(int num_samples);
+  void setup_indices(uint64_t num_samples);
 
   /// code common to both load() and load_using_data_store()
   size_t compute_num_samples_psum();

@@ -86,7 +86,7 @@ void data_reader_merge_features::load()
     }
   }
   // Verify the readers have the same number of samples.
-  int num_samples = m_data_readers[0]->get_num_data();
+  uint64_t num_samples = m_data_readers[0]->get_num_data();
   for (auto&& reader : m_data_readers) {
     if (num_samples != reader->get_num_data()) {
       throw lbann_exception("data_reader_merge_features: data readers do not "

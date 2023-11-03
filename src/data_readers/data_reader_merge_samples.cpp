@@ -96,7 +96,7 @@ void data_reader_merge_samples::sanity_check_for_consistency(
   }
 }
 
-void data_reader_merge_samples::setup_indices(int num_samples)
+void data_reader_merge_samples::setup_indices(uint64_t num_samples)
 {
   // Set up our indices.
   // Note each subsidiary data reader presumably shuffled its indices as well.

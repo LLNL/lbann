@@ -769,7 +769,7 @@ int data_store_conduit::build_indices_i_will_recv(uint64_t current_pos,
 #else
     int num_ranks_in_partition = 1;
 #endif // LBANN_HAS_DISTCONV
-    if ((((i % m_owner_map_mb_size) % m_num_partitions_in_trainer) *
+    if ((((int)(i % m_owner_map_mb_size) % m_num_partitions_in_trainer) *
            num_ranks_in_partition +
          m_offset_in_partition) == m_rank_in_trainer) {
       auto key = std::make_pair(index, m_offset_in_partition);

@@ -175,7 +175,7 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
 
     // Check shape and contents
     CHECK(samples.Width() == mini_batch_size);
-    for (int i = 0; i < mini_batch_size; ++i) {
+    for (uint64_t i = 0; i < mini_batch_size; ++i) {
       CHECK(samples.LockedMatrix()(0, i) == data);
       ++data;
     }
@@ -189,7 +189,7 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
       CHECK(epoch_done != true);
 
       CHECK(samples.Width() == mini_batch_size);
-      for (int i = 0; i < mini_batch_size; ++i) {
+      for (uint64_t i = 0; i < mini_batch_size; ++i) {
         CHECK(samples.LockedMatrix()(0, i) == data);
         ++data;
       }
@@ -225,7 +225,7 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
         current_mini_batch_size = 1;
       }
       CHECK(samples.Width() == current_mini_batch_size);
-      for (int i = 0; i < current_mini_batch_size; ++i) {
+      for (uint64_t i = 0; i < current_mini_batch_size; ++i) {
         CHECK(samples.LockedMatrix()(0, i) == data);
         ++data;
       }
@@ -255,7 +255,7 @@ TEST_CASE("Buffered data coordinator test", "[io][data_coordinator][sync]")
         current_mini_batch_size = 1;
       }
       CHECK(samples.Width() == current_mini_batch_size);
-      for (int i = 0; i < current_mini_batch_size; ++i) {
+      for (uint64_t i = 0; i < current_mini_batch_size; ++i) {
         CHECK(samples.LockedMatrix()(0, i) == data);
         ++data;
       }
