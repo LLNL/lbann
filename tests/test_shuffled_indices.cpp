@@ -36,11 +36,14 @@
 
 using namespace lbann;
 
-int mini_batch_size = 128;
+uint64_t mini_batch_size = 128;
 
-void test_is_shuffled(const generic_data_reader &reader, bool is_shuffled, const char *msg = nullptr);
+void test_is_shuffled(const generic_data_reader& reader,
+                      bool is_shuffled,
+                      const char* msg = nullptr);
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
   world_comm_ptr comm = initialize(argc, argv);
   // Initialize the general RNGs and the data sequence RNGs
   int random_seed = lbann_default_random_seed;
@@ -61,7 +64,7 @@ int main(int argc, char *argv[]) {
       return EXIT_SUCCESS;
     }
 
-    //read data_reader prototext file
+    // read data_reader prototext file
     if (arg_parser.get<std::string>("fn") == "") {
       std::cerr << __FILE__ << " " << __LINE__ << " :: "
                 << "you must run with: --fn=<string> where <string> is\n"
@@ -72,51 +75,76 @@ int main(int argc, char *argv[]) {
     lbann_data::LbannPB pb;
     std::string reader_fn = arg_parser.get<std::string>("fn");
     read_prototext_file(reader_fn.c_str(), pb, master);
-    const lbann_data::DataReader & d_reader = pb.data_reader();
+    const lbann_data::DataReader& d_reader = pb.data_reader();
 
     int size = d_reader.reader_size();
-    for (int j=0; j<size; j++) {
+    for (int j = 0; j < size; j++) {
       const lbann_data::Reader& readme = d_reader.reader(j);
       if (readme.role() == "train") {
         bool shuffle = true;
         auto reader = std::make_unique<mnist_reader>(shuffle);
 
-        if (readme.data_filename() != "") { reader->set_data_filename( readme.data_filename() ); }
-        if (readme.label_filename() != "") { reader->set_label_filename( readme.label_filename() ); }
-        if (readme.data_filedir() != "") { reader->set_file_dir( readme.data_filedir() ); }
+        if (readme.data_filename() != "") {
+          reader->set_data_filename(readme.data_filename());
+        }
+        if (readme.label_filename() != "") {
+          reader->set_label_filename(readme.label_filename());
+        }
+        if (readme.data_filedir() != "") {
+          reader->set_file_dir(readme.data_filedir());
+        }
         reader->load();
         test_is_shuffled(*reader, true, "TEST #1");
 
-        //test: indices should not be shuffled; same as previous, except we call
-        //      shuffle(true);
+        // test: indices should not be shuffled; same as previous, except we
+        // call
+        //       shuffle(true);
         shuffle = false;
         reader = std::make_unique<mnist_reader>(shuffle);
-        if (readme.data_filename() != "") { reader->set_data_filename( readme.data_filename() ); }
-        if (readme.label_filename() != "") { reader->set_label_filename( readme.label_filename() ); }
-        if (readme.data_filedir() != "") { reader->set_file_dir( readme.data_filedir() ); }
+        if (readme.data_filename() != "") {
+          reader->set_data_filename(readme.data_filename());
+        }
+        if (readme.label_filename() != "") {
+          reader->set_label_filename(readme.label_filename());
+        }
+        if (readme.data_filedir() != "") {
+          reader->set_file_dir(readme.data_filedir());
+        }
         reader->set_shuffle(shuffle);
         reader->load();
         test_is_shuffled(*reader, false, "TEST #2");
 
-        //test: indices should not be shuffled, due to ctor argument
+        // test: indices should not be shuffled, due to ctor argument
         shuffle = false;
         reader = std::make_unique<mnist_reader>(shuffle);
-        if (readme.data_filename() != "") { reader->set_data_filename( readme.data_filename() ); }
-        if (readme.label_filename() != "") { reader->set_label_filename( readme.label_filename() ); }
-        if (readme.data_filedir() != "") { reader->set_file_dir( readme.data_filedir() ); }
+        if (readme.data_filename() != "") {
+          reader->set_data_filename(readme.data_filename());
+        }
+        if (readme.label_filename() != "") {
+          reader->set_label_filename(readme.label_filename());
+        }
+        if (readme.data_filedir() != "") {
+          reader->set_file_dir(readme.data_filedir());
+        }
         reader->load();
         test_is_shuffled(*reader, false, "TEST #3");
 
-        //test: set_shuffled_indices; indices should not be shuffled
+        // test: set_shuffled_indices; indices should not be shuffled
         shuffle = true;
         reader = std::make_unique<mnist_reader>(shuffle);
-        if (readme.data_filename() != "") { reader->set_data_filename( readme.data_filename() ); }
-        if (readme.label_filename() != "") { reader->set_label_filename( readme.label_filename() ); }
-        if (readme.data_filedir() != "") { reader->set_file_dir( readme.data_filedir() ); }
+        if (readme.data_filename() != "") {
+          reader->set_data_filename(readme.data_filename());
+        }
+        if (readme.label_filename() != "") {
+          reader->set_label_filename(readme.label_filename());
+        }
+        if (readme.data_filedir() != "") {
+          reader->set_file_dir(readme.data_filedir());
+        }
         reader->load();
-        //at this point the indices should be shuffled (same as first test)
+        // at this point the indices should be shuffled (same as first test)
         test_is_shuffled(*reader, true, "TEST #4");
-        std::vector<int> indices(mini_batch_size);
+        std::vector<uint64_t> indices(mini_batch_size);
         std::iota(indices.begin(), indices.end(), 0);
         reader->set_shuffled_indices(indices);
         test_is_shuffled(*reader, false, "TEST #5");
@@ -124,8 +152,8 @@ int main(int argc, char *argv[]) {
         break;
       }
     }
-
-  } catch (lbann_exception& e) {
+  }
+  catch (lbann_exception& e) {
     e.print_report();
     return EXIT_FAILURE;
   }
@@ -133,26 +161,30 @@ int main(int argc, char *argv[]) {
   return EXIT_SUCCESS;
 }
 
-void test_is_shuffled(const generic_data_reader &reader, bool is_shuffled, const char *msg) {
-  const std::vector<int> &indices = reader.get_shuffled_indices();
-  std::cerr << "\nstarting test_is_suffled; mini_batch_size: " << mini_batch_size
-            << " indices.size(): " << indices.size();
+void test_is_shuffled(const generic_data_reader& reader,
+                      bool is_shuffled,
+                      const char* msg)
+{
+  const std::vector<uint64_t>& indices = reader.get_shuffled_indices();
+  std::cerr << "\nstarting test_is_suffled; mini_batch_size: "
+            << mini_batch_size << " indices.size(): " << indices.size();
   if (msg) {
     std::cout << " :: " << msg;
   }
   std::cout << std::endl;
 
-  bool yes = false;  //if true true: indices are actaully shuffled
-  for (int h=0; h<mini_batch_size; h++) {
+  bool yes = false; // if true true: indices are actaully shuffled
+  for (uint64_t h = 0; h < mini_batch_size; h++) {
     if (indices[h] != h) {
       yes = true;
     }
   }
-  std::cout << "testing for is_shuffled = " << is_shuffled << " test shows the shuffled is actually "
-            << yes << " :: ";
+  std::cout << "testing for is_shuffled = " << is_shuffled
+            << " test shows the shuffled is actually " << yes << " :: ";
   if (yes == is_shuffled) {
     std::cout << "PASSED!\n";
-  } else {
+  }
+  else {
     std::cout << "FAILED!\n";
   }
 }
