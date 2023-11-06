@@ -30,7 +30,7 @@
 #include "lbann_config.hpp"
 
 #include "lbann/base.hpp"
-#include "lbann/data_readers/utils/input_data_type.hpp"
+#include "lbann/data_ingestion/readers/utils/input_data_type.hpp"
 
 // Forward-declare Conduit nodes.
 namespace conduit {

@@ -31,7 +31,7 @@
 #include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/data_readers/metadata.hpp"
+#include "lbann/data_ingestion/readers/metadata.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"

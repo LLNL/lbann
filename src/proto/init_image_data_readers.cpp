@@ -29,12 +29,12 @@
 #include "lbann/proto/init_image_data_readers.hpp"
 #include "lbann/proto/factories.hpp"
 
-#include "lbann/data_readers/data_reader_cifar10.hpp"
-#include "lbann/data_readers/data_reader_jag_conduit.hpp"
+#include "lbann/data_ingestion/readers/data_reader_cifar10.hpp"
+#include "lbann/data_ingestion/readers/data_reader_jag_conduit.hpp"
 #ifdef LBANN_HAS_OPENCV
-#include "lbann/data_readers/data_reader_imagenet.hpp"
+#include "lbann/data_ingestion/readers/data_reader_imagenet.hpp"
 #endif // LBANN_HAS_OPENCV
-#include "lbann/data_readers/data_reader_mnist.hpp"
+#include "lbann/data_ingestion/readers/data_reader_mnist.hpp"
 
 #include "lbann/proto/reader.pb.h"
 

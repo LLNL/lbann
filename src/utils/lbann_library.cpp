@@ -27,7 +27,7 @@
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/comm_impl.hpp"
-#include "lbann/data_readers/data_reader.hpp"
+#include "lbann/data_ingestion/readers/data_reader.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
 

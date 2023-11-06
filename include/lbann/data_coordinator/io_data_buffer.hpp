@@ -27,7 +27,7 @@
 #ifndef LBANN_IO_BUFFER_HPP_INCLUDED
 #define LBANN_IO_BUFFER_HPP_INCLUDED
 
-#include "lbann/data_readers/utils/input_data_type.hpp"
+#include "lbann/data_ingestion/readers/utils/input_data_type.hpp"
 
 namespace lbann {
 

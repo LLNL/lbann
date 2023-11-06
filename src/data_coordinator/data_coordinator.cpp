@@ -26,7 +26,7 @@
 
 #include <lbann/comm_impl.hpp>
 #include <lbann/data_coordinator/data_coordinator.hpp>
-#include <lbann/data_readers/data_reader.hpp>
+#include <lbann/data_ingestion/readers/data_reader.hpp>
 #include <lbann/data_store/data_store_conduit.hpp>
 #include <lbann/execution_algorithms/execution_context.hpp>
 #include <lbann/trainers/trainer.hpp>

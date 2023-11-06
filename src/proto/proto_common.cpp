@@ -37,7 +37,7 @@
 #include "lbann/utils/profiling.hpp"
 #endif
 
-#include "lbann/data_readers/data_reader_HDF5.hpp"
+#include "lbann/data_ingestion/readers/data_reader_HDF5.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/protobuf.hpp"
 

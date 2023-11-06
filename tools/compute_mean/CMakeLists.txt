@@ -55,25 +55,25 @@ file(GLOB COMPUTE_MEAN_DEPEND_SRCS
      process_images.cpp
      lbann/utils/random.cpp
      ${LBANN_DIR}/src//utils/file_utils.cpp
-     ${LBANN_DIR}/src/data_readers/cv_augmenter.cpp
-     ${LBANN_DIR}/src/data_readers/cv_colorizer.cpp
-     ${LBANN_DIR}/src/data_readers/cv_cropper.cpp
-     ${LBANN_DIR}/src/data_readers/cv_decolorizer.cpp
-     ${LBANN_DIR}/src/data_readers/cv_mean_extractor.cpp
-     ${LBANN_DIR}/src/data_readers/cv_normalizer.cpp
-     ${LBANN_DIR}/src/data_readers/cv_process.cpp
-     ${LBANN_DIR}/src/data_readers/cv_process_patches.cpp
-     ${LBANN_DIR}/src/data_readers/cv_subtractor.cpp
-     ${LBANN_DIR}/src/data_readers/cv_transform.cpp
-     ${LBANN_DIR}/src/data_readers/patchworks/patchworks.cpp
-     ${LBANN_DIR}/src/data_readers/patchworks/patchworks_patch_descriptor.cpp
-     ${LBANN_DIR}/src/data_readers/patchworks/patchworks_ROI.cpp
-     ${LBANN_DIR}/src/data_readers/patchworks/patchworks_stats.cpp)
+     ${LBANN_DIR}/src/data_ingestion/readers/cv_augmenter.cpp
+     ${LBANN_DIR}/src/data_ingestion/readers/cv_colorizer.cpp
+     ${LBANN_DIR}/src/data_ingestion/readers/cv_cropper.cpp
+     ${LBANN_DIR}/src/data_ingestion/readers/cv_decolorizer.cpp
+     ${LBANN_DIR}/src/data_ingestion/readers/cv_mean_extractor.cpp
+     ${LBANN_DIR}/src/data_ingestion/readers/cv_normalizer.cpp
+     ${LBANN_DIR}/src/data_ingestion/readers/cv_process.cpp
+     ${LBANN_DIR}/src/data_ingestion/readers/cv_process_patches.cpp
+     ${LBANN_DIR}/src/data_ingestion/readers/cv_subtractor.cpp
+     ${LBANN_DIR}/src/data_ingestion/readers/cv_transform.cpp
+     ${LBANN_DIR}/src/data_ingestion/readers/patchworks/patchworks.cpp
+     ${LBANN_DIR}/src/data_ingestion/readers/patchworks/patchworks_patch_descriptor.cpp
+     ${LBANN_DIR}/src/data_ingestion/readers/patchworks/patchworks_ROI.cpp
+     ${LBANN_DIR}/src/data_ingestion/readers/patchworks/patchworks_stats.cpp)
 
 file(GLOB UNIFORM_MEAN_DEPEND_SRCS
      ${LBANN_DIR}/src//utils/file_utils.cpp
-     ${LBANN_DIR}/src/data_readers/cv_transform.cpp
-     ${LBANN_DIR}/src/data_readers/cv_subtractor.cpp)
+     ${LBANN_DIR}/src/data_ingestion/readers/cv_transform.cpp
+     ${LBANN_DIR}/src/data_ingestion/readers/cv_subtractor.cpp)
 
 add_executable(${COMPUTE_MEAN_EXE} ${COMPUTE_MEAN_SRCS} ${COMPUTE_MEAN_DEPEND_SRCS})
 target_link_libraries(${COMPUTE_MEAN_EXE} ${OpenCV_LIBS} ${Elemental_LIBS} ${MPI_CXX_LIBRARIES} ${OpenMP_CXX_LIBRARIES})

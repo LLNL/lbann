@@ -31,8 +31,8 @@
 
 #include <lbann/base.hpp>
 #include <lbann/data_coordinator/buffered_data_coordinator.hpp>
-#include <lbann/data_readers/data_reader.hpp>
-// #include <lbann/data_readers/data_reader_synthetic.hpp>
+#include <lbann/data_ingestion/readers/data_reader.hpp>
+// #include <lbann/data_ingestion/readers/data_reader_synthetic.hpp>
 #include <lbann/utils/memory.hpp>
 #include <lbann/utils/threads/thread_pool.hpp>
 #include <map>

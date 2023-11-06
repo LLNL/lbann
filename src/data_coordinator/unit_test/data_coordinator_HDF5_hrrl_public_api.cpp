@@ -41,8 +41,8 @@
 #include <ostream>
 #include <string.h>
 
-#include "../src/data_readers/unit_test/test_data/hdf5_hrrl_test_data_and_schemas.yaml" // THIS IS NOT A YAML FILE
-#include "lbann/data_readers/data_reader_HDF5.hpp"
+#include "../src/data_ingestion/readers/unit_test/test_data/hdf5_hrrl_test_data_and_schemas.yaml" // THIS IS NOT A YAML FILE
+#include "lbann/data_ingestion/readers/data_reader_HDF5.hpp"
 
 class DataReaderHDF5WhiteboxTester
 {
