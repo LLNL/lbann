@@ -27,7 +27,7 @@
 #ifndef LBANN_IO_BUFFER_HPP_IMPL_INCLUDED
 #define LBANN_IO_BUFFER_HPP_IMPL_INCLUDED
 
-#include "lbann/data_coordinator/io_data_buffer.hpp"
+#include "lbann/data_ingestion/infrastructure/io_data_buffer.hpp"
 
 namespace lbann {
 

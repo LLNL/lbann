@@ -28,7 +28,7 @@
 #define LBANN_BUFFERED_DATA_COORDINATOR_HPP
 
 #include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/data_coordinator/io_data_buffer.hpp"
+#include "lbann/data_ingestion/infrastructure/io_data_buffer.hpp"
 
 namespace lbann {
 

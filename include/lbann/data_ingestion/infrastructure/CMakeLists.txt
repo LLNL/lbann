@@ -26,6 +26,8 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
   dataset.hpp
+  io_data_buffer.hpp
+  io_data_buffer_impl.hpp
 )
 
 # Propagate the files up the tree
