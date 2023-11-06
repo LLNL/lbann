@@ -89,15 +89,21 @@ struct NormComputer
 {
   model& m;
   DataType* global_norm_ptr;
+  DataType* global_sharded_norm_ptr;
+  bool* any_weights_sharded;
   bool compute_global_norm;
   float norm_value;
 
   NormComputer(model& arg_m,
                DataType* arg_global_norm_ptr,
+               DataType* arg_global_sharded_norm_ptr,
+               bool* arg_any_weights_sharded,
                bool arg_compute_global_norm,
                float arg_norm_value)
     : m(arg_m),
       global_norm_ptr(arg_global_norm_ptr),
+      global_sharded_norm_ptr(arg_global_sharded_norm_ptr),
+      any_weights_sharded(arg_any_weights_sharded),
       compute_global_norm(arg_compute_global_norm),
       norm_value(arg_norm_value)
   {}
@@ -150,7 +156,14 @@ struct NormComputer
           El::SyncInfoFromMatrix(gradmatrix));
 #endif // LBANN_HAS_GPU
       }
-      *global_norm_ptr += local_norm * local_norm;
+      // Summarize sharded norms separately (as they will be allreduced)
+      if (dtw.is_sharded()) {
+        *global_sharded_norm_ptr += local_norm * local_norm;
+        *any_weights_sharded = true;
+      }
+      else {
+        *global_norm_ptr += local_norm * local_norm;
+      }
     }
   }
 };
@@ -161,17 +174,27 @@ void clip_gradient_norm::on_backward_prop_end(model* m)
     h2::meta::tlist::ExpandTL<data_type_weights, supported_layer_data_type>;
   using Dispatcher = h2::multimethods::
     SwitchDispatcher<NormComputer, void, weights, WeightsTypes>;
-  DataType global_norm = 0;
+  DataType global_norm = 0, global_sharded_norm = 0;
+  bool any_weights_sharded = false;
   for (weights* w : this->m_weights) {
     if (w->get_optimizer() != nullptr) {
-      Dispatcher::Exec(NormComputer(*m, &global_norm, m_global_norm, m_value),
+      Dispatcher::Exec(NormComputer(*m,
+                                    &global_norm,
+                                    &global_sharded_norm,
+                                    &any_weights_sharded,
+                                    m_global_norm,
+                                    m_value),
                        *w);
     }
   }
 
   if (m_global_norm) {
-    global_norm = m->get_comm()->trainer_allreduce(global_norm);
-    global_norm = std::sqrt(global_norm);
+    // Allreduce the global gradient norm for sharded weights
+    if (any_weights_sharded) {
+      global_norm += m->get_comm()->trainer_allreduce(global_sharded_norm);
+    }
+
+    global_norm = std::sqrt(global_norm + global_sharded_norm);
     if (global_norm > this->m_value) {
       DataType scale = this->m_value / global_norm;
       for (weights* w : this->m_weights) {
