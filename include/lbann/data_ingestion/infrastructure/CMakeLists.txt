@@ -23,10 +23,10 @@
 ## implied. See the License for the specific language governing
 ## permissions and limitations under the license.
 ################################################################################
-
-# Add the subdirectories
-add_subdirectory(infrastructure)
-add_subdirectory(readers)
+# Add the headers for this directory
+set_full_path(THIS_DIR_HEADERS
+  dataset.hpp
+)
 
 # Propagate the files up the tree
-set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
+set(HEADERS "${HEADERS}" "${THIS_DIR_HEADERS}" PARENT_SCOPE)

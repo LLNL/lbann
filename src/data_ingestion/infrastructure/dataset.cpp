@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/utils/dataset.hpp"
+#include "lbann/data_ingestion/infrastructure/dataset.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/serialize.hpp"
 

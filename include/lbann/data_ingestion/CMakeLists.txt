@@ -25,6 +25,7 @@
 ################################################################################
 
 # Add the subdirectories
+add_subdirectory(infrastructure)
 add_subdirectory(readers)
 
 # Propagate the files up the tree
