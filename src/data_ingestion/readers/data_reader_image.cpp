@@ -28,8 +28,8 @@
 
 #include "lbann/data_ingestion/readers/data_reader_image.hpp"
 #include "lbann/comm_impl.hpp"
+#include "lbann/data_ingestion/data_store_conduit.hpp"
 #include "lbann/data_ingestion/readers/sample_list_impl.hpp"
-#include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/threads/thread_utils.hpp"

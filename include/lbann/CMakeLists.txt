@@ -36,7 +36,6 @@ set_full_path(THIS_DIR_HEADERS
 add_subdirectory(callbacks)
 add_subdirectory(data_coordinator)
 add_subdirectory(data_ingestion)
-add_subdirectory(data_store)
 add_subdirectory(io)
 add_subdirectory(layers)
 add_subdirectory(macros)

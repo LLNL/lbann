@@ -154,7 +154,7 @@
 #include "lbann/data_ingestion/readers/data_reader_smiles.hpp"
 
 /// Data stores
-#include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/data_ingestion/data_store_conduit.hpp"
 
 /// Callbacks
 #include "lbann/callbacks/alternate_updates.hpp"

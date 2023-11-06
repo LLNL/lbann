@@ -27,7 +27,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/lbann.hpp"
-#include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/data_ingestion/data_store_conduit.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/protobuf_utils.hpp"

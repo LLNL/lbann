@@ -27,7 +27,7 @@
 
 #include "lbann/data_ingestion/readers/data_reader_npz_ras_lipid.hpp"
 #include "lbann/comm_impl.hpp"
-#include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/data_ingestion/data_store_conduit.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/commify.hpp"
 #include "lbann/utils/jag_utils.hpp"

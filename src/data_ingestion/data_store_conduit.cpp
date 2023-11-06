@@ -30,7 +30,7 @@
 #include <conduit/conduit_relay_io_hdf5.hpp>
 
 #include "lbann/comm_impl.hpp"
-#include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/data_ingestion/data_store_conduit.hpp"
 
 #include "lbann/data_ingestion/readers/data_reader_image.hpp"
 #include "lbann/data_ingestion/readers/sample_list_impl.hpp"

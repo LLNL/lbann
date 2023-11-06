@@ -23,6 +23,10 @@
 ## implied. See the License for the specific language governing
 ## permissions and limitations under the license.
 ################################################################################
+# Add the headers for this directory
+set_full_path(THIS_DIR_HEADERS
+  data_store_conduit.hpp
+  )
 
 # Add the subdirectories
 add_subdirectory(infrastructure)

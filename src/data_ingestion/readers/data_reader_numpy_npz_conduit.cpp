@@ -27,7 +27,7 @@
 
 #include "lbann/data_ingestion/readers/data_reader_numpy_npz_conduit.hpp"
 #include "lbann/comm_impl.hpp"
-#include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/data_ingestion/data_store_conduit.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/file_utils.hpp" // pad()
 #include "lbann/utils/jag_utils.hpp" // read_filelist(..) TODO should be move to file_utils

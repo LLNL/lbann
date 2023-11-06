@@ -32,7 +32,7 @@
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/data_ingestion/data_store_conduit.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/layers/io/input_layer.hpp"

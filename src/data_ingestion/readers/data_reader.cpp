@@ -30,7 +30,7 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/data_ingestion/data_store_conduit.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/io/persist_impl.hpp"

@@ -27,7 +27,7 @@
 
 #include "lbann/data_ingestion/readers/data_reader_jag_conduit.hpp"
 #include "lbann/comm_impl.hpp"
-#include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/data_ingestion/data_store_conduit.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/transforms/repack_HWC_to_CHW_layout.hpp"
