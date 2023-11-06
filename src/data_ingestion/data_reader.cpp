@@ -29,7 +29,7 @@
 #include "lbann/data_ingestion/data_reader.hpp"
 
 #include "lbann/comm_impl.hpp"
-#include "lbann/data_ingestion/coordinator/data_coordinator.hpp"
+#include "lbann/data_ingestion/data_coordinator.hpp"
 #include "lbann/data_ingestion/data_store_conduit.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/io/persist.hpp"

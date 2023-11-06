@@ -32,7 +32,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm_impl.hpp"
-#include "lbann/data_ingestion/coordinator/data_coordinator.hpp"
+#include "lbann/data_ingestion/data_coordinator.hpp"
 #include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/trainers/trainer.hpp"

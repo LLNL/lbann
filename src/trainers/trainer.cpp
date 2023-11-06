@@ -30,7 +30,7 @@
 // LBANN dependencies
 #include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/data_ingestion/coordinator/data_coordinator.hpp"
+#include "lbann/data_ingestion/data_coordinator.hpp"
 #include "lbann/data_ingestion/readers/metadata.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"

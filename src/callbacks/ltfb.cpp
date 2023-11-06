@@ -26,7 +26,7 @@
 
 #include "lbann/callbacks/ltfb.hpp"
 #include "lbann/comm_impl.hpp"
-#include "lbann/data_ingestion/coordinator/data_coordinator.hpp"
+#include "lbann/data_ingestion/data_coordinator.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
