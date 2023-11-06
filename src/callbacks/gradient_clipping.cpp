@@ -32,6 +32,7 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/weights/weights.hpp"
@@ -44,6 +45,12 @@
 
 namespace lbann {
 namespace callback {
+
+static inline bool on_subgrid(El::BaseDistMatrix const& mat)
+{
+  return mat.DistData().grid->Size() !=
+         ::lbann::get_trainer().get_comm()->get_trainer_grid().Size();
+}
 
 clip_gradient_norm::clip_gradient_norm()
   : clip_gradient_norm(std::vector<std::string>{})
@@ -148,6 +155,9 @@ struct NormComputer
         const auto& gradmatrix =
           static_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(
             gradmat);
+        if (!gradmatrix.Contiguous()) {
+          LBANN_ERROR("Cannot compute l2 norm of noncontiguous gradient");
+        }
         hydrogen::gpu_blas::Nrm2(
           size_t(gradmatrix.Width() * gradmatrix.Height()),
           gradmatrix.LockedBuffer(),
@@ -156,12 +166,20 @@ struct NormComputer
           El::SyncInfoFromMatrix(gradmatrix));
 #endif // LBANN_HAS_GPU
       }
-      // Summarize sharded norms separately (as they will be allreduced)
       if (dtw.is_sharded()) {
+        // Summarize sharded norms separately (as they will be allreduced)
         *global_sharded_norm_ptr += local_norm * local_norm;
         *any_weights_sharded = true;
       }
+      else if (on_subgrid(grad)) {
+        // If gradients live on a subgrid, also reduce them based on their size
+        *global_sharded_norm_ptr +=
+          (local_norm * local_norm) / grad.RedundantSize();
+        *any_weights_sharded = true;
+      }
       else {
+        // As an optimization, weights that are shared across all ranks in a
+        // trainer (i.e., STAR_STAR) don't need to be reduced
         *global_norm_ptr += local_norm * local_norm;
       }
     }
