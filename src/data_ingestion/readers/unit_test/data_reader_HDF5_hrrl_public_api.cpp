@@ -28,7 +28,7 @@
 
 #include "MPITestHelpers.hpp"
 #include "TestHelpers.hpp"
-#include "lbann/data_coordinator/data_packer.hpp"
+#include "lbann/data_ingestion/infrastructure/data_packer.hpp"
 #include "lbann/data_ingestion/readers/utils/input_data_type.hpp"
 #include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/proto_common.hpp"

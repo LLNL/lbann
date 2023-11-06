@@ -26,6 +26,7 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
   dataset.cpp
+  data_packer.cpp
 )
 
 # Propagate the files up the tree

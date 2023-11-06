@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_coordinator/data_packer.hpp"
+#include "lbann/data_ingestion/infrastructure/data_packer.hpp"
 
 #include "lbann/utils/exception.hpp"
 

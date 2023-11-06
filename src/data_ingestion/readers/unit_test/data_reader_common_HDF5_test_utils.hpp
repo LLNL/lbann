@@ -27,7 +27,7 @@
 #ifndef __DATA_READER_TEST_COMMON_HDF5_TEST_UTILS_HPP__
 #define __DATA_READER_TEST_COMMON_HDF5_TEST_UTILS_HPP__
 
-#include "lbann/data_coordinator/data_packer.hpp"
+#include "lbann/data_ingestion/infrastructure/data_packer.hpp"
 #include "lbann/data_ingestion/readers/data_reader_HDF5.hpp"
 
 #include <conduit/conduit.hpp>

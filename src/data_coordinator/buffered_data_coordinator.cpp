@@ -26,7 +26,7 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/buffered_data_coordinator_impl.hpp"
-#include "lbann/data_coordinator/data_packer.hpp"
+#include "lbann/data_ingestion/infrastructure/data_packer.hpp"
 #include "lbann/data_ingestion/infrastructure/io_data_buffer_impl.hpp"
 #include "lbann/data_ingestion/readers/data_reader.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
