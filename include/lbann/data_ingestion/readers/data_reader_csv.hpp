@@ -29,7 +29,7 @@
 #ifndef LBANN_DATA_READER_CSV_HPP
 #define LBANN_DATA_READER_CSV_HPP
 
-#include "data_reader.hpp"
+#include "lbann/data_ingestion/data_reader.hpp"
 #include <unordered_map>
 
 namespace lbann {

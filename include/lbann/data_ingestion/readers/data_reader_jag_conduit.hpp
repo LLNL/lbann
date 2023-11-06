@@ -31,7 +31,7 @@
 
 #include "conduit/conduit.hpp"
 #include "hdf5.h"
-#include "lbann/data_ingestion/readers/data_reader.hpp"
+#include "lbann/data_ingestion/data_reader.hpp"
 #include <map>
 #include <memory>
 #include <set>

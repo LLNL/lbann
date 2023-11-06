@@ -27,7 +27,7 @@
 #ifndef LBANN_PROTO_FACTORIES_HPP_INCLUDED
 #define LBANN_PROTO_FACTORIES_HPP_INCLUDED
 
-#include "lbann/data_ingestion/readers/data_reader.hpp"
+#include "lbann/data_ingestion/data_reader.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/operators/operator.hpp"
 #include "lbann/proto/proto_common.hpp"

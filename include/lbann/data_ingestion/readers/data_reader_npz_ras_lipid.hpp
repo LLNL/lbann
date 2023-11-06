@@ -29,7 +29,7 @@
 #define LBANN_DATA_READER_NPZ_RAS_LIPID_HPP
 
 #include "conduit/conduit.hpp"
-#include "lbann/data_ingestion/readers/data_reader.hpp"
+#include "lbann/data_ingestion/data_reader.hpp"
 #include "lbann/utils/options.hpp"
 #include <cnpy.h>
 #include <memory>

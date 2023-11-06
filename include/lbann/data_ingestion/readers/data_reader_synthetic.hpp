@@ -28,7 +28,7 @@
 #ifndef LBANN_DATA_READER_SYNTHETIC_HPP
 #define LBANN_DATA_READER_SYNTHETIC_HPP
 
-#include "data_reader.hpp"
+#include "lbann/data_ingestion/data_reader.hpp"
 #include "lbann/utils/dim_helpers.hpp"
 
 // Forward declaration

@@ -30,7 +30,7 @@
 #ifndef LBANN_DATA_READER_PILOT2_MOLECULAR_HPP
 #define LBANN_DATA_READER_PILOT2_MOLECULAR_HPP
 
-#include "data_reader.hpp"
+#include "lbann/data_ingestion/data_reader.hpp"
 #include <cnpy.h>
 
 namespace lbann {

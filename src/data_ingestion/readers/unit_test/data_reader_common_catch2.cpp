@@ -30,7 +30,7 @@
 #include "TestHelpers.hpp"
 
 #include "./data_reader_common_catch2.hpp"
-// #include "lbann/data_ingestion/readers/data_reader.hpp"
+// #include "lbann/data_ingestion/data_reader.hpp"
 #include "lbann/proto/proto_common.hpp"
 
 std::string create_test_directory(std::string base_name)

@@ -29,7 +29,7 @@
 #define LBANN_DATA_READER_NUMPY_NPZ_CONDUIT_HPP
 
 #include "conduit/conduit.hpp"
-#include "lbann/data_ingestion/readers/data_reader.hpp"
+#include "lbann/data_ingestion/data_reader.hpp"
 #include <cnpy.h>
 
 namespace lbann {

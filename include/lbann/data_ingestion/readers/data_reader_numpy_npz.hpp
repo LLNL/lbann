@@ -30,8 +30,8 @@
 #ifndef LBANN_DATA_READER_NUMPY_NPZ_HPP
 #define LBANN_DATA_READER_NUMPY_NPZ_HPP
 
-#include "data_reader.hpp"
 #include "data_reader_numpy.hpp"
+#include "lbann/data_ingestion/data_reader.hpp"
 #include <cnpy.h>
 
 namespace lbann {

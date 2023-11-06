@@ -26,6 +26,7 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
   data_store_conduit.hpp
+  data_reader.hpp
   )
 
 # Add the subdirectories

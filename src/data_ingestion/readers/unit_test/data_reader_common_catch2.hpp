@@ -31,7 +31,7 @@
 #include <sys/types.h> //for mkdir
 #include <unistd.h>    //for getpid
 
-#include "lbann/data_ingestion/readers/data_reader.hpp"
+#include "lbann/data_ingestion/data_reader.hpp"
 #include <lbann/base.hpp>
 
 #include "lbann/proto/lbann.pb.h"

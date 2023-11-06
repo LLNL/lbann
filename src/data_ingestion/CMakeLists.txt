@@ -26,6 +26,7 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
   data_store_conduit.cpp
+  data_reader.cpp
 )
 
 # Add the subdirectories

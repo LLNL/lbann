@@ -29,7 +29,7 @@
 #ifndef LBANN_DATA_READER_MESH_HPP
 #define LBANN_DATA_READER_MESH_HPP
 
-#include "data_reader.hpp"
+#include "lbann/data_ingestion/data_reader.hpp"
 
 namespace lbann {
 

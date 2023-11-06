@@ -26,10 +26,10 @@
 
 #include "lbann/comm_impl.hpp"
 #include "lbann/data_coordinator/buffered_data_coordinator_impl.hpp"
+#include "lbann/data_ingestion/data_reader.hpp"
 #include "lbann/data_ingestion/data_store_conduit.hpp"
 #include "lbann/data_ingestion/infrastructure/data_packer.hpp"
 #include "lbann/data_ingestion/infrastructure/io_data_buffer_impl.hpp"
-#include "lbann/data_ingestion/readers/data_reader.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/io/persist_impl.hpp"
 #include "lbann/trainers/trainer.hpp"

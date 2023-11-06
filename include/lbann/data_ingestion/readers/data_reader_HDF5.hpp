@@ -26,8 +26,8 @@
 #ifndef LBANN_DATA_READER_HDF5_REVISED_HPP
 #define LBANN_DATA_READER_HDF5_REVISED_HPP
 
+#include "lbann/data_ingestion/data_reader.hpp"
 #include "lbann/data_ingestion/data_store_conduit.hpp"
-#include "lbann/data_ingestion/readers/data_reader.hpp"
 #include "lbann/data_ingestion/readers/data_reader_sample_list.hpp"
 #include "lbann/data_ingestion/readers/sample_list_hdf5.hpp"
 

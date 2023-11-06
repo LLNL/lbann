@@ -27,7 +27,7 @@
 #ifndef LBANN_GENERIC_COMPOUND_DATA_READER_HPP
 #define LBANN_GENERIC_COMPOUND_DATA_READER_HPP
 
-#include "data_reader.hpp"
+#include "lbann/data_ingestion/data_reader.hpp"
 
 #include <utility>
 

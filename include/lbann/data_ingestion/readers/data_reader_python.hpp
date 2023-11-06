@@ -27,7 +27,7 @@
 #ifndef LBANN_DATA_READERS_PYTHON_HPP_INCLUDED
 #define LBANN_DATA_READERS_PYTHON_HPP_INCLUDED
 
-#include "data_reader.hpp"
+#include "lbann/data_ingestion/data_reader.hpp"
 #ifdef LBANN_HAS_EMBEDDED_PYTHON
 #include "lbann/utils/python.hpp"
 
