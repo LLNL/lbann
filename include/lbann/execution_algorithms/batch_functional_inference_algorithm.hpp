@@ -28,7 +28,7 @@
 #define LBANN_BATCH_INFERENCE_ALGORITHM_HPP
 
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/data_ingestion/coordinator/data_coordinator.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/io/input_layer.hpp"

@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/data_coordinator/buffered_data_coordinator.hpp"
+#include "lbann/data_ingestion/coordinator/buffered_data_coordinator.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/execution_algorithms/factory.hpp"
 #include "lbann/proto/datatype_helpers.hpp"

@@ -29,7 +29,7 @@
 #include "lbann/callbacks/progress_bar.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/callbacks/memory_profiler.hpp"
-#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/data_ingestion/coordinator/data_coordinator.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/objective_functions/layer_term.hpp"

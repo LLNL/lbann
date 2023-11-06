@@ -27,7 +27,7 @@
 #ifndef LBANN_BUFFERED_DATA_COORDINATOR_IMPL_HPP
 #define LBANN_BUFFERED_DATA_COORDINATOR_IMPL_HPP
 
-#include "lbann/data_coordinator/buffered_data_coordinator.hpp"
+#include "lbann/data_ingestion/coordinator/buffered_data_coordinator.hpp"
 #include "lbann/utils/serialize.hpp"
 
 namespace lbann {

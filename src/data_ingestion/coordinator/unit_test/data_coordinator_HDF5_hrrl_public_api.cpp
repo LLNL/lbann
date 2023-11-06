@@ -28,7 +28,7 @@
 
 #include "MPITestHelpers.hpp"
 #include "TestHelpers.hpp"
-#include "lbann/data_coordinator/buffered_data_coordinator.hpp"
+#include "lbann/data_ingestion/coordinator/buffered_data_coordinator.hpp"
 #include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"

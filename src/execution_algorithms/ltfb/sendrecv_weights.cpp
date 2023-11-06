@@ -26,7 +26,7 @@
 #include "lbann/execution_algorithms/ltfb/random_pairwise_exchange.hpp"
 
 #include "lbann/comm_impl.hpp"
-#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/data_ingestion/coordinator/data_coordinator.hpp"
 #include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/objective_functions/objective_function.hpp"

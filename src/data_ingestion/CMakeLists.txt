@@ -30,6 +30,7 @@ set_full_path(THIS_DIR_SOURCES
 )
 
 # Add the subdirectories
+add_subdirectory(coordinator)
 add_subdirectory(infrastructure)
 add_subdirectory(readers)
 

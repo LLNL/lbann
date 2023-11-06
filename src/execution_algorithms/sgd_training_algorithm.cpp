@@ -28,7 +28,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/data_ingestion/coordinator/data_coordinator.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/objective_functions/objective_function.hpp"

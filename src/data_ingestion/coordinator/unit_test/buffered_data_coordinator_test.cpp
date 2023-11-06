@@ -30,7 +30,7 @@
 #include "TestHelpers.hpp"
 
 #include <lbann/base.hpp>
-#include <lbann/data_coordinator/buffered_data_coordinator.hpp>
+#include <lbann/data_ingestion/coordinator/buffered_data_coordinator.hpp>
 #include <lbann/data_ingestion/data_reader.hpp>
 // #include <lbann/data_ingestion/readers/data_reader_synthetic.hpp>
 #include <lbann/utils/memory.hpp>

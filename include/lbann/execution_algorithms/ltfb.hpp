@@ -26,7 +26,7 @@
 #ifndef LBANN_EXECUTION_ALGORITHMS_LTFB_HPP_INCLUDED
 #define LBANN_EXECUTION_ALGORITHMS_LTFB_HPP_INCLUDED
 
-#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/data_ingestion/coordinator/data_coordinator.hpp"
 #include "lbann/execution_algorithms/factory.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
 #include "lbann/trainers/trainer.hpp"

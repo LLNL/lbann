@@ -29,7 +29,7 @@
 #include "lbann/callbacks/print_statistics.hpp"
 #include "lbann/comm_impl.hpp"
 
-#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/data_ingestion/coordinator/data_coordinator.hpp"
 #include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/argument_parser.hpp"

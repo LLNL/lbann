@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/check_gradients.hpp"
-#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/data_ingestion/coordinator/data_coordinator.hpp"
 #include "lbann/data_ingestion/data_reader.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
