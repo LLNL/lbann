@@ -159,25 +159,12 @@ struct NormComputer
           LBANN_ERROR("Cannot compute l2 norm of noncontiguous gradient");
         }
 
-        {
-#ifdef LBANN_HAS_ROCM
-          // Workaround to make Nrm2 run with host pointers and a nonblocking
-          // stream
-          static lbann::gpu_lib::event_wrapper ev;
-          auto syncinfo =
-            El::SyncInfo<El::Device::GPU>(nullptr, ev.get_event());
-          auto multisync =
-            El::MakeMultiSync(syncinfo, gpu::get_sync_info(gradmatrix));
-#else
-          auto syncinfo = gpu::get_sync_info(gradmatrix);
-#endif
-          hydrogen::gpu_blas::Nrm2(
-            size_t(gradmatrix.Width() * gradmatrix.Height()),
-            gradmatrix.LockedBuffer(),
-            size_t(1),
-            &local_norm,
-            syncinfo);
-        }
+        hydrogen::gpu_blas::Nrm2(
+          size_t(gradmatrix.Width() * gradmatrix.Height()),
+          gradmatrix.LockedBuffer(),
+          size_t(1),
+          &local_norm,
+          gpu::get_sync_info(gradmatrix));
 #endif // LBANN_HAS_GPU
       }
       if (dtw.is_sharded()) {
