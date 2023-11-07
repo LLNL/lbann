@@ -211,7 +211,7 @@ struct NormScaler
   {
     data_type_optimizer<TensorDataType>* opt = dtw.get_optimizer();
     auto& grad = opt->get_gradient_sharded();
-    El::Scale(TensorDataType(scale), grad.Matrix());
+    El::Scale(El::To<TensorDataType>(scale), grad.Matrix());
   }
 };
 
