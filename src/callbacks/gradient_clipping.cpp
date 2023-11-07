@@ -143,7 +143,7 @@ struct NormComputer
     }
     else {
       const auto& gradmat = grad.LockedMatrix();
-      TensorDataType local_norm = TensorDataType(0);
+      TensorDataType local_norm = El::To<TensorDataType>(0);
       if ((gradmat.GetDevice() == El::Device::CPU)) {
         const auto& gradmatrix =
           static_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(
