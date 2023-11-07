@@ -138,7 +138,7 @@ struct NormComputer
       // The following call may incur communication (e.g., with sharded weights)
       norm = El::Nrm2(grad);
       if (norm > norm_value) {
-        El::Scale(norm_value / norm, grad);
+        El::Scale(El::To<TensorDataType>(norm_value) / norm, grad);
       }
     }
     else {
