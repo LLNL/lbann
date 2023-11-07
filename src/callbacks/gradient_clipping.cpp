@@ -188,7 +188,8 @@ struct NormComputer
       else if (on_subgrid(grad)) {
         // If gradients live on a subgrid, also reduce them based on their size
         *global_sharded_norm_ptr +=
-          (local_norm * local_norm) / grad.RedundantSize();
+          (local_norm * local_norm) /
+          El::To<TensorDataType>(grad.RedundantSize());
         *any_weights_sharded = true;
       }
       else {
