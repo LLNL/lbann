@@ -158,12 +158,26 @@ struct NormComputer
         if (!gradmatrix.Contiguous()) {
           LBANN_ERROR("Cannot compute l2 norm of noncontiguous gradient");
         }
-        hydrogen::gpu_blas::Nrm2(
-          size_t(gradmatrix.Width() * gradmatrix.Height()),
-          gradmatrix.LockedBuffer(),
-          size_t(1),
-          &local_norm,
-          El::SyncInfoFromMatrix(gradmatrix));
+
+        {
+#ifdef LBANN_HAS_ROCM
+          // Workaround to make Nrm2 run with host pointers and a nonblocking
+          // stream
+          static lbann::gpu_lib::event_wrapper ev;
+          auto syncinfo =
+            El::SyncInfo<El::Device::GPU>(nullptr, ev.get_event());
+          auto multisync =
+            El::MakeMultiSync(syncinfo, gpu::get_sync_info(gradmatrix));
+#else
+          auto syncinfo = gpu::get_sync_info(gradmatrix);
+#endif
+          hydrogen::gpu_blas::Nrm2(
+            size_t(gradmatrix.Width() * gradmatrix.Height()),
+            gradmatrix.LockedBuffer(),
+            size_t(1),
+            &local_norm,
+            syncinfo);
+        }
 #endif // LBANN_HAS_GPU
       }
       if (dtw.is_sharded()) {
@@ -186,12 +200,41 @@ struct NormComputer
   }
 };
 
+struct NormScaler
+{
+  DataType scale;
+
+  NormScaler(DataType arg_scale) : scale(arg_scale) {}
+
+  template <typename... Ts>
+  void DispatchError(Ts&&...)
+  {
+    LBANN_ERROR("Unable to dispatch functor.");
+  }
+
+  template <typename... Ts>
+  void DeductionError(Ts&&...)
+  {
+    LBANN_ERROR("Unable to deduce an argument type.");
+  }
+
+  template <typename TensorDataType>
+  void operator()(data_type_weights<TensorDataType>& dtw)
+  {
+    data_type_optimizer<TensorDataType>* opt = dtw.get_optimizer();
+    auto& grad = opt->get_gradient_sharded();
+    El::Scale(TensorDataType(scale), grad.Matrix());
+  }
+};
+
 void clip_gradient_norm::on_backward_prop_end(model* m)
 {
   using WeightsTypes =
     h2::meta::tlist::ExpandTL<data_type_weights, supported_layer_data_type>;
   using Dispatcher = h2::multimethods::
     SwitchDispatcher<NormComputer, void, weights, WeightsTypes>;
+  using ScaleDispatcher =
+    h2::multimethods::SwitchDispatcher<NormScaler, void, weights, WeightsTypes>;
   DataType global_norm = 0, global_sharded_norm = 0;
   bool any_weights_sharded = false;
   for (weights* w : this->m_weights) {
@@ -212,15 +255,12 @@ void clip_gradient_norm::on_backward_prop_end(model* m)
       global_norm += m->get_comm()->trainer_allreduce(global_sharded_norm);
     }
 
-    global_norm = std::sqrt(global_norm + global_sharded_norm);
+    global_norm = std::sqrt(global_norm);
     if (global_norm > this->m_value) {
       DataType scale = this->m_value / global_norm;
       for (weights* w : this->m_weights) {
-        optimizer* opt = w->get_optimizer();
-        if (opt != nullptr) {
-          auto* dt_opt = dynamic_cast<data_type_optimizer<DataType>*>(opt);
-          auto& grad = dt_opt->get_gradient_sharded();
-          El::Scale(scale, grad);
+        if (w->get_optimizer() != nullptr) {
+          ScaleDispatcher::Exec(NormScaler(scale), *w);
         }
       }
     }
