@@ -465,19 +465,18 @@ set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^hydrogen".* ]]; then
     # If the user didn't supply a specific version of Hydrogen on the command line add one
-    HYDROGEN="^hydrogen${HYDROGEN_VER} ${CENTER_BLAS_LIBRARY}"
+    HYDROGEN="^hydrogen${HYDROGEN_VER} ${CENTER_BLAS_LIBRARY} generator=ninja"
 fi
 
 if [[ (! "${LBANN_VARIANTS}" =~ .*"^aluminum".*) && (! "${LBANN_VARIANTS}" =~ .*"~al".*) && (! "${CENTER_DEPENDENCIES}" =~ .*"^aluminum".*) ]]; then
     # If the user didn't supply a specific version of Aluminum on the command line add one
-    ALUMINUM="^aluminum${ALUMINUM_VER}"
+    ALUMINUM="^aluminum${ALUMINUM_VER} generator=ninja"
 fi
 
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
     # If the user didn't supply a specific version of DiHydrogen on the command line add one
     # Due to concretizer errors force the openmp variant for DiHydrogen
-#    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}"
-    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER} ${CENTER_BLAS_LIBRARY}"
+    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER} generator=ninja"
 fi
 
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^conduit".* ]]; then
@@ -719,7 +718,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
         # Allow minimal duplicates otherwise NumPy and SciPy cannot co-concretize
-        # CMD="spack config add concretizer:duplicates:strategy:minimal"
+        CMD="spack config add concretizer:duplicates:strategy:minimal"
         # echo ${CMD} | tee -a ${LOG}
         # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
