@@ -28,6 +28,7 @@
 #define LBANN_LAYER_SPLIT_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/lbann.pb.h"
 #include "lbann/utils/distconv.hpp"
@@ -89,6 +90,8 @@ public:
   std::string get_type() const override { return "split"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
 #ifdef LBANN_HAS_ONNX
   void fill_onnx_node(onnx::GraphProto& graph) const override;
@@ -103,20 +106,23 @@ protected:
   friend class cereal::access;
   split_layer() : split_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     for (int i = 0; i < this->get_num_children(); ++i) {
       this->set_output_dims(this->get_input_dims(), i);
     }
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) override
+  void fp_setup_outputs() override
   {
 
     const auto& input = this->get_prev_activations();
+    auto mini_batch_size =
+      this->infer_mini_batch_size_from_parents_or_default_to_current();
 
-    if (this->get_parallel_strategy().enable_subgraph) {
+    if (this->subgraph_parallelism_execution()) {
+
       // if subgraph parallelism is enabled
       auto const* ptr_input = dynamic_cast<El::DistMatrix<TensorDataType,
                                                           El::STAR,
@@ -125,7 +131,6 @@ protected:
                                                           Dev> const*>(&input);
       int tag = 0;
       auto childs = this->get_child_layers();
-
       if (this->get_communication_flag() == COLL_OPT) {
         El::copy::TranslateBetweenGridsBroadcast<TensorDataType, Dev, Dev>(
           *ptr_input,
@@ -141,12 +146,13 @@ protected:
       else {
         for (int i = 0; i < childs[0]->get_num_spliting_groups(); i++) {
 
+          this->get_branch_tag_input(i).Resize(ptr_input->Height(),
+                                               mini_batch_size);
           El::Copy(input, this->get_branch_tag_input(i));
         }
       }
-
       for (int i = 0; i < this->get_num_children(); ++i) {
-        tag = childs[i]->get_parallel_strategy().sub_branch_tag;
+        tag = childs[i]->get_grid_tag();
 
         El::LockedView(this->get_activations(i),
                        this->get_branch_tag_input(tag - 1));
@@ -156,6 +162,20 @@ protected:
       // If sub-graph parallelism is not enabled
       for (int i = 0; i < this->get_num_children(); ++i) {
         El::LockedView(this->get_activations(i), input);
+      }
+    }
+
+    if (this->get_num_children() > 1) {
+      // Register the output N-1 times
+      model* m = this->get_model();
+      if (m != nullptr) {
+        auto& refcnt = m->get_activation_reference_counter();
+        auto const& iter = lookup_pointer(refcnt, input.LockedBuffer());
+        if (iter != refcnt.end()) {
+          for (int i = 1; i < this->get_num_children(); ++i) {
+            refcnt.at(iter->first).inc();
+          }
+        }
       }
     }
   }
@@ -175,7 +195,7 @@ protected:
     auto& gradient_wrt_input = this->get_error_signals();
     auto childs = this->get_child_layers();
 
-    if (this->get_parallel_strategy().enable_subgraph == true) {
+    if (this->subgraph_parallelism_execution()) {
       int tag = 0;
 
       std::vector<bool> is_initialized_tensor(
@@ -184,7 +204,7 @@ protected:
 
       // Copy data internally with same branch tag
       for (int i = 0; i < this->get_num_children(); ++i) {
-        tag = childs[i]->get_parallel_strategy().sub_branch_tag;
+        tag = childs[i]->get_grid_tag();
 
         if (is_initialized_tensor[tag - 1]) {
           El::Axpy(DataType(1),
@@ -261,7 +281,7 @@ protected:
   {
     return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  void setup_distconv_adapter() override
   {
     this->get_distconv_adapter_ptr() =
       std::make_unique<split_distconv_adapter<TensorDataType, T_layout, Dev>>(

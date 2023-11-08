@@ -58,6 +58,9 @@
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/utils/distconv.hpp"
 #endif
+#ifdef LBANN_HAS_CALIPER
+#include "lbann/utils/profiling.hpp"
+#endif
 
 #include <cereal/types/polymorphic.hpp>
 
@@ -127,6 +130,10 @@ auto lbann::initialize_lbann(El::mpi::Comm&& c) -> std::unique_ptr<lbann_comm>
   hwloc_topology_destroy(topo);
 #endif
 
+#ifdef LBANN_HAS_CALIPER
+  initialize_caliper();
+#endif
+
 #ifdef LBANN_HAS_SHMEM
   // Initialize SHMEM
   if (arg_parser.get<bool>(LBANN_OPTION_INIT_SHMEM)) {
@@ -183,6 +190,10 @@ void lbann::finalize_lbann(lbann_comm* comm)
 #ifdef LBANN_HAS_SHMEM
   shmem_finalize();
 #endif // LBANN_HAS_SHMEM
+#ifdef LBANN_HAS_CALIPER
+  finalize_caliper();
+#endif
+
   if (comm != nullptr) {
     delete comm;
   }
@@ -232,6 +243,10 @@ auto lbann::initialize(int& argc, char**& argv) -> world_comm_ptr
   hwloc_topology_destroy(topo);
 #endif
 
+#ifdef LBANN_HAS_CALIPER
+  initialize_caliper();
+#endif
+
 #ifdef LBANN_HAS_SHMEM
   // Initialize SHMEM
   if (arg_parser.get<bool>(LBANN_OPTION_INIT_SHMEM)) {
@@ -249,7 +264,9 @@ auto lbann::initialize(int& argc, char**& argv) -> world_comm_ptr
 #endif // LBANN_HAS_NVSHMEM
 
 #ifdef LBANN_HAS_DISTCONV
-  dc::initialize(MPI_COMM_WORLD);
+  if (!arg_parser.get<bool>(LBANN_OPTION_DISABLE_DISTCONV)) {
+    dc::initialize(MPI_COMM_WORLD);
+  }
 #endif // LBANN_HAS_DISTCONV
 
   return comm;
@@ -277,6 +294,10 @@ void lbann::finalize(lbann_comm* comm)
 #ifdef LBANN_HAS_SHMEM
   shmem_finalize();
 #endif // LBANN_HAS_SHMEM
+#ifdef LBANN_HAS_CALIPER
+  finalize_caliper();
+#endif
+
   if (comm != nullptr) {
     delete comm;
   }
@@ -549,6 +570,7 @@ CEREAL_FORCE_DYNAMIC_INIT(ErfOperator);
 CEREAL_FORCE_DYNAMIC_INIT(ExpOperator);
 CEREAL_FORCE_DYNAMIC_INIT(Expm1Operator);
 CEREAL_FORCE_DYNAMIC_INIT(FloorOperator);
+CEREAL_FORCE_DYNAMIC_INIT(GeluOperator);
 CEREAL_FORCE_DYNAMIC_INIT(GreaterConstantOperator);
 CEREAL_FORCE_DYNAMIC_INIT(GreaterEqualConstantOperator);
 CEREAL_FORCE_DYNAMIC_INIT(GreaterEqualOperator);
@@ -631,6 +653,7 @@ CEREAL_FORCE_DYNAMIC_INIT(callback_dump_outputs);
 CEREAL_FORCE_DYNAMIC_INIT(callback_dump_weights);
 CEREAL_FORCE_DYNAMIC_INIT(callback_early_stopping);
 CEREAL_FORCE_DYNAMIC_INIT(callback_gpu_memory_usage);
+CEREAL_FORCE_DYNAMIC_INIT(callback_clip_gradient_norm);
 CEREAL_FORCE_DYNAMIC_INIT(callback_hang);
 CEREAL_FORCE_DYNAMIC_INIT(callback_load_model);
 CEREAL_FORCE_DYNAMIC_INIT(callback_mixup);

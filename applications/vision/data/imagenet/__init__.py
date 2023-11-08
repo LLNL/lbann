@@ -1,3 +1,5 @@
+from typing import Any
+
 import os
 import os.path
 
@@ -5,14 +7,11 @@ import google.protobuf.text_format
 import lbann
 import lbann.contrib.launcher
 
-def make_data_reader(num_classes=1000, small_testing=False):
 
-    # Load Protobuf message from file
+def make_data_reader_imagenet(num_classes: int = 1000) -> Any:
+    """Load and set up the ImageNet data reader."""
     current_dir = os.path.dirname(os.path.realpath(__file__))
-    if(small_testing):
-        protobuf_file = os.path.join(current_dir, 'data_reader_small.prototext')
-    else:
-        protobuf_file = os.path.join(current_dir, 'data_reader.prototext')
+    protobuf_file = os.path.join(current_dir, 'data_reader.prototext')
     message = lbann.lbann_pb2.LbannPB()
     with open(protobuf_file, 'r') as f:
         google.protobuf.text_format.Merge(f.read(), message)
@@ -57,3 +56,23 @@ def make_data_reader(num_classes=1000, small_testing=False):
     message.reader[1].data_filename = test_label_file
 
     return message
+
+
+def make_data_reader_synthetic(num_classes: int = 1000) -> Any:
+    """Load and set up a synthetic data reader matching ImageNet."""
+    current_dir = os.path.dirname(os.path.realpath(__file__))
+    protobuf_file = os.path.join(current_dir, 'data_reader_synthetic.prototext')
+    message = lbann.lbann_pb2.LbannPB()
+    with open(protobuf_file, 'r') as f:
+        google.protobuf.text_format.Merge(f.read(), message)
+    message = message.data_reader
+
+    return message
+
+def make_data_reader(
+        num_classes: int = 1000,
+        synthetic: bool = False) -> Any:
+    if synthetic:
+        return make_data_reader_synthetic(num_classes=num_classes)
+    else:
+        return make_data_reader_imagenet(num_classes=num_classes)

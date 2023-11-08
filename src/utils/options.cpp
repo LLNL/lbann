@@ -26,6 +26,7 @@
 
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/argument_parser.hpp"
+#include "lbann_config.hpp"
 
 namespace lbann {
 
@@ -37,11 +38,18 @@ void construct_std_options()
   arg_parser.add_flag(
     LBANN_OPTION_DISABLE_BACKGROUND_IO_ACTIVITY,
     {"--disable_background_io_activity"},
-    "[STD] prevent the input layers from fetching data in the background");
+    utils::ENV("LBANN_DISABLE_BACKGROUND_IO_ACTIVITY"),
+    "[STD] prevent the data coordinator from fetching data in the background");
   arg_parser.add_flag(
     LBANN_OPTION_DISABLE_CUDA,
     {"--disable_cuda"},
     "[STD] has no effect unless LBANN was compiled with LBANN_HAS_CUDNN");
+  arg_parser.add_flag(
+    LBANN_OPTION_DISABLE_DISTCONV,
+    {"--disable_distconv"},
+    utils::ENV("LBANN_DISABLE_DISTCONV"),
+    "[STD] Disables distconv support. Has no effect unless LBANN was compiled "
+    "with LBANN_HAS_DISTCONV");
   arg_parser.add_flag(
     LBANN_OPTION_DISABLE_SIGNAL_HANDLER,
     {"--disable_signal_handler"},
@@ -78,11 +86,6 @@ void construct_std_options()
     {"--multitrainer_verbose"},
     utils::ENV("LBANN_MULTITRAINER_VERBOSE"),
     "[STD] Increases number of per-trainer messages that are reported");
-  arg_parser.add_flag(
-    LBANN_OPTION_NO_IM_COMM,
-    {"--no_im_comm"},
-    "[STD] removed ImComm callback, if present; this is intended for "
-    "running alexnet with a single model, but may be useful elsewhere");
   arg_parser.add_flag(LBANN_OPTION_PRELOAD_DATA_STORE,
                       {"--preload_data_store"},
                       "[STD] Preloads the data store in-memory structure "
@@ -95,13 +98,6 @@ void construct_std_options()
     LBANN_OPTION_SERIALIZE_IO,
     {"--serialize_io"},
     "[STD] force data readers to use a single threaded for I/O");
-  arg_parser.add_flag(LBANN_OPTION_ST_ON,
-                      {"--st_on"},
-                      "[STD] Enable stack profiler tracing");
-  arg_parser.add_flag(
-    LBANN_OPTION_ST_FULL_TRACE,
-    {"--st_full_trace"},
-    "[STD] Enable full stack trace, stack tracing must be enabled");
   arg_parser.add_flag(LBANN_OPTION_STACK_TRACE_TO_FILE,
                       {"--stack_trace_to_file"},
                       "[STD] When enabled, stack trace is output to file");
@@ -122,12 +118,12 @@ void construct_std_options()
                       {"--verbose", "--verbose_print"},
                       "[STD] Turns on verbose mode");
   arg_parser.add_flag(
-    LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP,
-    {"--use_gpu_default_memory_in_forward_prop"},
-    utils::ENV("LBANN_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP"),
-    "[STD] Use Hydrogen's default memory mode for GPU buffers in "
-    "forward prop (namely activations and weights). This will "
-    "typically use a GPU memory pool, which uses more memory than "
+    LBANN_OPTION_USE_GPU_DIRECT_MEMORY_IN_FORWARD_PROP,
+    {"--use_gpu_direct_memory_in_forward_prop"},
+    utils::ENV("LBANN_GPU_DIRECT_MEMORY_IN_FORWARD_PROP"),
+    "[STD] Use direct memory mode (i.e., non-pooled) for GPU buffers in "
+    "forward prop (namely activations and weights). "
+    "The GPU memory pool typically uses more memory than "
     "directly allocating GPU memory.");
   arg_parser.add_flag(LBANN_OPTION_INIT_SHMEM,
                       {"--init_shmem"},
@@ -137,6 +133,14 @@ void construct_std_options()
                       {"--init_nvshmem"},
                       utils::ENV("LBANN_INIT_NVSHMEM"),
                       "[STD] Initialize NVSHMEM when initializing LBANN");
+  arg_parser.add_flag(LBANN_OPTION_NO_INPLACE,
+                      {"--no_inplace"},
+                      utils::ENV("LBANN_NO_INPLACE"),
+                      "[STD] Disable in-place layer memory optimization");
+  arg_parser.add_flag(LBANN_OPTION_NO_BACKPROP_DISABLE,
+                      {"--no_backprop_disable"},
+                      utils::ENV("LBANN_NO_BACKPROP_DISABLE"),
+                      "[STD] Always compute all layers in backpropagation");
 
   // Input options
   arg_parser.add_option(
@@ -180,16 +184,28 @@ void construct_std_options()
                         {"--num_epochs"},
                         "[STD] Number of epochs to train model",
                         -1);
-  arg_parser.add_option(LBANN_OPTION_NUM_IO_THREADS,
-                        {"--num_io_threads"},
-                        utils::ENV("LBANN_NUM_IO_THREADS"),
-                        "[STD] Number of threads available to both I/O and "
-                        "initial data transformations for each rank.",
-                        64);
-  arg_parser.add_option(LBANN_OPTION_NUM_PARALLEL_READERS,
-                        {"--num_parallel_readers"},
-                        "[STD] The number of parallel data readers",
-                        1);
+  arg_parser.add_option(
+    LBANN_OPTION_NUM_IO_THREADS,
+    {"--num_io_threads"},
+    utils::ENV("LBANN_NUM_IO_THREADS"),
+    "[STD] Number of threads available to both I/O and "
+    "initial data transformations for each rank. (Default: 4)",
+    4);
+  arg_parser.add_option(
+    LBANN_OPTION_MAX_IO_RNG_BANKS,
+    {"--max_io_thread_rngs"},
+    utils::ENV("LBANN_MAX_IO_RNG_BANKS"),
+    "[STD] Maximum number of random number generator banks available to "
+    "both I/O and initial data transformations for each rank. (Default: 128)",
+    128);
+  arg_parser.add_option(
+    LBANN_OPTION_OMP_NUM_THREADS,
+    {"--omp_num_threads"},
+    utils::ENV("OMP_NUM_THREADS"), // Use the standard environment
+                                   // variable if available
+    "[STD] Number of OpenMP (OMP) threads available for "
+    "CPU layers. (Default: 4)",
+    4);
   arg_parser.add_option(LBANN_OPTION_OPTIMIZER,
                         {"--optimizer"},
                         "[STD] Optimizer input file",
@@ -264,6 +280,15 @@ void construct_std_options()
                         "[STD] Divide each trainer into equally-sized "
                         "sub-grids with blocked ordering",
                         0);
+#ifdef LBANN_HAS_CALIPER
+  arg_parser.add_flag(LBANN_OPTION_USE_CALIPER,
+                      {"--caliper"},
+                      "[STD] Enable caliper.");
+  arg_parser.add_option(LBANN_OPTION_CALIPER_CONFIG,
+                        {"--caliper_config"},
+                        "[STD] Caliper configuration string",
+                        "spot");
+#endif
 }
 
 void construct_datastore_options()
@@ -393,10 +418,11 @@ void construct_datareader_options()
                         {"--data_filename_validate"},
                         "[DATAREADER] Sets the filename for validation data",
                         "");
-  arg_parser.add_option(LBANN_OPTION_DATA_READER_PERCENT,
-                        {"--data_reader_percent"},
-                        "[DATAREADER] Sets the percent of total samples to use",
-                        (float)-1);
+  arg_parser.add_option(
+    LBANN_OPTION_DATA_READER_FRACTION,
+    {"--data_reader_fraction"},
+    "[DATAREADER] Sets the fraction of total samples to use",
+    (float)-1);
   arg_parser.add_option(
     LBANN_OPTION_LABEL_FILENAME_TEST,
     {"--label_filename_test"},

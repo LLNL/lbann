@@ -28,14 +28,6 @@ parser.add_argument(
     help="size of minibatches for training",
 )
 parser.add_argument(
-    "--job-name",
-    action="store",
-    default="lbann_RoBERTa",
-    type=str,
-    help="scheduler job name",
-    metavar="NAME",
-)
-parser.add_argument(
     "--work-dir",
     action="store",
     default=None,
@@ -47,7 +39,7 @@ parser.add_argument("--batch-job", action="store_true", help="submit as batch jo
 parser.add_argument(
     "--checkpoint", action="store_true", help="checkpoint trainer after every epoch"
 )
-lbann.contrib.args.add_scheduler_arguments(parser)
+lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_RoBERTa')
 lbann_params = parser.parse_args()
 
 # ----------------------------------------------
@@ -61,7 +53,7 @@ def make_data_reader():
     _reader.name = "python"
     _reader.role = "train"
     _reader.shuffle = True
-    _reader.percent_of_data_to_use = 1.0
+    _reader.fraction_of_data_to_use = 1.0
     _reader.python.module = "dataset"
     _reader.python.module_dir = os.path.dirname(os.path.realpath(__file__))
     _reader.python.sample_function = "get_sample"
@@ -73,7 +65,7 @@ def make_data_reader():
     _reader.name = "python"
     _reader.role = "validate"
     _reader.shuffle = False
-    _reader.percent_of_data_to_use = 1.0
+    _reader.fraction_of_data_to_use = 1.0
     _reader.python.module = "dataset"
     _reader.python.module_dir = os.path.dirname(os.path.realpath(__file__))
     _reader.python.sample_function = "get_sample"
@@ -85,7 +77,7 @@ def make_data_reader():
     _reader.name = "python"
     _reader.role = "test"
     _reader.shuffle = False
-    _reader.percent_of_data_to_use = 1.0
+    _reader.fraction_of_data_to_use = 1.0
     _reader.python.module = "dataset"
     _reader.python.module_dir = os.path.dirname(os.path.realpath(__file__))
     _reader.python.sample_function = "get_sample"
@@ -199,7 +191,6 @@ model = lbann.Model(
 # Setup trainer, optimizer, data_reader
 trainer = lbann.Trainer(
     mini_batch_size=lbann_params.mini_batch_size,
-    num_parallel_readers=1,
 )
 optimizer = lbann.Adam(
     learn_rate=0.01,

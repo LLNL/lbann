@@ -70,7 +70,7 @@ protected:
   friend class cereal::access;
   abstract_evaluation_layer() : abstract_evaluation_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
   void setup_data(size_t max_mini_batch_size) override;
   void fp_compute() override;
   void bp_compute() override;
@@ -119,6 +119,11 @@ public:
   std::string get_type() const override { return "evaluation"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override
+  {
+    return PREV_ACTIVATIONS | ERROR_SIGNALS;
+  }
 
 #ifdef LBANN_HAS_ONNX
   void fill_onnx_node(onnx::GraphProto& graph) const override;

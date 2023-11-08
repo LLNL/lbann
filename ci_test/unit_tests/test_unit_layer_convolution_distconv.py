@@ -6,6 +6,7 @@ import os.path
 import sys
 import numpy as np
 import pytest
+import lbann.contrib.args
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -123,7 +124,7 @@ def setup_experiment(lbann, weekly):
         message = f'{os.path.basename(__file__)} requires DISTCONV'
         print('Skip - ' + message)
         pytest.skip(message)
-    
+
     mini_batch_size = num_samples() // 2
     trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model(lbann)
@@ -292,5 +293,7 @@ def construct_data_reader(lbann):
 # Note: Create test name by removing ".py" from file name
 _test_name = os.path.splitext(os.path.basename(current_file))[0]
 for _test_func in tools.create_tests(setup_experiment, _test_name,
-                               environment=tools.get_distconv_environment()):
+                                     environment=lbann.contrib.args.get_distconv_environment(),
+                                     skip_clusters=["tioga"],
+                                     time_limit=10):
     globals()[_test_func.__name__] = _test_func

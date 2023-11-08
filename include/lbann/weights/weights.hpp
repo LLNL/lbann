@@ -125,6 +125,9 @@ public:
   /** Human-readable description. */
   description get_description() const;
 
+  /** Get a string representing the weights's datatype. */
+  virtual std::string get_datatype_name() const = 0;
+
   virtual bool has_optimizer() const = 0;
 
   // -----------------------------------------------
@@ -194,9 +197,29 @@ public:
    */
   void set_values(El::BaseDistMatrix const& values);
 
-  /** @brief Access the matrix of weights values. */
-  virtual El::BaseDistMatrix& get_values() = 0;
-  virtual El::BaseDistMatrix const& get_values() const = 0;
+  /** @brief Access the full matrix of weight values. */
+  virtual const El::BaseDistMatrix& get_values() const = 0;
+
+  /** @brief Access the local shard of weight values. If sharded is false,
+   *         equivalent to 'get_values'.
+   */
+  virtual El::BaseDistMatrix& get_values_sharded() = 0;
+  virtual El::BaseDistMatrix const& get_values_sharded() const = 0;
+
+  // Memory management
+
+  /** @brief Start an asynchronous request for the full view of weights.
+   *
+   *  This is a noop if the weights are not sharded.
+   */
+  virtual void request_full_weights_async() const = 0;
+  /** @brief Wait for an asynchronous request for the full view of weights.
+   *
+   *  This is a noop if the weights are not sharded, or already requested.
+   */
+  virtual void wait_for_full_weights() const = 0;
+  /** @brief Releases the full view of the weights for memory reclamation. */
+  virtual void release_full_weights() const = 0;
   ///@}
 
   // -----------------------------------------------
@@ -231,6 +254,14 @@ public:
   // Setup
   // -----------------------------------------------
   void setup();
+
+  // -----------------------------------------------
+  // Weight sharding functions
+  // -----------------------------------------------
+  /** Are weights sharded across ranks? */
+  bool is_sharded() const { return m_sharded; }
+  /** Set weight sharding configuration. */
+  void set_sharded(bool value) { m_sharded = value; }
 
   // -----------------------------------------------
   // Freezing
@@ -336,6 +367,9 @@ private:
 
   /** Whether weight optimization is disabled. */
   bool m_frozen;
+
+  /** Whether weights are sharded across ranks. */
+  bool m_sharded;
 };
 
 } // namespace lbann

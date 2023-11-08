@@ -28,7 +28,7 @@
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/io/file_io.hpp"
-#include "lbann/optimizers/optimizer_impl.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/exception.hpp"
@@ -238,25 +238,44 @@ void data_type_weights<TensorDataType>::do_setup_()
     return;
   }
 
-  // Construct matrix for weights values
+  // Construct matrix for weight values
+  // If sharded, use STAR_VC distribution (column distributed) or VC_STAR (row
+  // distributed) if width=1.
   auto matrix_dist = this->get_matrix_distribution();
+  bool must_use_vc_star = (this->get_matrix_width() == 1);
   m_values.reset(AbsDistMatrixType::Instantiate(
     *matrix_dist.grid,
     matrix_dist.root,
-    matrix_dist.colDist,
-    matrix_dist.rowDist,
+    this->is_sharded() ? (must_use_vc_star ? El::VC : El::STAR)
+                       : matrix_dist.colDist,
+    this->is_sharded() ? (must_use_vc_star ? El::STAR : El::VC)
+                       : matrix_dist.rowDist,
     (matrix_dist.blockHeight == 1 && matrix_dist.blockWidth == 1 ? El::ELEMENT
                                                                  : El::BLOCK),
     matrix_dist.device));
 
+  if (this->is_sharded()) {
+    m_values_view.reset(AbsDistMatrixType::Instantiate(
+      *matrix_dist.grid,
+      matrix_dist.root,
+      matrix_dist.colDist,
+      matrix_dist.rowDist,
+      (matrix_dist.blockHeight == 1 && matrix_dist.blockWidth == 1 ? El::ELEMENT
+                                                                   : El::BLOCK),
+      matrix_dist.device));
+
+#ifdef LBANN_HAS_GPU
+    if (matrix_dist.device == El::Device::GPU) {
+      m_values_view->Matrix().SetMemoryMode(1); // CUB memory pool
+    }
+#endif // LBANN_HAS_GPU
+  }
+
   // Allocate memory
 #ifdef LBANN_HAS_GPU
   if (matrix_dist.device == El::Device::GPU) {
-    const auto& arg_parser = global_argument_parser();
-    if (!arg_parser.get<bool>(
-          LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
-      m_values->Matrix().SetMemoryMode(0); // Directly-allocated memory
-    }
+    int memory_mode = 0; // Direct allocation
+    m_values->Matrix().SetMemoryMode(memory_mode);
   }
 #endif // LBANN_HAS_GPU
   m_values->AlignWith(matrix_dist);
@@ -281,21 +300,39 @@ void data_type_weights<TensorDataType>::do_setup_()
 // -----------------------------------------------
 
 template <typename TensorDataType>
-auto data_type_weights<TensorDataType>::get_values() -> AbsDistMatrixType&
-{
-  return const_cast<AbsDistMatrixType&>(
-    static_cast<const data_type_weights&>(*this).get_values());
-}
-template <typename TensorDataType>
 auto data_type_weights<TensorDataType>::get_values() const
   -> const AbsDistMatrixType&
 {
+  auto matrix_dist = this->get_matrix_distribution();
+  // If the weights are not sharded, return m_values directly
+  if (m_values->DistData() == matrix_dist || !this->is_sharded()) {
+    return *m_values;
+  }
+
+  // Get weights as necessary
+  request_full_weights_async();
+  wait_for_full_weights();
+
+  return *m_values_view;
+}
+
+template <typename TensorDataType>
+auto data_type_weights<TensorDataType>::get_values_sharded()
+  -> AbsDistMatrixType&
+{
+  return const_cast<AbsDistMatrixType&>(
+    static_cast<const data_type_weights&>(*this).get_values_sharded());
+}
+template <typename TensorDataType>
+auto data_type_weights<TensorDataType>::get_values_sharded() const
+  -> const AbsDistMatrixType&
+{
   if (m_values == nullptr) {
-    LBANN_ERROR("attempted to access values of "
+    LBANN_ERROR("attempted to access value shard of "
                 "weights \"" +
                 this->get_name() +
                 "\" "
-                "before they are setup");
+                "before they are set up");
   }
   return *m_values;
 }
@@ -304,8 +341,8 @@ template <typename TensorDataType>
 void data_type_weights<TensorDataType>::set_values(
   const AbsDistMatrixType& values)
 {
-  if ((values.Height() != get_values().Height()) ||
-      (values.Width() != get_values().Width())) {
+  if ((values.Height() != m_values->Height()) ||
+      (values.Width() != m_values->Width())) {
     LBANN_ERROR("Expected matrix size ",
                 this->get_matrix_height(),
                 "x",
@@ -315,7 +352,7 @@ void data_type_weights<TensorDataType>::set_values(
                 "x",
                 values.Width());
   }
-  El::Copy(values, get_values());
+  El::Copy(values, *m_values);
 }
 
 template <typename TensorDataType>
@@ -409,16 +446,39 @@ void data_type_weights<TensorDataType>::set_value(TensorDataType value,
 #endif // LBANN_DEBUG
 
   // Set value if it is local
-  auto& values = get_values();
+  auto& values = *m_values;
   if (values.IsLocal(row, col)) {
     values.SetLocal(values.LocalRow(row), values.LocalCol(col), value);
   }
 }
 
 template <typename TensorDataType>
+void data_type_weights<TensorDataType>::request_full_weights_async() const
+{
+  m_values_view->AlignWith(this->get_matrix_distribution());
+  m_values_view->Resize(this->get_matrix_height(), this->get_matrix_width());
+  El::Copy(*m_values, *m_values_view);
+}
+
+template <typename TensorDataType>
+void data_type_weights<TensorDataType>::wait_for_full_weights() const
+{
+  // TODO(later): Wait for asynchronous gather, if necessary
+}
+
+template <typename TensorDataType>
+void data_type_weights<TensorDataType>::release_full_weights() const
+{
+  if (this->is_sharded()) {
+    m_values_view->Empty();
+  }
+}
+
+template <typename TensorDataType>
 void data_type_weights<TensorDataType>::reconcile_values()
 {
-  auto& values = get_values();
+  LBANN_ERROR("This should not be called. Method is a candidate for removal");
+  auto& values = *m_values;
   if (values.RedundantSize() > 1) {
     El::Scale(TensorDataType(1. / values.RedundantSize()), values);
     this->get_comm().allreduce(values, values.RedundantComm());
@@ -428,7 +488,8 @@ void data_type_weights<TensorDataType>::reconcile_values()
 template <typename TensorDataType>
 void data_type_weights<TensorDataType>::reconcile_values(Al::request& req)
 {
-  auto& values = get_values();
+  LBANN_ERROR("This should not be called. Method is a candidate for removal");
+  auto& values = *m_values;
   if (values.RedundantSize() > 1) {
     El::Scale(TensorDataType(1. / values.RedundantSize()), values);
     this->get_comm().nb_allreduce(values, values.RedundantComm(), req);

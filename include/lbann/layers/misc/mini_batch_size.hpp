@@ -56,6 +56,8 @@ public:
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
 protected:
   /** Add layer specific data to prototext */
@@ -64,8 +66,8 @@ protected:
   friend class cereal::access;
   mini_batch_size_layer() : mini_batch_size_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
-  void fp_setup_outputs(El::Int mini_batch_size) override;
+  void setup_dims() override;
+  void setup_data(size_t max_mini_batch_size) override;
   void fp_compute() override;
 
 private:

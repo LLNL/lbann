@@ -58,6 +58,7 @@ if (LBANN_HAS_PYTHON_FRONTEND)
 endif (LBANN_HAS_PYTHON_FRONTEND)
   endforeach ()
   add_custom_command(
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_CURRENT_BINARY_DIR}/lbann/proto"
     COMMAND protobuf::protoc
     "--cpp_out=${CMAKE_CURRENT_BINARY_DIR}/lbann/proto"
     $<$<BOOL:${LBANN_HAS_PYTHON_FRONTEND}>:--python_out=${CMAKE_CURRENT_BINARY_DIR}>

@@ -24,10 +24,7 @@ root_dir = os.path.dirname(os.path.realpath(__file__))
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser()
-lbann.contrib.args.add_scheduler_arguments(parser)
-parser.add_argument(
-    '--job-name', action='store', default='lbann_node2vec', type=str,
-    help='job name', metavar='NAME')
+lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_node2vec')
 parser.add_argument(
     '--config', action='store', default=None, type=str,
     help='data config file', metavar='FILE')
@@ -240,7 +237,6 @@ iterations_per_epoch = utils.ceildiv(epoch_size, args.mini_batch_size)
 num_epochs = utils.ceildiv(args.num_iterations, iterations_per_epoch)
 trainer = lbann.Trainer(
     mini_batch_size=args.mini_batch_size,
-    num_parallel_readers=0,
 )
 callbacks = [
     lbann.CallbackPrint(),

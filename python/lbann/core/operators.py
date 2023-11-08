@@ -5,6 +5,7 @@ Operators are atomic tensor operations supported by LBANN.
 """
 
 from __future__ import annotations
+from typing import Optional
 
 from lbann import operators_pb2 as OpProto
 from lbann import DataType, DeviceAllocation
@@ -296,6 +297,15 @@ class Floor(Operator):
         params = OpProto.FloorOperator()
         return params
 
+class Gelu(Operator):
+    """Apply the GELU operator entrywise."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def do_export_proto(self):
+        params = OpProto.GeluOperator()
+        return params
+
 class Greater(Operator):
     """Apply the Greater operator entrywise."""
     def __init__(self, *args, **kwargs):
@@ -448,6 +458,17 @@ class Max(Operator):
         params = OpProto.MaxOperator()
         return params
 
+class MaxConstant(Operator):
+    """Perform entrywise max of input tensor against a constant."""
+    def __init__(self, constant: float = 0.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.constant = constant
+
+    def do_export_proto(self):
+        params = OpProto.MaxConstantOperator()
+        params.constant = self.constant
+        return params
+
 class Min(Operator):
     """Apply the Min operator entrywise."""
     def __init__(self, *args, **kwargs):
@@ -455,6 +476,17 @@ class Min(Operator):
 
     def do_export_proto(self):
         params = OpProto.MinOperator()
+        return params
+
+class MinConstant(Operator):
+    """Perform entrywise min of input tensor against a constant."""
+    def __init__(self, constant: float = 0.0, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.constant = constant
+
+    def do_export_proto(self):
+        params = OpProto.MinConstantOperator()
+        params.constant = self.constant
         return params
 
 class Mod(Operator):
@@ -567,6 +599,44 @@ class Scale(Operator):
     def do_export_proto(self):
         params = OpProto.ScaleOperator()
         params.constant = self.constant
+        return params
+
+class Select(Operator):
+    """
+    Select one tensor (or value) or another based on a predicate. The
+    predicate is an equality predicate for optimization purposes.
+    """
+    def __init__(self, *args, value: float = 0.0, epsilon: float = 1e-5,
+                 if_true: Optional[float] = None,
+                 if_false: Optional[float] = None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.value = value
+        self.epsilon = epsilon
+
+        # Setup optional properties
+        if if_true is not None:
+            self.constant_if_true = True
+            self.value_if_true = if_true
+        else:
+            self.constant_if_true = False
+            self.value_if_true = 0.0
+
+        if if_false is not None:
+            self.constant_if_false = True
+            self.value_if_false = if_false
+        else:
+            self.constant_if_false = False
+            self.value_if_false = 0.0
+
+    def do_export_proto(self):
+        params = OpProto.SelectOperator()
+        params.value = self.value
+        params.epsilon = self.epsilon
+        params.constant_if_true = self.constant_if_true
+        params.constant_if_false = self.constant_if_false
+        params.value_if_true = self.value_if_true
+        params.value_if_false = self.value_if_false
         return params
 
 class Selu(Operator):

@@ -120,12 +120,17 @@ public:
   std::string get_type() const override { return "mean squared error"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | PREV_ACTIVATIONS;
+  }
 
 #ifdef LBANN_HAS_ONNX
   void fill_onnx_node(onnx::GraphProto& graph) const override;
 #endif // LBANN_HAS_ONNX
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void setup_data(size_t max_mini_batch_size) override;
 
@@ -160,7 +165,7 @@ protected:
     return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
   }
 
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  void setup_distconv_adapter() override
   {
     this->get_distconv_adapter_ptr() = std::make_unique<
       mean_squared_error_distconv_adapter<TensorDataType, T_layout, Dev>>(

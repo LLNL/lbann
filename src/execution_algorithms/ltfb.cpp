@@ -30,6 +30,7 @@
 #include "lbann/execution_algorithms/ltfb/termination_criteria.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/output_helpers.hpp"
+#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/timer_map.hpp"
 
 #include "lbann/proto/training_algorithm.pb.h"
@@ -45,6 +46,7 @@ void LTFB::apply(ExecutionContext& context,
                  data_coordinator& dc,
                  execution_mode /*mode*/)
 {
+  LBANN_CALIPER_MARK_FUNCTION;
   TimerMap ltfb_timer(build_string("LTFB::",
                                    this->get_name(),
                                    " (trainer:",
@@ -56,7 +58,6 @@ void LTFB::apply(ExecutionContext& context,
 
   // Sync trainers (Assumption: all trainers in this lbann_comm are
   // participating in this training algorithm)
-  int rank = El::mpi::Rank(m.get_comm()->get_combined_grid_comm());
   m.get_comm()->intertrainer_barrier();
 
   // LTFB likely has different stopping criteria than SGD (e.g., K

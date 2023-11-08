@@ -31,7 +31,6 @@ set_full_path(THIS_DIR_HEADERS
   cloneable.hpp
   commify.hpp
   compiler_control.hpp
-  cyg_profile.hpp
   dataset.hpp
   describable.hpp
   description.hpp
@@ -71,7 +70,6 @@ set_full_path(THIS_DIR_HEADERS
   random.hpp
   random_number_generators.hpp
   serialize.hpp
-  stack_profiler.hpp
   stack_trace.hpp
   statistics.hpp
   summary.hpp

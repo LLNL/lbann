@@ -69,6 +69,13 @@ public:
   std::string get_type() const override { return "top-k accuracy"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override
+  {
+    // Based on the backprop implementation of categorical_accuracy, we would
+    // need PREV_ACTIVATIONS here as well.
+    return ERROR_SIGNALS | PREV_ACTIVATIONS;
+  }
 
   description get_description() const override
   {
@@ -86,7 +93,7 @@ protected:
     : top_k_categorical_accuracy_layer(nullptr, 1)
   {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void fp_compute() override;
 

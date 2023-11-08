@@ -57,12 +57,6 @@ void kfac_block_bn<Device>::compute_local_kronecker_factors(
   assert(this->m_layer->num_weights() == 4); // scale, bias, r_mean, r_var
   auto& scales = this->m_layer->get_weights(0);
   auto& biases = this->m_layer->get_weights(1);
-  optimizer* s_optimizer = scales.get_optimizer();
-  optimizer* b_optimizer = biases.get_optimizer();
-  auto* s_dto = dynamic_cast<data_type_optimizer<DataType>*>(s_optimizer);
-  auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
-  El::Matrix<DataType, Device> s_gradients = s_dto->get_gradient().Matrix();
-  El::Matrix<DataType, Device> b_gradients = b_dto->get_gradient().Matrix();
   const auto& s_dtw = dynamic_cast<data_type_weights<DataType>*>(&scales);
   const auto& b_dtw = dynamic_cast<data_type_weights<DataType>*>(&biases);
   const auto& scale_values = s_dtw->get_values();
@@ -243,8 +237,10 @@ void kfac_block_bn<Device>::compute_preconditioned_gradients(
   optimizer* b_optimizer = biases.get_optimizer();
   auto* s_dto = dynamic_cast<data_type_optimizer<DataType>*>(s_optimizer);
   auto* b_dto = dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer);
-  El::Matrix<DataType, Device> s_gradients = s_dto->get_gradient().Matrix();
-  El::Matrix<DataType, Device> b_gradients = b_dto->get_gradient().Matrix();
+  auto& s_grad = s_dto->get_gradient_sharded();
+  auto& b_grad = b_dto->get_gradient_sharded();
+  const El::Matrix<DataType, Device> s_gradients = s_grad.LockedMatrix();
+  const El::Matrix<DataType, Device> b_gradients = b_grad.LockedMatrix();
 
   auto& stacked_grads =
     this->get_workspace_matrix("bn_stacked_grads", m_num_channels * 2, 1);
@@ -407,13 +403,11 @@ void kfac_block_bn<Device>::start_communication_forward_end(lbann_comm* comm)
         }
       }
 
-      int iter = 0;
       for (auto& weight : this->m_weight_values) {
         weight = make_unique<
           El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(
           comm->get_secondary_grid(),
           0);
-        iter++;
       }
     }
 
@@ -437,7 +431,7 @@ void kfac_block_bn<Device>::start_communication_forward_end(lbann_comm* comm)
       for (auto& weight : this->m_weight_values) {
         auto& weights = this->m_layer->get_weights(iter);
         const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
-        auto& weight_values = dtw->get_values();
+        const auto& weight_values = dtw->get_values();
         const auto weight_ptr = dynamic_cast<
           const El::
             DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
@@ -445,7 +439,7 @@ void kfac_block_bn<Device>::start_communication_forward_end(lbann_comm* comm)
         auto weight_input_ptr = dynamic_cast<
           El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
           &(*weight));
-        El::Copy(dtw->get_values(), *weight);
+        El::Copy(weight_values, *weight);
         kfac::TranslateBetweenGridsSTARAsync(*weight_ptr,
                                              *weight_input_ptr,
                                              this->m_requests_forward_end);
@@ -494,7 +488,7 @@ void kfac_block_bn<Device>::start_communication_forward_end(lbann_comm* comm)
       const auto& weights = this->m_layer->get_weights(i);
       const auto& dtw =
         dynamic_cast<const data_type_weights<DataType>*>(&weights);
-      auto& weight_values = dtw->get_values();
+      auto& weight_values = dtw->get_values_sharded();
       const auto weight_ptr = dynamic_cast<
         const El::
           DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
@@ -581,13 +575,11 @@ void kfac_block_bn<Device>::start_communication_backward_end(lbann_comm* comm)
         }
       }
       // Initialize gradients
-      int iter = 0;
       for (auto& gradient : this->m_weight_gradients) {
         gradient = make_unique<
           El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(
           comm->get_secondary_grid(),
           0);
-        iter++;
       }
     }
 
@@ -600,7 +592,7 @@ void kfac_block_bn<Device>::start_communication_backward_end(lbann_comm* comm)
         optimizer* optimizer = weights.get_optimizer();
         auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(optimizer);
 
-        El::Copy(dto->get_gradient(), *gradient);
+        El::Copy(dto->get_gradient_sharded(), *gradient);
         iter++;
       }
     }
@@ -624,7 +616,7 @@ void kfac_block_bn<Device>::start_communication_backward_end(lbann_comm* comm)
         auto& weights = this->m_layer->get_weights(iter);
         optimizer* optimizer = weights.get_optimizer();
         auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(optimizer);
-        auto& gradient_values = dto->get_gradient();
+        auto& gradient_values = dto->get_gradient_sharded();
         const auto gradient_ptr = dynamic_cast<
           const El::
             DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
@@ -667,7 +659,7 @@ void kfac_block_bn<Device>::start_communication_backward_end(lbann_comm* comm)
       auto& weights = this->m_layer->get_weights(i);
       optimizer* optimizer = weights.get_optimizer();
       auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(optimizer);
-      auto& gradient_values = dto->get_gradient();
+      auto& gradient_values = dto->get_gradient_sharded();
       const auto gradient_ptr = dynamic_cast<
         const El::
           DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(

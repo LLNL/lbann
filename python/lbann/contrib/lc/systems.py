@@ -16,15 +16,13 @@ class SystemParams:
 # Supported LC systems
 _system_params = {
     'catalyst': SystemParams(24, 0, 'slurm'),
-    'corona':   SystemParams(24, 4, 'flux'),
+    'corona':   SystemParams(48, 8, 'flux'),
+    'lassen':   SystemParams(44, 4, 'lsf'),
     'pascal':   SystemParams(36, 2, 'slurm'),
     'quartz':   SystemParams(36, 0, 'slurm'),
-    'surface':  SystemParams(16, 2, 'slurm'),
-    'lassen':   SystemParams(44, 4, 'lsf'),
-    'ray':      SystemParams(40, 4, 'lsf'),
-    'sierra':   SystemParams(44, 4, 'lsf'),
     'rzansel':  SystemParams(44, 4, 'lsf'),
-    'rzhasgpu': SystemParams(16, 2, 'slurm'),
+    'rzvernal': SystemParams(64, 8, 'flux'),
+    'sierra':   SystemParams(44, 4, 'lsf'),
     'tioga':    SystemParams(64, 8, 'flux'),
 }
 

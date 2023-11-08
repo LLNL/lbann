@@ -55,6 +55,7 @@ void data_buffer<TensorDataType>::initialize_buffer_for_data_field(
     // Pin the memory so that we get efficient GPU data transfer
     m_input_buffers[data_field]->Matrix().SetMemoryMode(1);
 #endif // LBANN_HAS_GPU
+    m_num_samples_per_field_distributed[data_field] = 0;
   }
 }
 

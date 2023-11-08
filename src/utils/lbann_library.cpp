@@ -51,23 +51,12 @@
 
 namespace lbann {
 
-// Creates a datareader metadata to get around the need for an actual
-// datareader in inference only mode
-auto mock_dr_metadata(std::vector<int> input_dims, std::vector<int> output_dims)
-{
-  DataReaderMetaData drmd;
-  auto& md_dims = drmd.data_dims;
-  md_dims[data_reader_target_mode::INPUT] = input_dims;
-  md_dims[data_reader_target_mode::CLASSIFICATION] = output_dims;
-  return drmd;
-}
-
 // Loads a model from checkpoint and sets up model for inference
 std::unique_ptr<model> load_inference_model(lbann_comm* lc,
                                             std::string cp_dir,
                                             int mbs,
-                                            std::vector<int> input_dims,
-                                            std::vector<int> output_dims)
+                                            std::vector<El::Int> input_dims,
+                                            std::vector<El::Int> output_dims)
 {
   persist p;
   p.open_restart(cp_dir.c_str());
@@ -75,10 +64,7 @@ std::unique_ptr<model> load_inference_model(lbann_comm* lc,
   m->load_from_checkpoint_shared(p);
   p.close_restart();
 
-  // Must use a mock datareader with input and output dims for setup
-  // TODO: avoid need for datareader altogether
-  auto dr_metadata = mock_dr_metadata(input_dims, output_dims);
-  m->setup(mbs, dr_metadata, get_trainer().get_grids());
+  m->setup(mbs, get_trainer().get_grids());
 
   return m;
 }
@@ -142,6 +128,16 @@ trainer const& get_const_trainer()
   return *global_trainer_;
 }
 
+bool trainer_exists()
+{
+  if (global_trainer_ == nullptr) {
+    return false;
+  }
+  else {
+    return true;
+  }
+}
+
 void finalize_trainer() { global_trainer_.reset(); }
 
 /// Construct a trainer that contains a lbann comm object and threadpool
@@ -150,20 +146,20 @@ trainer& construct_trainer(lbann_comm* comm,
                            lbann_data::LbannPB& pb)
 {
   int const procs_per_trainer = comm->get_procs_per_trainer();
-  if (pb_trainer->num_parallel_readers() > procs_per_trainer) {
-    pb_trainer->set_num_parallel_readers(procs_per_trainer);
-  }
   auto const& arg_parser = global_argument_parser();
 
-  // Adjust the number of parallel readers; this may be adjusted
-  // after calling split_trainers()
-  // set_num_parallel_readers(*comm, pb);
+  // Set the number of OMP threads for the trainer (Note that the
+  // LBANN option will inherit from std::getenv("OMP_NUM_THREADS")
+  auto num_omp_threads = arg_parser.get<int>(LBANN_OPTION_OMP_NUM_THREADS);
+  omp_set_num_threads(num_omp_threads);
 
   // Check to see if the model wants to reduce the I/O parallelism
   bool const serialized_io = pb_trainer->serialize_io();
-  if (serialized_io) {
-    std::cout << "Trainer " << pb_trainer->name()
-              << " serialized the I/O threads" << std::endl;
+  if (comm->am_trainer_master()) {
+    if (serialized_io) {
+      std::cout << "Trainer " << pb_trainer->name()
+                << " serialized the I/O threads" << std::endl;
+    }
   }
 
   // Initalize a per-trainer I/O thread pool
@@ -261,7 +257,9 @@ trainer& construct_trainer(lbann_comm* comm,
 #endif
 
   // Initialize the general RNGs and the data sequence RNGs
-  init_random(random_seed, io_threads_per_process);
+  int max_io_rng_banks = arg_parser.get<int>(LBANN_OPTION_MAX_IO_RNG_BANKS);
+  // Create a set of RNG banks for both training and validation type phases
+  init_random(random_seed, max_io_rng_banks * 2);
   init_data_seq_random(data_seq_random_seed);
   init_ltfb_random(root_random_seed);
   global_trainer_->set_random_seeds(root_random_seed,
@@ -376,14 +374,22 @@ std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm* comm,
 
   auto& arg_parser = global_argument_parser();
   int req_io_threads = arg_parser.get<int>(LBANN_OPTION_NUM_IO_THREADS);
-  int num_io_threads = std::max(std::min(max_io_threads, req_io_threads), 1);
+  int max_io_rng_banks = arg_parser.get<int>(LBANN_OPTION_MAX_IO_RNG_BANKS);
+  // Limit the number of I/O threads to:
+  //   < number of available free cores per process
+  //   < number of RNG banks provisioned
+  // and at least one
+  int num_io_threads = std::max(
+    std::min(max_io_rng_banks, std::min(max_io_threads, req_io_threads)),
+    1);
 
   auto io_threads_offset = free_core_offset(comm);
 
   if (comm->am_world_master()) {
     std::cout << "\tNum. I/O Threads: " << num_io_threads
-              << " (Limited to # Unused Compute Cores or 1) at offset "
-              << io_threads_offset << std::endl;
+              << " (Limited to # Unused Compute Cores [" << max_io_threads
+              << "] # of RNG banks [" << max_io_rng_banks
+              << "] or 1) at offset " << io_threads_offset << std::endl;
   }
 
   auto io_thread_pool = std::make_unique<thread_pool>();
@@ -399,8 +405,7 @@ std::unique_ptr<model> build_model_from_prototext(
   lbann_data::LbannPB& pb,
   lbann_comm* comm,
   thread_pool& io_thread_pool,
-  std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
-  int training_dr_linearized_data_size)
+  std::vector<std::shared_ptr<callback_base>>& shared_callbacks)
 {
 
   bool master = comm->am_world_master();
@@ -422,11 +427,7 @@ std::unique_ptr<model> build_model_from_prototext(
 
   // Initalize model
   std::unique_ptr<model> ret_model =
-    proto::construct_model(comm,
-                           training_dr_linearized_data_size,
-                           pb.optimizer(),
-                           pb.trainer(),
-                           pb.model());
+    proto::construct_model(comm, pb.optimizer(), pb.trainer(), pb.model());
 
   // Add the trainer's callbacks to the model
   for (auto&& c : shared_callbacks) {
@@ -559,34 +560,30 @@ void print_lbann_configuration(lbann_comm* comm,
   std::cout << std::endl;
 
   // Report build settings
-  std::cout << "Running: LLNL LBANN version: "
-            << LBANN_MAKE_STR(LBANN_VERSION)
-  #ifdef LBANN_GIT_VERSION
+  std::cout << "Running: LLNL LBANN version: " << LBANN_MAKE_STR(LBANN_VERSION)
+#ifdef LBANN_GIT_VERSION
             << " (" << LBANN_MAKE_STR(LBANN_GIT_VERSION) << ")"
-  #endif
+#endif
             << std::endl;
 #ifdef HYDROGEN_VERSION
-  std::cout << "         LLNL Hydrogen version: "
-            << HYDROGEN_VERSION
-  #ifdef HYDROGEN_GIT_VERSION
+  std::cout << "         LLNL Hydrogen version: " << HYDROGEN_VERSION
+#ifdef HYDROGEN_GIT_VERSION
             << " (" << HYDROGEN_GIT_VERSION << ")"
-  #endif
+#endif
             << std::endl;
 #endif
 #ifdef DIHYDROGEN_VERSION
-  std::cout << "         LLNL DiHydrogen version: "
-            << DIHYDROGEN_VERSION
-  #ifdef DIHYDROGEN_GIT_VERSION
+  std::cout << "         LLNL DiHydrogen version: " << DIHYDROGEN_VERSION
+#ifdef DIHYDROGEN_GIT_VERSION
             << " (" << DIHYDROGEN_GIT_VERSION << ")"
-  #endif
+#endif
             << std::endl;
 #endif
 #ifdef AL_VERSION
-  std::cout << "         LLNL Aluminum version: "
-            << AL_VERSION
-  #ifdef AL_GIT_VERSION
+  std::cout << "         LLNL Aluminum version: " << AL_VERSION
+#ifdef AL_GIT_VERSION
             << " (" << AL_GIT_VERSION << ")"
-  #endif
+#endif
             << std::endl;
 #endif
   std::cout << std::endl;
@@ -625,6 +622,27 @@ void print_lbann_configuration(lbann_comm* comm,
   const auto* env = std::getenv("MV2_USE_CUDA");
   std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
   std::cout << std::endl;
+
+#ifdef LBANN_HAS_ROCM
+  std::cout << "  MIOpen DB Cache : " << std::endl;
+  const auto* env_db = std::getenv("MIOPEN_USER_DB_PATH");
+  std::cout << "    MIOPEN_USER_DB_PATH : " << (env_db != nullptr ? env_db : "")
+            << std::endl;
+  const auto* env_cache = std::getenv("MIOPEN_CUSTOM_CACHE_DIR");
+  std::cout << "    MIOPEN_CUSTOM_CACHE_DIR : "
+            << (env_cache != nullptr ? env_cache : "") << std::endl;
+#endif // LBANN_HAS_ROCM
+
+#ifdef LBANN_HAS_DIHYDROGEN
+  std::cout << "DiHydrogen Features:" << std::endl;
+  std::cout << "  DaCe : ";
+#ifdef H2_HAS_DACE
+  std::cout << "enabled" << std::endl;
+#else
+  std::cout << "disabled" << std::endl;
+#endif // H2_HAS_DACE
+  std::cout << std::endl;
+#endif // LBANN_HAS_DIHYDROGEN
 
 #ifdef LBANN_HAS_ALUMINUM
   std::cout << "Aluminum Features:" << std::endl;

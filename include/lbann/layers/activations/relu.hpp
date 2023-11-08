@@ -75,6 +75,11 @@ public:
   std::string get_type() const override { return "ReLU"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return true; }
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | ACTIVATIONS;
+  }
 
 #ifdef LBANN_HAS_ONNX
   std::string get_onnx_op_type() const override { return "Relu"; }
@@ -99,7 +104,7 @@ protected:
   {
     return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  void setup_distconv_adapter() override
   {
     this->get_distconv_adapter_ptr() =
       std::make_unique<relu_distconv_adapter<TensorDataType, T_layout, Dev>>(

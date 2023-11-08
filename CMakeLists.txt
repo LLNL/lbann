@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -56,7 +56,7 @@ endif ()
 # Version setup
 
 set(LBANN_VERSION_MAJOR 0)
-set(LBANN_VERSION_MINOR 103)
+set(LBANN_VERSION_MINOR 104)
 set(LBANN_VERSION_PATCH 0)
 
 set(LBANN_VERSION
@@ -154,6 +154,9 @@ option(LBANN_WITH_TBINF "Include Tensorboard interface" ${LBANN_WITH_VISION})
 
 option(LBANN_WITH_VTUNE
   "Link the Intel VTune profiling library" OFF)
+
+option(LBANN_WITH_CALIPER
+  "Link the Caliper profiling library" OFF)
 
 option(LBANN_WITH_UNIT_TESTING
   "Enable the unit testing framework (requires Catch2)" OFF)
@@ -391,7 +394,7 @@ if (LBANN_HAS_CUDA)
   if (LBANN_WITH_NVSHMEM)
     find_package(NVSHMEM REQUIRED)
     # Build LBANN as a static library to get around a bug in NVSHMEM
-    set(BUILD_SHARED_LIBS OFF)
+#    set(BUILD_SHARED_LIBS OFF)
     list(APPEND LBANN_CUDA_LIBS NVSHMEM::NVSHMEM)
   endif ()
   set(LBANN_HAS_NVSHMEM "${NVSHMEM_FOUND}")
@@ -403,12 +406,23 @@ if (LBANN_HAS_CUDA)
 endif (LBANN_HAS_CUDA)
 
 if (LBANN_HAS_ROCM)
+  if (NOT LBANN_ROCM_PATH)
+    if (ROCM_PATH)
+      set(LBANN_ROCM_PATH "${ROCM_PATH}")
+    elseif (DEFINED ENV{ROCM_PATH})
+      set(LBANN_ROCM_PATH "$ENV{ROCM_PATH}")
+    else ()
+      set(LBANN_ROCM_PATH "/opt/rocm")
+    endif ()
+  endif ()
+  message(STATUS "Using LBANN_ROCM_PATH: ${LBANN_ROCM_PATH}")
+
   find_package(hip CONFIG REQUIRED)
   enable_language(HIP)
   find_package(MIOpen CONFIG REQUIRED)
 
   find_library(HSA_LIBRARY hsa-runtime64
-    HINTS ${ROCM_PATH}/hsa $ENV{ROCM_PATH}/hsa
+    HINTS ${LBANN_ROCM_PATH}/hsa ${ROCM_PATH}/hsa $ENV{ROCM_PATH}/hsa
     PATH_SUFFIXES lib lib64
     DOC "HSA runtime library"
     NO_DEFAULT_PATH)
@@ -442,6 +456,27 @@ if (LBANN_HAS_ROCM)
     list(APPEND LBANN_ROCM_LIBS cuTT::cuTT)
     set(LBANN_HAS_TENSOR_PERMUTE TRUE)
   endif ()
+
+  # More hand-holding
+  get_filename_component(LBANN_ROCM_LLVM_BASE_DIR
+    "${CMAKE_HIP_COMPILER}"
+    DIRECTORY)
+  get_filename_component(LBANN_ROCM_LLVM_BASE_DIR
+    "${LBANN_ROCM_LLVM_BASE_DIR}"
+    DIRECTORY)
+
+  # Clean up some paths
+  list(REMOVE_ITEM
+    CMAKE_HIP_IMPLICIT_LINK_DIRECTORIES
+    "${LBANN_ROCM_PATH}/lib"
+    "${LBANN_ROCM_LLVM_BASE_DIR}/lib")
+
+  # This shouldn't be needed, but it shouldn't hurt.
+  list(REMOVE_ITEM
+    CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES
+    "${LBANN_ROCM_PATH}/lib"
+    "${LBANN_ROCM_LLVM_BASE_DIR}/lib")
+
 endif (LBANN_HAS_ROCM)
 
 # This is used in the sample list implementation
@@ -507,6 +542,18 @@ if (LBANN_WITH_PYTHON_FRONTEND OR LBANN_WITH_EMBEDDED_PYTHON)
 
 endif (LBANN_WITH_PYTHON_FRONTEND OR LBANN_WITH_EMBEDDED_PYTHON)
 
+if (LBANN_WITH_PYTHON_FRONTEND)
+  set(LBANN_PFE_PYTHON_EXECUTABLE "${Python_EXECUTABLE}" CACHE FILEPATH "")
+  set(LBANN_PFE_PYTHONPATH "" CACHE STRING "")
+  configure_file(
+    "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_pfe.sh.in"
+    "${CMAKE_BINARY_DIR}/lbann_pfe.sh"
+    @ONLY)
+  install(
+    PROGRAMS "${PROJECT_BINARY_DIR}/lbann_pfe.sh"
+    DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif ()
+
 if (LBANN_WITH_VTUNE)
   find_package(VTune MODULE)
 
@@ -524,6 +571,17 @@ if (LBANN_WITH_VTUNE)
       "and reconfigure.")
   endif (VTune_FOUND)
 endif (LBANN_WITH_VTUNE)
+
+if (LBANN_WITH_CALIPER)
+  find_package(caliper REQUIRED)
+  find_package(adiak REQUIRED)
+  set(LBANN_HAS_CALIPER TRUE)
+  message(STATUS "LBANN_WITH_CALIPER")
+  configure_file(
+    "${CMAKE_SOURCE_DIR}/cmake/configure_files/adiak_config.hpp.in"
+    "${CMAKE_BINARY_DIR}/adiak_config.hpp"
+    @ONLY)
+endif (LBANN_WITH_CALIPER)
 
 if (LBANN_WITH_CUDA AND LBANN_WITH_NVPROF)
   set(LBANN_NVPROF TRUE)
@@ -643,6 +701,11 @@ target_include_directories(lbann PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
+if (LBANN_HAS_CALIPER)
+  target_include_directories(lbann PUBLIC ${caliper_INCLUDE_PATH} ${adiak_INCLUDE_DIRS})
+endif (LBANN_HAS_CALIPER)
+
+# The max of CXX_STANDARD and this value will be used.
 target_compile_features(lbann PUBLIC cxx_std_17)
 
 target_link_libraries(lbann PUBLIC LbannProto)
@@ -677,6 +740,15 @@ endif ()
 
 if (LBANN_HAS_VTUNE)
   target_link_libraries(lbann PUBLIC ${VTUNE_STATIC_LIB})
+endif ()
+
+if(LBANN_HAS_CALIPER)
+  if(NOT TARGET adiak::adiak)
+    target_link_libraries(lbann PUBLIC adiak)
+  else ()
+    target_link_libraries(lbann PUBLIC adiak::adiak)
+  endif ()
+  target_link_libraries(lbann PUBLIC caliper)
 endif ()
 
 if (LBANN_EXPLICIT_LIBDL)
@@ -983,6 +1055,7 @@ string(APPEND _str "\n")
 append_str_tf(_str
   LBANN_GNU_LINUX
   LBANN_HAS_ALUMINUM
+  LBANN_HAS_CALIPER
   LBANN_HAS_CEREAL
   LBANN_HAS_CEREAL_XML_ARCHIVES
   LBANN_HAS_CNPY
@@ -1034,6 +1107,29 @@ if (NOT (LBANN_MODULEFILE_NAME MATCHES ".+\.lua"))
     "LBANN_MODULEFILE_NAME must have extension \".lua\". Appending.")
   set(LBANN_MODULEFILE_NAME "${LBANN_MODULEFILE_NAME}.lua"
     CACHE STRING "" FORCE)
+endif ()
+
+if (LBANN_WRITE_DEPENDENT_MODULEPATH)
+  string(CONCAT LBANN_EXTRA_MODULEPATH
+    "prepend_path(\"MODULEPATH\", \""
+    "${LBANN_WRITE_DEPENDENT_MODULEPATH}"
+    "\")\n")
+else ()
+  set(LBANN_EXTRA_MODULEPATH "")
+endif ()
+
+if (LBANN_WRITE_DEPENDENT_MODULES)
+  list(LENGTH LBANN_WRITE_DEPENDENT_MODULES nmodules_)
+  if (nmodules_ LESS_EQUAL 1)
+    set(DEP_MODULES "aluminum" "hydrogen" "dihydrogen")
+  else ()
+    set(DEP_MODULES "${LBANN_WRITE_DEPENDENT_MODULES}")
+  endif ()
+  string(REPLACE ";" "\", \"" DEP_MOD_STR "${DEP_MODULES}")
+  string(CONCAT LBANN_EXTRA_MODULE_LOADS
+    "load(\"" "${DEP_MOD_STR}" "\")\n")
+else ()
+  set(LBANN_EXTRA_MODULE_LOADS "")
 endif ()
 
 configure_file(

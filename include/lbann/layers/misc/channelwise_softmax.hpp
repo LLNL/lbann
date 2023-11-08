@@ -55,7 +55,9 @@ class channelwise_softmax_layer : public data_type_layer<TensorDataType>
                 "data-parallel data layout");
 
 public:
-  channelwise_softmax_layer(lbann_comm* comm);
+  channelwise_softmax_layer(lbann_comm* comm,
+                            int64_t dim,
+                            bool single_dim_mode);
 
   channelwise_softmax_layer(const channelwise_softmax_layer& other) = default;
   channelwise_softmax_layer&
@@ -73,18 +75,35 @@ public:
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
+  bool can_run_inplace() const override { return true; }
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | ACTIVATIONS;
+  }
 
 protected:
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
   friend class cereal::access;
-  channelwise_softmax_layer() : channelwise_softmax_layer(nullptr) {}
+  channelwise_softmax_layer() : channelwise_softmax_layer(nullptr, 0, false) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void fp_compute() override;
   void bp_compute() override;
+
+private:
+  void get_channel_size_and_stride(El::Int& channel_size,
+                                   El::Int& channel_stride,
+                                   El::Int& num_channels) const;
+
+  /** Specifies the dimension of the tensor to perform softmax on. */
+  int64_t m_dim;
+
+  /** @brief If true, only performs softmax on the chosen dimension. Otherwise
+             all dimensions but ``m_dim`` will be used. */
+  bool m_single_dim_mode;
 };
 
 // Builder function
@@ -98,13 +117,17 @@ void channelwise_softmax_layer<T, L, D>::write_specific_proto(
   lbann_data::Layer& proto) const
 {
   proto.set_datatype(proto::ProtoDataType<T>);
-  proto.mutable_channelwise_softmax();
+  auto* msg = proto.mutable_channelwise_softmax();
+  msg->set_dim(m_dim);
+  msg->set_single_dim_mode(m_single_dim_mode);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 channelwise_softmax_layer<TensorDataType, Layout, Device>::
-  channelwise_softmax_layer(lbann_comm* comm)
-  : data_type_layer<TensorDataType>(comm)
+  channelwise_softmax_layer(lbann_comm* comm, int64_t dim, bool single_dim_mode)
+  : data_type_layer<TensorDataType>(comm),
+    m_dim(dim),
+    m_single_dim_mode(single_dim_mode)
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -134,14 +157,6 @@ El::Device channelwise_softmax_layer<TensorDataType, Layout, Device>::
   get_device_allocation() const
 {
   return Device;
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void channelwise_softmax_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
-{
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-  this->set_output_dims(this->get_input_dims());
 }
 
 // =========================================================

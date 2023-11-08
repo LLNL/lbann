@@ -37,7 +37,6 @@ def make_batch_script(
         cores_per_proc = cores_per_node(system) // procs_per_node
         set_environment('AL_PROGRESS_RANKS_PER_NUMA_NODE',
                         math.ceil(procs_per_node / numa_nodes_per_node(system)))
-        set_environment('OMP_NUM_THREADS', cores_per_proc - 1)
         if scheduler == 'slurm':
             masks = [2**cores_per_proc - 1]
             while len(masks) < procs_per_node:

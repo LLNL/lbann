@@ -30,7 +30,7 @@
 #define LBANN_DATA_READER_HPP
 
 #include "lbann/base.hpp"
-#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+#include "lbann/data_readers/metadata.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
@@ -84,23 +84,6 @@ public:
     : m_verbose(global_argument_parser().get<bool>(LBANN_OPTION_VERBOSE)),
       m_data_store(nullptr),
       m_comm(nullptr),
-      m_mini_batch_size(0),
-      m_current_pos(0),
-      m_stride_to_next_mini_batch(0),
-      m_base_offset(0),
-      m_model_offset(0),
-      m_sample_stride(1),
-      m_iteration_stride(1),
-      m_last_mini_batch_size(0),
-      m_stride_to_last_mini_batch(0),
-      m_reset_mini_batch_index(0),
-      m_loaded_mini_batch_idx(0),
-      m_current_mini_batch_idx(0),
-      m_num_iterations_per_epoch(0),
-      m_global_mini_batch_size(0),
-      m_global_last_mini_batch_size(0),
-      m_world_master_mini_batch_adjustment(0),
-      m_num_parallel_readers(0),
       m_max_files_to_load(0),
       m_file_dir(""),
       m_data_sample_list(""),
@@ -108,7 +91,7 @@ public:
       m_label_fn(""),
       m_shuffle(shuffle),
       m_absolute_sample_count(0),
-      m_use_percent(1.0),
+      m_use_fraction(1.0),
       m_gan_labelling(false), // default, not GAN
       m_gan_label_value(
         0), // If GAN, default for fake label, discriminator model
@@ -136,6 +119,8 @@ public:
   lbann_comm* get_comm() const { return m_comm; }
 
   virtual bool has_conduit_output() { return false; }
+
+  virtual bool supports_background_io() { return true; }
 
   // These non-virtual methods are used to specify where data is, how much to
   // load, etc.
@@ -244,9 +229,9 @@ public:
 
   /**
    * Read the first 'n' samples. If nonzero, this over-rides
-   * set_absolute_sample_count, set_use_percent. The intent
+   * set_absolute_sample_count, set_use_fraction. The intent
    * is to use this for testing. A problem with set_absolute_sample_count
-   * and set_use_percent is that the entire data set is read in, then
+   * and set_use_fraction is that the entire data set is read in, then
    * a subset is selected
    */
   void set_first_n(int n);
@@ -258,18 +243,18 @@ public:
   void set_absolute_sample_count(size_t s);
 
   /**
-   * Set the percentage of the data set to use for training and validation or
+   * Set the fraction of the data set to use for training and validation or
    * testing.
-   * @param s The percentage used, in the range [0, 1].
+   * @param s The fraction used, in the range [0, 1].
    */
-  void set_use_percent(double s);
+  void set_use_fraction(double s);
 
   /**
-   * Sets the percentage of the dataset to be used for validation.
+   * Sets the fraction of the dataset to be used for validation.
    * @param m The execution mode.
-   * @param s The percentage used, in the range [0, 1].
+   * @param s The fraction used, in the range [0, 1].
    */
-  virtual void set_execution_mode_split_percent(execution_mode m, double s);
+  virtual void set_execution_mode_split_fraction(execution_mode m, double s);
 
   /**
    * Set an idenifier for the dataset.
@@ -306,11 +291,17 @@ public:
    * responses (as appropriate) */
   int fetch(std::map<data_field_type, CPUMat*>& input_buffers,
             El::Matrix<El::Int>& indices_fetched,
-            size_t mb_size);
+            El::Int current_position_in_data_set,
+            El::Int sample_stride,
+            size_t mb_size,
+            execution_mode mode = execution_mode::invalid);
 
   int fetch(std::vector<conduit::Node>& samples,
             El::Matrix<El::Int>& indices_fetched,
-            size_t mb_size);
+            El::Int current_position_in_data_set,
+            El::Int sample_stride,
+            size_t mb_size,
+            execution_mode mode = execution_mode::invalid);
 
   /** @brief Check to see if the data reader supports this specific data field
    */
@@ -351,7 +342,10 @@ public:
     m_supported_input_types[INPUT_DATA_TYPE_RESPONSES] = b;
   }
 
-  void start_data_store_mini_batch_exchange();
+  void
+  start_data_store_mini_batch_exchange(El::Int current_position_in_data_set,
+                                       El::Int current_mini_batch_size,
+                                       bool at_new_epoch);
   void finish_data_store_mini_batch_exchange();
 
   /**
@@ -359,7 +353,7 @@ public:
    * advanced the current position pointer.  If the pointer wraps
    * around, then reshuffle the data indicies.
    */
-  virtual bool update(bool is_active_reader);
+  virtual void update(bool epoch_complete);
 
   /**
    * This is called at the end of update; it permits data readers to
@@ -384,9 +378,9 @@ public:
   virtual int get_linearized_size(data_field_type const& data_field) const;
 
   /// Get the dimensions of the data.
-  virtual const std::vector<int> get_data_dims() const
+  virtual const std::vector<El::Int> get_data_dims() const
   {
-    return std::vector<int>(0);
+    return std::vector<El::Int>(0);
   }
 
   virtual std::vector<El::Int>
@@ -396,132 +390,6 @@ public:
     return {};
   }
 
-  /// True if the data reader's current position is valid.
-  virtual bool position_valid() const
-  {
-    return (m_current_pos < get_num_data());
-  }
-  /// True if the data reader's current position is not valid but within # ranks
-  /// per model of the end of the data set (e.g. it is a rank with no valid data
-  /// on the last iteration)
-  virtual bool position_is_overrun() const
-  {
-    int end_pos = (int)m_shuffled_indices.size();
-    return (m_current_pos >= end_pos &&
-            (m_current_pos - end_pos) < m_comm->get_procs_per_trainer());
-  }
-  /// True if the data reader is at the start of an epoch.
-  bool at_new_epoch() const
-  {
-    /// Note that data readers can start at a non-zero index if there
-    /// are parallel data readers in a model
-    return ((m_loaded_mini_batch_idx == m_reset_mini_batch_index) &&
-            (m_current_mini_batch_idx == 0));
-  }
-  /// Set the mini batch size
-  void set_mini_batch_size(const int s);
-  /// Get the mini batch size
-  int get_mini_batch_size() const { return m_mini_batch_size; }
-  /// Get the loaded mini-batch size
-  int get_loaded_mini_batch_size() const;
-  /// Get the current mini-batch size.
-  int get_current_mini_batch_size() const;
-  /// Get the current global mini-batch size.
-  int get_current_global_mini_batch_size() const;
-  /// Get the current mini-batch size.
-  int get_current_world_master_mini_batch_adjustment(int model_rank) const;
-  /// Return the full mini_batch_size.
-  int get_mini_batch_max() const { return m_mini_batch_size; }
-  /// Set the mini batch size across all models (global)
-  void set_global_mini_batch_size(const int s) { m_global_mini_batch_size = s; }
-  /// Return the mini_batch_size across all models (global)
-  int get_global_mini_batch_size() const { return m_global_mini_batch_size; }
-  /// Set the mini batch stride
-  void set_stride_to_next_mini_batch(const int s)
-  {
-    m_stride_to_next_mini_batch = s;
-  }
-  /// Return the mini batch stride.
-  int get_stride_to_next_mini_batch() const
-  {
-    return m_stride_to_next_mini_batch;
-  }
-  /// Set the sample stride
-  void set_sample_stride(const int s) { m_sample_stride = s; }
-  /// Return the sample stride.
-  int get_sample_stride() const { return m_sample_stride; }
-  /// Set the iteration stride
-  void set_iteration_stride(const int s) { m_iteration_stride = s; }
-  /// Return the iteration stride.
-  int get_iteration_stride() const { return m_iteration_stride; }
-  /// Return the base offset.
-  virtual void set_base_offset(const int s) { m_base_offset = s; }
-  /// Return the base offset.
-  int get_base_offset() const { return m_base_offset; }
-  /// Set the model offset
-  void set_model_offset(const int s) { m_model_offset = s; }
-  /// Return the model offset.
-  int get_model_offset() const { return m_model_offset; }
-  /// Set the last mini batch size
-  void set_last_mini_batch_size(const int s) { m_last_mini_batch_size = s; }
-  /// Return the last mini batch size
-  int get_last_mini_batch_size() const { return m_last_mini_batch_size; }
-  /// Set the last mini batch size across all models (global)
-  void set_global_last_mini_batch_size(const int s)
-  {
-    m_global_last_mini_batch_size = s;
-  }
-  /// Return the last mini batch size across all models (global)
-  int get_global_last_mini_batch_size() const
-  {
-    return m_global_last_mini_batch_size;
-  }
-  /// Set the world master mini batch adjustment (global)
-  void set_world_master_mini_batch_adjustment(const int s)
-  {
-    m_world_master_mini_batch_adjustment = s;
-  }
-  /// Return the world master mini batch adjustment (global)
-  int get_world_master_mini_batch_adjustment() const
-  {
-    return m_world_master_mini_batch_adjustment;
-  }
-  /// Set the last mini batch stride
-  void set_stride_to_last_mini_batch(const int s)
-  {
-    m_stride_to_last_mini_batch = s;
-  }
-  /// Return the last mini batch stride
-  int get_stride_to_last_mini_batch() const
-  {
-    return m_stride_to_last_mini_batch;
-  }
-  /// Set the number of parallel readers per model
-  void set_num_parallel_readers(const int s) { m_num_parallel_readers = s; }
-  /// Return the number of parallel readers per model
-  int get_num_parallel_readers() const { return m_num_parallel_readers; }
-  /// Set the starting mini-batch index for the epoch
-  virtual void set_reset_mini_batch_index(const int s)
-  {
-    m_reset_mini_batch_index = s;
-  }
-  /// Return the starting mini-batch index for the epoch
-  int get_reset_mini_batch_index() const { return m_reset_mini_batch_index; }
-  /// Return the current mini-batch index for the epoch
-  int get_loaded_mini_batch_index() const { return m_loaded_mini_batch_idx; }
-  /// Return the current mini-batch index for the epoch
-  int get_current_mini_batch_index() const { return m_current_mini_batch_idx; }
-  /// Set the current position based on the base and model offsets
-  void set_initial_position()
-  {
-    m_current_pos = m_base_offset + m_model_offset;
-    m_loaded_mini_batch_idx = m_reset_mini_batch_index;
-    m_current_mini_batch_idx = 0;
-  }
-  /// Get the current position in the data reader.
-  int get_position() const { return m_current_pos; }
-  /// Get the next position in the data reader.
-  int get_next_position() const;
   /// Get a pointer to the start of the shuffled indices.
   int* get_indices() { return &m_shuffled_indices[0]; }
   /// Get the number of samples in this dataset.
@@ -534,27 +402,9 @@ public:
 
   const std::vector<int>& get_unused_indices(execution_mode m);
 
-  /// Set the number of iterations in each epoch.
-  void set_num_iterations_per_epoch(int num_iterations_per_epoch)
-  {
-    m_num_iterations_per_epoch =
-      num_iterations_per_epoch; /// @todo BVE FIXME merge this with alternate
-                                /// approach
-  }
-  /// Get the number of iterations in each epoch.
-  int get_num_iterations_per_epoch() const
-  {
-    return m_num_iterations_per_epoch; /// @todo BVE FIXME merge this with
-                                       /// alternate approach
-  }
-
-  /// Return the index of the current iteration step in the epoch (also the
-  /// mini-batch index)
-  int get_current_step_in_epoch() const { return m_current_mini_batch_idx; }
-
   /**
    * Optionally resizes the shuffled indices based on the data reader
-   * prototext settings: absolute_sample_count, percent_of_data_to_use.
+   * prototext settings: absolute_sample_count, fraction_of_data_to_use.
    * (dah - this was formerly part of select_subset_of_data)
    */
   void resize_shuffled_indices();
@@ -562,8 +412,8 @@ public:
   /**
    * Select the appropriate subset of data for the additional
    * execution modes such as validation or tournament  set based on
-   * the data reader prototext setting: validation_percent or
-   * tournament_percent
+   * the data reader prototext setting: validation_fraction or
+   * tournament_fraction
    */
   void select_subset_of_data();
 
@@ -657,17 +507,17 @@ protected:
   size_t get_absolute_sample_count() const;
 
   /**
-   * Returns the percent of the dataset to be used for training or testing.
+   * Returns the fraction of the dataset to be used for training or testing.
    * If training, this is the total for training and validation. Throws if
-   * set_use_percent was not called.
+   * set_use_fraction was not called.
    */
-  double get_use_percent() const;
+  double get_use_fraction() const;
 
   /**
-   * Return the percent of the dataset to be used for
+   * Return the fraction of the dataset to be used for
    * other execution modes such as validation or tournament.
    */
-  double get_execution_mode_split_percent(execution_mode m) const;
+  double get_execution_mode_split_fraction(execution_mode m) const;
 
   data_store_conduit* m_data_store;
 
@@ -675,16 +525,22 @@ protected:
 
   virtual bool
   fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers,
+                   El::Int current_position_in_data_set,
                    El::Int block_offset,
                    El::Int block_stride,
+                   El::Int sample_stride,
                    El::Int mb_size,
-                   El::Matrix<El::Int>& indices_fetched);
+                   El::Matrix<El::Int>& indices_fetched,
+                   execution_mode mode = execution_mode::invalid);
 
   bool fetch_data_block_conduit(std::vector<conduit::Node>& samples,
+                                El::Int current_position_in_data_set,
                                 El::Int block_offset,
                                 El::Int block_stride,
+                                El::Int sample_stride,
                                 El::Int mb_size,
-                                El::Matrix<El::Int>& indices_fetched);
+                                El::Matrix<El::Int>& indices_fetched,
+                                execution_mode mode = execution_mode::invalid);
 
   /** @brief Called by fetch_data, fetch_label, fetch_response
    *
@@ -775,46 +631,9 @@ protected:
   virtual void shuffle_indices(rng_gen& gen);
 
 public:
-  int m_mini_batch_size;
-  int m_current_pos;
-  /// Batch Stride is typically batch_size, but may be a multiple of batch size
-  /// if there are multiple readers
-  int m_stride_to_next_mini_batch;
-  /// If there are multiple instances of the reader,
-  /// then it may not reset to zero
-  int m_base_offset;
-  /// If there are multiple models with multiple instances of the reader,
-  /// each model's set of readers may not reset to zero
-  /// Provide a set of size, strides, and thresholds to handle the last mini
-  /// batch of a dataset
-  int m_model_offset;
-  /// Sample stride is used when a mini-batch is finely interleaved across a
-  /// DATA_PARALELL distribution.
-  int m_sample_stride;
-  /// Stride used by parallel data readers within the model
-  int m_iteration_stride;
-
   std::vector<int> m_shuffled_indices;
   /// Record of the indicies that are not being used for training
   unused_index_map_t m_unused_indices;
-
-  int m_last_mini_batch_size;
-  int m_stride_to_last_mini_batch;
-  /// The index at which this data reader starts its epoch
-  int m_reset_mini_batch_index;
-  /// The index of the current mini-batch that has been loaded
-  int m_loaded_mini_batch_idx;
-  /// The index of the current mini-batch that is being processed
-  /// (train/test/validate)
-  int m_current_mini_batch_idx;
-  int
-    m_num_iterations_per_epoch; /// How many iterations all readers will execute
-
-  int m_global_mini_batch_size;
-  int m_global_last_mini_batch_size;
-  int m_world_master_mini_batch_adjustment;
-
-  int m_num_parallel_readers; /// How many parallel readers are being used
 
   size_t m_max_files_to_load;
   std::string m_file_dir;
@@ -824,11 +643,12 @@ public:
   std::string m_label_fn;
   bool m_shuffle;
   size_t m_absolute_sample_count;
-  std::map<execution_mode, double> m_execution_mode_split_percentage;
-  double m_use_percent;
+  std::map<execution_mode, double> m_execution_mode_split_fraction;
+  double m_use_fraction;
   int m_first_n;
   std::string m_role;
 
+  virtual void print_config();
   /** @brief Print the return values from various get_X methods to file
    *
    * For use in unit testing. Only the master prints.
@@ -879,7 +699,7 @@ protected:
   bool m_issue_warning;
 
   /// throws exception if get_absolute_sample_count() and
-  /// get_use_percent() are incorrect
+  /// get_use_fraction() are incorrect
   void error_check_counts() const;
 };
 

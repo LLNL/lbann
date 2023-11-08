@@ -189,6 +189,25 @@ void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::
     l.m_epsilon,
     global_stats);
 }
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+std::unique_ptr<typename batch_normalization_distconv_adapter<TensorDataType,
+                                                              T_layout,
+                                                              Dev>::TensorDevType>
+batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::
+  setup_error_signals_i(int index) const
+{
+  assert_eq(index, 0);
+  auto& parent_layer = this->layer().get_parent_layer();
+  if (parent_layer.get_backprop_requirements() & ACTIVATIONS
+      || parent_layer.get_type() == "identity"
+      || this->get_prev_activations_dist() != this->get_error_signals_dist()
+      || std::getenv("DISTCONV_DISABLE_MEM_OPT")) {
+    return data_type_distconv_adapter<TensorDataType>::setup_error_signals_i(0);
+  }
+  const auto& prev_activations = this->get_prev_activations(0);
+  return std::make_unique<TensorDevType>(prev_activations);
+}
 #endif // LBANN_HAS_DISTCONV
 
 } // namespace lbann

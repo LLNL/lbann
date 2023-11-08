@@ -44,16 +44,18 @@
 #include "lbann/callbacks/dump_outputs.hpp"
 #include "lbann/callbacks/dump_weights.hpp"
 #include "lbann/callbacks/early_stopping.hpp"
+#include "lbann/callbacks/evaluate_progress.hpp"
 #ifdef LBANN_HAS_ONNX
 #include "lbann/callbacks/export_onnx.hpp"
 #endif // LBANN_HAS_ONNX
 #include "lbann/callbacks/alternate_updates.hpp"
 #include "lbann/callbacks/gpu_memory_usage.hpp"
+#include "lbann/callbacks/gradient_clipping.hpp"
 #include "lbann/callbacks/hang.hpp"
-#include "lbann/callbacks/imcomm.hpp"
 #include "lbann/callbacks/learning_rate.hpp"
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/ltfb.hpp"
+#include "lbann/callbacks/memory_profiler.hpp"
 #include "lbann/callbacks/mixup.hpp"
 #include "lbann/callbacks/monitor_io.hpp"
 #include "lbann/callbacks/perturb_adam.hpp"
@@ -63,6 +65,7 @@
 #include "lbann/callbacks/print_model_description.hpp"
 #include "lbann/callbacks/print_statistics.hpp"
 #include "lbann/callbacks/profiler.hpp"
+#include "lbann/callbacks/progress_bar.hpp"
 #include "lbann/callbacks/replace_weights.hpp"
 #include "lbann/callbacks/save_images.hpp"
 #include "lbann/callbacks/save_model.hpp"
@@ -126,6 +129,8 @@ void register_default_builders(factory_type& factory)
                            build_confusion_matrix_callback_from_pbuf);
   factory.register_builder("CallbackComputeModelSize",
                            build_compute_model_size_callback_from_pbuf);
+  factory.register_builder("CallbackCosineDecayLearningRate",
+                           build_cosine_decay_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackDebug", build_debug_callback_from_pbuf);
   factory.register_builder("CallbackDebugIO",
                            build_debug_io_callback_from_pbuf);
@@ -147,18 +152,23 @@ void register_default_builders(factory_type& factory)
                            build_dump_weights_callback_from_pbuf);
   factory.register_builder("CallbackEarlyStopping",
                            build_early_stopping_callback_from_pbuf);
+  factory.register_builder("CallbackEvaluateProgress",
+                           build_evaluate_progress_callback_from_pbuf);
 #ifdef LBANN_HAS_ONNX
   factory.register_builder("CallbackExportOnnx",
                            build_export_onnx_callback_from_pbuf);
 #endif // LBANN_HAS_ONNX
   factory.register_builder("CallbackGPUMemoryUsage",
                            build_gpu_memory_usage_callback_from_pbuf);
+  factory.register_builder("CallbackClipGradientNorm",
+                           build_clip_gradient_norm_callback_from_pbuf);
   factory.register_builder("CallbackHang", build_hang_callback_from_pbuf);
-  factory.register_builder("CallbackImComm", build_imcomm_callback_from_pbuf);
   factory.register_builder(
     "CallbackLinearGrowthLearningRate",
     build_linear_growth_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackLTFB", build_ltfb_callback_from_pbuf);
+  factory.register_builder("CallbackMemoryProfiler",
+                           build_memory_profiler_callback_from_pbuf);
   factory.register_builder("CallbackMinibatchSchedule",
                            build_minibatch_schedule_callback_from_pbuf);
   factory.register_builder("CallbackMixup", build_mixup_callback_from_pbuf);
@@ -181,6 +191,8 @@ void register_default_builders(factory_type& factory)
                            build_print_statistics_callback_from_pbuf);
   factory.register_builder("CallbackProfiler",
                            build_profiler_callback_from_pbuf);
+  factory.register_builder("CallbackProgressBar",
+                           build_progress_bar_callback_from_pbuf);
   factory.register_builder("CallbackReplaceWeights",
                            build_replace_weights_callback_from_pbuf);
   factory.register_builder("CallbackSaveImages",

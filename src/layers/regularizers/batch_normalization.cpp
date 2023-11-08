@@ -28,7 +28,7 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/layers/regularizers/batch_normalization_impl.hpp"
-#include "lbann/optimizers/optimizer_impl.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 #include "lbann/weights/weights_helpers.hpp"
 
 namespace lbann {
@@ -53,6 +53,8 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute()
   const auto& output_dims = this->get_output_dims();
   const auto& num_channels = output_dims[0];
   const auto& channel_size = this->get_output_size() / num_channels;
+
+  const int correction = this->m_bessel_correction ? 1 : 0;
 
   // Compute statistics
   if (is_training) {
@@ -123,7 +125,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute()
         const auto& mean = local_mean(channel, 0) / num_per_sum_dt;
         const auto& sqmean = local_var(channel, 0) / num_per_sum_dt;
         auto var = num_per_sum_dt * (sqmean - mean * mean) /
-                   (num_per_sum_dt - El::TypeTraits<TensorDataType>::One());
+                   (num_per_sum_dt - correction);
         var = std::max(var, this->m_epsilon);
         local_mean(channel, 0) = mean;
         local_var(channel, 0) = var;
@@ -202,6 +204,8 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute()
   const auto& output_dims = this->get_output_dims();
   const auto& num_channels = output_dims[0];
   const auto& channel_size = this->get_output_size() / num_channels;
+
+  const int correction = this->m_bessel_correction ? 1 : 0;
 
   // Compute local gradients
   LBANN_OMP_PARALLEL_FOR
@@ -306,7 +310,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute()
       const TensorDataType inv_stdev =
         static_cast<TensorDataType>(1 / El::Sqrt(var + this->m_epsilon));
       const auto& dmean_term = dmean / num_per_sum;
-      const auto& dvar_term = dvar * 2 / (num_per_sum - 1);
+      const auto& dvar_term = dvar * 2 / (num_per_sum - correction);
 
       // Compute error signal for current channel
       const auto& row_start = channel * channel_size;

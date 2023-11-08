@@ -444,7 +444,7 @@ float optimizerwise_adaptive_learning_rate::optimizer_schedule(model* m,
 {
   auto& dto = dynamic_cast<data_type_optimizer<DataType>&>(opt);
   DataType param_norm = El::Nrm2(dto.get_weights().get_values());
-  DataType param_grad_norm = El::Nrm2(dto.get_gradient());
+  DataType param_grad_norm = El::Nrm2(dto.get_gradient_sharded());
   if (param_norm > DataType(0) && param_grad_norm > DataType(0)) {
     // TODO: Should incorporate weight decay, etc. here.
     return optimizerwise_adaptive_learning_rate::
@@ -454,6 +454,85 @@ float optimizerwise_adaptive_learning_rate::optimizer_schedule(model* m,
   else {
     return dto.get_learning_rate();
   }
+}
+
+cosine_decay_learning_rate::cosine_decay_learning_rate(
+  double lr_max,
+  double lr_min,
+  size_t decay_steps,
+  double initial_learning_rate,
+  size_t warmup_steps)
+  : learning_rate(std::vector<std::string>()),
+    m_lr_max(lr_max),
+    m_lr_min(lr_min),
+    m_decay_steps(decay_steps),
+    m_initial_lr(initial_learning_rate),
+    m_warmup_steps(warmup_steps)
+{}
+
+cosine_decay_learning_rate::cosine_decay_learning_rate(
+  double lr_max,
+  double lr_min,
+  size_t decay_steps,
+  double initial_learning_rate,
+  size_t warmup_steps,
+  std::vector<std::string> weights_names)
+  : learning_rate(std::move(weights_names)),
+    m_lr_max(lr_max),
+    m_lr_min(lr_min),
+    m_decay_steps(decay_steps),
+    m_initial_lr(initial_learning_rate),
+    m_warmup_steps(warmup_steps)
+{}
+
+void cosine_decay_learning_rate::setup(model* m) { learning_rate::setup(m); }
+
+/**
+ * Keep the record of the learning rate at the end of the current epoch.
+ * The function computes a step-wise learning rate and is also called from
+ * ``optimizer_schedule``.
+ */
+float cosine_decay_learning_rate::global_schedule(model* m)
+{
+  const auto& c =
+    static_cast<const SGDExecutionContext&>(m->get_execution_context());
+  auto step = c.get_step();
+  size_t max_steps = m_warmup_steps + m_decay_steps;
+  // Piecewise evaluation based on step
+  if (step >= max_steps) { // Post-decay
+    return m_lr_min;
+  }
+  else if (step >= m_warmup_steps) { // Post-warmup, in decay
+    step -= m_warmup_steps;
+    float ratio = static_cast<float>(step) / m_decay_steps;
+    float cosine = 0.5f * (1.0f + static_cast<float>(std::cos(M_PI * ratio)));
+    return m_lr_min + (m_lr_max - m_lr_min) * cosine;
+  }
+  else { // Warmup (step < m_warmup_steps)
+    float ratio = static_cast<float>(step) / m_warmup_steps;
+    float delta = m_lr_max - m_initial_lr;
+    return m_initial_lr + ratio * delta;
+  }
+}
+
+/**
+ * Compute the learning rate for the next iteration.
+ */
+float cosine_decay_learning_rate::optimizer_schedule(model* m, optimizer& opt)
+{
+  return this->global_schedule(m);
+}
+
+void cosine_decay_learning_rate::write_specific_proto(
+  lbann_data::Callback& proto) const
+{
+  auto* msg = proto.mutable_cosine_decay_learning_rate();
+  msg->set_weights(protobuf::to_space_sep_string(this->get_weights_names()));
+  msg->set_lr_max(m_lr_max);
+  msg->set_lr_min(m_lr_min);
+  msg->set_decay_steps(m_decay_steps);
+  msg->set_initial_warmup_learning_rate(m_initial_lr);
+  msg->set_warmup_steps(m_warmup_steps);
 }
 
 void optimizerwise_adaptive_learning_rate::write_specific_proto(
@@ -562,6 +641,23 @@ std::unique_ptr<callback_base> build_poly_learning_rate_callback_from_pbuf(
     params.num_epochs(),
     params.max_iter(),
     params.end_lr(),
+    parse_list<std::string>(params.weights()));
+}
+
+std::unique_ptr<callback_base>
+build_cosine_decay_learning_rate_callback_from_pbuf(
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&)
+{
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackCosineDecayLearningRate&>(
+      proto_msg);
+  return std::make_unique<cosine_decay_learning_rate>(
+    params.lr_max(),
+    params.lr_min(),
+    params.decay_steps(),
+    params.initial_warmup_learning_rate(),
+    params.warmup_steps(),
     parse_list<std::string>(params.weights()));
 }
 

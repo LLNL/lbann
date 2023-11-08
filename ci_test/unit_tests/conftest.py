@@ -1,5 +1,6 @@
 import sys
-sys.path.insert(0, '../common_python')
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'common_python'))
 import tools
 import pytest, re, subprocess
 
@@ -17,8 +18,8 @@ def pytest_addoption(parser):
     parser.addoption('--weekly', action='store_true', default=False,
                      help='--weekly specifies that the test should ONLY be run weekly, not nightly. Default False')
     # For local testing only
-    parser.addoption('--data-reader-percent', action='store', default=None,
-                     help='--data-reader-percent=<percent of dataset to be used>. Default None. Note that 1.0 is 100%.')
+    parser.addoption('--data-reader-fraction', action='store', default=None,
+                     help='--data-reader-fraction=<fraction of dataset to be used>. Default None.')
 
 
 @pytest.fixture
@@ -37,5 +38,5 @@ def weekly(request):
 
 
 @pytest.fixture
-def data_reader_percent(request):
-    return request.config.getoption('--data-reader-percent')
+def data_reader_fraction(request):
+    return request.config.getoption('--data-reader-fraction')

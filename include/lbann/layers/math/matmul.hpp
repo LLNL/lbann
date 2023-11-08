@@ -96,6 +96,11 @@ public:
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | PREV_ACTIVATIONS;
+  }
 
   description get_description() const override;
 
@@ -109,7 +114,7 @@ protected:
   friend class cereal::access;
   matmul_layer() : matmul_layer(nullptr, false, false) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
   void fp_compute() override;
   void bp_compute() override;
 
@@ -117,7 +122,7 @@ protected:
   friend class matmul_distconv_adapter<TensorDataType, Layout, Device>;
 
 protected:
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+  void setup_distconv_adapter() override;
   bool is_distconv_supported() const override;
   matmul_distconv_adapter<TensorDataType, Layout, Device>&
   get_distconv_adapter() override;

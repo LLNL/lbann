@@ -27,12 +27,14 @@ class Weights:
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(self, initializer=None, optimizer=None, name=None, datatype=None):
+    def __init__(self, initializer=None, optimizer=None, name=None, datatype=None,
+                 sharded=None):
         Weights.global_count += 1
         self.name = name if name else 'weights{0}'.format(Weights.global_count)
         self.initializer = initializer
         self.optimizer = optimizer
         self.datatype = datatype
+        self.sharded = sharded
 
     def export_proto(self):
         """Construct and return a protobuf message."""
@@ -52,5 +54,8 @@ class Weights:
         # Set datatype if needed
         if self.datatype:
             proto.datatype = self.datatype
+
+        if self.sharded:
+            proto.sharded = self.sharded
 
         return proto

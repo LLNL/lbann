@@ -75,7 +75,7 @@ public:
   {
     return m_data_readers[0]->get_linearized_response_size();
   }
-  const std::vector<int> get_data_dims() const override
+  const std::vector<El::Int> get_data_dims() const override
   {
     return m_data_readers[0]->get_data_dims();
   }
@@ -101,7 +101,7 @@ protected:
   void sanity_check_for_consistency(int num_labels,
                                     int data_size,
                                     int label_size,
-                                    const std::vector<int>& data_dims);
+                                    const std::vector<El::Int>& data_dims);
 };
 
 } // namespace lbann

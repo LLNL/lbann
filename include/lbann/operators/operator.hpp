@@ -114,6 +114,15 @@ public:
    */
   virtual std::string get_type() const = 0;
 
+  /**
+   * @brief Returns the necessary tensors for computing backpropagation
+   * for this operator.
+   */
+  virtual int get_backprop_requirements() const
+  {
+    return ERROR_SIGNALS | PREV_ACTIVATIONS;
+  }
+
   /** @brief Get the description of the operator. */
   Description get_description() const override;
 
@@ -143,7 +152,7 @@ public:
              std::vector<OutputTensorType> const& outputs) const = 0;
 
   /** @brief Compute operator's "backward" operation
-   *  @details Given the inputs, outputs, and gradient w.r.t. output
+   *  @details Given the inputs and gradient w.r.t. output
    *           tensors, the gradient w.r.t. input tensors are
    *           populated with the computed values.
    */

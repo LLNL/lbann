@@ -53,6 +53,8 @@ public:
     return data_layout::DATA_PARALLEL;
   }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
 protected:
   /** Add layer specific data to prototext */
@@ -71,9 +73,9 @@ protected:
     }
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
 
     // Slice along last dimension
     int subgridCommSize = El::mpi::Size(this->get_subgrid_comm());
@@ -94,12 +96,12 @@ protected:
     auto& input = this->get_prev_activations(subgrid_comm_rank);
     // El::Copy(input, output);
 
-    auto* const output_cast = dynamic_cast<
-      El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>*>(
-      &output);
+    auto& output_cast = dynamic_cast<
+      El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>&>(
+      output);
 
     auto const sync_info_output =
-      El::SyncInfoFromMatrix(output_cast->LockedMatrix());
+      El::SyncInfoFromMatrix(output_cast.LockedMatrix());
 
     const El::Int mloc = input.LocalHeight();
     const El::Int nloc = input.LocalWidth();
@@ -137,13 +139,13 @@ protected:
       after_allreduce.LockedBuffer(last_dim_index, 0),
       1,
       last_dim,
-      output_cast->Buffer(),
+      output_cast.Buffer(),
       1,
       (last_dim / subgrid_comm_size),
       sync_info_output);
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) override
+  void fp_setup_outputs() override
   {
 
     if (this->get_num_children() < 1) {
@@ -151,16 +153,21 @@ protected:
     }
     // Determine distributed matrix alignment
 
+    auto mini_batch_size =
+      this->infer_mini_batch_size_from_parents_or_default_to_current();
+
     // Initialize output tensors
     for (int i = 0; i < this->get_num_children(); ++i) {
       auto& output = this->get_activations(i);
       output.Empty(false);
       output.Resize(this->get_output_size(i), mini_batch_size);
+      this->setup_reference_counter(output);
     }
   }
 
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override
+  void bp_setup_gradient_wrt_inputs() override
   {
+    auto children = this->get_child_layers();
     auto const subgrid_comm_rank = El::mpi::Rank(this->get_subgrid_comm());
     auto const subgrid_comm_size = El::mpi::Size(this->get_subgrid_comm());
     const auto input_dims = this->get_input_dims();
@@ -172,14 +179,13 @@ protected:
 
     using MatrixType =
       El::DistMatrix<TensorDataType, El::STAR, El::VC, El::ELEMENT, Dev>;
-    auto const* const gradient_wrt_output_cast =
-      dynamic_cast<const MatrixType*>(&gradient_wrt_output);
+    auto& gradient_wrt_output_cast =
+      dynamic_cast<const MatrixType&>(gradient_wrt_output);
 
-    auto* const gradient_wrt_input_cast =
-      dynamic_cast<MatrixType*>(&input_grad);
+    auto& gradient_wrt_input_cast = dynamic_cast<MatrixType&>(input_grad);
 
-    int mloc = gradient_wrt_output_cast->LocalHeight();
-    int nloc = gradient_wrt_output_cast->LocalWidth();
+    int mloc = gradient_wrt_output_cast.LocalHeight();
+    int nloc = gradient_wrt_output_cast.LocalWidth();
     int per_grid_last_dim = last_dim / subgrid_comm_size;
 
     El::Matrix<TensorDataType, Dev> temp_input(nloc, mloc),
@@ -187,7 +193,7 @@ protected:
       transposed(nloc * (mloc / per_grid_last_dim), per_grid_last_dim),
       transposed_output(last_dim, nloc * (mloc / per_grid_last_dim));
 
-    El::Copy(gradient_wrt_output_cast->LockedMatrix(), temp_input);
+    El::Copy(gradient_wrt_output_cast.LockedMatrix(), temp_input);
     temp_input.Resize(per_grid_last_dim, nloc * (mloc / per_grid_last_dim));
 
     El::Transpose(temp_input, transposed);
@@ -202,8 +208,16 @@ protected:
     El::Transpose(temp_output, transposed_output);
     transposed_output.Resize(mloc * subgrid_comm_size, nloc);
 
-    gradient_wrt_input_cast->Resize(this->get_input_size(), mini_batch_size);
-    El::Copy(transposed_output, gradient_wrt_input_cast->Matrix());
+    auto mini_batch_size =
+      this->infer_mini_batch_size_from_parents_or_default_to_current();
+
+    for (int i = 0; i < El::To<int>(children.size()); i++) {
+      auto& gradient_wrt_input_cast_layer =
+        dynamic_cast<MatrixType&>(this->get_error_signals(i));
+      gradient_wrt_input_cast_layer.Resize(this->get_input_size(),
+                                           mini_batch_size);
+    }
+    El::Copy(transposed_output, gradient_wrt_input_cast.Matrix());
   }
 
   void bp_compute() final {}

@@ -27,12 +27,9 @@ def f_invtransform(y,scale=4.0): ### Transform to original space
 
 def construct_lc_launcher_args():
     parser = argparse.ArgumentParser()
-    lbann.contrib.args.add_scheduler_arguments(parser)
+    lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_cosmo3DGAN')
 
     # General arguments
-    parser.add_argument(
-        '--job-name', action='store', default='lbann_cosmo3DGAN', type=str,
-        help='scheduler job name (default: lbann_cosmoae)')
     parser.add_argument("--scheduler", type=str, default="lsf")
     parser.add_argument(
         '--mini-batch-size', action='store', default=1, type=int,

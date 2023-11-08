@@ -54,6 +54,7 @@ Operators are specified for unique input and output data types.
    :ref:`ExpOperator <Exp>`, "Apply the Exp operator entrywise"
    :ref:`Expm1Operator <Expm1>`, "Apply the Expm1 operator entrywise"
    :ref:`FloorOperator <Floor>`, "Apply the Floor operator entrywise"
+   :ref:`GeluOperator <Gelu>`, "Gaussian Error Linear Unit operator"
    :ref:`GreaterOperator <Greater>`, "Apply the Greater operator entrywise"
    :ref:`GreaterConstantOperator <GreaterConstant>`, "Test each value for 'greater-than' with a constant (x>c)"
    :ref:`GreaterEqualOperator <GreaterEqual>`, "Apply the GreaterEqual operator entrywise"
@@ -86,6 +87,7 @@ Operators are specified for unique input and output data types.
    :ref:`SafeDivideOperator <SafeDivide>`, "Apply the SafeDivide operator entrywise"
    :ref:`SafeReciprocalOperator <SafeReciprocal>`, "Apply the SafeReciprocal operator entrywise"
    :ref:`ScaleOperator <Scale>`, "Scale each input value by a constant value (c*x)"
+   :ref:`SelectOperator <Select>`, "Chooses one input or the other based on the value of a predicate (if a return b, else c)" 
    :ref:`SeluOperator <Selu>`, "Apply the Selu operator entrywise"
    :ref:`SigmoidOperator <Sigmoid>`, "Apply the Sigmoid operator entrywise"
    :ref:`SigmoidBinaryCrossEntropyOperator <SigmoidBinaryCrossEntropy>`, "Apply the SigmoidBinaryCrossEntropy operator entrywise."
@@ -561,6 +563,38 @@ Apply the floor function to the input tensor entrywise.
 :ref:`Back to Top<operators>`
 
 ________________________________________________
+
+
+
+.. _Gelu:
+
+------------------------------------------------
+Gelu (GELU tanh approximation)
+------------------------------------------------
+
+The Gaussian Error Linear Unit (GELU) operator is defined by:
+
+.. math::
+
+   \text{GELU}(x) = x\Phi (x),
+
+where :math:`\Phi` is the Gaussian cumulative distribution function. The
+hyperbolic tangent-based approximation of the Gaussian Error Linear Unit (GELU)
+operator, found in the BERT and GPT transformer codebases, is implemented in
+LBANN and given by:
+
+.. math::
+
+   \text{GELU'}(x) = \frac{x}{2} \cdot (1 + \text{tanh}(\sqrt{2 / \pi} \cdot (x + 0.044715 x^3))).
+
+For explanation on GELU, see:
+
+Dan Hendrycks and Kevin Gimpel. "Gaussian Error Linear Units (GELUs)."
+arXiv preprint arXiv:1606.08415 (2016).
+
+:ref:`Back to Top<operators>`
+
+________________________________________
 
 
 
@@ -1109,6 +1143,54 @@ Scale each input value by a constant.
 Arguments:
 
    :constant: (``double``) The constant to scale by
+
+:ref:`Back to Top<operators>`
+
+________________________________________________
+
+
+
+.. _Select:
+
+------------------------------------------------
+Select
+------------------------------------------------
+
+Chooses one input or the other based on the value of a predicate (if a return b,
+else c). The predicate is given as the first tensor, followed by the ``true``
+and ``false`` results, respectively. To optimize the operator for comparison
+predicates, the ``value`` and ``epsilon`` arguments provide a value to compare
+with.
+
+For further optimization, the true and false tensors can be replaced
+with a constant value via the arguments (see below). If one of those values (or
+both) are set, the respective tensor parameters are not necessary. For example,
+``Select(condition, some_tensor, value=1, if_true=2)`` in the Python frontend
+will internally set ``constant_if_true`` to ``True`` and ``value_if_true`` to
+``2``. The resulting expression would be ``(condition == 1) ? 2 : some_tensor``
+for every input element.
+
+In general, the following statement is executed:
+
+
+.. math::
+
+   \text{Select}(pred, trueval, falseval) =
+       \begin{cases}
+         trueval  & | pred - \text{value} | < \text{epsilon} \\
+         falseval & otherwise
+       \end{cases}
+
+
+
+Arguments:
+
+   :value: (``double``) The value to compare the predicate with
+   :epsilon: (``double``) Comparison threshold (default: 1e-5)
+   :constant_if_true: (``bool``) If true, uses ``value_if_true`` as a constant true value
+   :constant_if_false: (``bool``) If true, uses ``value_if_false`` as a constant false value
+   :value_if_true: (``double``) If set, uses the given value instead of the second parameter
+   :value_if_false: (``double``) If set, uses the given value instead of the third parameter
 
 :ref:`Back to Top<operators>`
 

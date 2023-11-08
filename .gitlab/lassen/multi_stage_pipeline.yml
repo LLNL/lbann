@@ -1,0 +1,168 @@
+################################################################################
+## Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+## Produced at the Lawrence Livermore National Laboratory.
+## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+##
+## LLNL-CODE-697807.
+## All rights reserved.
+##
+## This file is part of LBANN: Livermore Big Artificial Neural Network
+## Toolkit. For details, see http://software.llnl.gov/LBANN or
+## https://github.com/LLNL/LBANN.
+##
+## Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+## may not use this file except in compliance with the License.  You may
+## obtain a copy of the License at:
+##
+## http://www.apache.org/licenses/LICENSE-2.0
+##
+## Unless required by applicable law or agreed to in writing, software
+## distributed under the License is distributed on an "AS IS" BASIS,
+## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+## implied. See the License for the specific language governing
+## permissions and limitations under the license.
+################################################################################
+
+# This is the testing pipeline for the Lassen cluster at LLNL. This
+# cluster builds the LBANN applications and libraries using a single
+# compiler toolchain and then runs a collection of tests. Testing
+# output is in JUnit format and parsed by the pipeline for web
+# viewing.
+
+include:
+  - .gitlab/common/common.yml
+
+stages:
+  - build
+  - test
+  - cleanup
+
+# Build LBANN and establish the Spack environment for this pipeline.
+build and install:
+  extends:
+    - .lassen common
+    - .lbann-base-vars
+    - .lbann-artifacts
+  stage: build
+  script:
+    - echo "== BUILDING LBANN =="
+    - !reference [.setup_spack, script]
+    - lalloc 1 -W 60 -q pdebug ./scripts/build_lbann.sh --ci ${SPACK_DEPS_FLAG}
+      -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} ${CLEAN_BUILD_FLAG}
+      -p py-scipy@1.8.1 --pip pytest --pip tqdm --
+      +deterministic +vision +numpy +unit_tests ${SPACK_SPECS}
+    - export TEST_TASKS_PER_NODE=2
+    - export LBANN_NNODES=1
+    - export TEST_MPIBIND_FLAG="--mpibind=off"
+    - export SPACK_ARCH=$(spack arch)
+    - export SPACK_ARCH_TARGET=$(spack arch -t)
+    - !reference [.setup_lbann, script]
+    - lalloc ${LBANN_NNODES} -W 45 -q pdebug .gitlab/common/run-catch-tests-lsf.sh
+  timeout: 2h
+
+# Run the Python-based unit tests.
+unit tests:
+  extends:
+    - .lassen common
+    - .lbann-base-vars
+    - .uses spack environment
+  stage: test
+  dependencies:
+    - build and install
+  script:
+    - echo "== RUNNING PYTHON-BASED UNIT TESTS =="
+#    - !reference [.setup_nvshmem, script]
+    - echo "Testing $(which lbann)"
+    - export OMP_NUM_THREADS=10
+    - export LBANN_NNODES=1
+    - export TEST_TASKS_PER_NODE=4
+    - echo "Skipping unit tests due to PMI issue on lassen."
+#    - lalloc ${LBANN_NNODES} -W 30 -G guests -q pdebug .gitlab/lassen/run_unit_tests.sh
+  artifacts:
+    when: always
+    paths:
+      - ci_test/unit_tests/results.xml
+    reports:
+      junit: ci_test/unit_tests/results.xml
+  timeout: 1h
+
+# Run the Python-based integration tests.
+integration tests:
+  extends:
+    - .lassen common
+    - .lbann-base-vars
+    - .uses spack environment
+  stage: test
+  dependencies:
+    - build and install
+  rules:
+    - !reference [.lbann-test-rules, rules]
+  script:
+    - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
+#    - !reference [.setup_nvshmem, script]
+    - echo "Testing $(which lbann)"
+    - export OMP_NUM_THREADS=10
+    - export LBANN_NNODES=2
+    - export TEST_TASKS_PER_NODE=4
+    - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
+    - lalloc ${LBANN_NNODES} -W 45 -G guests -q pdebug .gitlab/lassen/run_integration_tests.sh
+  artifacts:
+    when: always
+    paths:
+      - ci_test/integration_tests/results.xml
+    reports:
+      junit: ci_test/integration_tests/results.xml
+  timeout: 1h
+
+# This is a dummy job that checks the Catch2 testing.
+check catch2 tests:
+  extends:
+    - .lassen common
+    - .lbann-base-vars
+  stage: test
+  dependencies:
+    - build and install
+  script:
+    - ([[ $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
+  artifacts:
+    reports:
+      junit: ${RESULTS_DIR}/*.xml
+
+# Cleanup the pipeline's Spack environment.
+# Switching over to reusing Spack environments for each feature branch so don't remove them immediately
+# Cleanup any build directories and spack environments older than 5 days since last use
+remove spack environment:
+  extends:
+    - .lassen common
+    - .lbann-base-vars
+    - .cleanup old spack environment
+  stage: cleanup
+  variables:
+    GIT_STRATEGY: none
+  when: always
+
+
+# Load the spack shell integration and load the environment.
+.setup_nvshmem:
+  script:
+    - export NVSHMEM_IBRC_SUPPORT=1
+    - export NVSHMEM_PMIX_SUPPORT="1"
+#    - export NVSHMEM_PMIX_SUPPORT="0"
+    - export NVSHMEM_LIBFABRIC_SUPPORT=0
+
+# Variables for Lassen. Because this test uses "test_compiler.py", we
+# don't need to specify the Spack spec or the job name.
+.lassen common:
+  variables:
+    # Just the obvious identifier. Which specific node doesn't matter.
+    SYSTEM_NAME: lassen
+    SPACK_USER_CACHE_PATH: /g/g14/lbannusr/spack_repos/.spack_${SYSTEM_NAME}
+    SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
+
+    # These are system-specific specs that should be forwarded to the
+    # build script
+    SPACK_SPECS: "+cuda +half +fft"
+  tags:
+    - lassen
+    - shell

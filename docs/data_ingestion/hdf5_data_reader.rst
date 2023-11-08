@@ -193,11 +193,15 @@ keys in the metadata nodes, which we group as follows.
    may be necessary in conjunction with *pack* directives.
 
 #. Images. In addition to the *scale* and *bias* directives, images
-   may contain *dims*, *channels*, and *hwc* directives. If the *hwc*
-   directive is specified the images will be converted from
-   height-width-channel encoding to some other format. At present, the
-   only transformational format we support is channel-height-width
-   ("chw").
+   may contain *dims*, *channels*, and *hwc* directives. There are two
+   fields, *layout* and *transpose*, that describe how the channels in a
+   multi-channel image / volume are arranged. If the *layout*
+   directive is specified, and if it is *hwc* or *dhwc*, and if the
+   *transpose* field is set to either *chw* or *cdhw*, then the images
+   will be converted from a channels-last encoding to a channels-first
+   format. At present, the only transformational format we
+   support is channels-last to channels-first ("hwc -> chw" or
+   "dhwc -> cdhw").
 
 --------------
 Larger Example
@@ -253,7 +257,8 @@ We conclude this section with a more fleshed-out example of the schemas.
        channels: 4
        scale: [29.258502, 858.26596, 100048.72, 4807207.0]
        bias: [0.0, 0.0, 0.0, 0.0]
-       hwc: "chw"
+       layout: "hwc"
+       transpose: "chw"
 
      (0.0, 0.0):
        0.0:

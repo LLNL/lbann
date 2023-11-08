@@ -58,6 +58,8 @@ public:
   std::string get_type() const override { return "constant"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return PROPAGATE_NOTHING; }
 
   description get_description() const override
   {
@@ -75,7 +77,7 @@ protected:
 
   void fp_compute() override
   {
-    if (m_value == EvalType(0)) {
+    if (m_value == El::To<TensorDataType>(0.0)) {
       El::Zero(this->get_activations());
     }
     else {

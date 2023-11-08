@@ -28,6 +28,7 @@
 #define LBANN_DATA_TYPE_WEIGHTS_HPP
 
 #include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/utils/typename.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/weights.hpp"
 
@@ -85,6 +86,11 @@ public:
   data_type_weights& operator=(const data_type_weights& other);
   virtual ~data_type_weights() = default;
 
+  std::string get_datatype_name() const override
+  {
+    return TypeName<TensorDataType>();
+  }
+
   bool has_optimizer() const override { return m_optimizer != nullptr; }
 
   // -----------------------------------------------
@@ -122,10 +128,15 @@ public:
   // Weight matrix accessors
   // -----------------------------------------------
 
-  /** Get the weight matrix. */
-  AbsDistMatrixType& get_values() override;
-  /** Get the weight matrix. */
+  /** Get the weight matrix (a constant, full view of the weights). */
   const AbsDistMatrixType& get_values() const override;
+
+  /** @brief Access the local shard of weight values. If sharded is false,
+   *         equivalent to 'get_values'.
+   */
+  AbsDistMatrixType& get_values_sharded() override;
+  AbsDistMatrixType const& get_values_sharded() const override;
+
   using weights::set_values;
   /** Set the weight matrix. */
   void set_values(const AbsDistMatrixType& values);
@@ -136,6 +147,23 @@ public:
   void set_value(TensorDataType value, std::vector<size_t> pos);
   /** Set an entry in the weight matrix. */
   void set_value(TensorDataType value, size_t row, size_t col);
+
+  // -----------------------------------------------
+  // Weight memory management
+  // -----------------------------------------------
+
+  /** @brief Start an asynchronous request for the full view of weights.
+   *
+   *  This is a noop if the weights are not sharded.
+   */
+  void request_full_weights_async() const override;
+  /** @brief Wait for an asynchronous request for the full view of weights.
+   *
+   *  This is a noop if the weights are not sharded, or already requested.
+   */
+  void wait_for_full_weights() const override;
+  /** @brief Releases the full view of the weights for memory reclamation. */
+  void release_full_weights() const override;
 
   /** Reconcile weight values.
    *  If weight values are duplicated across multiple processes, they
@@ -190,8 +218,13 @@ private:
   void do_steal_values_(weights& other) override;
 
 private:
-  /** Weight matrix. */
+  /** Weight matrix (potentially sharded). */
   std::unique_ptr<AbsDistMatrixType> m_values;
+
+  /** View of the full weight matrix view for layers to use. The field is
+   *  mutable because it acts as a cache of a constant view of m_values.
+   */
+  mutable std::unique_ptr<AbsDistMatrixType> m_values_view;
 
   /** Weights initializer.
    *  Default is nullptr, which corresponds to zero initialization.

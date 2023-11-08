@@ -59,12 +59,14 @@ public:
   std::string get_type() const override { return "identity_zero"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return true; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
 protected:
   friend class cereal::access;
   identity_zero_layer() : identity_zero_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void fp_compute() override;
 

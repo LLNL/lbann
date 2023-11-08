@@ -30,9 +30,9 @@
 # Just in case
 source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
 
-# Load up the spack environment
-spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
+# Load the LBANN module
+ml load lbann
+echo "Using LBANN binary: $(which lbann)"
 
 # Configure the output directory
 OUTPUT_DIR=${CI_PROJECT_DIR}/${RESULTS_DIR}
@@ -47,35 +47,14 @@ export MV2_USE_RDMA_CM=0
 #export OMPI_MCA_btl=^openib
 #export OMPI_MCA_osc=ucx
 
-# ml
-# module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2
-# ml
-
 export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
 export LD_LIBRARY_PATH=${ROCM_PATH}/lib:${LD_LIBRARY_PATH}
 
-LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
-SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
+cd ${LBANN_BUILD_DIR}
 
-cd ${SPACK_BUILD_DIR}
+echo "Running sequential catch tests"
 
-flux resource list
-#flux proxy ${JOB_ID} flux resource list
-
-#flux mini run -N1 -n1 env
-
-flux mini run --label-io -n4 -N2 -g 1 -o cpu-affinity=per-task -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
-
-flux mini run --label-io -n4 -N2 -g 1 -o cpu-affinity=off -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
-#flux proxy ${JOB_ID} flux mini run --label-io -n4 -N2 -g 1 -o cpu-affinity=per-task -o gpu-affinity=per-task sh -c 'taskset -cp $$; printenv | grep VISIBLE' | sort
-
-flux mini run -N 1 -n 1 -g 1 -t 5m rocm-smi
-
-     # module load gcc-tce/10.3.1 rocm/5.2.0 openmpi-tce/4.1.2; \
-     # source /g/g14/lbannusr/spack_repos/spack_corona.git/share/spack/setup-env.sh; \
-     # spack env activate -p lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}; \
-#flux proxy ${JOB_ID} flux mini run -N 1 -n 1 -g 1 -t 5m \
-flux mini run -N 1 -n 1 -g 1 -t 5m \
+flux run -N 1 -n 1 --exclusive -o nosetpgrp ${EXTRA_FLUX_ARGS} -t 5m \
      ./unit_test/seq-catch-tests \
      -r JUnit \
      -o ${OUTPUT_DIR}/seq-catch-results.xml
@@ -83,14 +62,11 @@ if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" seq"
 fi
 
-#     --ntasks-per-node=$TEST_TASKS_PER_NODE \
-# ${TEST_MPIBIND_FLAG}
-    #LBANN_NNODES=1
-#TEST_TASKS_PER_NODE=4
-#flux proxy ${JOB_ID} flux mini run \
-flux mini run \
+echo "Running MPI catch tests with ${LBANN_NNODES} nodes and ${TEST_TASKS_PER_NODE} tasks per node"
+
+flux run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
-     -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task -o mpibind=off \
+     -t 5m --exclusive -o nosetpgrp ${EXTRA_FLUX_ARGS} \
      ./unit_test/mpi-catch-tests "exclude:[random]" "exclude:[filesystem]"\
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-results-rank=%r-size=%s.xml"
@@ -98,12 +74,11 @@ if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" mpi"
 fi
 
-#     --ntasks-per-node=$TEST_TASKS_PER_NODE \
-# ${TEST_MPIBIND_FLAG}
-#flux proxy ${JOB_ID} flux mini run \
-flux mini run \
+echo "Running MPI filesystem catch tests"
+
+flux run \
      -N ${LBANN_NNODES} -n $((${TEST_TASKS_PER_NODE} * ${LBANN_NNODES})) \
-     -g 1 -t 5m -o gpu-affinity=per-task -o cpu-affinity=per-task -o mpibind=off \
+     -t 5m --exclusive -o nosetpgrp ${EXTRA_FLUX_ARGS} \
      ./unit_test/mpi-catch-tests -s "[filesystem]" \
      -r JUnit \
      -o "${OUTPUT_DIR}/mpi-catch-filesystem-results-rank=%r-size=%s.xml"
@@ -117,7 +92,7 @@ fi
 # someone would look at it.
 if [[ -n "${FAILED_JOBS}" ]];
 then
-    echo "Some Catch2 tests failed:${FAILED_JOBS}" > ${OUTPUT_DIR}/catch-tests-failed.txt
+    echo "Some Catch2 tests failed:${FAILED_JOBS}" | tee ${OUTPUT_DIR}/catch-tests-failed.txt
 fi
 
 # Return "success" so that the pytest-based testing can run.

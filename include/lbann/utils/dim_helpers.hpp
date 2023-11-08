@@ -99,6 +99,12 @@ auto get_packed_strides(std::vector<T> const& dims)
   return get_strides(dims.size(), dims.data(), T(1));
 }
 
+template <typename To, typename From>
+auto vector_cast(std::vector<From> const& from)
+{
+  return std::vector<To>{from.cbegin(), from.cend()};
+}
+
 namespace details {
 
 template <typename T, typename... ArgTs>

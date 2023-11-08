@@ -28,7 +28,45 @@
 #ifndef LBANN_UTILS_PROFILING_HPP
 #define LBANN_UTILS_PROFILING_HPP
 
+#include <lbann_config.hpp>
+
+#if defined(LBANN_HAS_CALIPER)
+#include <caliper/cali.h>
+#include <caliper/cali_macros.h>
+
+#define LBANN_CALIPER_MARK_SCOPE(x) \
+  CALI_CXX_MARK_SCOPE(x)
+
+#define LBANN_CALIPER_MARK_FUNCTION \
+  CALI_CXX_MARK_FUNCTION
+
+#define LBANN_CALIPER_MARK_BEGIN(x) \
+  CALI_MARK_BEGIN(x)
+
+#define LBANN_CALIPER_MARK_END(x) \
+  CALI_MARK_END(x)
+
+#define LBANN_CALIPER_LOOP_BEGIN(label, desc) CALI_CXX_MARK_LOOP_BEGIN(label, desc)
+#define LBANN_CALIPER_LOOP_END(label) CALI_CXX_MARK_LOOP_END(label)
+#define LBANN_CALIPER_LOOP_ITER(label, id) CALI_CXX_MARK_LOOP_ITERATION(label, id)
+
+#else
+#define LBANN_CALIPER_MARK_SCOPE(x) ((void)0)
+#define LBANN_CALIPER_MARK_FUNCTION ((void)0)
+#define LBANN_CALIPER_MARK_BEGIN(x) ((void)0)
+#define LBANN_CALIPER_MARK_END(x) ((void)0)
+#define LBANN_CALIPER_LOOP_BEGIN(...) ((void)0)
+#define LBANN_CALIPER_LOOP_END(...) ((void)0)
+#define LBANN_CALIPER_LOOP_ITER(...) ((void)0)
+#endif
+
 namespace lbann {
+
+#if defined(LBANN_HAS_CALIPER)
+void initialize_caliper();
+void finalize_caliper();
+bool is_caliper_initialized() noexcept;
+#endif
 
 // Colors to use for profiling.
 constexpr int num_prof_colors = 20;

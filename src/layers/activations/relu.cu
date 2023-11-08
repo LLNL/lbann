@@ -77,7 +77,7 @@ void bp_compute_distconv(
   dc.m_relu->backward(TensorDataType{1.f},
                       dc.get_activations(),
                       dc.get_prev_error_signals(),
-                      dc.get_prev_activations(),
+                      dc.get_activations(),
                       TensorDataType{0.f},
                       dc.get_error_signals());
 }
@@ -108,7 +108,7 @@ void relu_layer<TensorDataType, Layout, Device>::bp_compute()
   }
 #endif // LBANN_HAS_DISTCONV
   gpu_lib::apply_entrywise_binary_operator<op_backprop, TensorDataType>(
-    this->get_prev_activations(),
+    this->get_activations(),
     this->get_prev_error_signals(),
     this->get_error_signals());
 }

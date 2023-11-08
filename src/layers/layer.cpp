@@ -30,6 +30,7 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/optimizers/optimizer.hpp"
+#include "lbann/utils/options.hpp"
 #include "lbann/utils/summary_impl.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/weights/weights.hpp"
@@ -45,12 +46,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-// Asynchronous memory transfers for input data
-// Note: This introduces a race condition. It is possible for the
-// input data to be modified by another layer before it is used by
-// this layer.
-// #define ASYNC_INPUT_MEMORY_TRANSFER
 
 namespace lbann {
 
@@ -77,6 +72,7 @@ Layer::Layer(const Layer& other)
     m_bp_compute_time(other.m_bp_compute_time),
     m_update_time(other.m_update_time),
     m_name(other.m_name),
+    m_runs_inplace(other.m_runs_inplace),
     m_parent_layers(other.m_parent_layers),
     m_child_layers(other.m_child_layers),
     m_weights(other.m_weights),
@@ -103,6 +99,7 @@ Layer& Layer::operator=(const Layer& other)
   m_weights = other.m_weights;
   m_output_dims_list = other.m_output_dims_list;
   m_hint_layer = other.m_hint_layer;
+  m_runs_inplace = other.m_runs_inplace;
 
   return *this;
 }
@@ -222,6 +219,10 @@ description Layer::get_description() const
   // Freeze state
   if (is_frozen()) {
     desc.add("Frozen");
+  }
+
+  if (this->m_runs_inplace) {
+    desc.add("In-place");
   }
 
 #ifdef LBANN_HAS_DISTCONV
@@ -351,6 +352,36 @@ void Layer::set_output_dims(std::vector<int> dims, size_t output_index)
   m_output_dims_list[output_index] = std::move(dims);
 }
 
+El::Int Layer::infer_mini_batch_size_from_parents() const
+{
+  El::Int inferred_mini_batch_size = 0;
+  std::string inferred_parent_layer_name;
+  for (int i = 0; i < get_num_parents(); ++i) {
+    // Set the mini-batch size based on the parent tensors
+    const auto& parent = get_parent_layer(i);
+    const auto& parent_output = parent.get_activations(*this);
+    if (inferred_mini_batch_size == 0) {
+      inferred_mini_batch_size = parent_output.Width();
+      inferred_parent_layer_name = parent.get_name();
+    }
+    else if (parent_output.Width() != 0 &&
+             inferred_mini_batch_size != parent_output.Width()) {
+      // Check mini-batch matrix dimensions
+      LBANN_ERROR("Layer ",
+                  get_name(),
+                  " has multiple parents with different mini-batch sizes: ",
+                  inferred_parent_layer_name,
+                  "=",
+                  inferred_mini_batch_size,
+                  " vs ",
+                  parent.get_name(),
+                  "=",
+                  parent_output.Width());
+    }
+  }
+  return inferred_mini_batch_size;
+}
+
 std::vector<ViewingWeightsPtr> Layer::get_weights_pointers() const
 {
   return m_weights;
@@ -391,7 +422,7 @@ void Layer::replace_weights(Layer const& other_layer)
   using IdxT = typename std::decay<decltype(my_num_weights)>::type;
   for (IdxT ii = 0; ii < my_num_weights; ++ii) {
     auto const& other_layer_weights = other_layer.get_weights(ii);
-    this->get_weights(ii).set_values(other_layer_weights.get_values());
+    this->get_weights(ii).set_values(other_layer_weights.get_values_sharded());
   }
 }
 
@@ -431,21 +462,41 @@ bool Layer::is_frozen() const
 }
 
 void Layer::setup(size_t max_mini_batch_size,
-                  DataReaderMetaData& dr_metadata,
                   const std::vector<El::Grid*>& grids)
 {
   setup_pointers();
-  setup_dims(dr_metadata);
+  setup_dims();
   setup_matrices(grids);
 
 #ifdef LBANN_HAS_DISTCONV
-  prepare_distconv(dr_metadata);
+  prepare_distconv();
 #endif // LBANN_HAS_DISTCONV
   setup_data(max_mini_batch_size);
   if (using_gpus()) {
     setup_gpu();
   }
 }
+
+namespace {
+
+std::string get_parent_names(Layer const& l)
+{
+  std::ostringstream ss;
+  for (int i = 0; i < l.get_num_parents(); ++i) {
+    ss << (i > 0 ? ", " : "") << l.get_parent_layer(i).get_name();
+  }
+  return ss.str();
+}
+
+std::string get_child_names(Layer const& l)
+{
+  std::ostringstream ss;
+  for (int i = 0; i < l.get_num_children(); ++i) {
+    ss << (i > 0 ? ", " : "") << l.get_child_layer(i).get_name();
+  }
+  return ss.str();
+}
+} // namespace
 
 void Layer::setup_pointers()
 {
@@ -507,7 +558,7 @@ void Layer::setup_pointers()
                 "but found ",
                 get_num_parents(),
                 " (",
-                get_parent_names(),
+                get_parent_names(*this),
                 ")");
   }
   if (m_expected_num_child_layers >= 0 &&
@@ -522,12 +573,69 @@ void Layer::setup_pointers()
                 "but found ",
                 get_num_children(),
                 " (",
-                get_child_names(),
+                get_child_names(*this),
                 ")");
+  }
+
+  // Set whether this layer will run in-place
+
+  // Check for environment variable that disables this behavior
+  auto const& arg_parser = global_argument_parser();
+  bool const envvar_disable_inplace =
+    arg_parser.get<bool>(LBANN_OPTION_NO_INPLACE);
+  if (!this->can_run_inplace() || envvar_disable_inplace) {
+    // TODO (later): Support distconv-enabled layers
+    this->m_runs_inplace = false;
+  }
+  else {
+    bool can_run_inplace = true;
+
+    // If a layer needs its own previous activations for backprop, it cannot
+    // run in-place
+    if (this->get_backprop_requirements() & PREV_ACTIVATIONS) {
+      can_run_inplace = false;
+    }
+
+    // For now, disable in-place operation for layers with multiple parents
+    // or children until behavior is well-defined. TODO (later): Support
+    if (get_num_parents() > 1 || get_num_children() > 1)
+      can_run_inplace = false;
+
+    if (can_run_inplace) {
+      // If any of the parents needs its output activations for
+      // backprop, this layer cannot run in-place.
+      for (int i = 0; i < get_num_parents(); ++i) {
+        const auto& parent = get_parent_layer(i);
+
+        int bp_requirements = parent.get_backprop_requirements();
+        if (bp_requirements & ACTIVATIONS) {
+          can_run_inplace = false;
+          break;
+        }
+      }
+    }
+
+    // TODO:
+    // If any of the children is a viewing layer (Identity, Reshape, etc.),
+    // there is a bug (issue #2274) in which a layer deallocates memory too soon
+    // and deep-copying the tensors during backprop fails. THE FOLLOWING LINES
+    // SHOULD BE REMOVED AFTER NEW TENSORS ARE MERGED
+    if (can_run_inplace) {
+      for (int i = 0; i < get_num_children(); ++i) {
+        const auto& child = get_child_layer(i);
+        if (child.get_type() == "identity" || child.get_type() == "reshape" ||
+            child.get_type() == "identity_zero") {
+          can_run_inplace = false;
+          break;
+        }
+      }
+    }
+
+    this->m_runs_inplace = can_run_inplace;
   }
 }
 
-void Layer::setup_dims(DataReaderMetaData& dr_metadata)
+void Layer::setup_dims()
 {
   m_output_dims_list.resize(get_num_children());
   const auto* hint_layer = get_hint_layer();
@@ -646,13 +754,25 @@ void Layer::remove_as_gradient_source()
 
 void Layer::back_prop()
 {
+  // This bit is preprocessed out since the LBANN_CALIPER macro
+  // won't help us out here.
+#ifdef LBANN_HAS_CALIPER
+  auto const scope_name = this->get_type() + "_layer:back_prop";
+  LBANN_CALIPER_MARK_SCOPE(scope_name.c_str());
+#endif
+
   allocate_new_gradients_();
   back_prop_impl_();
   propagate_error_signals_to_parents_();
   clear_prev_error_signals_();
+
+  // Release the now-unnecessary full weight views
+  for (size_t i = 0; i < this->num_weights(); ++i) {
+    this->get_weights(i).release_full_weights();
+  }
 }
 
-void Layer::write_proto(lbann_data::Layer& proto)
+void Layer::write_proto(lbann_data::Layer& proto) const
 {
   proto.Clear();
   proto.set_name(get_name());
@@ -815,24 +935,6 @@ size_t Layer::find_child_layer_index(const Layer& l) const
   return get_num_children();
 }
 
-std::string Layer::get_parent_names() const
-{
-  std::ostringstream ss;
-  for (int i = 0; i < get_num_parents(); ++i) {
-    ss << (i > 0 ? ", " : "") << get_parent_layer(i).get_name();
-  }
-  return ss.str();
-}
-
-std::string Layer::get_child_names() const
-{
-  std::ostringstream ss;
-  for (int i = 0; i < get_num_children(); ++i) {
-    ss << (i > 0 ? ", " : "") << get_child_layer(i).get_name();
-  }
-  return ss.str();
-}
-
 void Layer::add_parent_layer(ViewingLayerPtr l)
 {
   const auto* l_ptr = l.lock().get();
@@ -984,10 +1086,10 @@ void Layer::set_layer_pointers(std::vector<ViewingLayerPtr> layers)
 }
 
 #ifdef LBANN_HAS_DISTCONV
-void Layer::prepare_distconv(const DataReaderMetaData& dr_metadata)
+void Layer::prepare_distconv()
 {
   if (distconv_enabled()) {
-    setup_distconv_adapter(dr_metadata);
+    setup_distconv_adapter();
   }
 }
 
@@ -997,6 +1099,14 @@ bool Layer::distconv_enabled() const
   // Return immediately if distconv support is known
   if (m_distconv_enabled_set) {
     return m_distconv_enabled;
+  }
+
+  // Check if distconv is disabled in arguments
+  auto const& arg_parser = global_argument_parser();
+  if (arg_parser.get<bool>(LBANN_OPTION_DISABLE_DISTCONV)) {
+    m_distconv_enabled = false;
+    m_distconv_enabled_set = true;
+    return false;
   }
 
   // Check if distconv is enabled

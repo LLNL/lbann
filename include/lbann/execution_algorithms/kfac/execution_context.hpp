@@ -60,8 +60,7 @@ public:
   friend class ::lbann::KFAC;
 
   /** Constructor. */
-  KFACExecutionContext(size_t mini_batch_size,
-                       double damping_act,
+  KFACExecutionContext(double damping_act,
                        double damping_err,
                        double damping_bn_act,
                        double damping_bn_err);

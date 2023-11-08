@@ -74,9 +74,9 @@ public:
   {
     return m_num_response_features;
   }
-  const std::vector<int> get_data_dims() const override
+  const std::vector<El::Int> get_data_dims() const override
   {
-    std::vector<int> dims(m_data.shape.begin() + 1, m_data.shape.end());
+    std::vector<El::Int> dims(m_data.shape.begin() + 1, m_data.shape.end());
     return dims;
   }
 

@@ -213,7 +213,7 @@ public:
   std::vector<size_t> get_linearized_response_sizes() const;
 
   /// Return the dimension of data
-  const std::vector<int> get_data_dims() const override;
+  const std::vector<El::Int> get_data_dims() const override;
 
   int get_num_data() const override;
   int get_num_labels() const override;
@@ -318,18 +318,6 @@ protected:
   /// Shuffle sammple indices using a different RNG
   void shuffle_indices(rng_gen& gen) override;
 
-  /**
-   * Compute the number of parallel readers based on the type of io_buffer,
-   * the mini batch size, the requested number of parallel readers.
-   * This is done before populating the sample indices.
-   */
-  int compute_max_num_parallel_readers();
-  /**
-   * Check if there are sufficient number of samples for the given number of
-   * data readers with distributed io buffer, based on the number of samples,
-   * the number of models and the mini batch size.
-   */
-  bool check_num_parallel_readers(long data_set_size);
   /// Check the consistency of the schema of the first sample
   void sample_schema_check(const bool check_data);
   /// Rely on pre-determined list of samples.

@@ -33,17 +33,22 @@ namespace lbann {
 
 // Cross entropy loss
 LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(BinaryCrossEntropy,
-                                             "binary cross entropy");
+                                             "binary cross entropy",
+                                             true);
 LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(SigmoidBinaryCrossEntropy,
-                                             "sigmoid binary cross entropy");
+                                             "sigmoid binary cross entropy",
+                                             true);
 
 // Boolean loss functions
 LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(BooleanAccuracy,
-                                             "Boolean accuracy");
+                                             "Boolean accuracy",
+                                             false);
 LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(BooleanFalseNegative,
-                                             "Boolean false negative rate");
+                                             "Boolean false negative rate",
+                                             false);
 LBANN_DECLARE_STATELESS_ELEMENTWISE_OPERATOR(BooleanFalsePositive,
-                                             "Boolean false positive rate");
+                                             "Boolean false positive rate",
+                                             false);
 
 } // namespace lbann
 

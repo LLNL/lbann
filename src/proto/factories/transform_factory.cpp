@@ -134,11 +134,11 @@ lbann::proto::construct_transform(const lbann_data::Transform& trans)
 }
 
 lbann::transform::transform_pipeline lbann::proto::construct_transform_pipeline(
-  const lbann_data::Reader& data_reader)
+  const lbann_data::Reader& data_reader_proto)
 {
   transform::transform_pipeline tp;
-  for (int i = 0; i < data_reader.transforms_size(); ++i) {
-    tp.add_transform(construct_transform(data_reader.transforms(i)));
+  for (int i = 0; i < data_reader_proto.transforms_size(); ++i) {
+    tp.add_transform(construct_transform(data_reader_proto.transforms(i)));
   }
   return tp;
 }

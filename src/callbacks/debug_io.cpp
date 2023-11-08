@@ -77,12 +77,8 @@ void debug_io::on_forward_prop_begin(model* m, Layer* l)
 
   const auto& c = m->get_execution_context();
   auto mode = c.get_execution_mode();
-  const data_coordinator& dc = get_const_trainer().get_data_coordinator();
-  if (m->get_comm()->get_rank_in_trainer() <
-      dc.get_data_reader(mode)->get_num_parallel_readers()) {
-    if (m_debug_phase == execution_mode::invalid || m_debug_phase == mode) {
-      print_fp_start(m, input);
-    }
+  if (m_debug_phase == execution_mode::invalid || m_debug_phase == mode) {
+    print_fp_start(m, input);
   }
   /// BVE Note - what is hte role of hte current mini-batch index
   /// versus the current position
@@ -96,20 +92,19 @@ void debug_io::print_fp_start(model* m, input_layer<DataType>* input)
   const data_coordinator& dc = get_const_trainer().get_data_coordinator();
   const auto& step = c.get_step();
   const auto mode = c.get_execution_mode();
+  const dataset& ds = dc.get_dataset(mode);
   std::cout
     << "[" << m->get_comm()->get_trainer_rank() << "."
     << m->get_comm()->get_rank_in_trainer() << "] @" << c.get_epoch() << "."
     << step << " Phase: " << to_string(mode)
     << " starting forward propagation for layer " << input->get_name()
-    << " type: " << input->get_type() << " iteration: "
-    << dc.get_data_reader(mode)->get_current_mini_batch_index() << " of "
-    << dc.get_num_iterations_per_epoch(mode) << " loading idx "
-    << dc.get_data_reader(mode)->get_loaded_mini_batch_index()
-    << " bs=" << dc.get_current_mini_batch_size(mode) << "/"
-    << dc.get_current_global_mini_batch_size(mode) << " @"
-    << dc.get_data_reader(mode)->get_position()
+    << " type: " << input->get_type()
+    << " iteration: " << ds.get_current_mini_batch_index() << " of "
+    << dc.get_num_iterations_per_epoch(mode)
+    << " bs=" << dc.get_current_mini_batch_size(mode) << " @"
+    << ds.get_position()
     //              << " %" << input->get_data_reader()->get_batch_stride()
-    << " ^" << dc.get_data_reader(mode)->get_sample_stride() << std::endl;
+    << " ^" << ds.get_sample_stride() << std::endl;
 }
 
 //  179i @ 300s (=5m*60s) + 1i @ 100s (=5m*45s):offset <- num models
@@ -117,37 +112,18 @@ void debug_io::print_phase_start(model* m, execution_mode mode)
 {
   const auto& c = m->get_execution_context();
   const data_coordinator& dc = get_const_trainer().get_data_coordinator();
-  // Get data reader from first input layer in model
-  generic_data_reader* data_reader = dc.get_data_reader(mode);
+  const dataset& ds = dc.get_dataset(mode);
   const auto& step = c.get_step();
 
-  if (m->get_comm()->get_rank_in_trainer() <
-      data_reader->get_num_parallel_readers()) {
-    std::cout << "[" << m->get_comm()->get_trainer_rank() << "."
-              << m->get_comm()->get_rank_in_trainer() << "] @" << 0 << "."
-              << step << " Starting Phase: " << to_string(mode) << " "
-              << (data_reader->get_num_iterations_per_epoch() - 1) << "i @ "
-              << data_reader->get_global_mini_batch_size()
-              << "s (=" << m->get_comm()->get_num_trainers() << "m *"
-              << data_reader->get_mini_batch_size() << "s [+"
-              << data_reader->get_stride_to_next_mini_batch() << "s]) + 1i @ "
-              << data_reader->get_global_last_mini_batch_size()
-              << "s (=" << m->get_comm()->get_num_trainers() << "m *"
-              << data_reader->get_last_mini_batch_size() << "s [+"
-              << data_reader->get_stride_to_last_mini_batch() << "s]):"
-              << " base offset " << data_reader->get_base_offset()
-              << " model offset " << data_reader->get_model_offset()
-              << " par. readers = " << data_reader->get_num_parallel_readers()
-              << "r" << std::endl;
-  }
-  else {
-    std::cout << "[" << m->get_comm()->get_trainer_rank() << "."
-              << m->get_comm()->get_rank_in_trainer() << "] @" << 0 << "."
-              << step << " Starting Phase: " << to_string(mode) << " "
-              << (data_reader->get_num_iterations_per_epoch()) << "i "
-              << " par. readers = " << data_reader->get_num_parallel_readers()
-              << "r (Inactive Reader)" << std::endl;
-  }
+  std::cout << "[" << m->get_comm()->get_trainer_rank() << "."
+            << m->get_comm()->get_rank_in_trainer() << "] @" << 0 << "." << step
+            << " Starting Phase: " << to_string(mode) << " "
+            << (ds.get_num_iterations_per_epoch() - 1) << "i @ "
+            << ds.get_mini_batch_size() << "s [+"
+            << ds.get_stride_to_next_mini_batch() << "s]) + 1i @ "
+            << ds.get_last_mini_batch_size() << "s [+"
+            << ds.get_stride_to_last_mini_batch() << "s]):"
+            << " base offset " << ds.get_base_offset() << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -170,12 +146,8 @@ void debug_io::on_evaluate_forward_prop_begin(model* m, Layer* l)
 
   const auto& c = m->get_execution_context();
   auto mode = c.get_execution_mode();
-  const data_coordinator& dc = get_const_trainer().get_data_coordinator();
-  if (m->get_comm()->get_rank_in_trainer() <
-      dc.get_data_reader(mode)->get_num_parallel_readers()) {
-    if (m_debug_phase == execution_mode::invalid || m_debug_phase == mode) {
-      print_fp_start(m, input);
-    }
+  if (m_debug_phase == execution_mode::invalid || m_debug_phase == mode) {
+    print_fp_start(m, input);
   }
 }
 

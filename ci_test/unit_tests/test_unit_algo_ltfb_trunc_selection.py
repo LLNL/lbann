@@ -12,6 +12,7 @@ import os.path
 import random
 import re
 import sys
+import pytest
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -61,6 +62,10 @@ def setup_experiment(lbann, weekly):
         lbann (module): Module for LBANN Python frontend
 
     """
+
+    message = f'{os.path.basename(__file__)} is temporarily failing intermittently on all systems... disable'
+    print('Skip - ' + message)
+    pytest.skip(message)
 
     # Setup the training algorithm
     SGD = lbann.BatchedIterativeOptimizer

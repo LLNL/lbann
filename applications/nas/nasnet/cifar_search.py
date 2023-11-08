@@ -20,7 +20,7 @@ import cifar_networks
 
 desc = ('Micro search on CIFAR10 data using LBANN.')
 parser = argparse.ArgumentParser(description=desc)
-#lbann.contrib.args.add_scheduler_arguments(parser)
+#lbann.contrib.args.add_scheduler_arguments(parser, 'denas_cifar10')
 
 #NAS parameters
 parser.add_argument(

@@ -27,6 +27,7 @@
 #define LBANN_LAYER_NORM_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/layer_norm.hpp"
 #include "lbann/comm_impl.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/layers/data_type_distconv_adapter.hpp"
@@ -42,7 +43,9 @@ void fp_impl(lbann_comm& comm,
              TensorDataType epsilon,
              const El::AbstractDistMatrix<TensorDataType>& input,
              El::AbstractDistMatrix<TensorDataType>& output,
-             El::AbstractDistMatrix<TensorDataType>& statistics)
+             El::AbstractDistMatrix<TensorDataType>& statistics,
+             const TensorDataType* local_scale,
+             const TensorDataType* local_bias)
 {
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
@@ -109,7 +112,12 @@ void fp_impl(lbann_comm& comm,
     for (El::Int j = 0; j < local_sample_size; ++j) {
       const auto& x = local_input(j, i);
       auto& y = local_output(j, i);
-      y = (x - mean) * inv_stdev;
+      TensorDataType result = (x - mean) * inv_stdev;
+      if (local_scale)
+        result *= local_scale[j];
+      if (local_bias)
+        result += local_bias[j];
+      y = result;
     }
   }
 }
@@ -122,7 +130,10 @@ void bp_impl(lbann_comm& comm,
              const El::AbstractDistMatrix<TensorDataType>& output_grad,
              El::AbstractDistMatrix<TensorDataType>& input_grad,
              const El::AbstractDistMatrix<TensorDataType>& statistics,
-             El::AbstractDistMatrix<TensorDataType>& statistics_grad)
+             El::AbstractDistMatrix<TensorDataType>& statistics_grad,
+             const TensorDataType* local_scale,
+             TensorDataType* scale_grad,
+             TensorDataType* bias_grad)
 {
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
@@ -172,7 +183,18 @@ void bp_impl(lbann_comm& comm,
     auto& dvar = local_vars_grad(0, i);
     for (El::Int j = 0; j < local_sample_size; ++j) {
       const auto& x = local_input(j, i);
-      const auto& dy = local_output_grad(j, i);
+      auto dy = local_output_grad(j, i);
+
+      if (bias_grad) {
+        LBANN_OMP_ATOMIC
+        bias_grad[j] += dy;
+      }
+      if (scale_grad) {
+        LBANN_OMP_ATOMIC
+        scale_grad[j] += dy * (x - mean) * inv_stdev;
+        dy *= local_scale[j];
+      }
+
       dmean += dy;
       dvar += dy * (x - mean);
     }
@@ -197,8 +219,12 @@ void bp_impl(lbann_comm& comm,
     const auto& dvar = local_vars_grad(0, i);
     for (El::Int j = 0; j < local_sample_size; ++j) {
       const auto& x = local_input(j, i);
-      const auto& dy = local_output_grad(j, i);
+      auto dy = local_output_grad(j, i);
       auto& dx = local_input_grad(j, i);
+
+      if (local_scale)
+        dy *= local_scale[j];
+
       dx = (dy * inv_stdev + dmean / sample_size +
             dvar * (x - mean) * 2 / sample_size);
     }
@@ -211,23 +237,74 @@ void bp_impl(lbann_comm& comm,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void layer_norm_layer<TensorDataType, Layout, Device>::fp_compute()
 {
+  int weight_idx = 0;
+  const TensorDataType* scale_weights = nullptr;
+  const TensorDataType* bias_weights = nullptr;
+  if (m_scale)
+    scale_weights =
+      this->weights_values(weight_idx++).LockedMatrix().LockedBuffer();
+  if (m_bias)
+    bias_weights =
+      this->weights_values(weight_idx).LockedMatrix().LockedBuffer();
+
   fp_impl(*this->get_comm(),
           this->m_epsilon,
           this->get_prev_activations(),
           this->get_activations(),
-          *this->m_statistics);
+          *this->m_statistics,
+          scale_weights,
+          bias_weights);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void layer_norm_layer<TensorDataType, Layout, Device>::bp_compute()
 {
+  // Obtain optional buffers
+  const TensorDataType* scale_weights = nullptr;
+  TensorDataType* scale_grad = nullptr;
+  TensorDataType* bias_grad = nullptr;
+
+  if (m_scale) {
+    scale_weights = this->weights_values(0).LockedMatrix().LockedBuffer();
+    El::Zero(*this->m_scale_gradient);
+    scale_grad = this->m_scale_gradient->Buffer();
+  }
+
+  if (m_bias) {
+    El::Zero(*this->m_bias_gradient);
+    bias_grad = this->m_bias_gradient->Buffer();
+  }
+
+  // Compute backpropagation
   bp_impl(*this->get_comm(),
           this->m_epsilon,
           this->get_prev_activations(),
           this->get_prev_error_signals(),
           this->get_error_signals(),
           *this->m_statistics,
-          *this->m_statistics_gradient);
+          *this->m_statistics_gradient,
+          scale_weights,
+          scale_grad,
+          bias_grad);
+
+  // Update optimizers with gradients
+  int weight_idx = 0;
+  if (m_scale) {
+    auto* opt = this->get_weights(weight_idx++).get_optimizer();
+    if (opt != nullptr) {
+      opt->add_to_gradient(*this->m_scale_gradient,
+                           El::TypeTraits<TensorDataType>::One(),
+                           true);
+    }
+  }
+  if (m_bias) {
+    auto* opt = this->get_weights(weight_idx).get_optimizer();
+    if (opt != nullptr) {
+      opt->add_to_gradient(*this->m_bias_gradient,
+                           El::TypeTraits<TensorDataType>::One(),
+                           true);
+    }
+  }
 }
 
 #define PROTO(T)                                                               \

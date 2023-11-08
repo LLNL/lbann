@@ -20,8 +20,8 @@ def create_unet3d_data_reader(train_dir, test_dir):
             role=role,
             shuffle=shuffle,
             data_file_pattern="{}/*.hdf5".format(role_dir),
-            validation_percent=0,
-            percent_of_data_to_use=1.0,
+            validation_fraction=0,
+            fraction_of_data_to_use=1.0,
             scaling_factor_int16=1.0,
             hdf5_key_data="volume",
             hdf5_key_labels="segmentation",
@@ -47,12 +47,9 @@ if __name__ == '__main__':
     desc = ('Construct and run the 3D U-Net on a 3D segmentation dataset.'
             'Running the experiment is only supported on LC systems.')
     parser = argparse.ArgumentParser(description=desc)
-    lbann.contrib.args.add_scheduler_arguments(parser)
+    lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_unet3d')
 
     # General arguments
-    parser.add_argument(
-        '--job-name', action='store', default='lbann_unet3d', type=str,
-        help='scheduler job name (default: lbann_unet3d)')
     parser.add_argument(
         '--mini-batch-size', action='store', default=1, type=int,
         help='mini-batch size (default: 1)', metavar='NUM')

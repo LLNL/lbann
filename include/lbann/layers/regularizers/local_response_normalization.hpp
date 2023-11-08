@@ -120,6 +120,11 @@ public:
   std::string get_type() const override { return "LRN"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | PREV_ACTIVATIONS | ACTIVATIONS;
+  }
 
   description get_description() const override
   {
@@ -150,9 +155,9 @@ protected:
                                          El::To<TensorDataType>(2))
   {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
 
@@ -394,11 +399,10 @@ private:
     const int num_per_channel = this->get_output_size() / num_channels;
 
     // Check if LRN is using default beta parameter
+    typedef TensorDataType T;
     const bool default_beta =
-      (std::fabs((m_beta - El::To<TensorDataType>(0.75)) /
-                 El::To<TensorDataType>(0.75)) <
-       El::To<TensorDataType>(2) *
-         std::numeric_limits<TensorDataType>::epsilon());
+      (El::Abs((m_beta - El::To<T>(0.75)) / El::To<T>(0.75)) <
+       El::To<T>(2) * std::numeric_limits<T>::epsilon());
 
     ////////////////////////////////////////////////////////////////
     // error_signal(i)

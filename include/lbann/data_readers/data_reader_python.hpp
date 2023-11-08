@@ -49,7 +49,7 @@ public:
 
   std::string get_type() const override { return "python_reader"; }
 
-  const std::vector<int> get_data_dims() const override;
+  const std::vector<El::Int> get_data_dims() const override;
   int get_num_labels() const override;
   int get_linearized_data_size() const override;
   int get_linearized_label_size() const override;
@@ -60,10 +60,13 @@ public:
 
 protected:
   bool fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers,
+                        El::Int current_position_in_data_set,
                         El::Int block_offset,
                         El::Int block_stride,
+                        El::Int sample_stride,
                         El::Int mb_size,
-                        El::Matrix<El::Int>& indices_fetched) override;
+                        El::Matrix<El::Int>& indices_fetched,
+                        execution_mode mode = execution_mode::invalid) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
 
 private:

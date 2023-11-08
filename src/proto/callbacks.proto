@@ -40,7 +40,6 @@ message Callback {
     CallbackDumpGradients dump_gradients = 6;
     CallbackDumpMBIndices dump_mb_indices = 7;
     CallbackDispIOStats disp_io_stats = 8;
-    CallbackImComm imcomm = 9;
     CallbackSaveImages save_images = 10;
     CallbackDebug debug = 11;
     CallbackAdaptiveLearningRate adaptive_learning_rate = 12;
@@ -86,6 +85,11 @@ message Callback {
     CallbackPerturbWeights perturb_weights = 52;
     CallbackExportOnnx export_onnx = 53;
     CallbackAlternateUpdates alternate_updates = 54;
+    CallbackProgressBar progress_bar = 56;
+    CallbackCosineDecayLearningRate cosine_decay_learning_rate = 57;
+    CallbackMemoryProfiler memory_profiler = 58;
+    CallbackClipGradientNorm clip_gradient_norm = 59;
+    CallbackEvaluateProgress evaluate_progress = 60;
   }
 
   message CallbackLTFB {
@@ -138,7 +142,9 @@ message Callback {
     bool skip_init = 2;
   }
 
-  message CallbackTimer {}
+  message CallbackTimer {
+    int64 skip_steps = 1;  // Number of steps to skip before starting timing
+  }
 
   message CallbackSummary {
     int64 batch_interval = 2;  // default in lbann_callback_summary.hpp is 1
@@ -233,6 +239,15 @@ message Callback {
     uint64 num_epochs = 3;
     uint64 max_iter = 4;
     double end_lr = 5;
+  }
+
+  message CallbackCosineDecayLearningRate {
+    string weights = 1;
+    double lr_max = 2;
+    double lr_min = 3;
+    uint64 decay_steps = 4;
+    double initial_warmup_learning_rate = 5;
+    uint64 warmup_steps = 6;
   }
 
   message CallbackStepMinibatch {
@@ -443,5 +458,28 @@ message Callback {
     int64 iters_1 = 3;  // number of training iterations for first set of layers
     int64 iters_2 =
         4;  // number of training iterations for second set of layers
+  }
+
+  message CallbackProgressBar {
+    int64 interval = 1;          // Print every n iterations
+    int64 newline_interval = 2;  // Number of iterations between a newline print
+                                 // (0 disables)
+    bool print_mem_usage = 3;    // If true, also prints GPU memory usage
+  }
+
+  message CallbackMemoryProfiler {
+    bool detailed_first_step = 1;  // Layer-wise first-step accounting
+  }
+
+  message CallbackClipGradientNorm {
+    string weights = 1;    // Parameters whose gradient to clip.
+    bool global_norm = 2;  // Whether to clip according to the values
+                           // of all parameters, or each one separately.
+    float value = 3;       // Value to clip to.
+  }
+
+  message CallbackEvaluateProgress {
+    int64 batch_interval = 1;
+    string metric = 2;
   }
 }

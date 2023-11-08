@@ -104,6 +104,23 @@ OperatorLayer<InputT, OutputT, Layout, D>::get_device_allocation() const
 }
 
 template <typename InputT, typename OutputT, data_layout Layout, El::Device D>
+bool OperatorLayer<InputT, OutputT, Layout, D>::can_run_inplace() const
+{
+  return true;
+}
+
+template <typename InputT, typename OutputT, data_layout Layout, El::Device D>
+int OperatorLayer<InputT, OutputT, Layout, D>::get_backprop_requirements() const
+{
+  // Find the union of all internal operators
+  int result = ERROR_SIGNALS;
+  for (const auto& op : m_ops) {
+    result |= op->get_backprop_requirements();
+  }
+  return result;
+}
+
+template <typename InputT, typename OutputT, data_layout Layout, El::Device D>
 void OperatorLayer<InputT, OutputT, Layout, D>::fp_compute()
 {
   return m_ops[0]->fp_compute(this->get_inputs(), this->get_outputs());

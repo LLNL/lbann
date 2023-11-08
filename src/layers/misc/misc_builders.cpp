@@ -206,17 +206,24 @@ std::unique_ptr<lbann::Layer> lbann::build_channelwise_mean_layer_from_pbuf(
 }
 
 template <typename T, lbann::data_layout L, El::Device D>
-std::unique_ptr<lbann::Layer>
-lbann::build_channelwise_softmax_layer_from_pbuf(lbann_comm* comm,
-                                                 lbann_data::Layer const&)
+std::unique_ptr<lbann::Layer> lbann::build_channelwise_softmax_layer_from_pbuf(
+  lbann_comm* comm,
+  lbann_data::Layer const& proto_layer)
 {
+  auto const& layer = proto_layer.channelwise_softmax();
   if constexpr (L == data_layout::DATA_PARALLEL) {
     if constexpr (std::is_same_v<T, float>)
       return std::make_unique<
-        channelwise_softmax_layer<float, data_layout::DATA_PARALLEL, D>>(comm);
+        channelwise_softmax_layer<float, data_layout::DATA_PARALLEL, D>>(
+        comm,
+        layer.dim(),
+        layer.single_dim_mode());
     else if constexpr (std::is_same_v<T, double>)
       return std::make_unique<
-        channelwise_softmax_layer<double, data_layout::DATA_PARALLEL, D>>(comm);
+        channelwise_softmax_layer<double, data_layout::DATA_PARALLEL, D>>(
+        comm,
+        layer.dim(),
+        layer.single_dim_mode());
   }
   (void)comm;
   LBANN_ERROR("Attempted to construct channelwise_softmax_layer ",

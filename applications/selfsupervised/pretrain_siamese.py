@@ -111,7 +111,7 @@ def make_data_reader(num_patches):
     data_reader.name = 'python'
     data_reader.role = 'train'
     data_reader.shuffle = True
-    data_reader.percent_of_data_to_use = 1.0
+    data_reader.fraction_of_data_to_use = 1.0
     data_reader.python.module = 'patch_generator'
     data_reader.python.module_dir = os.path.dirname(os.path.realpath(__file__))
     data_reader.python.num_samples_function = 'num_samples'
@@ -137,12 +137,9 @@ if __name__ == "__main__":
     # Command-line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--job-name', action='store', default='lbann_siamese', type=str,
-        help='scheduler job name  (default: lbann_siamese)', metavar='NAME')
-    parser.add_argument(
         '--num-patches', action='store', default=3, type=int,
         help='number of patches and Siamese heads (default: 3)', metavar='NUM')
-    lbann.contrib.args.add_scheduler_arguments(parser)
+    lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_siamese')
     parser.add_argument(
         '--mini-batch-size', action='store', default=512, type=int,
         help='mini-batch size (default: 512)', metavar='NUM')

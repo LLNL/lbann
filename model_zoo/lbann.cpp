@@ -162,9 +162,6 @@ int main(int argc, char* argv[])
       stack_trace::register_signal_handler(file_base);
     }
 
-    // to activate, must specify --st_on on cmd line
-    stack_profiler::get()->activate(comm->get_rank_in_world());
-
     // Split MPI into trainers
     allocate_trainer_resources(comm.get());
 
@@ -187,12 +184,6 @@ int main(int argc, char* argv[])
 
     thread_pool& io_thread_pool = trainer.get_io_thread_pool();
 
-    int training_dr_linearized_data_size = -1;
-    auto* dr =
-      trainer.get_data_coordinator().get_data_reader(execution_mode::training);
-    if (dr != nullptr) {
-      training_dr_linearized_data_size = dr->get_linearized_data_size();
-    }
     lbann_data::Model* pb_model = pb.mutable_model();
 
     auto model =
@@ -202,8 +193,7 @@ int main(int argc, char* argv[])
                                  pb,
                                  comm.get(),
                                  io_thread_pool,
-                                 trainer.get_callbacks_with_ownership(),
-                                 training_dr_linearized_data_size);
+                                 trainer.get_callbacks_with_ownership());
 
     if (!arg_parser.get<bool>(LBANN_OPTION_EXIT_AFTER_SETUP)) {
 
@@ -212,9 +202,6 @@ int main(int argc, char* argv[])
 
       // Evaluate model on test set
       trainer.evaluate(model.get(), execution_mode::testing);
-
-      // has no affect unless option: --st_on was given
-      stack_profiler::get()->print();
     }
     else {
       if (comm->am_world_master()) {
@@ -226,9 +213,6 @@ int main(int argc, char* argv[])
              "-----------------------------------------------------------------"
              "---------------\n";
       }
-
-      // has no affect unless option: --st_on was given
-      stack_profiler::get()->print();
     }
   }
   catch (lbann::exception& e) {

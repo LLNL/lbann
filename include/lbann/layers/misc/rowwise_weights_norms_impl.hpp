@@ -26,6 +26,9 @@
 #ifndef LBANN_LAYERS_MISC_ROWWISE_WEIGHTS_NORMS_IMPL_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_ROWWISE_WEIGHTS_NORMS_IMPL_HPP_INCLUDED
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include "lbann/layers/misc/rowwise_weights_norms.hpp"
 
 namespace lbann {
@@ -63,10 +66,9 @@ El::Device rowwise_weights_norms_layer<T, L, D>::get_device_allocation() const
 }
 
 template <typename T, data_layout L, El::Device D>
-void rowwise_weights_norms_layer<T, L, D>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void rowwise_weights_norms_layer<T, L, D>::setup_dims()
 {
-  data_type_layer<T>::setup_dims(dr_metadata);
+  data_type_layer<T>::setup_dims();
 
   // Make sure weights have already been setup by another layer
   if (this->has_weights() != 1) {
@@ -186,4 +188,6 @@ void rowwise_weights_norms_layer<T, L, D>::bp_compute()
                  weights_matrix_grad.Matrix());
 }
 } // namespace lbann
+
+#pragma GCC diagnostic pop
 #endif // LBANN_LAYERS_MISC_ROWWISE_WEIGHTS_NORMS_IMPL_HPP_INCLUDED

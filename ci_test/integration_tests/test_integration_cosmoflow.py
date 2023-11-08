@@ -23,7 +23,7 @@ sys.path.append(app_path)
 # ==============================================
 
 # Training options
-procs_per_node = 1#2 # Only use 2 GPUs to ensure comparable testing between lassen and pascal
+procs_per_node = 2#2 # Only use 2 GPUs to ensure comparable testing between lassen and pascal
                    # this model is very sensitive to differences in how it is initialized
                    # and parallelized
 
@@ -53,7 +53,7 @@ weekly_options_and_targets = {
     'mini_batch_size': 128,
     'expected_train_pc_range': (7.7, 7.9),
     'expected_test_pc_range': (8.0, 8.2),
-    'percent_of_data_to_use': 0.1,
+    'fraction_of_data_to_use': 0.1,
     'expected_mini_batch_times': {
         'lassen':   0.0530066,
         'pascal':   0.044,
@@ -64,21 +64,23 @@ weekly_options_and_targets = {
 # Nightly training options and targets
 ################################################################################
 nightly_options_and_targets = {
-    'num_nodes': 1,
+    'num_nodes': 2,
     'num_epochs': 10,
     'mini_batch_size': 2,
     'input_width': 128,
     'num_secrets': 4,
     'use_batchnorm': True,
     'local_batchnorm': True,
-    'depth_groups': 1, #2,
+    'depth_groups': 4, #2,
     'sample_groups': 1,
-    'depth_splits_pooling_id': None,
-    'gather_dropout_id': 1,
+    'learning_rate': 0.001,
+#    'min_distconv_width': 4,
+    'mlperf': True,
+    'transform_input': False, #True,
     'expected_train_mse_range': (0.273, 0.290),
     'expected_test_mse_range': (0.118, 0.120),
 #    'expected_test_mse_range': (2.96, 2.97),
-    'percent_of_data_to_use': 1.0,
+    'fraction_of_data_to_use': 1.0,
     'expected_mini_batch_times': {
         'lassen':   0.0229,
         'pascal':   0.044,
@@ -90,7 +92,7 @@ nightly_options_and_targets = {
 # Setup LBANN experiment
 # ==============================================
 
-def make_data_reader(lbann, percent_of_data_to_use):
+def make_data_reader(lbann, fraction_of_data_to_use):
     """Create a data reader for CosmoFlow.
 
     Args:
@@ -119,9 +121,9 @@ def make_data_reader(lbann, percent_of_data_to_use):
         reader = lbann.reader_pb2.Reader(
             name="hdf5",
             shuffle=(reader_arg["role"] != "test"),
-            validation_percent=0,
+            validation_fraction=0,
             absolute_sample_count=0,
-            percent_of_data_to_use=1.0,
+            fraction_of_data_to_use=1.0,
             disable_labels=True,
             disable_responses=False,
             scaling_factor_int16=1.0,
@@ -171,19 +173,22 @@ def setup_experiment(lbann, weekly):
         sample_groups=options['sample_groups'],
         depth_groups=options['depth_groups'])
     import cosmoflow_model
-    model = cosmoflow_model.construct_cosmoflow_model(parallel_strategy=None, #parallel_strategy,
+    model = cosmoflow_model.construct_cosmoflow_model(parallel_strategy=parallel_strategy,
                                                       local_batchnorm=options['local_batchnorm'],
                                                       input_width=options['input_width'],
                                                       num_secrets=options['num_secrets'],
                                                       use_batchnorm=options['use_batchnorm'],
                                                       num_epochs=options['num_epochs'],
-                                                      depth_splits_pooling_id = options['depth_splits_pooling_id'],
-                                                      gather_dropout_id = options['gather_dropout_id'])
+                                                      learning_rate=options['learning_rate'],
+                                                      min_distconv_width=options['depth_groups'],
+                                                      mlperf=options['mlperf'],
+                                                      transform_input=options['transform_input'])
 
+    model.callbacks.append(lbann.CallbackDebug())
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.001,beta1=0.9,beta2=0.99,eps=1e-8)
     # Load data reader from prototext
-    data_reader = make_data_reader(lbann, options['percent_of_data_to_use'])
+    data_reader = make_data_reader(lbann, options['fraction_of_data_to_use'])
 
     return trainer, model, data_reader, opt, options['num_nodes']
 
@@ -276,6 +281,7 @@ m_environment['SPDLOG_LEVEL'] = "error"
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
+                                     time_limit=10,
                                      lbann_args=[m_lbann_args],
                                      environment = m_environment,
                                      procs_per_node=procs_per_node):

@@ -98,6 +98,10 @@ public:
   ///@{
 
   std::string get_type() const final { return "clamp"; }
+  int get_backprop_requirements() const final
+  {
+    return ERROR_SIGNALS | PREV_ACTIVATIONS;
+  }
   DataT get_min() const noexcept { return m_min; }
   DataT get_max() const noexcept { return m_max; }
 

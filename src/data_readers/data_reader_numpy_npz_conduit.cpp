@@ -32,6 +32,7 @@
 #include "lbann/utils/file_utils.hpp" // pad()
 #include "lbann/utils/jag_utils.hpp" // read_filelist(..) TODO should be move to file_utils
 #include "lbann/utils/lbann_library.hpp"
+#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/timer.hpp"
 #include <unordered_set>
 
@@ -135,13 +136,13 @@ void numpy_npz_conduit_reader::do_preload_data_store()
       << m_shuffled_indices.size() << std::endl;
 
   size_t count = get_absolute_sample_count();
-  double use_percent = get_use_percent();
-  if (count != 0 || use_percent != 1) {
+  double use_fraction = get_use_fraction();
+  if (count != 0 || use_fraction != 1) {
     LBANN_ERROR("numpy_npz_conduit_reader currently assumes you are using 100% "
                 "of the data set; you specified get_absolute_sample_count() = ",
                 count,
-                " and get_use_percent() = ",
-                use_percent,
+                " and get_use_fraction() = ",
+                use_fraction,
                 "; please ask Dave Hysom to modify the code, if you want to "
                 "use less than 100%");
   }
@@ -289,6 +290,7 @@ bool numpy_npz_conduit_reader::load_numpy_npz_from_file(
 
 bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
 {
+  LBANN_CALIPER_MARK_SCOPE("numpy_npz_conduit_reader::fetch_datum");
   Mat X_v = El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
   conduit::Node node;
   if (data_store_active()) {

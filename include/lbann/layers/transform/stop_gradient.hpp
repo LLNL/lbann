@@ -61,6 +61,8 @@ public:
   std::string get_type() const override { return "stop_gradient"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return PROPAGATE_NOTHING; }
 
 protected:
   /** Add layer specific data to prototext */
@@ -69,14 +71,14 @@ protected:
   friend class cereal::access;
   stop_gradient_layer() : stop_gradient_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
-  void fp_setup_outputs(El::Int mini_batch_size) override
+  void fp_setup_outputs() override
   {
-    El::LockedView(this->get_activations(), this->get_prev_activations());
+    El::View(this->get_activations(), this->get_prev_activations());
   }
   void fp_compute() override {}
 };

@@ -44,8 +44,8 @@ namespace callback {
 class timer : public callback_base
 {
 public:
-  timer(const std::shared_ptr<lbann_summary>& summarizer = nullptr)
-    : callback_base(1)
+  timer(const std::shared_ptr<lbann_summary>& summarizer = nullptr, int skip_steps = 0)
+    : callback_base(1), m_skip_steps(skip_steps)
   {}
   timer(const timer&) = default;
   timer& operator=(const timer&) = default;
@@ -110,6 +110,9 @@ private:
 
   /** @brief lbann_summary */
   std::shared_ptr<lbann_summary> m_summarizer = nullptr;
+
+  /** Number of steps to skip before starting timing. */
+  size_t m_skip_steps = 0;
 };
 
 // Builder function

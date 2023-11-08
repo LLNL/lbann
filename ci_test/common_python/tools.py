@@ -39,7 +39,7 @@ def get_command(cluster,
                 data_filename_test_default=None,
                 data_reader_name=None,
                 data_reader_path=None,
-                data_reader_percent=None,
+                data_reader_fraction=None,
                 exit_after_setup=False,
                 metadata=None,
                 mini_batch_size=None,
@@ -77,7 +77,7 @@ def get_command(cluster,
         data_filedir_default, data_filedir_train_default,
         data_filename_train_default, data_filedir_test_default,
         data_filename_test_default, data_reader_name, data_reader_path,
-        data_reader_percent, exit_after_setup, metadata, mini_batch_size,
+        data_reader_fraction, exit_after_setup, metadata, mini_batch_size,
         model_folder, model_name, model_path, num_epochs, optimizer_name,
         optimizer_path, processes_per_model, restart_dir,
         # Error/Output Redirect
@@ -352,7 +352,7 @@ def get_command(cluster,
     option_data_filedir_test = ''
     option_data_filename_test = ''
     option_data_reader = ''
-    option_data_reader_percent = ''
+    option_data_reader_fraction = ''
     option_exit_after_setup = ''
     option_metadata = ''
     option_mini_batch_size = ''
@@ -507,25 +507,25 @@ def get_command(cluster,
                  '_test_default] is set, but neither data_reader_name or'
                  ' data_reader_path are.'))
         # else: no conflicts
-    if data_reader_percent != "prototext":
-        if data_reader_percent is not None:
+    if data_reader_fraction != "prototext":
+        if data_reader_fraction is not None:
 
-            # If data_reader_percent is not None, then it will override `weekly`.
+            # If data_reader_fraction is not None, then it will override `weekly`.
             # If it is None however, we choose its value based on `weekly`.
             try:
-                data_reader_percent = float(data_reader_percent)
+                data_reader_fraction = float(data_reader_fraction)
 
             except ValueError:
                 lbann_errors.append(
-                    'data_reader_percent={d} is not a float.'.format(
-                        d=data_reader_percent))
+                    'data_reader_fraction={d} is not a float.'.format(
+                        d=data_reader_fraction))
         elif weekly:
-            data_reader_percent = 1.00
+            data_reader_fraction = 1.00
         else:
             # Nightly
-            data_reader_percent = 0.10
-        option_data_reader_percent = ' --data_reader_percent={d}'.format(
-            d=data_reader_percent)
+            data_reader_fraction = 0.10
+        option_data_reader_fraction = ' --data_reader_fraction={d}'.format(
+            d=data_reader_fraction)
     # else: use the data reader's value
     if exit_after_setup:
         option_exit_after_setup = ' --exit_after_setup'
@@ -563,7 +563,6 @@ def get_command(cluster,
                 # 'num_epochs',
                 'hydrogen_block_size',
                 'procs_per_trainer',
-                'num_parallel_readers',
                 'num_io_threads',
                 'serialize_io',
                 'disable_background_io_activity',
@@ -591,7 +590,7 @@ def get_command(cluster,
                 'sample_list_test',
                 'label_filename_train',
                 'label_filename_test',
-                # 'data_reader_percent',
+                # 'data_reader_fraction',
                 'share_testing_data_readers',
 
                 # Callbacks:
@@ -622,7 +621,7 @@ def get_command(cluster,
         option_data_filedir,
         option_data_filedir_train, option_data_filename_train,
         option_data_filedir_test, option_data_filename_test,
-        option_data_reader, option_data_reader_percent,
+        option_data_reader, option_data_reader_fraction,
         option_exit_after_setup, option_metadata, option_mini_batch_size,
         option_model, option_num_epochs, option_optimizer,
         option_processes_per_model, option_restart_dir, extra_options)
@@ -672,14 +671,14 @@ def assert_success(return_code, error_file_name):
     if return_code != 0:
         error_line = get_error_line(error_file_name)
         raise AssertionError(
-            'return_code={rc}\n{el}\nSee {efn}'.format(
+            '{el}\nreturn_code={rc}\nSee {efn}'.format(
                 rc=return_code, el=error_line, efn=error_file_name))
 
 
 def assert_failure(return_code, expected_error, error_file_name):
     if return_code == 0:
         raise AssertionError(
-            'return_code={rc}\nSuccess when expecting failure.\nSee {efn}'.format(
+            'Success when expecting failure. return_code={rc}\nSee {efn}'.format(
                 rc=return_code, efn=error_file_name))
     with open(error_file_name, 'r') as error_file:
         for line in error_file:
@@ -689,7 +688,7 @@ def assert_failure(return_code, expected_error, error_file_name):
     # but we didn't get the expected error.
     actual_error = get_error_line(error_file_name)
     raise AssertionError(
-        'return_code={rc}\nFailed with error different than expected.\nactual_error={ae}\nexpected_error={ee}\nSee {efn}'.format(
+        'Failed with error different than expected: actual_error={ae}, expected_error={ee}\nreturn_code={rc}\nSee {efn}'.format(
             rc=return_code, ae=actual_error, ee=expected_error,
             efn=error_file_name))
 
@@ -734,6 +733,7 @@ def create_tests(setup_func,
             other output data.
 
     """
+    import lbann.contrib.lc.systems
 
     # Make sure test name is valid
     test_file = os.path.realpath(test_file)
@@ -743,6 +743,31 @@ def create_tests(setup_func,
     if not re.match('^test_.', test_name_base):
         # Make sure test name is prefixed with 'test_'
         test_name_base = 'test_' + test_name_base
+
+    # Check to see if we are testing on a ROCm system and then set a cache for CI testing
+    system = lbann.contrib.lc.systems.system()
+    if system in ('tioga', 'rzvernal', 'corona'):
+        if 'environment' in kwargs:
+            environment = kwargs.get('environment')
+        else:
+            environment = {}
+
+        # if os.environ.get('USER') == 'lbannusr':
+        #     basepath = '/p/vast1/lbannusr'
+        # else:
+        #     basepath = '/p/vast1/lbann'
+
+        tmpdir = os.environ.get('TMPDIR')
+        # if os.path.isdir(basepath) and os.access(basepath, os.R_OK | os.W_OK):
+        #     db_path = basepath
+        # else:
+        db_path = tmpdir
+
+        environment['MIOPEN_USER_DB_PATH'] = f'{db_path}/MIOpen_user_db'
+        # Empirically the cache dir cannot be on a parallel file system
+        environment['MIOPEN_CUSTOM_CACHE_DIR'] =f'{tmpdir}/MIOpen_custom_cache'
+
+        kwargs['environment'] = environment
 
     def test_func(cluster, dirname, weekly):
         """Function that can interact with PyTest.
@@ -786,6 +811,10 @@ def create_tests(setup_func,
             _kwargs['job_name'] = f'lbann_{test_name}'
         if 'overwrite_script' not in _kwargs:
             _kwargs['overwrite_script'] = True
+
+        # Set a default time limit for tests
+        if 'time_limit' not in _kwargs:
+            _kwargs['time_limit'] = 2
 
         # Run LBANN
         work_dir = _kwargs['work_dir']
@@ -851,7 +880,7 @@ def create_python_data_reader(lbann,
     reader.name = 'python'
     reader.role = execution_mode
     reader.shuffle = False
-    reader.percent_of_data_to_use = 1.0
+    reader.fraction_of_data_to_use = 1.0
     reader.python.module = module_name
     reader.python.module_dir = dir_name
     reader.python.sample_function = sample_function_name
@@ -1001,6 +1030,9 @@ def print_diff_files(dcmp):
 
 def system(lbann):
     """Name of compute system."""
+    import lbann.contrib
+    import lbann.contrib.launcher
+
     compute_center = lbann.contrib.launcher.compute_center()
     if compute_center != "unknown":
         return getattr(lbann.contrib, compute_center).systems.system()
@@ -1011,15 +1043,11 @@ def system(lbann):
 # Get the number of GPUs per compute node.
 # Return 0 if the system is unknown.
 def gpus_per_node(lbann):
+    import lbann.contrib
+    import lbann.contrib.launcher
+
     compute_center = lbann.contrib.launcher.compute_center()
     if compute_center != "unknown":
         return getattr(lbann.contrib, compute_center).systems.gpus_per_node()
     else:
         return 0
-
-
-# Get the environment variables for Distconv.
-def get_distconv_environment():
-    # TODO: Use the default halo exchange and shuffle method. See https://github.com/LLNL/lbann/issues/1659
-    return {"LBANN_DISTCONV_HALO_EXCHANGE": "AL",
-            "LBANN_DISTCONV_TENSOR_SHUFFLER": "AL"}

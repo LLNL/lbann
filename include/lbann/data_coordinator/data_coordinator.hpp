@@ -27,7 +27,7 @@
 #ifndef LBANN_DATA_COORDINATOR_HPP
 #define LBANN_DATA_COORDINATOR_HPP
 
-#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+#include "lbann/data_readers/metadata.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/utils/dataset.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
@@ -37,10 +37,6 @@
 #endif // LBANN_HAS_DISTCONV
 
 /** Design docs:
- num_parallel_readers - used by the partitioned io buffer to control
- how many ranks will access data.  Can be set by either the user, or
- by the size of the mini-batch????
-
  * IO buffers should go away and be rolled into the data coordinator.
 
  * Buffered data coordinator knows about the native data size / for
@@ -135,15 +131,32 @@ public:
     return *m_io_thread_pool;
   }
 
-  virtual void fetch_data(execution_mode mode) = 0;
+  /** @brief Fetches data into the active buffer and ensures it is usable for
+   * forward propagation. This method may not perform any background tasks.
+   */
+  virtual void fetch_active_batch_synchronous(execution_mode mode) = 0;
+
+  /** @brief Ensures the active buffer contains usable data for forward
+   *  propagation. May initiate fetching of more data in the background.
+   */
+  virtual void fetch_data_asynchronous(execution_mode mode) = 0;
+
+  /** @brief Signals to the coordinator that the active buffer can now be
+   * overridden. Returns true if the epoch is complete after this active buffer.
+   */
+  virtual bool ready_for_next_fetch(execution_mode mode) = 0;
 
   /** @brief Complete any background I/O data fetch for the execution
       mode requested */
   virtual void collect_background_data_fetch(execution_mode mode) = 0;
 
-  /// @todo BVE FIXME this should probably be a property of the
-  /// execution mode
-  virtual bool epoch_complete(execution_mode mode) = 0;
+  //************************************************************************
+  // Helper functions for LTFB
+  //************************************************************************
+
+  void make_data_store_preloaded(execution_mode mode);
+
+  void mark_data_store_explicitly_loading(execution_mode mode);
 
   //************************************************************************
   // Helper functions to access the statistics about the data set
@@ -167,18 +180,6 @@ public:
 
   virtual int get_current_mini_batch_size(execution_mode mode) const;
 
-  virtual int get_global_mini_batch_size(execution_mode mode) const;
-
-  virtual int get_current_global_mini_batch_size(execution_mode mode) const;
-
-  virtual int get_global_last_mini_batch_size(execution_mode mode) const;
-
-  virtual int get_world_master_mini_batch_adjustment(execution_mode mode) const;
-
-  virtual int
-  get_current_world_master_mini_batch_adjustment(execution_mode mode,
-                                                 int model_rank) const;
-
   //************************************************************************
   // Helper functions to access the data readers
   //************************************************************************
@@ -188,24 +189,30 @@ public:
   /**
    * Get the dimensions of the underlying data.
    */
-  TargetModeDimMap get_data_dims();
+  TargetModeDimMap get_data_dims() const;
 
   /**
    * Get the dimensions of the underlying data.
    */
-  SPModeSlicePoints get_slice_points();
+  SPModeSlicePoints get_slice_points() const;
 
-  DataReaderMetaData get_dr_metadata();
+  DataReaderMetaData get_dr_metadata() const;
+
+  /** Sets a mock data reader metadata, for when a data reader does not exist.
+   *  Used in unit tests.
+   */
+  void set_mock_dr_metadata(const DataReaderMetaData& drm);
+  void clear_mock_dr_metadata();
 
   /**
    * Check to see if the data readers have labels
    */
-  bool has_labels();
+  bool has_labels() const;
 
   /**
    * Check to see if the data readers have responses
    */
-  bool has_responses();
+  bool has_responses() const;
 
   /**
    * Get the linearized size of the underlying data.
@@ -233,6 +240,9 @@ public:
 
   /** @name Helper functions to access the dataset statistics */
   ///@{
+  /** @brief Return if the dataset for the given execution mode exists. */
+  bool dataset_exists(execution_mode m) const;
+
   /** @brief Return the dataset for the given execution mode. */
   dataset& get_dataset(execution_mode m);
 
@@ -242,7 +252,7 @@ public:
    * Return the first dataset with a valid (non-null) datareader.
    * Returns null if none are valid.
    */
-  dataset* select_first_valid_dataset();
+  dataset& select_first_valid_dataset();
 
   long get_num_samples(execution_mode m) const;
 
@@ -262,26 +272,16 @@ public:
   //************************************************************************
 
   void calculate_num_iterations_per_epoch(int max_mini_batch_size,
-                                          generic_data_reader* data_reader);
+                                          dataset& dataset);
   void calculate_num_iterations_per_epoch(int mini_batch_size);
-
-  int compute_max_num_parallel_readers(
-    long data_set_size,
-    int mini_batch_size,
-    int requested_num_parallel_readers) const;
-  static int
-  compute_max_num_parallel_readers(long data_set_size,
-                                   int mini_batch_size,
-                                   int requested_num_parallel_readers,
-                                   const lbann_comm* comm);
-
-  virtual int get_num_parallel_readers(execution_mode mode) const;
 
   bool at_new_epoch(execution_mode mode) const;
 
   bool at_new_epoch() const;
 
-  virtual void register_active_data_field(data_field_type const data_field);
+  virtual void
+  register_active_data_field(data_field_type const& data_field,
+                             std::vector<El::Int> const& data_field_dim_map);
 
   //************************************************************************
   //
@@ -306,6 +306,8 @@ protected:
   data_reader_map_t m_data_readers;
   //  std::map<execution_mode, dataset_stats> m_dataset_stats;
 
+  data_field_dim_map_type m_active_data_fields_dim_map;
+
   std::set<data_field_type> m_active_data_fields;
 
 public: // @todo BVE FIXME
@@ -317,6 +319,9 @@ public: // @todo BVE FIXME
   observer_ptr<ExecutionContext> m_execution_context;
 
   observer_ptr<thread_pool> m_io_thread_pool;
+
+private:
+  std::unique_ptr<DataReaderMetaData> m_mock_data_reader_metadata;
 };
 
 } // namespace lbann

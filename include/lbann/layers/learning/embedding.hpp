@@ -91,6 +91,11 @@ public:
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | WEIGHTS | PREV_ACTIVATIONS;
+  }
 
   description get_description() const override;
 
@@ -109,7 +114,7 @@ protected:
   friend class cereal::access;
   embedding_layer();
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
   void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;
@@ -125,9 +130,6 @@ private:
    *  gradient w.r.t. this embedding vector is always zero.
    */
   El::Int m_padding_idx;
-
-  /** Gradient w.r.t. embedding weights. */
-  std::unique_ptr<AbsDistMatrixType> m_embeddings_grad;
 };
 
 // =========================================================
@@ -167,9 +169,7 @@ embedding_layer<TensorDataType, Layout, Device>::embedding_layer(
   : data_type_layer<TensorDataType>(other),
     m_num_embeddings{other.m_num_embeddings},
     m_embedding_dim{other.m_embedding_dim},
-    m_padding_idx{other.m_padding_idx},
-    m_embeddings_grad(other.m_embeddings_grad ? other.m_embeddings_grad->Copy()
-                                              : nullptr)
+    m_padding_idx{other.m_padding_idx}
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -181,8 +181,6 @@ embedding_layer<TensorDataType, Layout, Device>::operator=(
   m_num_embeddings = other.m_num_embeddings;
   m_embedding_dim = other.m_embedding_dim;
   m_padding_idx = other.m_padding_idx;
-  m_embeddings_grad.reset(
-    other.m_embeddings_grad ? other.m_embeddings_grad->Copy() : nullptr);
   return *this;
 }
 
@@ -225,10 +223,9 @@ embedding_layer<TensorDataType, Layout, Device>::get_description() const
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void embedding_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void embedding_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
   auto dims = this->get_input_dims();
   dims.push_back(static_cast<int>(m_embedding_dim));
   this->set_output_dims(dims);
@@ -283,22 +280,12 @@ void embedding_layer<TensorDataType, Layout, Device>::setup_data(
     // type that matches this layer. In future, we should abstract
     // this or dynamically dispatch it.
     auto& embedding_values =
-      dynamic_cast<AbsDistMatrixType&>(embeddings.get_values());
+      dynamic_cast<AbsDistMatrixType&>(embeddings.get_values_sharded());
     std::unique_ptr<AbsDistMatrixType> pad_embedding(
       embedding_values.Construct(embedding_values.Grid(),
                                  embedding_values.Root()));
     El::View(*pad_embedding, embedding_values, El::ALL, El::IR(m_padding_idx));
     El::Zero(*pad_embedding);
-  }
-
-  // Initialize gradient w.r.t. embeddings
-  {
-    auto& embedding_values =
-      dynamic_cast<AbsDistMatrixType&>(embeddings.get_values());
-    this->m_embeddings_grad.reset(
-      embedding_values.Construct(embedding_values.Grid(),
-                                 embedding_values.Root()));
-    m_embeddings_grad->Resize(m_embedding_dim, m_num_embeddings);
   }
 }
 

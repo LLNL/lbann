@@ -89,7 +89,6 @@ SendRecvWeights::get_partner_model(model const& m,
   const bool subgrid = m.get_comm()->get_grid_type() != GridType::NO_GRID;
   const El::Int partner_rank_in_world =
     (partner_trainer * procs_per_trainer * (subgrid ? 2 : 1) + rank_in_trainer);
-  auto& w = comm.get_world_comm();
   comm.intertrainer_barrier();
 
   // Exchange weights with partner
@@ -106,8 +105,8 @@ SendRecvWeights::get_partner_model(model const& m,
     using WeightsType = data_type_weights<TensorDataType>;
     auto& recv_weights = dynamic_cast<WeightsType&>(*w_ptr);
     auto send_weights = recv_weights;
-    El::SendRecv(send_weights.get_values().LockedMatrix(),
-                 recv_weights.get_values().Matrix(),
+    El::SendRecv(send_weights.get_values_sharded().LockedMatrix(),
+                 recv_weights.get_values_sharded().Matrix(),
                  comm.get_world_comm(),
                  partner_rank_in_world,
                  partner_rank_in_world);

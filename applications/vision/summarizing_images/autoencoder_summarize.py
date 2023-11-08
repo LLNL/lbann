@@ -51,10 +51,7 @@ import imagenet
 desc = ('Construct and run ResNet on ImageNet-1K data. '
         'Running the experiment is only supported on LC systems.')
 parser = argparse.ArgumentParser(description=desc)
-lbann.contrib.args.add_scheduler_arguments(parser)
-parser.add_argument(
-    '--job-name', action='store', default='lbann_image_ae', type=str,
-    help='scheduler job name (default: lbann_resnet)')
+lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_image_ae')
 parser.add_argument(
     '--width', action='store', default=1, type=float,
     help='Wide ResNet width factor (default: 1)')
@@ -80,9 +77,9 @@ parser.add_argument(
     '--dataset', action='store', default='imagenet', type=str,
     help='dataset to use; \"cifar10\" or \"imagenet\"')
 parser.add_argument(
-    '--data-reader-percent', action='store',
+    '--data-reader-fraction', action='store',
     default=1.0, type=float,
-    help='the percent of the data to use (default: 1.0)', metavar='NUM')
+    help='the fraction of the data to use (default: 1.0)', metavar='NUM')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 args = parser.parse_args()
 
@@ -185,7 +182,7 @@ trainer = lbann.Trainer(random_seed=args.random_seed, mini_batch_size=args.mini_
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-kwargs['lbann_args'] = '--data_reader_percent='+str(args.data_reader_percent)
+kwargs['lbann_args'] = '--data_reader_fraction='+str(args.data_reader_fraction)
 
 lbann.contrib.launcher.run(trainer, model, data_reader, opt,
                            job_name=args.job_name,

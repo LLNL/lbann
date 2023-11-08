@@ -37,7 +37,7 @@ weekly_options_and_targets = {
     'mini_batch_size': 256,
     'expected_train_accuracy_range': (9, 15),
     'expected_test_accuracy_range': (15, 24),
-    'percent_of_data_to_use': imagenet_fraction,
+    'fraction_of_data_to_use': imagenet_fraction,
     'expected_mini_batch_times': {
         'pascal': 0.154, # 0.100,
         'lassen': 0.050,
@@ -54,7 +54,7 @@ nightly_options_and_targets = {
     'mini_batch_size': 256,
     'expected_train_accuracy_range': (.4, 1.4), # Relaxed lower bound from .5 to .4 on 11/10/22 and relaxed lower bound from .6 to .5 on 9/21/22 BVE and upper bound from 1.1 to 1.4 on 11/8/22
     'expected_test_accuracy_range': (0.45, 0.6),
-    'percent_of_data_to_use': imagenet_fraction * 0.01,
+    'fraction_of_data_to_use': imagenet_fraction * 0.01,
     'expected_mini_batch_times': {
         'pascal': 0.100, # BVE tightened target test time from 1.574 on 9/21/22
         'lassen': 0.070,
@@ -90,7 +90,7 @@ def setup_experiment(lbann, weekly):
     # Setup data reader
     data_reader = data.imagenet.make_data_reader(lbann, num_classes=1000)
     # We train on a subset of ImageNet
-    data_reader.reader[0].percent_of_data_to_use = options['percent_of_data_to_use']
+    data_reader.reader[0].fraction_of_data_to_use = options['fraction_of_data_to_use']
     # Only evaluate on ImageNet validation set at end of training
     data_reader.reader[1].role = 'test'
 
@@ -226,5 +226,6 @@ def augment_test_func(test_func):
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
+                                     time_limit=10, # For the time being the bootstrap time for ROCm is slow
                                      lbann_args=['--load_full_sample_list_once']):
     globals()[_test_func.__name__] = augment_test_func(_test_func)

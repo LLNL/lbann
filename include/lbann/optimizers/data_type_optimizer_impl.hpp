@@ -27,6 +27,7 @@
 #ifndef LBANN_OPTIMIZERS_DATA_TYPE_OPTIMIZER_IMPL_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_DATA_TYPE_OPTIMIZER_IMPL_HPP_INCLUDED
 
+#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
@@ -47,7 +48,6 @@ data_type_optimizer<TensorDataType>::data_type_optimizer(
   : BaseType(other),
     m_weights(other.m_weights),
     m_gradient(other.m_gradient ? other.m_gradient->Copy() : nullptr),
-    m_gradient_v(other.m_gradient_v ? other.m_gradient_v->Copy() : nullptr),
     m_learning_rate(other.m_learning_rate)
 {}
 
@@ -59,7 +59,6 @@ data_type_optimizer<TensorDataType>::operator=(
   optimizer::operator=(other);
   m_weights = other.m_weights;
   m_gradient.reset(other.m_gradient ? other.m_gradient->Copy() : nullptr);
-  m_gradient_v.reset(other.m_gradient_v ? other.m_gradient_v->Copy() : nullptr);
   m_learning_rate = other.m_learning_rate;
   return *this;
 }
@@ -92,7 +91,34 @@ auto data_type_optimizer<TensorDataType>::get_weights() const
 }
 
 template <typename TensorDataType>
-auto data_type_optimizer<TensorDataType>::get_gradient() -> AbsDistMatrixType&
+auto data_type_optimizer<TensorDataType>::get_gradient()
+  -> std::unique_ptr<AbsDistMatrixType>
+{
+  auto matrix_dist = std::get<2>(this->get_matrix_info());
+
+  // Create a new matrix with the correct value distribution (usually STAR_STAR)
+  // and copy the values from there.
+  std::unique_ptr<AbsDistMatrixType> result;
+  result.reset(AbsDistMatrixType::Instantiate(*matrix_dist.grid,
+                                              matrix_dist.root,
+                                              matrix_dist.colDist,
+                                              matrix_dist.rowDist,
+                                              El::ELEMENT,
+                                              matrix_dist.device));
+
+  // If the gradient is not sharded, return a view
+  if (m_gradient->DistData() == matrix_dist) {
+    El::LockedView(*result, *m_gradient);
+  }
+  else {
+    El::Copy(*m_gradient, *result);
+  }
+  return result;
+}
+
+template <typename TensorDataType>
+auto data_type_optimizer<TensorDataType>::get_gradient_sharded()
+  -> AbsDistMatrixType&
 {
 
   // Make sure gradient matrix has been setup
@@ -101,8 +127,8 @@ auto data_type_optimizer<TensorDataType>::get_gradient() -> AbsDistMatrixType&
   }
 
   // Make sure gradient values are ready
-  this->start_gradient_allreduce();
-  this->finish_gradient_allreduce();
+  this->start_gradient_sync();
+  this->finish_gradient_sync();
 
   // Gather all gradients to the master precision
   this->accumulate_all_gradient_contributions(*m_gradient);
@@ -130,6 +156,7 @@ template <typename TensorDataType>
 void data_type_optimizer<TensorDataType>::setup_base(WeightsType* w)
 {
   this->set_comm(w->get_comm());
+  this->m_sharded = w->is_sharded();
   this->clear_gradient();
 
   // Set weights being optimized
@@ -143,23 +170,22 @@ void data_type_optimizer<TensorDataType>::setup_base(WeightsType* w)
   // Initialize matrices
   const auto& height = m_weights->get_matrix_height();
   const auto& width = m_weights->get_matrix_width();
-  const AbsDistMatrixType& values = m_weights->get_values();
+  const AbsDistMatrixType& values = m_weights->get_values_sharded();
   m_gradient.reset(AbsDistMatrixType::Instantiate(values.DistData()));
   m_gradient->AlignWith(values);
   m_gradient->Resize(height, width);
-  m_gradient_v.reset(AbsDistMatrixType::Instantiate(values.DistData()));
-  m_gradient_v->AlignWith(values);
-#ifdef HYDROGEN_HAVE_CUB
-  if (m_gradient_v->GetLocalDevice() == El::Device::GPU) {
-    m_gradient_v->Matrix().SetMemoryMode(1); // CUB GPU memory pool
-  }
-#endif // HYDROGEN_HAVE_CUB
 }
 
 template <typename TensorDataType>
 double data_type_optimizer<TensorDataType>::get_learning_rate() const
 {
   return m_learning_rate;
+}
+
+template <typename TensorDataType>
+size_t data_type_optimizer<TensorDataType>::get_state_size() const
+{
+  return m_gradient->AllocatedMemory() * sizeof(TensorDataType);
 }
 
 template <typename TensorDataType>
@@ -172,22 +198,27 @@ void data_type_optimizer<TensorDataType>::set_learning_rate(
 template <typename TensorDataType>
 void data_type_optimizer<TensorDataType>::step()
 {
+  LBANN_CALIPER_MARK_SCOPE(
+    (this->get_type() + " " + m_weights->get_name()).c_str());
+
   if (m_weights == nullptr) {
     LBANN_ERROR("attempted to perform optimization step without weights");
   }
   const auto start_time = get_time();
-  this->step_compute(m_weights->get_values(), this->get_gradient());
+  this->step_compute(m_weights->get_values_sharded(),
+                     this->get_gradient_sharded());
   this->inc_step_time(get_time() - start_time);
 }
 
 template <typename TensorDataType>
-std::tuple<El::Int, El::Int, El::DistData>
+std::tuple<El::Int, El::Int, El::DistData, El::DistData>
 data_type_optimizer<TensorDataType>::get_matrix_info() const
 {
   auto const& w = this->get_weights();
   return {w.get_matrix_height(),
           w.get_matrix_width(),
-          w.get_matrix_distribution()};
+          w.get_matrix_distribution(),
+          m_gradient->DistData()};
 }
 
 template <typename TensorDataType>

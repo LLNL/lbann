@@ -135,7 +135,7 @@ void lbann::protobuf::fill(std::string const& pbuf_str,
 void lbann::protobuf::load(std::string const& pbuf_file,
                            google::protobuf::Message& msg)
 {
-  std::ifstream ifs(pbuf_file);
+  std::ifstream ifs(pbuf_file, std::ios::binary | std::ios::in);
   LBANN_ASSERT((bool)ifs);
   fill(ifs, msg);
 }

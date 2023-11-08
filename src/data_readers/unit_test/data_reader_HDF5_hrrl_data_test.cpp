@@ -36,9 +36,9 @@
 #include <errno.h>
 #include <string.h>
 
-#include "./test_data/hdf5_hrrl_data_schema.yaml"
-#include "./test_data/hdf5_hrrl_experiment_schema.yaml"
-#include "./test_data/hdf5_hrrl_test_data_and_schema.yaml"
+#include "./data_reader_common_HDF5_test_utils.hpp"
+
+#include "./test_data/hdf5_hrrl_test_data_and_schemas.yaml"
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 
 // Use a different schema to create a different packing
@@ -110,57 +110,6 @@ alpha:
     ordering: 1
 )AurthurDent";
 
-class DataReaderHDF5WhiteboxTester
-{
-public:
-  void normalize(lbann::hdf5_data_reader& x,
-                 conduit::Node& node,
-                 const std::string& path,
-                 const conduit::Node& metadata)
-  {
-    x.normalize(node, path, metadata);
-  }
-  void repack_image(lbann::hdf5_data_reader& x,
-                    conduit::Node& node,
-                    const std::string& path,
-                    const conduit::Node& metadata)
-  {
-    x.repack_image(node, path, metadata);
-  }
-
-  void pack(lbann::hdf5_data_reader& x, conduit::Node& node, size_t index)
-  {
-    x.pack(node, index);
-  }
-
-  void parse_schemas(lbann::hdf5_data_reader& x) { return x.parse_schemas(); }
-
-  conduit::Node& get_data_schema(lbann::hdf5_data_reader& x)
-  {
-    return x.m_data_schema;
-  }
-
-  conduit::Node& get_experiment_schema(lbann::hdf5_data_reader& x)
-  {
-    return x.m_experiment_schema;
-  }
-
-  void set_data_schema(lbann::hdf5_data_reader& x, const conduit::Node& s)
-  {
-    x.set_data_schema(s);
-  }
-
-  void set_experiment_schema(lbann::hdf5_data_reader& x, const conduit::Node& s)
-  {
-    x.set_experiment_schema(s);
-  }
-
-  void print_metadata(lbann::hdf5_data_reader& x, std::ostream& os = std::cout)
-  {
-    x.print_metadata(os);
-  }
-};
-
 TEST_CASE("hdf5 data reader transform tests", "[data_reader][hdf5][hrrl]")
 {
   // initialize stuff (boilerplate)
@@ -174,7 +123,7 @@ TEST_CASE("hdf5 data reader transform tests", "[data_reader][hdf5][hrrl]")
   DataReaderHDF5WhiteboxTester white_box_tester;
 
   conduit::Node schema;
-  schema.parse(hdf5_hrrl_data_schema_test, "yaml");
+  schema.parse(hdf5_hrrl_data_schema, "yaml");
 
   SECTION("HRRL conduit node normalize")
   {
@@ -269,12 +218,12 @@ TEST_CASE("hdf5 data reader pack test", "[data_reader][hdf5][hrrl][pack]")
 
   // Setup the data schema for this HRRL data set
   conduit::Node& data_schema = white_box_tester.get_data_schema(*hdf5_dr);
-  data_schema.parse(hdf5_hrrl_data_schema_test, "yaml");
+  data_schema.parse(hdf5_hrrl_data_schema, "yaml");
 
   // For some reason this approach does not properly setup the data reader
   // conduit::Node data_schema;
   // conduit::Node experiment_schema;
-  // data_schema.parse(hdf5_hrrl_data_schema_test, "yaml");
+  // data_schema.parse(hdf5_hrrl_data_schema, "yaml");
   // experiment_schema.parse(hdf5_hrrl_experiment_schema_test, "yaml");
   // white_box_tester.set_data_schema(*hdf5_dr, data_schema);
   // white_box_tester.set_experiment_schema(*hdf5_dr, experiment_schema);

@@ -5,6 +5,7 @@ import os.path
 import sys
 import numpy as np
 import pytest
+import lbann.contrib.args
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -216,5 +217,5 @@ def construct_data_reader(lbann):
 
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment, __file__,
-                               environment=tools.get_distconv_environment()):
+                               environment=lbann.contrib.args.get_distconv_environment()):
     globals()[_test_func.__name__] = _test_func

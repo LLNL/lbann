@@ -20,10 +20,7 @@ metadata_prototext = join(model_zoo_dir,
 
 # Command-line arguments
 parser = argparse.ArgumentParser()
-lbann.contrib.args.add_scheduler_arguments(parser)
-parser.add_argument(
-    '--job-name', action='store', default='wae', type=str,
-    help='job name', metavar='NAME')
+lbann.contrib.args.add_scheduler_arguments(parser, 'wae')
 parser.add_argument(
     '--mini-batch-size', action='store', default=128, type=int,
     help='mini-batch size (default: 128)', metavar='NUM')

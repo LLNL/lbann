@@ -6,9 +6,9 @@ data_reader {
     data_filedir: "/p/vast1/lbann/datasets/mnist"
     data_filename: "train-images-idx3-ubyte"
     label_filename: "train-labels-idx1-ubyte"
-    validation_percent: 0.1
+    validation_fraction: 0.1
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     transforms {
       scale {
         scale: 0.003921568627  # 1/255
@@ -23,7 +23,7 @@ data_reader {
     data_filename: "t10k-images-idx3-ubyte"
     label_filename: "t10k-labels-idx1-ubyte"
     absolute_sample_count: 0
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     transforms {
       scale {
         scale: 0.003921568627  # 1/255

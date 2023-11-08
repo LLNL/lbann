@@ -29,6 +29,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/options.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 
@@ -68,6 +69,16 @@ description sgd<TensorDataType>::get_description() const
 }
 
 template <typename TensorDataType>
+size_t sgd<TensorDataType>::get_state_size() const
+{
+  size_t allocated = 0;
+  if (m_velocity != nullptr) {
+    allocated += m_velocity->AllocatedMemory() * sizeof(TensorDataType);
+  }
+  return data_type_optimizer<TensorDataType>::get_state_size() + allocated;
+}
+
+template <typename TensorDataType>
 auto sgd<TensorDataType>::get_velocity() const -> const AbsDistMatrixType&
 {
   if (m_velocity == nullptr) {
@@ -88,15 +99,12 @@ template <typename TensorDataType>
 void sgd<TensorDataType>::setup(WeightsType* w)
 {
   OptimizerType::setup(w);
-  const auto& gradient = this->get_gradient();
+  const auto& gradient = this->get_gradient_sharded();
   m_velocity.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
 #ifdef LBANN_HAS_GPU
   if (m_velocity->GetLocalDevice() == El::Device::GPU) {
-    const auto& arg_parser = global_argument_parser();
-    if (!arg_parser.get<bool>(
-          LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
-      m_velocity->Matrix().SetMemoryMode(0); // Directly-allocated memory
-    }
+    int memory_mode = 0; // Direct allocation
+    m_velocity->Matrix().SetMemoryMode(memory_mode);
   }
 #endif // LBANN_HAS_GPU
   El::Zeros(*m_velocity, gradient.Height(), gradient.Width());
@@ -143,7 +151,7 @@ template <typename TensorDataType>
 void sgd<TensorDataType>::momentum_step_cpu(AbsDistMatrixType& values,
                                             const AbsDistMatrixType& gradient)
 {
-
+  LBANN_CALIPER_MARK_SCOPE("sgd::momentum_step");
   // Get local matrix data
   const auto learning_rate = El::To<TensorDataType>(this->get_learning_rate());
   const size_t local_height = values.LocalHeight();

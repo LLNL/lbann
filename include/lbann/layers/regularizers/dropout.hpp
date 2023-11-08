@@ -114,6 +114,8 @@ public:
   std::string get_type() const override { return "dropout"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return true; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
   description get_description() const override
   {
@@ -138,9 +140,9 @@ protected:
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
 

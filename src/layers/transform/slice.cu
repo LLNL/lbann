@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_SLICE_LAYER_INSTANTIATE
-#include "lbann/layers/transform/slice.hpp"
+#include "lbann/layers/transform/slice_impl.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
@@ -264,36 +264,36 @@ void fp_compute_impl(
 
   // Pack tensor data into a CPU buffer
   l.m_workspace_event.synchronize();
-  l.m_workspace.resize(sizeof(size_t) * input_offset_list.size() +
-                       sizeof(TensorDataType*) * output_buffer_list.size() +
-                       sizeof(dim4) * output_dims_list.size() +
-                       sizeof(dim4) * output_strides_list.size());
+  l.m_workspace->allocate(sizeof(size_t) * input_offset_list.size() +
+                          sizeof(TensorDataType*) * output_buffer_list.size() +
+                          sizeof(dim4) * output_dims_list.size() +
+                          sizeof(dim4) * output_strides_list.size());
   size_t pos = 0;
-  std::memcpy(&l.m_workspace[pos],
+  std::memcpy(&l.m_workspace->data()[pos],
               input_offset_list.data(),
               sizeof(size_t) * input_offset_list.size());
   pos += sizeof(size_t) * input_offset_list.size();
-  std::memcpy(&l.m_workspace[pos],
+  std::memcpy(&l.m_workspace->data()[pos],
               output_buffer_list.data(),
               sizeof(TensorDataType*) * output_buffer_list.size());
   pos += sizeof(TensorDataType*) * output_buffer_list.size();
-  std::memcpy(&l.m_workspace[pos],
+  std::memcpy(&l.m_workspace->data()[pos],
               output_dims_list.data(),
               sizeof(dim4) * output_dims_list.size());
   pos += sizeof(dim4) * output_dims_list.size();
-  std::memcpy(&l.m_workspace[pos],
+  std::memcpy(&l.m_workspace->data()[pos],
               output_strides_list.data(),
               sizeof(dim4) * output_strides_list.size());
   pos += sizeof(dim4) * output_strides_list.size();
 
   // Copy tensor data to GPU
   hydrogen::simple_buffer<unsigned char, El::Device::GPU> device_workspace(
-    l.m_workspace.size(),
+    l.m_workspace->size(),
     sync_info);
   unsigned char* device_workspace_ptr = device_workspace.data();
-  hydrogen::gpu::Copy1DToDevice(l.m_workspace.data(),
+  hydrogen::gpu::Copy1DToDevice(l.m_workspace->data(),
                                 device_workspace_ptr,
-                                l.m_workspace.size(),
+                                l.m_workspace->size(),
                                 sync_info);
   l.m_workspace_event.record(sync_info.Stream());
   pos = 0;
@@ -426,37 +426,37 @@ void bp_compute_impl(
 
   // Pack tensor data into a CPU buffer
   l.m_workspace_event.synchronize();
-  l.m_workspace.resize(sizeof(TensorDataType*) *
-                         output_grad_buffer_list.size() +
-                       sizeof(dim4) * output_grad_dims_list.size() +
-                       sizeof(dim4) * output_grad_strides_list.size() +
-                       sizeof(size_t) * input_grad_offset_list.size());
+  l.m_workspace->allocate(sizeof(TensorDataType*) *
+                            output_grad_buffer_list.size() +
+                          sizeof(dim4) * output_grad_dims_list.size() +
+                          sizeof(dim4) * output_grad_strides_list.size() +
+                          sizeof(size_t) * input_grad_offset_list.size());
   size_t pos = 0;
-  std::memcpy(&l.m_workspace[pos],
+  std::memcpy(&l.m_workspace->data()[pos],
               output_grad_buffer_list.data(),
               sizeof(TensorDataType*) * output_grad_buffer_list.size());
   pos += sizeof(TensorDataType*) * output_grad_buffer_list.size();
-  std::memcpy(&l.m_workspace[pos],
+  std::memcpy(&l.m_workspace->data()[pos],
               output_grad_dims_list.data(),
               sizeof(dim4) * output_grad_dims_list.size());
   pos += sizeof(dim4) * output_grad_dims_list.size();
-  std::memcpy(&l.m_workspace[pos],
+  std::memcpy(&l.m_workspace->data()[pos],
               output_grad_strides_list.data(),
               sizeof(dim4) * output_grad_strides_list.size());
   pos += sizeof(dim4) * output_grad_strides_list.size();
-  std::memcpy(&l.m_workspace[pos],
+  std::memcpy(&l.m_workspace->data()[pos],
               input_grad_offset_list.data(),
               sizeof(size_t) * input_grad_offset_list.size());
   pos += sizeof(size_t) * input_grad_offset_list.size();
 
   // Copy tensor data to GPU
   hydrogen::simple_buffer<unsigned char, El::Device::GPU> device_workspace(
-    l.m_workspace.size(),
+    l.m_workspace->size(),
     sync_info);
   unsigned char* device_workspace_ptr = device_workspace.data();
-  hydrogen::gpu::Copy1DToDevice(l.m_workspace.data(),
+  hydrogen::gpu::Copy1DToDevice(l.m_workspace->data(),
                                 device_workspace_ptr,
-                                l.m_workspace.size(),
+                                l.m_workspace->size(),
                                 sync_info);
   l.m_workspace_event.record(sync_info.Stream());
   pos = 0;

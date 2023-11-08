@@ -58,6 +58,13 @@ public:
   std::string get_type() const override { return "Hadamard"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return true; }
+  int get_backprop_requirements() const override
+  {
+    if (this->get_num_parents() > 1)
+      return ERROR_SIGNALS | PREV_ACTIVATIONS;
+    return ERROR_SIGNALS;
+  }
 
 protected:
   /** Add layer specific data to prototext */
@@ -77,9 +84,9 @@ protected:
     }
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
 
     // Check that input dimensions match

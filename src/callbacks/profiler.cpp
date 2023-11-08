@@ -51,12 +51,27 @@ namespace callback {
 profiler::profiler(bool sync, bool skip_init)
   : callback_base(), m_sync(sync), m_skip_init(skip_init)
 {
+#ifdef LBANN_HAS_CALIPER
+  if (is_caliper_initialized()) {
+    LBANN_WARNING_WORLD_ROOT(
+      "LBANN is detected to be running with Caliper. This profiler callback is "
+      "likely superfluous and may result in undefined behavior, possibly "
+      "including duplicate regions. It is NOT recommended to run this callback "
+      "and Caliper simultaneously.");
+  }
+#endif
+
 #ifdef LBANN_NVPROF
   nvtxNameCudaStreamA(hydrogen::cuda::GetDefaultStream(), "Hydrogen");
 #endif
   if (!m_skip_init) {
     prof_start();
   }
+}
+
+profiler::~profiler()
+{
+  prof_stop();
 }
 
 template <class Archive>

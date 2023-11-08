@@ -5,8 +5,8 @@ data_reader {
     shuffle: true
     data_filedir: "path/to/ILSVRC2012/train"
     data_filename: "path/to/ILSVRC2012/labels/train.txt"
-    validation_percent: 0.0
-    percent_of_data_to_use: 1.0
+    validation_fraction: 0.0
+    fraction_of_data_to_use: 1.0
     num_labels: 1000
 
     transforms {
@@ -37,7 +37,7 @@ data_reader {
     shuffle: true
     data_filedir: "path/to/ILSVRC2012/val"
     data_filename: "path/to/ILSVRC2012/labels/val.txt"
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     num_labels: 1000
 
     transforms {

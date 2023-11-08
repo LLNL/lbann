@@ -66,6 +66,8 @@ public:
   std::string get_type() const override { return "weighted sum"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return true; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
   description get_description() const override
   {
@@ -103,9 +105,9 @@ protected:
     }
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
 
     // Check that input dimensions match
@@ -133,8 +135,13 @@ protected:
   void fp_compute() override
   {
     auto& output = this->get_activations();
-    El::Zero(output);
-    for (int i = 0; i < this->get_num_parents(); ++i) {
+
+    // Special case for the first input so that in-place operation works
+    if (!this->m_runs_inplace)
+      El::Copy(this->get_prev_activations(0), output);
+
+    El::Scale(m_scaling_factors[0], output);
+    for (int i = 1; i < this->get_num_parents(); ++i) {
       El::Axpy(m_scaling_factors[i], this->get_prev_activations(i), output);
     }
   }
@@ -142,11 +149,17 @@ protected:
   void bp_compute() override
   {
     const auto& gradient_wrt_output = this->get_prev_error_signals();
-    for (int i = 0; i < this->get_num_parents(); ++i) {
+
+    for (int i = 1; i < this->get_num_parents(); ++i) {
       auto& gradient_wrt_input = this->get_error_signals(i);
       El::Zero(gradient_wrt_input);
       El::Axpy(m_scaling_factors[i], gradient_wrt_output, gradient_wrt_input);
     }
+
+    // Special case for the first input so that in-place operation works
+    if (!this->m_runs_inplace)
+      El::Copy(gradient_wrt_output, this->get_error_signals(0));
+    El::Scale(m_scaling_factors[0], this->get_error_signals(0));
   }
 };
 

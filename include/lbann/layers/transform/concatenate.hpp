@@ -85,6 +85,8 @@ public:
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
   description get_description() const override;
 
@@ -98,10 +100,10 @@ protected:
   concatenate_layer() : concatenate_layer(nullptr, 0) {}
 
   void setup_pointers() override;
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
-  void fp_setup_outputs(El::Int mini_batch_size) override;
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
+  void fp_setup_outputs() override;
+  void bp_setup_gradient_wrt_inputs() override;
   void fp_compute() override;
   void bp_compute() override;
 
@@ -146,7 +148,7 @@ protected:
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL &&
            m_concat_dim == 0;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  void setup_distconv_adapter() override
   {
     this->get_distconv_adapter_ptr() = std::make_unique<
       concatenate_distconv_adapter<TensorDataType, Layout, Device>>(*this);
@@ -230,10 +232,9 @@ void concatenate_layer<TensorDataType, Layout, Device>::setup_pointers()
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void concatenate_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void concatenate_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
 
   // Dimensions of first input tensor
   auto output_dims = this->get_input_dims(0);
@@ -304,8 +305,7 @@ void concatenate_layer<TensorDataType, Layout, Device>::setup_dims(
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void concatenate_layer<TensorDataType, Layout, Device>::fp_setup_outputs(
-  El::Int mini_batch_size)
+void concatenate_layer<TensorDataType, Layout, Device>::fp_setup_outputs()
 {
 #ifdef LBANN_HAS_DISTCONV
   if (!this->keep_original_outputs(0))
@@ -318,19 +318,19 @@ void concatenate_layer<TensorDataType, Layout, Device>::fp_setup_outputs(
     El::LockedView(output, input0);
   }
   else {
-    if (this->is_subgraph_parallelism_enabled() == false ||
-        this->get_parallel_strategy().enable_subgraph == false) {
+    if (this->subgraph_parallelism_execution() == false) {
       output.AlignWith(input0);
     }
 
     output.Resize(this->get_output_size(), input0.Width());
+
+    this->setup_reference_counter(output);
   }
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType, Layout, Device>::fp_compute_subgrid()
 {
-
   const auto& input_dims = this->get_input_dims(0);
 
   int split_dim = int(input_dims[m_concat_dim]);
@@ -352,7 +352,6 @@ void concatenate_layer<TensorDataType, Layout, Device>::fp_compute_subgrid()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType, Layout, Device>::bp_compute_subgrid()
 {
-
   const auto& input_dims = this->get_input_dims(0);
 
   int split_dim = int(input_dims[m_concat_dim] * this->get_num_parents());
@@ -412,8 +411,7 @@ void concatenate_layer<TensorDataType, Layout, Device>::fp_compute()
   }
 
   // Perform concatenation
-  if (m_concat_dim == num_dims - 1 && this->is_subgraph_parallelism_enabled() &&
-      this->get_parallel_strategy().enable_subgraph == true) {
+  if (m_concat_dim == num_dims - 1 && this->subgraph_parallelism_execution()) {
     this->fp_compute_subgrid();
   }
   else {
@@ -468,7 +466,7 @@ void bp_setup_gradient_wrt_inputs_impl(
         continue;
 #endif
       auto& input_grad = l.get_error_signals(j);
-      if (l.get_parallel_strategy().enable_subgraph == false) {
+      if (l.subgraph_parallelism_execution() == false) {
         input_grad.AlignWith(output_grad);
       }
       input_grad.Resize(l.get_input_size(j), output_grad.Width());
@@ -478,7 +476,7 @@ void bp_setup_gradient_wrt_inputs_impl(
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType, Layout, Device>::
-  bp_setup_gradient_wrt_inputs(El::Int mini_batch_size)
+  bp_setup_gradient_wrt_inputs()
 {
   bp_setup_gradient_wrt_inputs_impl(*this);
 }
@@ -504,8 +502,7 @@ void concatenate_layer<TensorDataType, Layout, Device>::bp_compute()
   }
 
   // Perform slice
-  if (m_concat_dim == num_dims - 1 && this->is_subgraph_parallelism_enabled() &&
-      this->get_parallel_strategy().enable_subgraph == true) {
+  if (m_concat_dim == num_dims - 1 && this->subgraph_parallelism_execution()) {
     this->bp_compute_subgrid();
   }
   else {

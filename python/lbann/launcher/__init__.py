@@ -10,65 +10,72 @@ import lbann.launcher.lsf
 import lbann.launcher.pjm
 from lbann.util import make_iterable, nvprof_command
 
-def make_timestamped_work_dir(work_dir=None,
-                              experiment_dir=None,
-                              job_name='lbann',
-                              **kwargs,
+
+def make_timestamped_work_dir(
+    work_dir=None,
+    experiment_dir=None,
+    job_name='lbann',
+    **kwargs,
 ):
     # Create work directory if not provided
     if not work_dir:
-       work_dir = experiment_dir
+        work_dir = experiment_dir
     if not work_dir:
         if 'LBANN_EXPERIMENT_DIR' in os.environ:
             work_dir = os.environ['LBANN_EXPERIMENT_DIR']
         else:
             work_dir = os.path.join(os.getcwd())
         timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        work_dir = os.path.join(work_dir,
-                                '{}_{}'.format(timestamp, job_name))
+        work_dir = os.path.join(work_dir, '{}_{}'.format(timestamp, job_name))
         # Differentiate the work directory with a few key parameters
-        if kwargs['nodes']:
+        if 'nodes' in kwargs:
             work_dir = ('{}_n{}'.format(work_dir, kwargs['nodes']))
-        if kwargs['procs_per_node']:
+        if 'procs_per_node' in kwargs:
             work_dir = ('{}_ppn{}'.format(work_dir, kwargs['procs_per_node']))
 
         i = 1
         while os.path.lexists(work_dir):
             i += 1
-            work_dir = os.path.join(
-                os.path.dirname(work_dir),
-                '{}_{}_{}'.format(timestamp, job_name, i))
+            work_dir = os.path.join(os.path.dirname(work_dir),
+                                    '{}_{}_{}'.format(timestamp, job_name, i))
     work_dir = os.path.realpath(work_dir)
     os.makedirs(work_dir, exist_ok=True)
 
     return work_dir
 
+
 # ==============================================
 # Run experiments
 # ==============================================
 
-def run(trainer, model, data_reader, optimizer,
-        work_dir=None,
-        proto_file_name='experiment.prototext',
-        nodes=1,
-        procs_per_node=1,
-        time_limit=None,
-        scheduler=None,
-        job_name='lbann',
-        partition=None,
-        account=None,
-        reservation=None,
-        launcher_args=[],
-        lbann_exe=lbann.lbann_exe(),
-        lbann_args=[],
-        procs_per_trainer=None,
-        environment={},
-        overwrite_script=False,
-        setup_only=False,
-        batch_job=False,
-        nvprof=False,
-        nvprof_output_name=None,
-        experiment_dir=None,
+
+def run(
+    trainer,
+    model,
+    data_reader,
+    optimizer,
+    work_dir=None,
+    proto_file_name=None,
+    nodes=1,
+    procs_per_node=1,
+    time_limit=None,
+    scheduler=None,
+    job_name='lbann',
+    partition=None,
+    account=None,
+    reservation=None,
+    launcher_args=[],
+    lbann_exe=lbann.lbann_exe(),
+    lbann_args=[],
+    procs_per_trainer=None,
+    environment={},
+    overwrite_script=False,
+    setup_only=False,
+    batch_job=False,
+    nvprof=False,
+    nvprof_output_name=None,
+    binary_protobuf=False,
+    experiment_dir=None,
 ):
     """Run LBANN.
 
@@ -118,6 +125,8 @@ def run(trainer, model, data_reader, optimizer,
         nvprof_output_name (str, optional): nvprof output filename.
             Filename should be unique to each process by using %q{ENV}
             (see https://docs.nvidia.com/cuda/profiler-users-guide/).
+        binary_protobuf (bool, optional): If true, saves experiment description
+            as a binary file. Otherwise, saves as prototext.
         experiment_dir (str, optional, deprecated): See `work_dir`.
 
     Returns:
@@ -147,16 +156,22 @@ def run(trainer, model, data_reader, optimizer,
     lbann_command = [lbann_exe]
     if nvprof:
         lbann_command = nvprof_command(
-            work_dir=work_dir,
-            output_name=nvprof_output_name)+lbann_command
+            work_dir=work_dir, output_name=nvprof_output_name) + lbann_command
     lbann_command.extend(make_iterable(lbann_args))
-    prototext_file = os.path.join(script.work_dir, proto_file_name)
-    lbann.proto.save_prototext(prototext_file,
+
+    # Set default file name and extension
+    if proto_file_name is None:
+        proto_file_name = ('experiment.protobin'
+                           if binary_protobuf else 'experiment.prototext')
+    proto_file = os.path.join(script.work_dir, proto_file_name)
+
+    lbann.proto.save_prototext(proto_file,
+                               binary=binary_protobuf,
                                trainer=trainer,
                                model=model,
                                data_reader=data_reader,
                                optimizer=optimizer)
-    lbann_command.append('--prototext={}'.format(prototext_file))
+    lbann_command.append('--prototext={}'.format(proto_file))
     if procs_per_trainer is not None:
         lbann_command.append(f'--procs_per_trainer={procs_per_trainer}')
 
@@ -176,6 +191,7 @@ def run(trainer, model, data_reader, optimizer,
     else:
         status = script.run(overwrite=overwrite_script)
     return status
+
 
 def make_batch_script(script_file=None,
                       work_dir=None,
@@ -268,7 +284,7 @@ def make_batch_script(script_file=None,
     if not script_file:
         script_file = os.path.join(work_dir, 'batch.sh')
     script = None
-    if scheduler.lower() in ('openmpi',):
+    if scheduler.lower() in ('openmpi', ):
         script = lbann.launcher.openmpi.OpenMPIBatchScript(
             script_file=script_file,
             work_dir=work_dir,
@@ -320,8 +336,7 @@ def make_batch_script(script_file=None,
             partition=partition,
             launcher_args=launcher_args)
     else:
-        raise RuntimeError('unsupported job scheduler ({})'
-                           .format(scheduler))
+        raise RuntimeError('unsupported job scheduler ({})'.format(scheduler))
 
     # Set batch script preamble commands
     for cmd in preamble_cmds:

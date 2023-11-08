@@ -28,6 +28,7 @@
 #include "lbann/optimizers/hypergradient_adam_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/profiling.hpp"
 
 #include "lbann/proto/optimizers.pb.h"
 
@@ -96,10 +97,19 @@ description hypergradient_adam<TensorDataType>::get_description() const
 }
 
 template <typename TensorDataType>
+size_t hypergradient_adam<TensorDataType>::get_state_size() const
+{
+  size_t allocated = m_moment1->AllocatedMemory() * sizeof(TensorDataType);
+  allocated += m_moment2->AllocatedMemory() * sizeof(TensorDataType);
+  allocated += m_old_gradient->AllocatedMemory() * sizeof(TensorDataType);
+  return data_type_optimizer<TensorDataType>::get_state_size() + allocated;
+}
+
+template <typename TensorDataType>
 void hypergradient_adam<TensorDataType>::setup(WeightsType* w)
 {
   OptimizerType::setup(w);
-  const auto& gradient = this->get_gradient();
+  const auto& gradient = this->get_gradient_sharded();
   m_moment1.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
   m_moment2.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
   m_old_gradient.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
@@ -125,6 +135,7 @@ void hypergradient_adam<TensorDataType>::step_compute(
   AbsDistMatrixType& values,
   const AbsDistMatrixType& gradient)
 {
+  LBANN_CALIPER_MARK_SCOPE("hypergradient_adam::step_compute");
   if (values.GetLocalDevice() != El::Device::CPU) {
     LBANN_ERROR("hypergradient Adam is only supported on CPU");
   }

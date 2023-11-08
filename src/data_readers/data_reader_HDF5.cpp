@@ -30,24 +30,11 @@
 #include "lbann/data_readers/data_reader_sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_impl.hpp"
 #include "lbann/data_readers/sample_list_open_files_impl.hpp"
+#include "lbann/transforms/repack_HWC_to_CHW_layout.hpp"
 #include "lbann/utils/timer.hpp"
 
 namespace lbann {
 namespace {
-
-/** @brief Copy a floating point array into a new floating point array.
- *  @tparam ToType The new data type.
- *  @tparam FromType (Inferred) The old data type.
- *  @param data_in The type of the input data.
- *  @param num_elements The number of elements in the input array.
- *  @returns A clean copy of the input data with a new type.
- */
-template <typename ToType, typename FromType>
-std::vector<ToType> do_coerce(FromType const* const data_in,
-                              size_t const num_elements)
-{
-  return std::vector<ToType>{data_in, data_in + num_elements};
-}
 
 template <typename T>
 void do_normalize(T* const data,
@@ -76,41 +63,36 @@ void do_normalize(T* const data,
   }
 }
 
+// Pack 2-D tensor into a channels-first from a channels-last storage format
 template <typename T>
-void do_repack_image(T* const src_buf,
-                     size_t const n_elts,
-                     size_t const n_rows,
-                     size_t const n_cols,
-                     int const n_channels)
+void do_repack_tensor_HWC_to_CHW(T* const src_buf,
+                                 size_t const n_elts,
+                                 size_t const n_rows,
+                                 size_t const n_cols,
+                                 size_t const n_channels)
 {
-  size_t const size = n_rows * n_cols;
   std::vector<T> work;
   work.reserve(n_elts);
   T* const dst_buf = work.data();
-  for (size_t row = 0; row < n_rows; ++row) {
-    for (size_t col = 0; col < n_cols; ++col) {
-      int N = n_channels;
-      // Multiply by N because there are N channels.
-      const size_t src_base = N * (row + col * n_rows);
-      const size_t dst_base = row + col * n_rows;
-      switch (N) {
-      case 4:
-        dst_buf[dst_base + 3 * size] = src_buf[src_base + 3];
-        [[fallthrough]];
-      case 3:
-        dst_buf[dst_base + 2 * size] = src_buf[src_base + 2];
-        [[fallthrough]];
-      case 2:
-        dst_buf[dst_base + size] = src_buf[src_base + 1];
-        [[fallthrough]];
-      case 1:
-        dst_buf[dst_base] = src_buf[src_base];
-        break;
-      default:
-        LBANN_ERROR("Unsupported number of channels");
-      }
-    }
-  }
+  std::vector<size_t> dims = {n_channels, n_rows, n_cols};
+  transform::repack_HWC_to_CHW(src_buf, dst_buf, dims);
+  std::copy_n(dst_buf, n_elts, src_buf);
+}
+
+// Pack 3-D tensor into a channels-first from a channels-last storage format
+template <typename T>
+void do_repack_tensor_DHWC_to_CDHW(T* const src_buf,
+                                   size_t const n_elts,
+                                   size_t const depth,
+                                   size_t const height,
+                                   size_t const width,
+                                   size_t const n_channels)
+{
+  std::vector<T> work;
+  work.reserve(n_elts);
+  T* const dst_buf = work.data();
+  std::vector<size_t> dims = {n_channels, depth, height, width};
+  transform::repack_DHWC_to_CDHW(src_buf, dst_buf, dims);
   std::copy_n(dst_buf, n_elts, src_buf);
 }
 
@@ -279,6 +261,7 @@ void hdf5_data_reader::load_schema(std::string filename, conduit::Node& schema)
   if (m_comm->am_trainer_master()) {
     conduit::relay::io::load(filename, schema);
   }
+
   conduit::relay::mpi::broadcast_using_schema(
     schema,
     m_comm->get_trainer_master(),
@@ -301,7 +284,7 @@ void hdf5_data_reader::do_preload_data_store()
     }
     try {
       conduit::Node& node = m_data_store->get_empty_node(index);
-      load_sample(node, index);
+      load_sample_from_sample_list(node, index);
       m_data_store->set_preloaded_conduit_node(index, node);
     }
     catch (conduit::Error const& e) {
@@ -334,11 +317,15 @@ void hdf5_data_reader::do_preload_data_store()
 
 // Loads the fields that are specified in the user supplied schema
 void hdf5_data_reader::load_sample(conduit::Node& node,
-                                   size_t index,
+                                   hid_t file_handle,
+                                   const std::string& sample_name,
                                    bool ignore_failure)
 {
-  auto [file_handle, sample_name] = data_reader_sample_list::open_file(index);
-  // load data for the field names specified in the user's experiment-schema
+  // BVE FIXME Note that this will load an HDF5 field by field.  If the entire
+  // file is used, this will have sub-optimal performance.  It should be
+  // optimized to have a cut-through for when the experiment schema matches the
+  // data schema load data for the field names specified in the user's
+  // experiment-schema
   for (auto& [pathname, path_node] : m_useme_node_map) {
     // do not load a "packed" field, as it doesn't exist on disk!
     if (!is_composite_node(path_node)) {
@@ -354,7 +341,7 @@ void hdf5_data_reader::load_sample(conduit::Node& node,
 
       // get the new path-name (prepend the index)
       std::ostringstream ss2;
-      ss2 << LBANN_DATA_ID_STR(index) << '/' << pathname;
+      ss2 << '/' << pathname;
       const std::string new_pathname(ss2.str());
 
       // note: this will throw an exception if the child node doesn't exist
@@ -362,7 +349,7 @@ void hdf5_data_reader::load_sample(conduit::Node& node,
 
       // optionally coerce the data, e.g, from double to float, per settings
       // in the experiment_schema
-      if (metadata.has_child(s_coerce_name)) {
+      if (metadata.has_child(HDF5_METADATA_KEY_COERCE)) {
         coerce(metadata, file_handle, original_path, new_pathname, node);
       }
       else {
@@ -371,19 +358,41 @@ void hdf5_data_reader::load_sample(conduit::Node& node,
                                       node[new_pathname]);
       }
 
+      // check to see if there are integer types left in the sample and warn the
+      // user
+      auto dtype = node[new_pathname].dtype();
+      // https://github.com/LLNL/conduit/blob/develop/src/libs/conduit/conduit_data_type.hpp
+      if (!dtype.is_floating_point()) {
+        LBANN_MSG("Ingesting sample field ",
+                  pathname,
+                  " which has unconventional data format ",
+                  dtype.to_string());
+      }
+
       // optionally normalize
-      if (metadata.has_child("scale")) {
+      if (metadata.has_child(HDF5_METADATA_KEY_SCALE) ||
+          metadata.has_child(HDF5_METADATA_KEY_BIAS)) {
         normalize(node, new_pathname, metadata);
       }
 
       // for images
-      if (metadata.has_child("channels") &&
-          metadata["channels"].as_int64() > 1) {
+      // Check to make sure that the image / data volume has more than one
+      // channel and is in a channel's last format.  LBANN wants data in a
+      // channels first format
+      if (does_hdf5_field_require_repack_to_channels_first(metadata)) {
         repack_image(node, new_pathname, metadata);
       }
     }
   }
+}
 
+void hdf5_data_reader::load_sample_from_sample_list(conduit::Node& node,
+                                                    size_t index,
+                                                    bool ignore_failure)
+{
+  auto [file_handle, sample_name] = data_reader_sample_list::open_file(index);
+  const std::string padded_index = LBANN_DATA_ID_STR(index);
+  load_sample(node[padded_index], file_handle, sample_name, ignore_failure);
   pack(node, index);
 }
 
@@ -395,11 +404,11 @@ void hdf5_data_reader::normalize(conduit::Node& node,
   size_t n_elements = node[path].dtype().number_of_elements();
 
   // treat this as a multi-channel image
-  if (metadata.has_child("channels")) {
+  if (metadata.has_child(HDF5_METADATA_KEY_CHANNELS)) {
 
     // get number of channels, with sanity checking
-    int64_t n_channels = metadata["channels"].value();
-    int sanity = metadata["scale"].dtype().number_of_elements();
+    int64_t n_channels = metadata[HDF5_METADATA_KEY_CHANNELS].value();
+    int sanity = metadata[HDF5_METADATA_KEY_SCALE].dtype().number_of_elements();
     if (sanity != n_channels) {
       LBANN_ERROR("sanity: ",
                   sanity,
@@ -415,11 +424,11 @@ void hdf5_data_reader::normalize(conduit::Node& node,
     }
 
     // get the scale and bias arrays
-    const double* scale = metadata["scale"].as_double_ptr();
+    const double* scale = metadata[HDF5_METADATA_KEY_SCALE].as_double_ptr();
     std::vector<double> b(n_channels, 0);
     const double* bias = b.data();
-    if (metadata.has_child("bias")) {
-      bias = metadata["bias"].as_double_ptr();
+    if (metadata.has_child(HDF5_METADATA_KEY_BIAS)) {
+      bias = metadata[HDF5_METADATA_KEY_BIAS].as_double_ptr();
     }
 
     // perform the normalization
@@ -439,10 +448,10 @@ void hdf5_data_reader::normalize(conduit::Node& node,
 
   // 1D case
   else {
-    double scale = metadata["scale"].value();
+    double scale = metadata[HDF5_METADATA_KEY_SCALE].value();
     double bias = 0;
-    if (metadata.has_child("bias")) {
-      bias = metadata["bias"].value();
+    if (metadata.has_child(HDF5_METADATA_KEY_BIAS)) {
+      bias = metadata[HDF5_METADATA_KEY_BIAS].value();
     }
 
     if (node[path].dtype().is_float32()) {
@@ -572,7 +581,7 @@ void hdf5_data_reader::get_leaves_multi(
     std::unordered_map<std::string, conduit::Node*> final_leaves;
     get_leaves(node_for_recursion, final_leaves);
     for (auto t : final_leaves) {
-      conduit::Node& end_metadata = (*t.second)["metadata"];
+      conduit::Node& end_metadata = (*t.second)[s_metadata_node_name];
       for (int j = 0; j < metadata.number_of_children(); j++) {
         const std::string& field_name = metadata.child(j).name();
         end_metadata[field_name] = metadata[field_name];
@@ -657,13 +666,14 @@ void hdf5_data_reader::build_packing_map(conduit::Node& node)
   std::unordered_map<std::string, std::vector<PackingData>> packing_data;
   for (const auto& nd : m_useme_node_map_ptrs) {
     const conduit::Node& metadata = (*nd.second)[s_metadata_node_name];
-    if (metadata.has_child("pack")) {
-      const std::string& group_name = metadata["pack"].as_string();
-      if (!metadata.has_child("ordering")) {
+    if (metadata.has_child(HDF5_METADATA_KEY_PACK)) {
+      const std::string& group_name =
+        metadata[HDF5_METADATA_KEY_PACK].as_string();
+      if (!metadata.has_child(HDF5_METADATA_KEY_ORDERING)) {
         LBANN_ERROR("metadata has 'pack' but is missing 'ordering' for: ",
                     nd.first);
       }
-      conduit::int64 ordering = metadata["ordering"].value();
+      conduit::int64 ordering = metadata[HDF5_METADATA_KEY_ORDERING].value();
       const std::string& field_name = nd.first;
       int n_elts = node[field_name].dtype().number_of_elements();
       size_t data_type = node[field_name].dtype().id();
@@ -714,6 +724,16 @@ void hdf5_data_reader::adjust_metadata(conduit::Node* node)
 {
   // note: next call creates the node if it doesn't exist
   conduit::Node* metadata = node->fetch_ptr(s_metadata_node_name);
+  for (int j = 0; j < metadata->number_of_children(); j++) {
+    const std::string& field_name = metadata->child(j).name();
+    // Check that all of the field name is a valid key
+    if (!is_hdf5_metadata_key_valid(field_name)) {
+      LBANN_WARNING("In conduit node ",
+                    node->name(),
+                    " invalid schema key detected: ",
+                    field_name);
+    }
+  }
 
   if (!node->is_root()) {
     const conduit::Node& parents_metadata =
@@ -743,42 +763,41 @@ void hdf5_data_reader::coerce(const conduit::Node& metadata,
   conduit::Node tmp;
   conduit::relay::io::hdf5_read(file_handle, original_path, tmp);
 
-  // yay! I finally get to use a void*
-  void* vals = tmp.element_ptr(0);
-  size_t num_elements = tmp.dtype().number_of_elements();
-
-  // get data type for data from disk
-  bool from_is_float = tmp.dtype().is_float32();
-  bool from_is_double = tmp.dtype().is_float64();
-  if (!(from_is_float || from_is_double)) {
+  // https://github.com/LLNL/conduit/blob/develop/src/libs/conduit/conduit_data_type.hpp
+  if (!tmp.dtype().is_number()) {
     LBANN_ERROR(
-      "source data is not float or data; please update the data reader");
+      "source data in field ",
+      original_path,
+      " is not integer or real format; ",
+      "please update the data set or experiment schema to exclude the field: ",
+      tmp.dtype().to_string());
   }
 
-  // I don't know why, but conduit includes quotes around the string,
-  // even when they're not in the json file -- so need to strip them off
-  const std::string& cc = metadata[s_coerce_name].to_string();
-  const std::string& coerce_to = cc.substr(1, cc.size() - 2);
+  const std::string& coerce_to =
+    conduit_to_string(metadata[HDF5_METADATA_KEY_COERCE]);
 
-  // this is just ugly, but I don't know how to make it better; would
-  // like to have a single call to do_coerce<>
+  // Example of data coercion taken from
+  // https://github.com/LLNL/conduit/blob/develop/src/tests/conduit/t_conduit_node_to_array.cpp
+  conduit::DataType::TypeID coerced_tid;
   if (coerce_to == "float") {
-    node[new_pathname] =
-      (from_is_float
-         ? do_coerce<float>(reinterpret_cast<float*>(vals), num_elements)
-         : do_coerce<float>(reinterpret_cast<double*>(vals), num_elements));
+    coerced_tid = conduit::DataType::FLOAT32_ID;
   }
   else if (coerce_to == "double") {
-    node[new_pathname] =
-      (from_is_float
-         ? do_coerce<double>(reinterpret_cast<float*>(vals), num_elements)
-         : do_coerce<double>(reinterpret_cast<double*>(vals), num_elements));
+    coerced_tid = conduit::DataType::FLOAT64_ID;
+  }
+  else if (coerce_to == "int") {
+    coerced_tid = conduit::DataType::INT32_ID;
+  }
+  else if (coerce_to == "long" || coerce_to == "int64") {
+    coerced_tid = conduit::DataType::INT64_ID;
   }
   else {
     LBANN_ERROR("Un-implemented type requested for coercion: ",
                 coerce_to,
                 "; you need to update the data reader to support this");
   }
+  // https://github.com/LLNL/conduit/blob/develop/src/libs/conduit/conduit_node.hpp#L3263
+  tmp.to_data_type(coerced_tid, node[new_pathname]);
 }
 
 void hdf5_data_reader::repack_image(conduit::Node& node,
@@ -787,44 +806,80 @@ void hdf5_data_reader::repack_image(conduit::Node& node,
 {
 
   // ==== start: sanity checking
-  if (!metadata.has_child("channels")) {
+  if (!metadata.has_child(HDF5_METADATA_KEY_CHANNELS)) {
     LBANN_WARNING("repack_image called, but metadata is missing the 'channels' "
                   "field; please check your schemas");
     return;
   }
-  if (!metadata.has_child("hwc")) {
-    LBANN_ERROR("we only currently know how to deal with HWC input images");
+  if (!is_hdf5_field_channels_last(metadata)) {
+    LBANN_ERROR(
+      "repack_image is only designed to deal with channels last input images");
   }
-  if (!metadata.has_child("dims")) {
+  if (!metadata.has_child(HDF5_METADATA_KEY_DIMS)) {
     LBANN_ERROR("your metadata is missing 'dims' for an image");
   }
   // ==== end: sanity checking
 
   void* vals = node[path].element_ptr(0);
-  size_t n_bytes = node[path].dtype().number_of_elements() *
-                   node[path].dtype().element_bytes();
-  int64_t n_channels = metadata["channels"].value();
-  const conduit::int64* dims = metadata["dims"].as_int64_ptr();
-  const int row_dim = dims[0];
-  const int col_dim = dims[1];
+  size_t n_elts = node[path].dtype().number_of_elements();
+  int64_t n_channels = metadata[HDF5_METADATA_KEY_CHANNELS].value();
+  const conduit::int64* dims = metadata[HDF5_METADATA_KEY_DIMS].as_int64_ptr();
+  const int num_dims =
+    metadata[HDF5_METADATA_KEY_DIMS].dtype().number_of_elements();
 
-  if (node[path].dtype().is_float32()) {
-    float* data = reinterpret_cast<float*>(vals);
-    do_repack_image(data, n_bytes, row_dim, col_dim, n_channels);
+  if (num_dims == 2) {
+    const int row_dim = dims[0];
+    const int col_dim = dims[1];
+
+    if (node[path].dtype().is_float32()) {
+      float* data = reinterpret_cast<float*>(vals);
+      do_repack_tensor_HWC_to_CHW(data, n_elts, row_dim, col_dim, n_channels);
+    }
+    else if (node[path].dtype().is_float64()) {
+      double* data = reinterpret_cast<double*>(vals);
+      do_repack_tensor_HWC_to_CHW(data, n_elts, row_dim, col_dim, n_channels);
+    }
+    else {
+      LBANN_ERROR(
+        "Only float and double are currently supported for repacking");
+    }
   }
-  else if (node[path].dtype().is_float64()) {
-    double* data = reinterpret_cast<double*>(vals);
-    do_repack_image(data, n_bytes, row_dim, col_dim, n_channels);
+  else if (num_dims == 3) {
+    const int depth_dim = dims[0];
+    const int height_dim = dims[1];
+    const int width_dim = dims[2];
+
+    if (node[path].dtype().is_float32()) {
+      float* data = reinterpret_cast<float*>(vals);
+      do_repack_tensor_DHWC_to_CDHW(data,
+                                    n_elts,
+                                    depth_dim,
+                                    height_dim,
+                                    width_dim,
+                                    n_channels);
+    }
+    else if (node[path].dtype().is_float64()) {
+      double* data = reinterpret_cast<double*>(vals);
+      do_repack_tensor_DHWC_to_CDHW(data,
+                                    n_elts,
+                                    depth_dim,
+                                    height_dim,
+                                    width_dim,
+                                    n_channels);
+    }
+    else {
+      LBANN_ERROR(
+        "Only float and double are currently supported for repacking");
+    }
   }
   else {
-    LBANN_ERROR(
-      "Only float and double are currently supported for normalization");
+    LBANN_ERROR("Only 2D and 3D tensors are supported for repacking");
   }
 }
 
-const std::vector<int> hdf5_data_reader::get_data_dims(std::string name) const
+const std::vector<El::Int> hdf5_data_reader::get_data_dims(std::string name) const
 {
-  std::unordered_map<std::string, std::vector<int>>::const_iterator iter =
+  std::unordered_map<std::string, std::vector<El::Int>>::const_iterator iter =
     m_data_dims_lookup_table.find(name);
   if (iter == m_data_dims_lookup_table.end()) {
     LBANN_ERROR(
@@ -869,7 +924,7 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables()
 
   // must load a sample to get data sizes. Alternatively, this metadata
   // could be included in the schemas
-  load_sample(node, index);
+  load_sample_from_sample_list(node, index);
 
   return construct_linearized_size_lookup_tables(node);
 }
@@ -899,7 +954,7 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables(
       conduit::Node* metadata = nd->fetch_ptr(s_metadata_node_name);
 
       // easy case: scalars, vectors
-      if (!metadata->has_child("channels")) {
+      if (!metadata->has_child(HDF5_METADATA_KEY_CHANNELS)) {
         m_data_dims_lookup_table[field_name].push_back(n_elts);
       }
 
@@ -907,10 +962,12 @@ void hdf5_data_reader::construct_linearized_size_lookup_tables(
       // data dims for JAG images are: {4, 64, 64}; they may have previously
       // been {64, 64}; this could be a problem
       else {
-        int channels = metadata->child("channels").to_int32();
+        int channels = metadata->child(HDF5_METADATA_KEY_CHANNELS).to_int32();
         m_data_dims_lookup_table[field_name].push_back(channels);
-        int nn_elts = metadata->child("dims").dtype().number_of_elements();
-        const conduit::int64* tmp = metadata->child("dims").as_int64_ptr();
+        int nn_elts =
+          metadata->child(HDF5_METADATA_KEY_DIMS).dtype().number_of_elements();
+        const conduit::int64* tmp =
+          metadata->child(HDF5_METADATA_KEY_DIMS).as_int64_ptr();
         for (int k = 0; k < nn_elts; k++) {
           m_data_dims_lookup_table[field_name].push_back(tmp[k]);
         }
@@ -942,7 +999,7 @@ void hdf5_data_reader::print_metadata(std::ostream& os)
   if (m_shuffled_indices.size() != 0) {
     size_t index = random() % m_shuffled_indices.size();
     bool ignore_failure = true;
-    load_sample(populated_node, index, ignore_failure);
+    load_sample_from_sample_list(populated_node, index, ignore_failure);
 
     // get all leaves (data fields)
     get_leaves(&populated_node, leaves);
@@ -1001,6 +1058,57 @@ void hdf5_data_reader::set_experiment_schema(const conduit::Node& s)
 {
   m_experiment_schema = s;
   parse_schemas();
+}
+
+bool is_hdf5_metadata_key_valid(std::string const& key)
+{
+  return hdf5_metadata_valid_keys.count(key);
+}
+
+bool is_hdf5_field_channels_last(conduit::Node const& metadata)
+{
+  // If the field has a single channel then there is no diference between
+  // channels last and first
+  if ((metadata.has_child(HDF5_METADATA_KEY_CHANNELS) &&
+       metadata[HDF5_METADATA_KEY_CHANNELS].as_int64() == 1)) {
+    return false;
+  }
+  if (metadata.has_child(HDF5_METADATA_KEY_LAYOUT)) {
+    if (conduit_to_string(metadata[HDF5_METADATA_KEY_LAYOUT]) ==
+        HDF5_METADATA_VALUE_LAYOUT_HWC) {
+      return true;
+    }
+    if (conduit_to_string(metadata[HDF5_METADATA_KEY_LAYOUT]) ==
+        HDF5_METADATA_VALUE_LAYOUT_DHWC) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool does_hdf5_field_require_repack_to_channels_first(
+  conduit::Node const& metadata)
+{
+  if (is_hdf5_field_channels_last(metadata)) {
+    if (metadata.has_child(HDF5_METADATA_KEY_TRANSPOSE)) {
+      if (conduit_to_string(metadata[HDF5_METADATA_KEY_TRANSPOSE]) ==
+          HDF5_METADATA_VALUE_LAYOUT_CHW) {
+        return true;
+      }
+      if (conduit_to_string(metadata[HDF5_METADATA_KEY_TRANSPOSE]) ==
+          HDF5_METADATA_VALUE_LAYOUT_CDHW) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+std::string conduit_to_string(conduit::Node const& field)
+{
+  std::string str = field.to_string();
+  str.erase(std::remove(str.begin(), str.end(), '\"'), str.end());
+  return str;
 }
 
 } // namespace lbann

@@ -31,10 +31,55 @@
 #include "lbann/data_readers/sample_list_hdf5.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 
+#include <set>
+
 // Forward declaration
 class DataReaderHDF5WhiteboxTester;
 
+/** Valid keys in a metadata file */
+#define HDF5_METADATA_KEY_DIMS "dims"
+#define HDF5_METADATA_KEY_CHANNELS "channels"
+#define HDF5_METADATA_KEY_ORDERING "ordering"
+#define HDF5_METADATA_KEY_SCALE "scale"
+#define HDF5_METADATA_KEY_BIAS "bias"
+#define HDF5_METADATA_KEY_LAYOUT "layout"
+#define HDF5_METADATA_KEY_TRANSPOSE "transpose"
+#define HDF5_METADATA_KEY_COERCE "coerce"
+#define HDF5_METADATA_KEY_PACK "pack"
+/** Valid string values for a metadata file */
+#define HDF5_METADATA_VALUE_COERCE_FLOAT "float"
+#define HDF5_METADATA_VALUE_COERCE_DOUBLE "double"
+#define HDF5_METADATA_VALUE_COERCE_FLOAT64 "float64"
+#define HDF5_METADATA_VALUE_COERCE_FLOAT16 "float16"
+#define HDF5_METADATA_VALUE_LAYOUT_CHW "chw"
+#define HDF5_METADATA_VALUE_LAYOUT_HWC "hwc"
+#define HDF5_METADATA_VALUE_LAYOUT_CDHW "cdhw"
+#define HDF5_METADATA_VALUE_LAYOUT_DHWC "dhwc"
+
 namespace lbann {
+
+bool is_hdf5_metadata_key_valid(std::string const& key);
+bool is_hdf5_field_channels_last(conduit::Node const& field);
+bool does_hdf5_field_require_repack_to_channels_first(
+  conduit::Node const& metadata);
+/**
+ * For some reason conduit includes quotes around the string,
+ * even when they're not in the json file -- so need to strip them off
+ */
+std::string conduit_to_string(conduit::Node const& field);
+
+static std::set<std::string> const hdf5_metadata_valid_keys = {
+  HDF5_METADATA_KEY_DIMS,
+  HDF5_METADATA_KEY_CHANNELS,
+  HDF5_METADATA_KEY_ORDERING,
+  HDF5_METADATA_KEY_SCALE,
+  HDF5_METADATA_KEY_BIAS,
+  HDF5_METADATA_KEY_LAYOUT,
+  HDF5_METADATA_KEY_TRANSPOSE,
+  HDF5_METADATA_KEY_COERCE,
+  HDF5_METADATA_KEY_PACK,
+};
+
 /**
  * A generalized data reader for data stored in HDF5 files.
  */
@@ -91,7 +136,7 @@ public:
     return m_data_schema_filename;
   }
 
-  const std::vector<int> get_data_dims() const override
+  const std::vector<El::Int> get_data_dims() const override
   {
     return get_data_dims(INPUT_DATA_TYPE_SAMPLES);
   }
@@ -147,7 +192,7 @@ private:
   /** filled in by construct_linearized_size_lookup_tables;
    *  used by get_data_dims()
    */
-  std::unordered_map<std::string, std::vector<int>> m_data_dims_lookup_table;
+  std::unordered_map<std::string, std::vector<El::Int>> m_data_dims_lookup_table;
 
   /** filled in by construct_linearized_size_lookup_tables;
    *  used by get_linearized_size()
@@ -183,8 +228,6 @@ private:
   const std::string s_metadata_node_name = "metadata";
 
   const std::string s_composite_node = "composite_node";
-
-  const std::string s_coerce_name = "coerce";
 
   /** Refers to data that will be used for the experiment.
    *  Combination of hte data & experimental schema.
@@ -225,7 +268,7 @@ private:
   // methods follow
   //=========================================================================
 
-  const std::vector<int> get_data_dims(std::string name = "") const;
+  const std::vector<El::Int> get_data_dims(std::string name = "") const;
 
   /** Returns the size of the requested field (datum, label, response, etc) */
   int get_linearized_size(data_field_type const& data_field) const override;
@@ -270,8 +313,16 @@ private:
    *  coerce, pack, etc. "ignore_failure" is only used for
    *  by the call to print_metadata().
    */
-  void
-  load_sample(conduit::Node& node, size_t index, bool ignore_failure = false);
+  void load_sample(conduit::Node& node,
+                   hid_t file_handle,
+                   const std::string& sample_name,
+                   bool ignore_failure = false);
+
+  /** Finds a sample in the sample list by index and then loads it.
+   */
+  void load_sample_from_sample_list(conduit::Node& node,
+                                    size_t index,
+                                    bool ignore_failure = false);
 
   /** Performs packing, normalization, etc. Called by load_sample. */
   void pack_data(conduit::Node& node_in_out);

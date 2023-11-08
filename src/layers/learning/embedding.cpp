@@ -26,7 +26,7 @@
 
 #define LBANN_EMBEDDING_LAYER_INSTANTIATE
 #include "lbann/layers/learning/embedding.hpp"
-#include "lbann/optimizers/optimizer_impl.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 
 namespace lbann {
 
@@ -82,16 +82,26 @@ void embedding_layer<TensorDataType, Layout, Device>::bp_compute()
   // Local data
   const auto& local_input =
     dynamic_cast<const MatType&>(this->get_local_prev_activations());
-  auto& local_embedding_grad =
-    dynamic_cast<MatType&>(this->m_embeddings_grad->Matrix());
   const auto& local_output_grad =
     dynamic_cast<const MatType&>(this->get_local_prev_error_signals());
+
+  TensorDataType dst_scale, gradient_scale;
+  auto& embeddings_grad =
+    opt.get_gradient_buffer(dst_scale, gradient_scale, true);
+  auto& local_embedding_grad = dynamic_cast<MatType&>(embeddings_grad.Matrix());
+
   const size_t input_size = this->get_input_size();
   const size_t local_mini_batch_size = local_input.Width();
 
   // Update gradient w.r.t. embeddings
   // Note: Don't update gradient for padding index
-  El::Zero(local_embedding_grad);
+  if (dst_scale == El::TypeTraits<TensorDataType>::Zero()) {
+    El::Zero(local_embedding_grad);
+  }
+  else if (dst_scale != one) {
+    El::Scale(dst_scale, local_embedding_grad);
+  }
+
   MatType embedding_grad_v, output_grad_v;
   for (size_t j = 0; j < local_mini_batch_size; ++j) {
     for (size_t i = 0; i < input_size; ++i) {
@@ -103,13 +113,10 @@ void embedding_layer<TensorDataType, Layout, Device>::bp_compute()
                        El::IR(i * m_embedding_dim, (i + 1) * m_embedding_dim),
                        El::IR(j));
         El::View(embedding_grad_v, local_embedding_grad, El::ALL, El::IR(ind));
-        El::Axpy(one, output_grad_v, embedding_grad_v);
+        El::Axpy(gradient_scale, output_grad_v, embedding_grad_v);
       }
     }
   }
-  opt.add_to_gradient(*this->m_embeddings_grad,
-                      El::TypeTraits<TensorDataType>::One(),
-                      true);
 }
 
 // Explicit instantiation

@@ -109,8 +109,7 @@ std::string KFAC::get_type() const { return "KFAC"; }
 
 kfac::KFACExecutionContext* KFAC::do_get_new_execution_context() const
 {
-  return new kfac::KFACExecutionContext(0UL,
-                                        m_damping_act_params[0],
+  return new kfac::KFACExecutionContext(m_damping_act_params[0],
                                         m_damping_err_params[0],
                                         m_damping_bn_act_params[0],
                                         m_damping_bn_err_params[0]);
@@ -148,6 +147,9 @@ void KFAC::train(ExeContextType& kfac_context,
   sgd_context.set_execution_mode(execution_mode::training);
   model.reset_mode(sgd_context, execution_mode::training);
   dc.reset_mode(sgd_context);
+
+  // Load the first minibatch synchronously
+  dc.fetch_active_batch_synchronous(execution_mode::training);
 
   // Get lbann comm
   auto& comm = *model.get_comm();
@@ -198,7 +200,11 @@ void KFAC::train(ExeContextType& kfac_context,
       if (comm.get_KFAC_subgrid_create_two_models() or
           comm.get_grid_type() == GridType::NO_GRID or
           comm.get_grid_type() == GridType::PRIMARY_GRID) {
-        model.reconcile_weight_values();
+        // FIXME (tbennun 10/09/23): This is weight averaging and should not be
+        // done unless requested. Commented out for now to test for any
+        // regressions.
+        // model.reconcile_weight_values();
+
         do_epoch_end_cbs(model);
 
         // Evaluate on validation set
@@ -209,8 +215,7 @@ void KFAC::train(ExeContextType& kfac_context,
         // its own context that we needn't know about.
         if (dc.is_execution_mode_valid(execution_mode::validation)) {
           const execution_mode eval_mode = execution_mode::validation;
-          SGDExecutionContext eval_context(eval_mode,
-                                           dc.get_mini_batch_size(eval_mode));
+          SGDExecutionContext eval_context(eval_mode);
           // FIXME (trb 05/05/2021): This hacks around a bad assumption
           // in the data store.
           // Note (tym 6/7/21): Copied from sgd_training_algorithm.cpp.
@@ -258,6 +263,7 @@ bool KFAC::train_mini_batch(ExeContextType& kfac_context,
                             model& model,
                             data_coordinator& dc)
 {
+  LBANN_CALIPER_MARK_FUNCTION;
   bool profile = true;
   auto& sgd_context = kfac_context.get_sgd_execution_context();
   auto current_epoch = sgd_context.get_epoch();
@@ -271,7 +277,11 @@ bool KFAC::train_mini_batch(ExeContextType& kfac_context,
   const bool compute_inverse =
     sgd_context.get_step() % this->m_compute_interval == 0;
 
-  dc.fetch_data(execution_mode::training);
+  dc.fetch_data_asynchronous(execution_mode::training);
+
+  El::Int current_mini_batch_size =
+    dc.get_current_mini_batch_size(execution_mode::training);
+  model.set_current_mini_batch_size(current_mini_batch_size);
 
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
   LBANN_OMP_PARALLEL
@@ -333,12 +343,12 @@ bool KFAC::train_mini_batch(ExeContextType& kfac_context,
           comm.get_grid_type() == GridType::NO_GRID) {
         // check if the data coordinator has finished the epoch and kickoff
         // background I/O
-        finished = dc.epoch_complete(execution_mode::training);
+        finished = dc.ready_for_next_fetch(execution_mode::training);
 
         // Result is not needed until the end of the mini-batch.
         model.get_objective_function()->start_evaluation(
           execution_mode::training,
-          sgd_context.get_current_mini_batch_size());
+          current_mini_batch_size);
 
         // Backward prop step
 #ifdef LBANN_HAS_GPU
@@ -363,7 +373,7 @@ bool KFAC::train_mini_batch(ExeContextType& kfac_context,
             .count();
       }
       else {
-        finished = dc.epoch_complete(execution_mode::training);
+        finished = dc.ready_for_next_fetch(execution_mode::training);
       }
 
       // Overlapping async communication in two models approach for weight
@@ -441,9 +451,9 @@ bool KFAC::train_mini_batch(ExeContextType& kfac_context,
         // Finish evaluation.
         model.get_objective_function()->finish_evaluation(
           execution_mode::training,
-          sgd_context.get_current_mini_batch_size());
+          current_mini_batch_size);
         model.evaluate_metrics(execution_mode::training,
-                               sgd_context.get_current_mini_batch_size());
+                               current_mini_batch_size);
 
         // Update step
         model.update_weights();
@@ -605,7 +615,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm* comm)
       int width = weights.get_matrix_width();
 
       El::AbstractDistMatrix<DataType>& weight_values =
-        weights_dt->get_values();
+        weights_dt->get_values_sharded();
       El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*
         weight_values_ = dynamic_cast<
           El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
@@ -672,7 +682,7 @@ void KFAC::sync_weights_model(model& model, lbann_comm* comm)
         El::Matrix<DataType, Device> weight_buffer(height, width);
 
         El::AbstractDistMatrix<DataType>& weight_values =
-          weights_dt->get_values();
+          weights_dt->get_values_sharded();
         El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*
           weight_values_ = dynamic_cast<
             El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
@@ -751,7 +761,7 @@ void KFAC::start_old_async_weights_model(model& model,
       int width = weights.get_matrix_width();
 
       El::AbstractDistMatrix<DataType>& weight_values =
-        weights_dt->get_values();
+        weights_dt->get_values_sharded();
       El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*
         weight_values_ = dynamic_cast<
           El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
@@ -843,7 +853,7 @@ void KFAC::end_old_async_weights_model(model& model,
         El::Matrix<DataType, Device> weight_buffer(height, width);
 
         El::AbstractDistMatrix<DataType>& weight_values =
-          weights_dt->get_values();
+          weights_dt->get_values_sharded();
         El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*
           weight_values_ = dynamic_cast<
             El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
@@ -887,7 +897,7 @@ void KFAC::start_sync_weights_async(model& model, lbann_comm* comm)
       int height = weight->get_matrix_height();
       int width = weight->get_matrix_width();
       auto dtw = dynamic_cast<data_type_weights<DataType>*>(&(*weight));
-      auto& weight_values = dtw->get_values().Matrix();
+      auto& weight_values = dtw->get_values_sharded().Matrix();
       El::Matrix<DataType, Device>* weight_values_ =
         dynamic_cast<El::Matrix<DataType, Device>*>(&weight_values);
       El::SyncInfo<Device> sync_info = El::SyncInfoFromMatrix(*weight_values_);
@@ -917,7 +927,7 @@ void KFAC::start_sync_weights_async(model& model, lbann_comm* comm)
       int height = weight->get_matrix_height();
       int width = weight->get_matrix_width();
       auto dtw = dynamic_cast<data_type_weights<DataType>*>(&(*weight));
-      auto& weight_values = dtw->get_values().Matrix();
+      auto& weight_values = dtw->get_values_sharded().Matrix();
       El::Matrix<DataType, Device>* weight_values_ =
         dynamic_cast<El::Matrix<DataType, Device>*>(&weight_values);
       El::SyncInfo<Device> sync_info = El::SyncInfoFromMatrix(*weight_values_);
@@ -1209,7 +1219,6 @@ void KFAC::on_forward_prop_end(ExeContextType& context, model& model)
 
   auto& comm = *model.get_comm();
   const auto layers = model.get_layers();
-  auto& sgd_context = context.get_sgd_execution_context();
 
   // List up layers to be updated
   if (context.m_blocks.size() == 0) {
@@ -1407,7 +1416,7 @@ void KFAC::on_forward_prop_end(ExeContextType& context, model& model)
   hydrogen::gpu::SynchronizeDevice();
 #endif // LBANN_HAS_GPU
   auto t_start = std::chrono::high_resolution_clock::now();
-  int current_batch_size = sgd_context.get_current_mini_batch_size();
+  int current_batch_size = model.get_current_mini_batch_size();
   current_batch_size = broadcast_variable_grids(current_batch_size, &comm);
   for (auto& block : context.m_blocks) {
     // Start forward end exchange (like activations and weights)
@@ -1713,7 +1722,7 @@ void KFAC::on_backward_prop_end(ExeContextType& context, model& model)
   }
 
   if (is_first_step) {
-    int kfac_inverse_size = 0;
+    // int kfac_inverse_size = 0;
     for (auto& block : context.m_blocks) {
       for (auto& info : block->get_internal_matrix_info()) {
         std::ostringstream oss;
@@ -1724,7 +1733,8 @@ void KFAC::on_backward_prop_end(ExeContextType& context, model& model)
         std::cout << oss.str();
         if (std::get<0>(info).find("inverse_A") != std::string::npos or
             std::get<0>(info).find("inverse_A") != std::string::npos or true) {
-          kfac_inverse_size += (int)std::get<1>(info) * (int)std::get<2>(info);
+          // kfac_inverse_size += (int)std::get<1>(info) *
+          // (int)std::get<2>(info);
         }
       }
     }

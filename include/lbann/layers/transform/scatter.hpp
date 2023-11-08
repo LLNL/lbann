@@ -119,6 +119,11 @@ public:
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | PREV_ACTIVATIONS;
+  }
 
 protected:
   /** Add layer specific data to prototext */
@@ -126,12 +131,12 @@ protected:
 
   friend class cereal::access;
   scatter_layer() : scatter_layer({1}, -1) {}
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
   void fp_compute() override;
   void bp_compute() override;
 #if defined(LBANN_HAS_DISTCONV) && defined(LBANN_HAS_NVSHMEM)
   friend class scatter_distconv_adapter<TensorDataType, Layout, Device>;
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+  void setup_distconv_adapter() override;
   bool is_distconv_supported() const override;
   scatter_distconv_adapter<TensorDataType, Layout, Device>&
   get_distconv_adapter() override;
@@ -194,10 +199,9 @@ scatter_layer<TensorDataType, Layout, Device>::get_device_allocation() const
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void scatter_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void scatter_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
 
   const auto& input0_dims = this->get_input_dims(0);
   const auto& input1_dims = this->get_input_dims(1);
@@ -396,8 +400,7 @@ bool scatter_layer<TensorDataType, Layout, Device>::is_distconv_supported()
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void scatter_layer<TensorDataType, Layout, Device>::setup_distconv_adapter(
-  const DataReaderMetaData& dr_metadata)
+void scatter_layer<TensorDataType, Layout, Device>::setup_distconv_adapter()
 {
   this->get_distconv_adapter_ptr() =
     std::make_unique<scatter_distconv_adapter<TensorDataType, Layout, Device>>(

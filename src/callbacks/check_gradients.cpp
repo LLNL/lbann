@@ -58,6 +58,7 @@ namespace {
 EvalType compute_objective_function(model& m)
 {
   const auto& c = static_cast<SGDExecutionContext&>(m.get_execution_context());
+  m.get_activation_reference_counter().clear();
 
   // Forward prop, skipping input layers
 
@@ -73,7 +74,6 @@ EvalType compute_objective_function(model& m)
   {
     for (auto&& l : m.get_layers()) {
       if (dynamic_cast<input_layer<DataType>*>(l) == nullptr) {
-
         l->forward_prop();
       }
     }
@@ -82,7 +82,7 @@ EvalType compute_objective_function(model& m)
   // Get objective function value
   auto&& obj = m.get_objective_function();
   const auto mode = c.get_execution_mode();
-  const auto mini_batch_size = c.get_current_mini_batch_size();
+  const auto mini_batch_size = m.get_current_mini_batch_size();
   obj->start_evaluation(mode, mini_batch_size);
   return obj->finish_evaluation(mode, mini_batch_size);
 }
@@ -132,8 +132,8 @@ struct CheckWeightsFunctor : DefaultErrorReporter
   void operator()(data_type_weights<TensorDataType>& dtw)
   {
     // Get weights matrix and gradient
-    const auto& weights_matrix = dtw.get_values();
-    const auto& gradient = dtw.get_optimizer()->get_gradient();
+    auto const& weights_matrix = dtw.get_values_sharded();
+    auto const& gradient = dtw.get_optimizer()->get_gradient_sharded();
     // Iterate through weights matrix entries
     for (El::Int col = 0; col < weights_matrix.Width(); ++col) {
       for (El::Int row = 0; row < weights_matrix.Height(); ++row) {
@@ -281,10 +281,13 @@ void check_gradients::do_check_gradients(model& m) const
       opt->clear_gradient();
     }
   }
+  m.get_activation_reference_counter().clear();
 
   // Load data in input layers
   data_coordinator& dc = get_trainer().get_data_coordinator();
-  dc.fetch_data(mode);
+  dc.fetch_active_batch_synchronous(mode);
+  El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
+  m.set_current_mini_batch_size(current_mini_batch_size);
 
   // checking subgrpah parallelism
   if (m.is_subgraph_parallelism_enabled()) {
@@ -380,8 +383,9 @@ void check_gradients::do_check_gradients(model& m) const
   }
 
   // Clean up
-  auto&& reader = dc.get_data_reader(mode);
-  reader->set_initial_position();
+  // TODO: Why
+  auto&& dataset = dc.get_dataset(mode);
+  dataset.set_initial_position();
   m.get_objective_function()->reset_statistics(mode);
   for (auto&& met : m.get_metrics()) {
     met->reset_statistics(mode);

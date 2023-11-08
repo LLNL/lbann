@@ -717,12 +717,6 @@ void TranslateBetweenGridsVC(
                      viewingCommB,
                      rankMap.data());
 
-  int requiredMemory = 0;
-  if (inAGrid)
-    requiredMemory += maxSendSize;
-  if (inBGrid)
-    requiredMemory += maxSendSize;
-
   El::simple_buffer<DataType, KFACDevice> send_buf(inAGrid ? maxSendSize : 0,
                                                    syncInfoA);
   El::simple_buffer<DataType, KFACDevice> recv_buf(inBGrid ? maxSendSize : 0,
@@ -1031,8 +1025,6 @@ void TranslateBetweenGridsVCAsyncDirect(
   const int commSizeB = B.Grid().VCSize();
   El::SyncInfo<KFACDevice> syncInfoA = El::SyncInfoFromMatrix(A.LockedMatrix());
   El::SyncInfo<KFACDevice> syncInfoB = El::SyncInfoFromMatrix(B.LockedMatrix());
-
-  El::SyncInfo<KFACDevice> syncGeneral = El::SyncInfo<KFACDevice>();
 
   height = featureSize;
   width = currentBatchSize;

@@ -81,10 +81,9 @@ sort_layer<TensorDataType, T_layout, Dev>::operator=(const sort_layer& other)
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void sort_layer<TensorDataType, T_layout, Dev>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void sort_layer<TensorDataType, T_layout, Dev>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
   this->set_output_dims(this->get_input_dims());
 }
 
@@ -110,10 +109,9 @@ void sort_layer<TensorDataType, T_layout, Dev>::setup_data(
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void sort_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(
-  El::Int mini_batch_size)
+void sort_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs()
 {
-  data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+  data_type_layer<TensorDataType>::fp_setup_outputs();
   const auto& output = this->get_activations();
   m_indices->Resize(output.LocalHeight(), output.LocalWidth());
 }

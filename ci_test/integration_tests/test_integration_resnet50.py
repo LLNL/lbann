@@ -35,11 +35,13 @@ weekly_options_and_targets = {
     'mini_batch_size': 256,
     'expected_train_accuracy_range': (45, 50),
     'expected_test_accuracy_range': (40, 55),
-    'percent_of_data_to_use': imagenet_fraction,
+    'fraction_of_data_to_use': imagenet_fraction,
     'expected_mini_batch_times': {
         'pascal': 0.25,
         'lassen': 0.10,
         'ray':    0.15,
+        'tioga':  0.25,
+        'corona':  0.61,
     }
 }
 
@@ -50,13 +52,15 @@ nightly_options_and_targets = {
     'num_nodes': 2,
     'num_epochs': 3,
     'mini_batch_size': 256,
-    'expected_train_accuracy_range': (3, 4.1),
-    'expected_test_accuracy_range': (1.5, 2.1),
-    'percent_of_data_to_use': imagenet_fraction * 0.01,
+    'expected_train_accuracy_range': (3, 4.25), # BVE increased upper limit from 4.1 10/28
+    'expected_test_accuracy_range': (1.5, 2.11), # BVE increased upper limit from 2.1 10/28
+    'fraction_of_data_to_use': imagenet_fraction * 0.01,
     'expected_mini_batch_times': {
         'pascal': 0.43,
         'lassen': 0.15,
         'ray':    0.23,
+        'tioga':  0.43,
+        'corona':  0.61,
     }
 }
 
@@ -75,6 +79,11 @@ def setup_experiment(lbann, weekly):
         message = f'{os.path.basename(__file__)} requires VISION support with OPENCV'
         print('Skip - ' + message)
         pytest.skip(message)
+
+    # Skip test on CPU systems
+    if not lbann.has_feature('GPU'):
+        pytest.skip('only run {} on GPU systems'.format(test_name))
+
     if weekly:
         options = weekly_options_and_targets
     else:
@@ -85,7 +94,7 @@ def setup_experiment(lbann, weekly):
     # Setup data reader
     data_reader = data.imagenet.make_data_reader(lbann, num_classes=1000)
     # We train on a subset of ImageNet
-    data_reader.reader[0].percent_of_data_to_use = options['percent_of_data_to_use']
+    data_reader.reader[0].fraction_of_data_to_use = options['fraction_of_data_to_use']
     # Only evaluate on ImageNet validation set at end of training
     data_reader.reader[1].role = 'test'
 
@@ -163,10 +172,6 @@ def augment_test_func(test_func):
     # Define test function
     def func(cluster, dirname, weekly):
 
-        # Skip test on CPU systems
-        if cluster in ('catalyst', 'corona'):
-            pytest.skip('only run {} on GPU systems'.format(test_name))
-
         if weekly:
             targets = weekly_options_and_targets
         else:
@@ -221,5 +226,6 @@ def augment_test_func(test_func):
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
+                                     time_limit=22, # For the time being the bootstrap time for ROCm is slow
                                      lbann_args=['--load_full_sample_list_once']):
     globals()[_test_func.__name__] = augment_test_func(_test_func)

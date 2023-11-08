@@ -79,6 +79,8 @@ public:
   std::string get_type() const override { return "discrete random"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
 protected:
   /** Add layer specific data to prototext */
@@ -87,9 +89,9 @@ protected:
   friend class cereal::access;
   discrete_random_layer() : discrete_random_layer(nullptr, {0}, {1}) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     if (this->get_input_size() != (int)m_values.size()) {
       LBANN_ERROR("input tensor dimensions don't match number of "
                   "values in discrete distribution");

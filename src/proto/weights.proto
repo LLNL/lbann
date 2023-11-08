@@ -36,6 +36,7 @@ message Weights {
   Optimizer optimizer = 2;
   Initializer initializer = 3;
   DataType datatype = 4;
+  bool sharded = 5;
 }
 
 message Initializer {
@@ -62,13 +63,16 @@ message Initializer {
   /** @brief Fill weights with values from a list.
    *
    *  The number of weight entries must exactly match the number of
-   *  provided values.
+   *  provided values. Choose one of ``values`` and ``values_d``.
+   *  If double-precision weights are necessary (e.g., for debugging), use
+   *  ``values_d``.
    *
    *  @note Most weights are stored in row-major order. However, the
    *  fully-connected layer's linearity weights are column-major.
    */
   message ValueInitializer {
-    repeated double values = 1;
+    repeated float values = 1 [packed = true];
+    repeated double values_d = 2 [packed = true];
   }
   /** @brief Fill weights with values from a NumPy file.
    *

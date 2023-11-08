@@ -52,11 +52,15 @@ public:
   std::future<void> m_data_fetch_future;
   /// 1-D Matrix of which indices were fetched in this mini-batch
   El::Matrix<El::Int> m_indices_fetched_per_mb;
+  // Once samples are fetched, track if the data fields are pulled out
+  // of the buffer
+  std::map<data_field_type, El::Int> m_num_samples_per_field_distributed;
 
   data_buffer(lbann_comm* comm)
     : m_num_samples_fetched(0), m_fetch_data_in_background(false)
   {
     m_input_buffers.clear();
+    m_num_samples_per_field_distributed.clear();
   }
 
   data_buffer(const data_buffer& other)
@@ -64,6 +68,7 @@ public:
   {
     m_fetch_data_in_background.store(other.m_fetch_data_in_background);
     m_input_buffers.clear();
+    m_num_samples_per_field_distributed.clear();
     // m_input_buffers.reserve(other.m_input_buffers.size());
     // for (const auto& ptr : other.m_input_buffers) {
     //   m_input_buffers.emplace_back(ptr ? ptr->Copy() : nullptr);
@@ -74,6 +79,7 @@ public:
     m_num_samples_fetched = other.m_num_samples_fetched;
     m_fetch_data_in_background.store(other.m_fetch_data_in_background);
     m_input_buffers.clear();
+    m_num_samples_per_field_distributed.clear();
     // m_input_buffers.reserve(other.m_input_buffers.size());
     // for (const auto& ptr : other.m_input_buffers) {
     //   m_input_buffers.emplace_back(ptr ? ptr->Copy() : nullptr);
@@ -91,12 +97,12 @@ public:
   void initialize_buffer_for_data_field(data_field_type const data_field,
                                         lbann_comm* comm);
 
-  void set_fetch_data_in_background(bool flag)
+  void set_background_fetching_in_progress(bool flag)
   {
     m_fetch_data_in_background = flag;
   }
 
-  bool is_data_fetched_in_background() const
+  bool is_background_fetching_in_progress() const
   {
     return m_fetch_data_in_background;
   }
@@ -113,7 +119,7 @@ public:
     return &m_indices_fetched_per_mb;
   }
 
-  int num_samples_ready() { return m_num_samples_fetched; }
+  int num_samples_ready() const { return m_num_samples_fetched; }
 
   void set_data_fetch_future(std::future<void> future)
   {

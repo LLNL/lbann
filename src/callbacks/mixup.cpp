@@ -33,6 +33,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/serialize.hpp"
+#include "lbann/utils/profiling.hpp"
 #include <algorithm>
 
 #include "lbann/proto/callbacks.pb.h"
@@ -70,6 +71,7 @@ void mixup::write_specific_proto(lbann_data::Callback& proto) const
 
 void mixup::on_forward_prop_end(model* m, Layer* l)
 {
+  LBANN_CALIPER_MARK_SCOPE("mixup::on_forward_prop_end");
   if (!m_layers.count(l->get_name())) {
     return;
   }

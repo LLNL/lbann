@@ -74,7 +74,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void relu_layer<TensorDataType, Layout, Device>::bp_compute()
 {
   apply_entrywise_binary_operator<op_backprop, TensorDataType>(
-    this->get_prev_activations(),
+    this->get_activations(),
     this->get_prev_error_signals(),
     this->get_error_signals());
 }

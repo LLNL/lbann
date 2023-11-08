@@ -65,6 +65,8 @@ public:
   std::string get_type() const override { return "identity"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
 #ifdef LBANN_HAS_ONNX
   std::string get_onnx_op_type() const override { return "Identity"; }
@@ -82,32 +84,31 @@ protected:
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
-  void fp_setup_outputs(El::Int mini_batch_size) override
+  void fp_setup_outputs() override
   {
 #ifdef LBANN_HAS_DISTCONV
     // Copy activations when distconv is enabled
 
     if (this->distconv_enabled()) {
-      data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+      data_type_layer<TensorDataType>::fp_setup_outputs();
 
       return;
     }
 #endif // LBANN_HAS_DISTCONV
     El::LockedView(this->get_activations(), this->get_prev_activations());
   }
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override
+  void bp_setup_gradient_wrt_inputs() override
   {
 #ifdef LBANN_HAS_DISTCONV
     // Copy gradients wrt inputs when distconv is enabled
 
     if (this->distconv_enabled()) {
-      data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(
-        mini_batch_size);
+      data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs();
 
       return;
     }
@@ -122,7 +123,7 @@ protected:
   {
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  void setup_distconv_adapter() override
   {
     this->get_distconv_adapter_ptr() = std::make_unique<
       identity_distconv_adapter<TensorDataType, Layout, Device>>(*this);

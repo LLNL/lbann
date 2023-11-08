@@ -20,10 +20,7 @@ import dataset
 
 # Command-line arguments
 parser = argparse.ArgumentParser()
-lbann.contrib.args.add_scheduler_arguments(parser)
-parser.add_argument(
-    '--job-name', action='store', default='lbann_textrnn', type=str,
-    help='job name', metavar='NAME')
+lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_textrnn')
 parser.add_argument(
     '--mini-batch-size', action='store', default=256, type=int,
     help='mini-batch size (default: 256)', metavar='NUM')
@@ -90,7 +87,7 @@ _reader = reader.reader.add()
 _reader.name = 'python'
 _reader.role = 'train'
 _reader.shuffle = True
-_reader.percent_of_data_to_use = 1.0
+_reader.fraction_of_data_to_use = 1.0
 _reader.python.module = 'dataset'
 _reader.python.module_dir = current_dir
 _reader.python.sample_function = 'get_sample'

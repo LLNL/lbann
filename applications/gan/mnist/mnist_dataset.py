@@ -38,14 +38,14 @@ def num_samples():
 def sample_dims():
     return (32*32,)
 
-def make_data_reader(percent_of_data_to_use=1):
+def make_data_reader(fraction_of_data_to_use=1):
     reader = lbann.reader_pb2.DataReader()
 
     _reader = reader.reader.add()
     _reader.name = "python"
     _reader.role = "train"
     _reader.shuffle = True
-    _reader.percent_of_data_to_use = percent_of_data_to_use
+    _reader.fraction_of_data_to_use = fraction_of_data_to_use
     _reader.python.module = "mnist_dataset"
     _reader.python.module_dir = os.path.dirname(os.path.realpath(__file__))
     _reader.python.sample_function = "get_sample"

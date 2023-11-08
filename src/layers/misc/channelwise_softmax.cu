@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_CHANNELWISE_SOFTMAX_LAYER_INSTANTIATE
-#include "lbann/layers/misc/channelwise_softmax.hpp"
+#include "lbann/layers/misc/channelwise_softmax_impl.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
@@ -157,7 +157,10 @@ __global__ void fp_denom_kernel(Size3 input_dims,
       // Compute contribution from each block
       denom = gpu_lib::block_reduce<bdimx, bdimy, bdimz>(denom);
       if (tid == 0) {
-        gpu_lib::atomic_add(&denoms[j + k * input_dims[1]], denom);
+        if (gridDim.x > 1)
+          gpu_lib::atomic_add(&denoms[j + k * input_dims[1]], denom);
+        else
+          denoms[j + k * input_dims[1]] = denom;
       }
     }
   }
@@ -212,6 +215,7 @@ fp_output_kernel(Size3 input_dims,
 template <typename TensorDataType>
 void fp_impl(size_t num_channels,
              size_t channel_size,
+             size_t channel_stride,
              const El::AbstractDistMatrix<TensorDataType>& input,
              El::AbstractDistMatrix<TensorDataType>& output)
 {
@@ -247,7 +251,7 @@ void fp_impl(size_t num_channels,
       multisync,
       Size3{local_mini_batch_size, num_channels, channel_size},
       local_input.LockedBuffer(),
-      Size3{static_cast<size_t>(local_input.LDim()), channel_size, 1},
+      Size3{static_cast<size_t>(local_input.LDim()), channel_stride, 1},
       maxvals.Buffer(),
       Size3{static_cast<size_t>(maxvals.LDim()), grid_dims.x, 1});
     while (grid_dims.x > 1) {
@@ -277,7 +281,16 @@ void fp_impl(size_t num_channels,
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
-    grid_dims.x = (channel_size + block_size - 1) / block_size;
+
+    // Simple heuristic to switch between atomic softmax denominator vs.
+    // sequentially accumulating, block-reducing
+    int sequential_sum_batch = (channel_size + block_size - 1) / block_size;
+    // The below threshold value has nothing to do with block size
+    if (sequential_sum_batch < 256)
+      grid_dims.x = 1;
+    else
+      grid_dims.x = sequential_sum_batch;
+
     grid_dims.y = num_channels;
     grid_dims.z = local_mini_batch_size;
     gpu_lib::clip_grid_dims(grid_dims);
@@ -289,7 +302,7 @@ void fp_impl(size_t num_channels,
       multisync,
       Size3{local_mini_batch_size, num_channels, channel_size},
       local_input.LockedBuffer(),
-      Size3{static_cast<size_t>(local_input.LDim()), channel_size, 1},
+      Size3{static_cast<size_t>(local_input.LDim()), channel_stride, 1},
       local_shifts.LockedBuffer(),
       local_denoms.Buffer());
   }
@@ -311,9 +324,9 @@ void fp_impl(size_t num_channels,
       multisync,
       Size3{local_mini_batch_size, num_channels, channel_size},
       local_input.LockedBuffer(),
-      Size3{static_cast<size_t>(local_input.LDim()), channel_size, 1},
+      Size3{static_cast<size_t>(local_input.LDim()), channel_stride, 1},
       local_output.Buffer(),
-      Size3{static_cast<size_t>(local_output.LDim()), channel_size, 1},
+      Size3{static_cast<size_t>(local_output.LDim()), channel_stride, 1},
       local_shifts.LockedBuffer(),
       local_denoms.LockedBuffer());
   }
@@ -324,10 +337,11 @@ void fp_impl(size_t num_channels,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_softmax_layer<TensorDataType, Layout, Device>::fp_compute()
 {
-  const size_t num_channels = this->get_output_dims().front();
-  const size_t channel_size = this->get_output_size() / num_channels;
+  El::Int num_channels, channel_size, channel_stride;
+  this->get_channel_size_and_stride(channel_size, channel_stride, num_channels);
   fp_impl(num_channels,
           channel_size,
+          channel_stride,
           this->get_prev_activations(),
           this->get_activations());
 }
@@ -445,6 +459,7 @@ bp_input_grad_kernel(Size3 output_dims,
 template <typename TensorDataType>
 void bp_impl(size_t num_channels,
              size_t channel_size,
+             size_t channel_stride,
              const El::AbstractDistMatrix<TensorDataType>& output,
              const El::AbstractDistMatrix<TensorDataType>& output_grad,
              El::AbstractDistMatrix<TensorDataType>& input_grad)
@@ -486,9 +501,9 @@ void bp_impl(size_t num_channels,
       multisync,
       Size3{local_mini_batch_size, num_channels, channel_size},
       local_output.LockedBuffer(),
-      Size3{static_cast<size_t>(local_output.LDim()), channel_size, 1},
+      Size3{static_cast<size_t>(local_output.LDim()), channel_stride, 1},
       local_output_grad.LockedBuffer(),
-      Size3{static_cast<size_t>(local_output_grad.LDim()), channel_size, 1},
+      Size3{static_cast<size_t>(local_output_grad.LDim()), channel_stride, 1},
       local_y_dot_dy.Buffer());
   }
 
@@ -509,11 +524,11 @@ void bp_impl(size_t num_channels,
       multisync,
       Size3{local_mini_batch_size, num_channels, channel_size},
       local_output.LockedBuffer(),
-      Size3{static_cast<size_t>(local_output.LDim()), channel_size, 1},
+      Size3{static_cast<size_t>(local_output.LDim()), channel_stride, 1},
       local_output_grad.LockedBuffer(),
-      Size3{static_cast<size_t>(local_output_grad.LDim()), channel_size, 1},
+      Size3{static_cast<size_t>(local_output_grad.LDim()), channel_stride, 1},
       local_input_grad.Buffer(),
-      Size3{static_cast<size_t>(local_input_grad.LDim()), channel_size, 1},
+      Size3{static_cast<size_t>(local_input_grad.LDim()), channel_stride, 1},
       local_y_dot_dy.LockedBuffer());
   }
 }
@@ -523,10 +538,11 @@ void bp_impl(size_t num_channels,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_softmax_layer<TensorDataType, Layout, Device>::bp_compute()
 {
-  const size_t num_channels = this->get_output_dims().front();
-  const size_t channel_size = this->get_output_size() / num_channels;
+  El::Int num_channels, channel_size, channel_stride;
+  this->get_channel_size_and_stride(channel_size, channel_stride, num_channels);
   bp_impl(num_channels,
           channel_size,
+          channel_stride,
           this->get_activations(),
           this->get_prev_error_signals(),
           this->get_error_signals());

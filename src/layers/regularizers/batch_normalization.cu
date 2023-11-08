@@ -28,7 +28,7 @@
 #include "lbann/comm_impl.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/layers/regularizers/batch_normalization_impl.hpp"
-#include "lbann/optimizers/optimizer_impl.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 #include "lbann/weights/weights_helpers.hpp"
 
@@ -120,6 +120,7 @@ template <typename TensorDataType>
 __global__ void
 fp_statistics_kernel(int num_sums,
                      int num_per_sum,
+                     int correction,
                      TensorDataType epsilon,
                      TensorDataType decay,
                      TensorDataType* __restrict__ global_mean,
@@ -136,8 +137,8 @@ fp_statistics_kernel(int num_sums,
     // Compute mean and variance
     const auto& mean = global_mean[i] / num_per_sum_dt;
     const auto& sqmean = global_var[i] / num_per_sum_dt;
-    auto var =
-      num_per_sum_dt * (sqmean - mean * mean) / TensorDataType(num_per_sum - 1);
+    auto var = num_per_sum_dt * (sqmean - mean * mean) /
+               TensorDataType(num_per_sum - correction);
     var = var > epsilon ? var : epsilon;
     global_mean[i] = mean;
     global_var[i] = var;
@@ -310,6 +311,7 @@ __global__ void bp_input_grad_kernel(
   int num_channels,
   int channel_size,
   int num_per_sum,
+  int correction,
   const TensorDataType* __restrict__ global_input,
   int input_ldim,
   const TensorDataType* __restrict__ global_gradient_wrt_output,
@@ -341,7 +343,7 @@ __global__ void bp_input_grad_kernel(
     const auto& dvar = global_dvar[k];
     const auto& dmean_term = dmean / TensorDataType(num_per_sum);
     const auto& dvar_term =
-      dvar * TensorDataType(2) / TensorDataType(num_per_sum - 1);
+      dvar * TensorDataType(2) / TensorDataType(num_per_sum - correction);
     for (auto j = gidy; j < mini_batch_size; j += nthreadsy) {
       for (auto i = gidx; i < channel_size; i += nthreadsx) {
         const auto& x = global_input[i + k * channel_size + j * input_ldim];
@@ -511,6 +513,8 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute()
   const auto& num_channels = output_dims[0];
   const auto& channel_size = this->get_output_size() / num_channels;
 
+  const int correction = this->m_bessel_correction ? 1 : 0;
+
   // Compute statistics
   if (is_training) {
     using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
@@ -599,6 +603,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute()
                                   multisync,
                                   num_channels,
                                   num_per_sum,
+                                  correction,
                                   this->m_epsilon,
                                   this->m_decay,
                                   local_mean.Buffer(),
@@ -688,6 +693,8 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute()
   const auto& output_dims = this->get_output_dims();
   const auto& num_channels = output_dims[0];
   const auto& channel_size = this->get_output_size() / num_channels;
+
+  const int correction = this->m_bessel_correction ? 1 : 0;
 
   // Compute local gradients
   // Compute gradients w.r.t. batch norm parameters
@@ -802,6 +809,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute()
                                 num_channels,
                                 channel_size,
                                 num_per_sum,
+                                correction,
                                 local_input.LockedBuffer(),
                                 local_input.LDim(),
                                 local_gradient_wrt_output.LockedBuffer(),

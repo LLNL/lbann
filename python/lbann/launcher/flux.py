@@ -5,13 +5,6 @@ import subprocess
 from lbann.util import make_iterable
 from .batch_script import BatchScript
 
-def _time_string(minutes):
-    """Time D-hh:mm:ss format."""
-    minutes = max(minutes, 0)
-    seconds = int(round((minutes % 1) * 60))
-    hours, minutes = divmod(int(minutes), 60)
-    days, hours = divmod(hours, 24)
-    return f'{days}-{hours:02}:{minutes:02}:{seconds:02}'
 
 class FluxBatchScript(BatchScript):
     """Utility class to write Flux batch scripts."""
@@ -25,7 +18,7 @@ class FluxBatchScript(BatchScript):
                  job_name=None,
                  partition=None,
                  account=None,
-                 launcher='flux mini run',
+                 launcher='flux run',
                  launcher_args=[],
                  interpreter='/bin/bash'):
         """Construct Flux batch script manager.
@@ -46,9 +39,9 @@ class FluxBatchScript(BatchScript):
             account (str, optional): Scheduler account
                 (default: none).
             launcher (str, optional): Parallel command launcher
-                (default: flux mini run).
+                (default: flux run).
             launcher_args (`Iterable` of `str`, optional):
-                Command-line arguments to flux mini run.
+                Command-line arguments to flux run.
             interpreter (str, optional): Script interpreter
                 (default: /bin/bash).
 
@@ -65,6 +58,10 @@ class FluxBatchScript(BatchScript):
         self.launcher = launcher
         self.launcher_args = launcher_args
 
+        # Slurm defines these in the ctor, so let's do that too.
+        self.add_header_line(f'#flux --output={self.out_log_file}')
+        self.add_header_line(f'#flux --error={self.err_log_file}')
+
     def add_parallel_command(self,
                              command,
                              work_dir=None,
@@ -78,7 +75,7 @@ class FluxBatchScript(BatchScript):
                              launcher_args=None):
         """Add command to be executed in parallel.
 
-        The command is launched with flux mini run. Parallel processes are
+        The command is launched with flux run. Parallel processes are
         distributed evenly amongst the compute nodes.
 
         Args:
@@ -92,9 +89,9 @@ class FluxBatchScript(BatchScript):
             job_name (str, optional): Job name.
             partition (str, optional): Scheduler partition.
             account (str, optional): Scheduler account.
-            launcher (str, optional): flux mini run executable.
+            launcher (str, optional): flux run executable.
             launcher_args (`Iterable` of `str`s, optional):
-                Command-line arguments to flux mini run.
+                Command-line arguments to flux run.
 
         """
 
@@ -118,37 +115,32 @@ class FluxBatchScript(BatchScript):
         if launcher_args is None:
             launcher_args = self.launcher_args
 
-        # Construct flux mini run invocation
+        # Construct flux run invocation
         args = [launcher]
         args.extend(make_iterable(launcher_args))
         args.append(f'--setattr=system.cwd={work_dir}')
         args.append(f'--nodes={nodes}')
         args.append(f'--ntasks={nodes * procs_per_node}')
-        args.append(f'-o per-resource.type=node')
-        args.append(f'-o per-resource.count={procs_per_node}')
         args.append(f'--exclusive')
-        args.append(f'-g 1') # --gpus-per-task
         # Ramesh had used a -c flag but doesn't  seem to use it right now
         # args.append(f'-c {int(self.cores_per_node / procs_per_node)}') #--cores-per-task
-        args.append(f'-o gpu-affinity=per-task')
-        args.append(f'-o cpu-affinity=per-task')
         args.append(f'-o nosetpgrp')
-        args.append(f'--output={self.out_log_file}')
-        args.append(f'--error={self.err_log_file}')
-
+        use_this_rccl=os.getenv('LBANN_USE_THIS_RCCL')
+        if use_this_rccl is not None:
+            args.append(f'--env=LD_PRELOAD=' + use_this_rccl)
         if time_limit is not None:
-            args.append(f'--time={_time_string(time_limit)}')
+            args.append(f'--time={time_limit}m')
         if job_name:
             args.append(f'--job-name={job_name}')
         if partition:
-            args.append(f'--partition={partition}')
+            args.append(f'--queue={partition}')
         if account:
             args.append(f'--account={account}')
         args.extend(make_iterable(command))
         self.add_command(args)
 
     def submit(self, overwrite=False):
-        """Submit batch job to Flux with flux mini batch.
+        """Submit batch job to Flux with flux batch.
 
         The script file is written before being submitted.
 
@@ -165,7 +157,7 @@ class FluxBatchScript(BatchScript):
         self.write(overwrite=overwrite)
 
         # Submit batch script and pipe output to log files
-        run_proc = subprocess.Popen(['flux mini batch', self.script_file],
+        run_proc = subprocess.Popen(['flux batch', self.script_file],
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
                                     cwd=self.work_dir)

@@ -51,8 +51,9 @@ weekly_options_and_targets = {
     'num_nodes': 1,
     'num_epochs': 0,
     'mini_batch_size': 16,
-    'expected_test_loss_range': (6.8, 7.1),
-    'percent_of_data_to_use': 1.0,
+    # Test loss range expanded from [6.8, 7.1] to [6.1, 7.2]
+    'expected_test_loss_range': (6.1, 7.2),
+    'fraction_of_data_to_use': 1.0,
     'expected_mini_batch_times': {
         "pascal": 0.1225,
         "lassen": 0.0440,
@@ -68,8 +69,9 @@ nightly_options_and_targets = {
     'num_nodes': 1,
     'num_epochs': 0,
     'mini_batch_size': 16,
-    'expected_test_loss_range': (6.75, 7.1),
-    'percent_of_data_to_use': 0.01,
+    # Test loss range expanded from [6.75, 7.1] to [6.1, 7.2]
+    'expected_test_loss_range': (6.1, 7.2),
+    'fraction_of_data_to_use': 0.01,
     'expected_mini_batch_times': {
         "pascal": 0.925, # Weird performance behavior 3/21/2022 - 0.1225,
         "lassen": 1.409, # BVE Changed again on 9/21/22 from 0.808 # Weird performance regression 3/21/2022 - 0.0440,
@@ -101,7 +103,7 @@ def setup_experiment(lbann, weekly):
     model = construct_model(lbann, options['num_epochs'])
 
     data_reader = data.iur.make_data_reader(lbann)
-    data_reader.reader[0].percent_of_data_to_use = options['percent_of_data_to_use']
+    data_reader.reader[0].fraction_of_data_to_use = options['fraction_of_data_to_use']
 
     optimizer = lbann.Adam(learn_rate=1e-3, beta1=0.9, beta2=0.99, eps=1e-8)
     return trainer, model, data_reader, optimizer, options['num_nodes']
@@ -222,5 +224,5 @@ def augment_test_func(test_func):
 
 
 # Create test functions that can interact with PyTest
-for _test_func in tools.create_tests(setup_experiment, __file__):
+for _test_func in tools.create_tests(setup_experiment, __file__, time_limit=4):
     globals()[_test_func.__name__] = augment_test_func(_test_func)

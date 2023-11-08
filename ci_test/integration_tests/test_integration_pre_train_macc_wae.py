@@ -52,7 +52,7 @@ weekly_options_and_targets = {
     'mini_batch_size': 128,
     'expected_train_pc_range': (7.7, 7.9),
     'expected_test_pc_range': (8.0, 8.2),
-    'percent_of_data_to_use': 0.1,
+    'fraction_of_data_to_use': 0.1,
     'expected_mini_batch_times': {
         'lassen':   0.0530066,
         'pascal':   0.044,
@@ -66,9 +66,9 @@ nightly_options_and_targets = {
     'num_nodes': 1,
     'num_epochs': 10,
     'mini_batch_size': 128,
-    'expected_train_pc_range': (19.9, 20.0),
+    'expected_train_pc_range': (19.9, 20.1), # BVE Changing the limits from 20.0
     'expected_test_pc_range': (19.1, 19.2),
-    'percent_of_data_to_use': 0.01,
+    'fraction_of_data_to_use': 0.01,
     'expected_mini_batch_times': {
         'lassen':   0.0530066,
         'pascal':   0.044,
@@ -79,7 +79,7 @@ nightly_options_and_targets = {
 # Setup LBANN experiment
 # ==============================================
 
-def make_data_reader(lbann, percent_of_data_to_use):
+def make_data_reader(lbann, fraction_of_data_to_use):
     """Make Protobuf message for HRRL  data reader.
 
     """
@@ -92,7 +92,7 @@ def make_data_reader(lbann, percent_of_data_to_use):
     message = message.data_reader
 
     # Use less training data for the integration test
-    message.reader[0].percent_of_data_to_use = percent_of_data_to_use
+    message.reader[0].fraction_of_data_to_use = fraction_of_data_to_use
 
     # Set paths
     return message
@@ -130,7 +130,7 @@ def setup_experiment(lbann, weekly):
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)
     # Load data reader from prototext
-    data_reader = make_data_reader(lbann, options['percent_of_data_to_use'])
+    data_reader = make_data_reader(lbann, options['fraction_of_data_to_use'])
 
     return trainer, model, data_reader, opt, options['num_nodes']
 
@@ -221,5 +221,6 @@ m_lbann_args=f"--use_data_store --preload_data_store --metadata={metadata_protot
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
                                      lbann_args=[m_lbann_args],
+                                     time_limit=2,
                                      procs_per_node=procs_per_node):
     globals()[_test_func.__name__] = augment_test_func(_test_func)

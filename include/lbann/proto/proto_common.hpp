@@ -69,9 +69,6 @@ void init_data_readers(
   const ::lbann_data::LbannPB& p,
   std::map<execution_mode, generic_data_reader*>& data_readers);
 
-/** @brief adjusts the number of parallel data readers */
-void set_num_parallel_readers(const lbann_comm& comm, ::lbann_data::LbannPB& p);
-
 /** @brief adjusts the values in p by querying the options db */
 void get_cmdline_overrides(const lbann_comm& comm, ::lbann_data::LbannPB& p);
 
@@ -92,6 +89,11 @@ void save_session(const lbann_comm& comm,
 void read_prototext_file(const std::string& fn,
                          ::lbann_data::LbannPB& pb,
                          const bool master);
+
+/** @brief Read prototext from a string into a protobuf message. */
+void read_prototext_string(const std::string& contents,
+                           lbann_data::LbannPB& pb,
+                           const bool master);
 
 /** @brief Write a protobuf message into a prototext file. */
 bool write_prototext_file(const std::string& fn, ::lbann_data::LbannPB& pb);

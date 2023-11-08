@@ -68,6 +68,11 @@ public:
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
   description get_description() const override;
+  bool can_run_inplace() const override { return true; }
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | PREV_ACTIVATIONS;
+  }
 
   /** @name Serialization */
   ///@{
@@ -81,7 +86,7 @@ protected:
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void fp_compute() override;
   void bp_compute() override;
@@ -155,10 +160,9 @@ instance_norm_layer<TensorDataType, Layout, Device>::get_description() const
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void instance_norm_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void instance_norm_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
   this->set_output_dims(this->get_input_dims());
 }
 

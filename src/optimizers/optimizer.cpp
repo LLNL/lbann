@@ -33,27 +33,26 @@ namespace lbann {
 
 void optimizer::clear_gradient()
 {
-  for (auto& g : gradients_) {
-    if (g.second->get_status() ==
-        optimizer_gradient_status::allreduce_started) {
-      g.second->complete_allreduce(*m_comm);
+  for (auto& g : m_local_gradient_contributions) {
+    if (g.second->get_status() == optimizer_gradient_status::sync_started) {
+      g.second->complete_sync(*m_comm);
     }
     g.second->clear();
   }
   this->get_gradient_sources().clear();
 }
 
-void optimizer::start_gradient_allreduce()
+void optimizer::start_gradient_sync()
 {
-  for (auto& grad_mgr : gradients_) {
-    grad_mgr.second->start_allreduce(*m_comm);
+  for (auto& grad_mgr : m_local_gradient_contributions) {
+    grad_mgr.second->start_sync(*m_comm);
   }
 }
 
-void optimizer::finish_gradient_allreduce()
+void optimizer::finish_gradient_sync()
 {
-  for (auto& grad_mgr : gradients_) {
-    grad_mgr.second->complete_allreduce(*m_comm);
+  for (auto& grad_mgr : m_local_gradient_contributions) {
+    grad_mgr.second->complete_sync(*m_comm);
   }
 }
 
@@ -64,10 +63,10 @@ std::string to_string(optimizer_gradient_status status)
     return "ready";
   case optimizer_gradient_status::cleared:
     return "cleared";
-  case optimizer_gradient_status::allreduce_needed:
-    return "allreduce needed";
-  case optimizer_gradient_status::allreduce_started:
-    return "allreduce started";
+  case optimizer_gradient_status::sync_needed:
+    return "sync needed";
+  case optimizer_gradient_status::sync_started:
+    return "sync started";
   default:
     return "unknown";
   }
@@ -81,9 +80,9 @@ optimizer::optimizer(const optimizer& other)
     m_gradient_status(other.m_gradient_status),
     m_step_time(other.m_step_time)
 {
-  if (m_gradient_status == optimizer_gradient_status::allreduce_started) {
+  if (m_gradient_status == optimizer_gradient_status::sync_started) {
     LBANN_ERROR("attempted to copy optimizer while a "
-                "gradient allreduce is in progress");
+                "gradient sync is in progress");
   }
 }
 
@@ -93,9 +92,9 @@ optimizer& optimizer::operator=(const optimizer& other)
   m_gradient_sources = other.m_gradient_sources;
   m_gradient_status = other.m_gradient_status;
   m_step_time = other.m_step_time;
-  if (m_gradient_status == optimizer_gradient_status::allreduce_started) {
+  if (m_gradient_status == optimizer_gradient_status::sync_started) {
     LBANN_ERROR("attempted to copy optimizer while a "
-                "gradient allreduce is in progress");
+                "gradient sync is in progress");
   }
   return *this;
 }
@@ -129,11 +128,29 @@ void optimizer::remove_gradient_source(const void* source)
   m_gradient_sources.erase(nullptr);
   m_gradient_sources.erase(source);
   if (get_gradient_sources().empty()) {
-    start_gradient_allreduce();
+    start_gradient_sync();
   }
 }
 
 } // namespace lbann
+
+// Instantiate methods
+#undef PROTO
+#define PROTO(T)                                                               \
+  template El::AbstractDistMatrix<T>& lbann::optimizer::get_gradient_buffer(   \
+    T& buf_scale,                                                              \
+    T& in_scale,                                                               \
+    bool sync_needed);                                                         \
+  template void lbann::optimizer::add_to_gradient(                             \
+    El::AbstractDistMatrix<T> const& contrib,                                  \
+    T scale,                                                                   \
+    bool sync_needed);                                                         \
+  template void lbann::optimizer::accumulate_all_gradient_contributions(       \
+    El::AbstractDistMatrix<T>& gradient);
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 #define LBANN_CLASS_NAME optimizer
 #include <lbann/macros/register_class_with_cereal.hpp>

@@ -27,8 +27,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/profiling.hpp"
+
 #include "lbann/base.hpp"
 #include "lbann/utils/exception.hpp"
+// For get_current_comm, which is here for some reason.
+#include "lbann/utils/options.hpp"
+#include "lbann/utils/serialize.hpp"
 
 #if defined(LBANN_SCOREP)
 #include <scorep/SCOREP_User.h>
@@ -42,13 +46,217 @@
 #endif
 
 #if defined(LBANN_HAS_ROCTRACER)
-#include <roctracer_ext.h>
-#include <roctx.h>
+#include <roctracer/roctracer_ext.h>
+#include <roctracer/roctx.h>
 #endif
+
+#if defined(LBANN_HAS_CALIPER)
+#include <adiak.hpp>
+#include <caliper/cali-manager.h>
+#include <caliper/cali.h>
+
+#include "adiak_config.hpp"
+
+#include <algorithm>
+#include <regex>
+#include <string>
+#include <vector>
+
+#if defined(_OPENMP)
+#include <omp.h>
+#endif // defined(_OPENMP)
+#endif // LBANN_HAS_CALIPER
 
 namespace {
 bool profiling_started = false;
 }
+
+// If Caliper is available, it is used unilaterally. If it were
+// composed with other annotation APIs (nvtx, roctx, etc), one could
+// end up with double marked regions. Instead, ensure that Caliper has
+// been configured with these tools and access them via Caliper.
+#if defined(LBANN_HAS_CALIPER)
+namespace {
+
+cali::ConfigManager cali_mgr;
+bool caliper_initialized = false;
+MPI_Comm adiak_comm; // Dedicated Adiak communicator.
+
+std::vector<std::string> split(std::string const str,
+                               std::string const regex_str)
+{
+  std::regex regexz(regex_str);
+  std::vector<std::string> list(
+    std::sregex_token_iterator(str.begin(), str.end(), regexz, -1),
+    std::sregex_token_iterator());
+  return list;
+}
+
+std::string as_lowercase(std::string str)
+{
+  std::transform(cbegin(str), cend(str), begin(str), [](unsigned char c) {
+    return ::tolower(c);
+  });
+  return str;
+}
+
+// FIXME (trb): There's potentially a good amount of other metadata
+// that might be outside the scope of this "profiling" file. This
+// might be better factored out of here and managed independently of
+// caliper-based profiling. E.g., much of this information would be
+// useful if it were managed by the LBANN executable and dropped in
+// the working directory as a general artifact of the run.
+void do_adiak_init()
+{
+  struct lbann::adiak_configuration const cc;
+  MPI_Comm world_comm =
+    lbann::utils::get_current_comm().get_world_comm().GetMPIComm();
+  MPI_Comm_dup(world_comm, &adiak_comm);
+  adiak::init(&adiak_comm);
+  adiak::user();
+  adiak::launchdate();
+  adiak::libraries();
+  adiak::cmdline();
+  adiak::clustername();
+  adiak::jobsize();
+  adiak::hostlist();
+  adiak::numhosts();
+  adiak::walltime();
+  adiak::value("lbann_git_version", cc.lbann_git_version);
+  adiak::value("cmake_build_type", cc.cmake_build_type);
+
+  // Compiler information:
+  auto const tokens = split(cc.compiler, "/");
+  auto const tsize = tokens.size();
+  std::string const compiler_exec = tokens.back();
+  std::string const compiler = compiler_exec + "-" + cc.compiler_version;
+  adiak::value("compiler", compiler);
+
+  adiak::value("compiler_path", cc.compiler);
+  adiak::value("compiler_version", cc.compiler_version);
+  // FIXME: How robust is this?? Seems like "not very" to me.
+  if (tsize >= 4) {
+    // pickup path version <compiler-version-hash|date>/mpispec/bin/exec
+    std::string const path_version = tokens[tsize - 4];
+    auto const s = split(path_version, "-");
+    if (s.size() >= 2) {
+      std::string const path_version_short = s[0] + "-" + s[1];
+      adiak::value("compiler_path_version", path_version_short);
+    }
+  }
+
+  // Flag information
+  auto const build_type = as_lowercase(cc.cmake_build_type);
+  adiak::value("compiler_flags", cc.compiler_flags);
+  if (build_type == "release")
+    adiak::value("compiler_flags_release", cc.compiler_flags_release);
+  else if (build_type == "relwithdebinfo")
+    adiak::value("compiler_flags_relwithdebinfo",
+                 cc.compiler_flags_relwithdebinfo);
+  else if (build_type == "debug")
+    adiak::value("compiler_flags_debug", cc.compiler_flags_debug);
+
+#ifdef LBANN_HAS_CUDA
+  if (strlen(cc.cuda_compiler) > 0) {
+    adiak::value("cuda_compiler", cc.cuda_compiler);
+    adiak::value("cuda_compiler_version", cc.cuda_compiler_version);
+    adiak::value("cuda_flags", cc.cuda_flags);
+    if (build_type == "release")
+      adiak::value("cuda_flags_release", cc.cuda_flags_release);
+    else if (build_type == "relwithdebinfo")
+      adiak::value("cuda_flags_relwithdebinfo", cc.cuda_flags_relwithdebinfo);
+    else if (build_type == "debug")
+      adiak::value("cuda_flags_debug", cc.cuda_flags_debug);
+  }
+#endif // LBANN_HAS_CUDA
+#ifdef LBANN_HAS_ROCM
+  if (strlen(cc.hip_compiler) > 0) {
+    adiak::value("hip_compiler", cc.hip_compiler);
+    adiak::value("hip_compiler_version", cc.hip_compiler_version);
+    adiak::value("hip_flags", cc.hip_flags);
+    if (build_type == "release")
+      adiak::value("hip_flags_release", cc.hip_flags_release);
+    else if (build_type == "relwithdebinfo")
+      adiak::value("hip_flags_relwithdebinfo", cc.hip_flags_relwithdebinfo);
+    else if (build_type == "debug")
+      adiak::value("hip_flags_debug", cc.hip_flags_debug);
+  }
+#endif // LBANN_HAS_ROCM
+
+  // Openmp section
+  // todo get lib : e.g libomp,libiomp5,libgomp etc  : parse adiak::libraries
+  // via tool callback note version map only goes to 5.1; revise as needed
+#if defined(_OPENMP)
+  std::unordered_map<unsigned, std::string> map{{200505, "2.5"},
+                                                {200805, "3.0"},
+                                                {201107, "3.1"},
+                                                {201307, "4.0"},
+                                                {201511, "4.5"},
+                                                {201811, "5.0"},
+                                                {202011, "5.1"},
+                                                {202111, "5.2"}};
+  adiak::value("omp_version", map.at(_OPENMP));
+  adiak::value("omp_max_threads", omp_get_max_threads());
+#endif
+}
+void do_adiak_finalize()
+{
+  adiak::fini();
+  MPI_Comm_free(&adiak_comm);
+}
+
+} // namespace
+
+static bool check_env_set_and_nonempty(char const* env_var)
+{
+  auto const val = std::getenv(env_var);
+  return val && std::strlen(val) > 0UL;
+}
+
+// The rules for caliper:
+//
+//   - If CALI_CONFIG is set and nonempty, initialize caliper but ignore
+//     "--caliper_config".
+//   - if "--caliper", setup with "--caliper_config".
+//   - Otherwise, do nothing.
+void lbann::initialize_caliper()
+{
+  auto const& arg_parser = global_argument_parser();
+  bool const cali_config_from_env = check_env_set_and_nonempty("CALI_CONFIG");
+  bool const use_caliper =
+    cali_config_from_env || arg_parser.get<bool>(LBANN_OPTION_USE_CALIPER);
+
+  if (!use_caliper)
+    return;
+
+  if (caliper_initialized) {
+    LBANN_ERROR("Cannot reinitialize Caliper");
+  }
+  do_adiak_init();
+
+  if (!cali_config_from_env) {
+    auto const config =
+      arg_parser.get<std::string>(LBANN_OPTION_CALIPER_CONFIG).c_str();
+    cali_mgr.add(config);
+    if (cali_mgr.error()) {
+      LBANN_ERROR("Caliper config parse error: ", cali_mgr.error_msg());
+    }
+  }
+  cali_mgr.start();
+  caliper_initialized = true;
+}
+
+void lbann::finalize_caliper()
+{
+  if (caliper_initialized) {
+    cali_mgr.stop();
+    cali_mgr.flush();
+    do_adiak_finalize();
+  }
+}
+
+bool lbann::is_caliper_initialized() noexcept { return caliper_initialized; }
+#endif // LBANN_HAS_CALIPER
 
 namespace lbann {
 

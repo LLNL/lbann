@@ -59,6 +59,8 @@ public:
   std::string get_type() const override { return "argmax"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
 protected:
   /** Add layer specific data to prototext */
@@ -67,7 +69,7 @@ protected:
   friend class cereal::access;
   argmax_layer() : argmax_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void fp_compute() override;
 };

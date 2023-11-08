@@ -44,10 +44,9 @@ void variance_layer<TensorDataType, Layout, Device>::setup_data(
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void variance_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void variance_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
   this->set_output_dims({1});
   if (this->get_input_size() <= 1) {
     std::stringstream err;

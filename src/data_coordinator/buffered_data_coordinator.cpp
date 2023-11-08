@@ -43,16 +43,17 @@ namespace lbann {
 
 template <typename TensorDataType>
 void buffered_data_coordinator<TensorDataType>::register_active_data_field(
-  data_field_type const data_field)
+  data_field_type const& data_field,
+  std::vector<El::Int> const& data_field_dim_map)
+
 {
-  data_coordinator::register_active_data_field(data_field);
+  data_coordinator::register_active_data_field(data_field, data_field_dim_map);
   for (const auto& buf_map : m_data_buffers) {
     const data_buffer_map_t& buffer_map = buf_map;
     for (auto& [mode, buffer] : buffer_map) {
       buffer->initialize_buffer_for_data_field(data_field, m_comm);
     }
   }
-  setup_data_fields(get_trainer().get_max_mini_batch_size());
 }
 
 template <typename TensorDataType>
@@ -75,8 +76,6 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(
   }
 #endif // LBANN_HAS_DISTCONV
 
-  /// @todo BVE This is where we are going to have to limit how many
-  /// ranks are participating in I/O
   El::Int local_mini_batch_size =
     max_mini_batch_size / this->m_comm->get_procs_per_trainer();
   El::Int partial_mini_batch_size =
@@ -112,21 +111,24 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(
   for (auto& data_field : m_active_data_fields) {
     for (const auto& buf_map : m_data_buffers) {
       const data_buffer_map_t& buffer_map = buf_map;
-      for (const auto& [mode, data_buffer] : buffer_map) {
+      for (auto& [mode, data_buffer] : buffer_map) {
         auto& phase_io_buffer = data_buffer->m_input_buffers[data_field];
         // Check to see if a buffer has already been allocated.  If
         // not, resize and zero it
         if (phase_io_buffer->IsEmpty() || phase_io_buffer->Width() == 0 ||
             phase_io_buffer->Height() == 0) {
           El::Int linearized_size = get_linearized_size(data_field);
+          if (linearized_size == -1) {
+            LBANN_ERROR("Invalid value for the linearized size of data field ",
+                        data_field);
+          }
           data_buffer->m_input_buffers[data_field]->Resize(linearized_size,
                                                            max_mini_batch_size);
 
           /// The amount of space needed will vary based on input layer type,
           /// but the batch size is the maximum space necessary
-          El::Zeros_seq(data_buffer->m_indices_fetched_per_mb,
-                        local_mini_batch_size,
-                        1);
+          auto& indices_fetched_per_mb = data_buffer->m_indices_fetched_per_mb;
+          El::Zeros_seq(indices_fetched_per_mb, local_mini_batch_size, 1);
         }
       }
     }
@@ -135,22 +137,25 @@ void buffered_data_coordinator<TensorDataType>::setup_data_fields(
 
 template <typename TensorDataType>
 int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
-  data_buffer_map_t& buffer_map,
-  const execution_mode mode)
+  const execution_mode mode,
+  data_buffer<IODataType>& buf,
+  El::Int loaded_mini_batch_size,
+  El::Int relative_base_position,
+  int buffer_id)
 {
   generic_data_reader* dr = get_data_reader(mode);
-  int num_parallel_readers = dr->get_num_parallel_readers();
+  dataset& ds = get_dataset(mode);
 
-  prof_region_begin("fetch_to_local_matrix", prof_colors[2], false);
+  std::string prof_title =
+    ("fetch_to_local_matrix " + std::to_string(buffer_id));
+  prof_region_begin(prof_title.c_str(), prof_colors[2], false);
   /// Coordinate all available readers so that they perform I/O in the same step
   /// Check to make sure that the local matrix has space for data
-  data_buffer<IODataType>& buf = get_data_buffer(buffer_map, mode);
 
   buf.m_num_samples_fetched = 0;
-  /// BVE FIXME change the guard
-  if (this->m_comm->get_rank_in_trainer() < num_parallel_readers &&
-      (buf.m_input_buffers[INPUT_DATA_TYPE_SAMPLES]->LocalHeight() != 0 &&
-       buf.m_input_buffers[INPUT_DATA_TYPE_SAMPLES]->LocalWidth() != 0)) {
+  // Check to see if this rank has local space for the current mini-batch
+  if (buf.m_input_buffers[INPUT_DATA_TYPE_SAMPLES]->LocalHeight() != 0 &&
+      buf.m_input_buffers[INPUT_DATA_TYPE_SAMPLES]->LocalWidth() != 0) {
     /// Create a map of the local matrices to pass into the data reader
     std::map<data_field_type, CPUMat*> local_input_buffers;
     for (auto& b : buf.m_input_buffers) {
@@ -158,29 +163,36 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
         static_cast<CPUMat*>(&(b.second->Matrix()));
     }
 
-    // Compute the size of the current mini-batch
+    // Compute the size of the current local mini-batch
+    const int end_pos = std::min(
+      static_cast<size_t>(relative_base_position + loaded_mini_batch_size),
+      dr->m_shuffled_indices.size());
+    const int local_mini_batch_size =
+      std::min(El::Int{((end_pos - relative_base_position) +
+                        ds.get_sample_stride() - 1) /
+                       ds.get_sample_stride()},
+               local_input_buffers[INPUT_DATA_TYPE_SAMPLES]->Width());
 
-    int loaded_batch_size = dr->get_loaded_mini_batch_size();
-    const int end_pos =
-      std::min(static_cast<size_t>(dr->m_current_pos + loaded_batch_size),
-               dr->m_shuffled_indices.size());
-    const int mb_size = std::min(
-      El::Int{((end_pos - dr->m_current_pos) + dr->m_sample_stride - 1) /
-              dr->m_sample_stride},
-      local_input_buffers[INPUT_DATA_TYPE_SAMPLES]->Width());
-
-    /** @brief Each rank will fetch a mini-batch worth of data into it's buffer
+    /** @brief Each rank will fetch a mini-batch worth of data into its buffer
      */
     if (dr->has_conduit_output()) {
-      std::vector<conduit::Node> samples(mb_size);
-      buf.m_num_samples_fetched =
-        dr->fetch(samples, buf.m_indices_fetched_per_mb, mb_size);
+      std::vector<conduit::Node> samples(local_mini_batch_size);
+      buf.m_num_samples_fetched = dr->fetch(samples,
+                                            buf.m_indices_fetched_per_mb,
+                                            relative_base_position,
+                                            ds.get_sample_stride(),
+                                            local_mini_batch_size,
+                                            mode);
       data_packer::extract_data_fields_from_samples(samples,
                                                     local_input_buffers);
     }
     else {
-      buf.m_num_samples_fetched =
-        dr->fetch(local_input_buffers, buf.m_indices_fetched_per_mb, mb_size);
+      buf.m_num_samples_fetched = dr->fetch(local_input_buffers,
+                                            buf.m_indices_fetched_per_mb,
+                                            relative_base_position,
+                                            ds.get_sample_stride(),
+                                            local_mini_batch_size,
+                                            mode);
     }
 
     bool data_valid = (buf.m_num_samples_fetched > 0);
@@ -189,7 +201,7 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
       //      change how this is shared
     }
   }
-  prof_region_end("fetch_to_local_matrix", false);
+  prof_region_end(prof_title.c_str(), false);
   return buf.m_num_samples_fetched;
 }
 
@@ -209,15 +221,28 @@ void buffered_data_coordinator<TensorDataType>::fp_setup_data(
 template <typename TensorDataType>
 void buffered_data_coordinator<TensorDataType>::fetch_data_in_background(
   int future_active_buffer,
+  data_buffer<IODataType>& buf,
+  El::Int loaded_mini_batch_size,
+  El::Int relative_base_position,
   execution_mode mode)
 {
   int active_buffer_idx = future_active_buffer % m_data_buffers.size();
-  data_buffer_map_t& buffer_map = m_data_buffers[active_buffer_idx];
   std::lock_guard<std::mutex> guard(dr_mutex);
-  int mini_batch_size = get_current_mini_batch_size(mode);
-  fp_setup_data(*buffer_map[mode], mini_batch_size);
-  fetch_to_local_matrix(buffer_map, mode);
+  fetch_to_local_matrix(mode,
+                        buf,
+                        loaded_mini_batch_size,
+                        relative_base_position,
+                        active_buffer_idx);
   return;
+}
+
+template <typename TensorDataType>
+int buffered_data_coordinator<TensorDataType>::get_current_mini_batch_size(
+  execution_mode mode) const
+{
+  // Get the mini-batch size from the active buffer
+  int buffer_id = this->get_active_buffer_idx(mode) % m_data_buffers.size();
+  return m_current_mini_batch_size.at(buffer_id).at(mode);
 }
 
 /// Check for each buffer if there is an outstanding fetch request
@@ -229,94 +254,168 @@ void buffered_data_coordinator<TensorDataType>::collect_background_data_fetch(
     typename data_buffer_map_t::const_iterator it = buffer_map.find(mode);
     if (it != buffer_map.end()) {
       data_buffer<IODataType>& io_buffer = *buffer_map[mode];
-      if (io_buffer.is_data_fetched_in_background()) {
+      if (io_buffer.is_background_fetching_in_progress()) {
         io_buffer.get_data_fetch_future().get();
-        io_buffer.set_fetch_data_in_background(false);
+        io_buffer.set_background_fetching_in_progress(false);
       }
     }
   }
 }
 
 template <typename TensorDataType>
-void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode)
+void buffered_data_coordinator<TensorDataType>::fetch_active_batch_synchronous(
+  execution_mode mode)
 {
-
-  increment_active_buffer_idx(mode);
-
+  int idx = this->get_active_buffer_idx(mode);
+  int buffer_id = idx % m_data_buffers.size();
   data_buffer<IODataType>& active_buffer = get_active_buffer(mode);
+  dataset& ds = get_dataset(mode);
+  //************************************************************************
+  // Get the current mini-batch from the data reader
+  El::Int loaded_mini_batch_size = ds.get_current_mini_batch_size();
 
   // If there is no valid data and there is not already a background
   // thread to fetch the data, queue up the background thread
-  if (active_buffer.num_samples_ready() == 0 &&
-      !active_buffer.is_data_fetched_in_background()) {
-    // Start data store exchange if necessary (this should be move
+  if (loaded_mini_batch_size > 0 && active_buffer.num_samples_ready() == 0 &&
+      !active_buffer.is_background_fetching_in_progress()) {
+    // Store the size of the current mini-batch so that others can obtain it
+    // without worrying about where the data reader is currently at.
+    m_current_mini_batch_size[buffer_id][mode] = loaded_mini_batch_size;
+    El::Int relative_base_position = ds.get_position(); // dr->m_current_pos;
+
+    // Start data store exchange if necessary (this should be moved
     // earlier as a future optimization)
-    get_data_reader(mode)->start_data_store_mini_batch_exchange();
+    get_data_reader(mode)->start_data_store_mini_batch_exchange(
+      // Use the relative position of the mini-batch (adjusted for rank)
+      relative_base_position - ds.get_base_offset(),
+      loaded_mini_batch_size,
+      ds.at_new_epoch());
     // Finish data store exchange before accessing samples
     get_data_reader(mode)->finish_data_store_mini_batch_exchange();
+
+    // Set the size for the I/O buffers
+    fp_setup_data(active_buffer, loaded_mini_batch_size);
+
     std::future<void> background_fetch_done = get_io_thread_pool().submit_job(
       std::bind(&buffered_data_coordinator::fetch_data_in_background,
                 this,
-                this->get_active_buffer_idx(mode),
+                idx,
+                std::ref(active_buffer),
+                loaded_mini_batch_size,
+                relative_base_position,
                 mode));
     active_buffer.set_data_fetch_future(std::move(background_fetch_done));
-    active_buffer.set_fetch_data_in_background(true);
+    active_buffer.set_background_fetching_in_progress(true);
   }
 
-  // Wait for the background thread to complete fetching the data
-  if (active_buffer.is_data_fetched_in_background()) {
+  // Wait for the background thread to complete fetching the same data
+  if (active_buffer.is_background_fetching_in_progress()) {
     active_buffer.get_data_fetch_future().get();
-    active_buffer.set_fetch_data_in_background(false);
-  }
-
-  //  int num_samples_in_batch = 0;
-  if (active_buffer.num_samples_ready() > 0) {
-    /*num_samples_in_batch = */ active_buffer.num_samples_ready();
-    // }else {
-    //     if(!get_data_reader(mode)->position_is_overrun()) {
-    //       std::stringstream err;
-    //       err << "I/O buffer does not contain valid samples ("/*<<
-    //       num_samples_in_batch << ")"*/; LBANN_ERROR(err.str());
-    //     }
+    active_buffer.set_background_fetching_in_progress(false);
   }
 }
 
 template <typename TensorDataType>
-bool buffered_data_coordinator<TensorDataType>::epoch_complete(
+void buffered_data_coordinator<TensorDataType>::fetch_data_asynchronous(
   execution_mode mode)
 {
-  // Use the predetermined size of the mini-batch to set the current
-  // batch size for the neural network
-  int num_samples_in_batch = get_current_mini_batch_size(mode);
-  // BVE When we finish the epoch we can increment the number of
-  // samples that have been
-  update_num_samples_processed(mode, num_samples_in_batch);
-  m_data_set_processed = update_data_set(get_data_reader(mode), mode);
+  data_buffer<IODataType>& current_buffer = get_active_buffer(mode);
+  data_buffer<IODataType>& next_buffer = get_next_buffer(mode);
+  auto next_buffer_idx = this->get_next_buffer_idx(mode);
+  auto next_buffer_id = next_buffer_idx % m_data_buffers.size();
 
-  // Kick off background I/O once the forward prop phase is complete.
-  // This is because the data reader has state about the current step
-  // in epoch.  In a future PR this state should be moved to the data
-  // coordinator
-  if (!m_data_set_processed && m_trainer->background_io_activity_allowed()) {
-    int next_active_buffer = this->get_active_buffer_idx(mode) + 1;
-    // Start data store exchange if necessary (this should be move
+  // Wait for the background thread to complete fetching the data
+  if (current_buffer.is_background_fetching_in_progress()) {
+    current_buffer.get_data_fetch_future().get();
+    current_buffer.set_background_fetching_in_progress(false);
+  }
+
+  dataset& ds = get_dataset(mode);
+  //************************************************************************
+  // Get the next mini-batchs size from the data reader
+  El::Int next_mini_batch_size = ds.get_next_mini_batch_size();
+
+  // If there is no valid data and there is not already a background
+  // thread to fetch the data, queue up the background thread
+  if (next_mini_batch_size > 0 && next_buffer.num_samples_ready() == 0 &&
+      !next_buffer.is_background_fetching_in_progress()) {
+    // Store the size of the current mini-batch so that others can obtain it
+    // without worrying about where the data reader is currently at.
+    m_current_mini_batch_size[next_buffer_id][mode] = next_mini_batch_size;
+    El::Int relative_base_position = ds.get_next_position();
+
+    // Start data store exchange if necessary (this should be moved
     // earlier as a future optimization)
-    get_data_reader(mode)->start_data_store_mini_batch_exchange();
+    get_data_reader(mode)->start_data_store_mini_batch_exchange(
+      // Use the relative position of the mini-batch (adjusted for rank)
+      relative_base_position - ds.get_base_offset(),
+      next_mini_batch_size,
+      ds.at_new_epoch());
     // Finish data store exchange before accessing samples
     get_data_reader(mode)->finish_data_store_mini_batch_exchange();
+
+    // Set the size for the I/O buffers
+    fp_setup_data(next_buffer, next_mini_batch_size);
+
     std::future<void> background_fetch_done = get_io_thread_pool().submit_job(
       std::bind(&buffered_data_coordinator::fetch_data_in_background,
                 this,
-                next_active_buffer,
+                next_buffer_idx,
+                std::ref(next_buffer),
+                next_mini_batch_size,
+                relative_base_position,
                 mode));
-    data_buffer_map_t& next_io_buffer_map =
-      m_data_buffers[next_active_buffer % m_data_buffers.size()];
-    data_buffer<IODataType>& next_io_buffer =
-      get_data_buffer(next_io_buffer_map, mode);
-    next_io_buffer.set_data_fetch_future(std::move(background_fetch_done));
-    next_io_buffer.set_fetch_data_in_background(true);
+    next_buffer.set_data_fetch_future(std::move(background_fetch_done));
+    next_buffer.set_background_fetching_in_progress(true);
   }
-  return m_data_set_processed;
+}
+
+template <typename TensorDataType>
+bool buffered_data_coordinator<TensorDataType>::ready_for_next_fetch(
+  execution_mode mode)
+{
+  // Check to see if the data from the sample was actually consumed
+  data_buffer<IODataType>& active_buffer = get_active_buffer(mode);
+  for (auto& [field, count] :
+       active_buffer.m_num_samples_per_field_distributed) {
+    if (count != active_buffer.m_num_samples_fetched) {
+      LBANN_WARNING("ready for next fetch: UNUSED field ",
+                    field,
+                    " was not distributed ",
+                    count,
+                    " samples but ",
+                    active_buffer.m_num_samples_fetched,
+                    " available");
+    }
+  }
+  active_buffer.m_num_samples_fetched = 0;
+
+  // Make sure to update the data reader before incrementing the
+  // buffer index
+  auto is_epoch_complete = this->update_data_reader(mode);
+  if (is_epoch_complete) {
+    // Wait for the background thread to complete fetching the same data
+    if (active_buffer.is_background_fetching_in_progress()) {
+      LBANN_WARNING("ready_for_next_fetch has to wait for the data.");
+      active_buffer.get_data_fetch_future().get();
+      active_buffer.set_background_fetching_in_progress(false);
+    }
+  }
+  this->increment_active_buffer_idx(mode);
+  return is_epoch_complete;
+}
+
+template <typename TensorDataType>
+bool buffered_data_coordinator<TensorDataType>::update_data_reader(
+  execution_mode mode)
+{
+  // Use the size of the mini-batch to update the data reader how much
+  // to advance
+  int num_samples_in_batch = get_current_mini_batch_size(mode);
+  update_num_samples_processed(mode, num_samples_in_batch);
+
+  // Returns true if the epoch will be complete
+  return update_data_set(get_data_reader(mode), mode);
 }
 
 template <typename TensorDataType>
@@ -375,6 +474,24 @@ auto buffered_data_coordinator<TensorDataType>::get_active_buffer(
   return get_data_buffer(active_buffer_map, mode);
 }
 
+template <typename TensorDataType>
+auto buffered_data_coordinator<TensorDataType>::get_next_buffer(
+  execution_mode mode) const -> const data_buffer<IODataType>&
+{
+  const data_buffer_map_t& next_buffer_map =
+    m_data_buffers.at(get_next_buffer_idx(mode) % m_data_buffers.size());
+  return get_data_buffer(next_buffer_map, mode);
+}
+
+template <typename TensorDataType>
+auto buffered_data_coordinator<TensorDataType>::get_next_buffer(
+  execution_mode mode) -> data_buffer<IODataType>&
+{
+  data_buffer_map_t& next_buffer_map =
+    m_data_buffers[get_next_buffer_idx(mode) % m_data_buffers.size()];
+  return get_data_buffer(next_buffer_map, mode);
+}
+
 /**
  * Return the sample indices fetched in the current mini-batch.
  */
@@ -402,12 +519,14 @@ bool buffered_data_coordinator<TensorDataType>::update_data_set(
   generic_data_reader* data_reader,
   execution_mode mode)
 {
-  int num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
+  dataset& ds = get_dataset(mode);
+  int num_iterations_per_epoch = ds.get_num_iterations_per_epoch();
   int current_step_in_epoch =
-    data_reader->get_current_step_in_epoch(); // Get the current step before the
-                                              // update function increments it
+    ds.get_current_step_in_epoch(); // Get the current step before the
+                                    // update function increments it
 
-  data_reader->update(true);
+  bool epoch_complete = ds.update();
+  data_reader->update(epoch_complete /*ds.get_next_position(), */);
 
   if (current_step_in_epoch == (num_iterations_per_epoch - 1)) {
     return true;
@@ -423,12 +542,20 @@ void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(
   data_field_type const data_field,
   AbsDistMatrixType& input_buffer)
 {
-  prof_region_begin("distribute_from_local_matrix", prof_colors[3], false);
+  std::string prof_title = ("distribute_from_local_matrix " +
+                            std::to_string(get_active_buffer_idx(mode)));
+  prof_region_begin(prof_title.c_str(), prof_colors[3], false);
   data_buffer<IODataType>& buf = get_active_buffer(mode);
+  // Wait for the background thread to complete fetching the same data
+  if (buf.is_background_fetching_in_progress()) {
+    LBANN_WARNING("distribute from local matrix has to wait for the data.");
+    buf.get_data_fetch_future().get();
+    buf.set_background_fetching_in_progress(false);
+  }
   if (buf.m_input_buffers.find(data_field) == buf.m_input_buffers.end()) {
     LBANN_ERROR("Unknown data_field_type value requested: " + data_field);
   }
-  view_or_copy_tensor(*buf.m_input_buffers[data_field], input_buffer);
+  view_or_copy_tensor(*buf.m_input_buffers[data_field], input_buffer, false);
 #ifdef LBANN_HAS_DISTCONV
   if (dc::is_cosmoflow_parallel_io_enabled() &&
       data_field == INPUT_DATA_TYPE_RESPONSES) {
@@ -442,8 +569,10 @@ void buffered_data_coordinator<TensorDataType>::distribute_from_local_matrix(
     }
   }
 #endif
-  buf.m_num_samples_fetched = 0;
-  prof_region_end("distribute_from_local_matrix", false);
+  // Track if the data field has been pulled out of the buffer
+  buf.m_num_samples_per_field_distributed[data_field] =
+    buf.m_num_samples_fetched;
+  prof_region_end(prof_title.c_str(), false);
   return;
 }
 
@@ -482,7 +611,7 @@ bool buffered_data_coordinator<TensorDataType>::load_from_checkpoint_shared(
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                                    "_dc.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                                    "_dc.bin"
+                                                   "_dc.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
     );
     buf = create_cereal_archive_binary_string<buffered_data_coordinator>(*this);
@@ -529,7 +658,7 @@ bool buffered_data_coordinator<
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                                  "_dc.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                                  "_dc.bin"
+                                                 "_dc.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   );
   return true;

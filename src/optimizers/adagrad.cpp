@@ -27,6 +27,7 @@
 #include "lbann/optimizers/adagrad_impl.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 
@@ -62,10 +63,17 @@ description adagrad<TensorDataType>::get_description() const
 }
 
 template <typename TensorDataType>
+size_t adagrad<TensorDataType>::get_state_size() const
+{
+  size_t allocated = m_cache->AllocatedMemory() * sizeof(TensorDataType);
+  return data_type_optimizer<TensorDataType>::get_state_size() + allocated;
+}
+
+template <typename TensorDataType>
 void adagrad<TensorDataType>::setup(WeightsType* w)
 {
   OptimizerType::setup(w);
-  const auto& gradient = this->get_gradient();
+  const auto& gradient = this->get_gradient_sharded();
   m_cache.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
   El::Zeros(*m_cache, gradient.Height(), gradient.Width());
 }
@@ -104,6 +112,7 @@ void adagrad<TensorDataType>::step_compute_cpu(
   AbsDistMatrixType& values,
   const AbsDistMatrixType& gradient)
 {
+  LBANN_CALIPER_MARK_SCOPE("adagrad::step_compute");
 
   // Get local matrix data
   const size_t local_height = values.LocalHeight();

@@ -40,6 +40,7 @@ namespace lbann {
 #define LBANN_OPTION_DISABLE_BACKGROUND_IO_ACTIVITY                            \
   "disable_background_io_activity"
 #define LBANN_OPTION_DISABLE_CUDA "disable_cuda"
+#define LBANN_OPTION_DISABLE_DISTCONV "disable_distconv"
 #define LBANN_OPTION_DISABLE_SIGNAL_HANDLER "disable_signal_handler"
 #define LBANN_OPTION_EXIT_AFTER_SETUP "exit_after_setup"
 #define LBANN_OPTION_GENERATE_MULTI_PROTO "generate_multi_proto"
@@ -52,21 +53,22 @@ namespace lbann {
 #define LBANN_OPTION_MULTITRAINER_VERBOSE "multitrainer_verbose"
 #define LBANN_OPTION_ALLOW_MULTITRAINER_GLOBAL_STATISTICS                      \
   "Allow multitrainer global statistics"
-#define LBANN_OPTION_NO_IM_COMM "no_im_comm"
 #define LBANN_OPTION_PRELOAD_DATA_STORE "preload_data_store"
 #define LBANN_OPTION_PRINT_AFFINITY "print_affinity"
 #define LBANN_OPTION_SERIALIZE_IO "serialize_io"
-#define LBANN_OPTION_ST_ON "st_on"
-#define LBANN_OPTION_ST_FULL_TRACE "st_full_trace"
 #define LBANN_OPTION_STACK_TRACE_TO_FILE "stack_trace_to_file"
 #define LBANN_OPTION_USE_CUBLAS_TENSOR_OPS "use_cublas_tensor_ops"
 #define LBANN_OPTION_USE_CUDNN_TENSOR_OPS "use_cudnn_tensor_ops"
 #define LBANN_OPTION_USE_DATA_STORE "use_data_store"
 #define LBANN_OPTION_VERBOSE "verbose"
-#define LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP                    \
-  "Use Hydrogen's default memory mode for GPU buffers in forward prop"
+#define LBANN_OPTION_USE_GPU_DIRECT_MEMORY_IN_FORWARD_PROP                     \
+  "Use direct (i.e., not pooled) memory mode for GPU buffers in forward prop"
 #define LBANN_OPTION_INIT_SHMEM "Initialize SHMEM when initializing LBANN"
 #define LBANN_OPTION_INIT_NVSHMEM "Initialize NVSHMEM when initializing LBANN"
+#define LBANN_OPTION_NO_INPLACE "no_inplace"
+#define LBANN_OPTION_NO_BACKPROP_DISABLE "no_backprop_disable"
+
+#define LBANN_OPTION_OMP_NUM_THREADS "Num. OMP threads"
 
 // Input options
 #define LBANN_OPTION_CKPT_DIR "ckpt_dir"
@@ -78,7 +80,7 @@ namespace lbann {
 #define LBANN_OPTION_MODEL "model"
 #define LBANN_OPTION_NUM_EPOCHS "num_epochs"
 #define LBANN_OPTION_NUM_IO_THREADS "Num. IO threads"
-#define LBANN_OPTION_NUM_PARALLEL_READERS "num_parallel_readers"
+#define LBANN_OPTION_MAX_IO_RNG_BANKS "Max IO RNG banks"
 #define LBANN_OPTION_OPTIMIZER "optimizer"
 #define LBANN_OPTION_PROCS_PER_TRAINER "Processes per trainer"
 #define LBANN_OPTION_PROTOTEXT "prototext"
@@ -96,6 +98,10 @@ namespace lbann {
   "Enable topology aware process placement in Sub-grid parallelism"
 #define LBANN_OPTION_NUM_SUBGRIDS_BLOCK_ORDER                                  \
   "Divide each trainer into equally-sized sub-grids with blocked ordering"
+#ifdef LBANN_HAS_CALIPER
+#define LBANN_OPTION_USE_CALIPER "use caliper"
+#define LBANN_OPTION_CALIPER_CONFIG "caliper_config"
+#endif
 
 /****** datastore options ******/
 // Bool flags
@@ -132,7 +138,7 @@ namespace lbann {
 #define LBANN_OPTION_DATA_FILENAME_TEST "data_filename_test"
 #define LBANN_OPTION_DATA_FILENAME_TRAIN "data_filename_train"
 #define LBANN_OPTION_DATA_FILENAME_VALIDATE "data_filename_validate"
-#define LBANN_OPTION_DATA_READER_PERCENT "data_reader_percent"
+#define LBANN_OPTION_DATA_READER_FRACTION "data_reader_fraction"
 #define LBANN_OPTION_LABEL_FILENAME_TEST "label_filename_test"
 #define LBANN_OPTION_LABEL_FILENAME_TRAIN "label_filename_train"
 #define LBANN_OPTION_LABEL_FILENAME_VALIDATE "label_filename_validate"

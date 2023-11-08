@@ -58,18 +58,20 @@ public:
 
     // Initialize two buffers
     m_data_buffers.resize(2);
+    m_current_mini_batch_size.resize(2);
     for (size_t i = 0; i < m_data_buffers.size(); i++) {
       for (auto m : execution_mode_iterator()) {
         if (m != execution_mode::invalid) {
           m_data_buffers[i][m] =
             std::make_unique<data_buffer<IODataType>>(comm);
+          m_current_mini_batch_size[i][m] = 0;
         }
       }
     }
 
     for (auto m : execution_mode_iterator()) {
       if (m != execution_mode::invalid) {
-        this->m_active_buffer[m].store(-1);
+        this->m_active_buffer[m].store(0);
       }
     }
   }
@@ -81,11 +83,17 @@ public:
     : data_coordinator(other)
   {
     m_data_buffers.resize(other.m_data_buffers.size());
+    m_current_mini_batch_size.resize(other.m_current_mini_batch_size.size());
     for (size_t i = 0; i < other.m_data_buffers.size(); i++) {
       data_buffer_map_t& buffer_map = m_data_buffers[i];
       const data_buffer_map_t& other_buffer_map = other.m_data_buffers[i];
       for (auto& b : other_buffer_map) {
         buffer_map[b.first].reset(b.second ? b.second->copy() : nullptr);
+      }
+      auto& mb_map = m_current_mini_batch_size[i];
+      const auto& other_mb_map = other.m_current_mini_batch_size[i];
+      for (const auto& mb : other_mb_map) {
+        mb_map[mb.first] = mb.second;
       }
     }
   }
@@ -95,11 +103,18 @@ public:
     data_coordinator::operator=(other);
     m_data_buffers.clear();
     m_data_buffers.resize(other.m_data_buffers.size());
+    m_current_mini_batch_size.clear();
+    m_current_mini_batch_size.resize(other.m_current_mini_batch_size.size());
     for (size_t i = 0; i < other.m_data_buffers.size(); i++) {
       data_buffer_map_t& buffer_map = m_data_buffers[i];
       const data_buffer_map_t& other_buffer_map = other.m_data_buffers[i];
       for (auto& b : other_buffer_map) {
         buffer_map[b.first].reset(b.second ? b.second->copy() : nullptr);
+      }
+      auto& mb_map = m_current_mini_batch_size[i];
+      const auto& other_mb_map = other.m_current_mini_batch_size[i];
+      for (const auto& mb : other_mb_map) {
+        mb_map[mb.first] = mb.second;
       }
     }
     return *this;
@@ -112,12 +127,23 @@ public:
   /** @brief After registering the active data field, allocate storage for each
    *  data field in the context maps within the double buffer.
    */
-  void register_active_data_field(data_field_type const data_field) override;
+  void register_active_data_field(
+    data_field_type const& data_field,
+    std::vector<El::Int> const& data_field_dim_map) override;
+
+  /** @brief After a data field has been registered with the data
+   *  coordinator setup its buffers. Note this can be called after
+   *  each call to register_active_data_field. */
+  void setup_data_fields(int max_mini_batch_size) override;
 
   void fp_setup_data(data_buffer<IODataType>& buffer,
                      El::Int cur_mini_batch_size);
 
-  void fetch_data(execution_mode mode) override;
+  /** @brief fetch data will check to make sure that the active buffer
+   *   is ready to go and queue work to fetch the next buffer of data.
+   */
+  void fetch_data_asynchronous(execution_mode mode) override;
+  void fetch_active_batch_synchronous(execution_mode mode) override;
 
   const data_buffer_map_t& get_active_buffer_map(execution_mode mode) const;
   data_buffer_map_t& get_active_buffer_map(execution_mode mode);
@@ -133,7 +159,7 @@ public:
       mode requested */
   void collect_background_data_fetch(execution_mode mode) override;
 
-  bool epoch_complete(execution_mode mode) override;
+  bool ready_for_next_fetch(execution_mode mode) override;
 
   const data_buffer<IODataType>&
   get_data_buffer(const data_buffer_map_t& buffer_map,
@@ -146,10 +172,20 @@ public:
                                     AbsDistMatrixType& input_buffer);
 
 protected:
-  int fetch_to_local_matrix(data_buffer_map_t& buffer_map,
-                            const execution_mode mode);
+  int fetch_to_local_matrix(const execution_mode mode,
+                            data_buffer<IODataType>& buf,
+                            El::Int loaded_mini_batch_size,
+                            El::Int relative_base_position,
+                            int buffer_id);
 
-  void fetch_data_in_background(int future_active_buffer, execution_mode mode);
+  void fetch_data_in_background(int future_active_buffer,
+                                data_buffer<IODataType>& buf,
+                                El::Int loaded_mini_batch_size,
+                                El::Int relative_base_position,
+                                execution_mode mode);
+
+  const data_buffer<IODataType>& get_next_buffer(execution_mode mode) const;
+  data_buffer<IODataType>& get_next_buffer(execution_mode mode);
 
   int get_active_buffer_idx(execution_mode m) const
   {
@@ -163,7 +199,21 @@ protected:
 
   void increment_active_buffer_idx(execution_mode m) { m_active_buffer[m]++; }
 
+  int get_next_buffer_idx(execution_mode m) const
+  {
+    return m_active_buffer.at(m).load() + 1;
+  }
+
+  int get_next_buffer_idx(execution_mode m)
+  {
+    return m_active_buffer[m].load() + 1;
+  }
+
+  bool update_data_reader(execution_mode mode);
+
   bool update_data_set(generic_data_reader* data_reader, execution_mode mode);
+
+  int get_current_mini_batch_size(execution_mode mode) const override;
 
   //************************************************************************
   //
@@ -180,11 +230,6 @@ protected:
   bool load_from_checkpoint_distributed(persist& p) override;
 
 protected:
-  /** @brief After a data field has been registered with the data
-   *  coordinator setup its buffers. Note this can be called after
-   *  each call to register_active_data_field. */
-  void setup_data_fields(int max_mini_batch_size) override;
-
   /**
    * Map from execution context to the index of the active data buffer
    */
@@ -197,6 +242,11 @@ protected:
    *  or label or responase.
    */
   std::vector<data_buffer_map_t> m_data_buffers;
+
+  /**
+   * Stores each buffer mini-batch size as it was returned from the data reader.
+   */
+  std::vector<std::map<execution_mode, int>> m_current_mini_batch_size;
 };
 
 } // namespace lbann

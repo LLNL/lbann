@@ -33,6 +33,7 @@
 #include "lbann/weights/weights.hpp"
 
 #if defined LBANN_DEBUG
+#include "lbann/utils/exception.hpp"
 #define LBANN_DEBUG_ASSERT_POINTER(ptr)                                        \
   do {                                                                         \
     if (!ptr)                                                                  \

@@ -84,6 +84,7 @@ Available Callbacks
 
    Export Onnx <callbacks/export_onnx>
    Summarize images <callbacks/summarize_images>
+   Print progress bar <callback/progress_bar>
 
 ..
    Alternate updates <callbacks/alternate_updates>
@@ -105,10 +106,10 @@ Available Callbacks
    Early stopping <callbacks/early_stopping>
    Gpu memory usage <callbacks/gpu_memory_usage>
    Hang <callbacks/hang>
-   Imcomm <callbacks/imcomm>
    Learning rate <callbacks/learning_rate>
    Load model <callbacks/load_model>
    Ltfb <callbacks/ltfb>
+   Memory Profiler <callbacks/memory_profiler>
    Mixup <callbacks/mixup>
    Monitor io <callbacks/monitor_io>
    Perturb adam <callbacks/perturb_adam>

@@ -27,6 +27,9 @@
 #ifndef LBANN_LAYER_CROP_HPP_INCLUDED
 #define LBANN_LAYER_CROP_HPP_INCLUDED
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/proto/layers.pb.h"
@@ -104,6 +107,8 @@ public:
   std::string get_type() const override { return "crop"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
   void setup_data(size_t max_mini_batch_size) override
   {
@@ -123,9 +128,9 @@ public:
       El::Device::CPU));
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     std::stringstream err;
 
     // Make sure input tensors have valid dimensions
@@ -385,4 +390,5 @@ void crop_layer<T, L, D>::write_specific_proto(lbann_data::Layer& proto) const
 
 } // namespace lbann
 
+#pragma GCC diagnostic pop
 #endif // LBANN_LAYER_CROP_HPP_INCLUDED

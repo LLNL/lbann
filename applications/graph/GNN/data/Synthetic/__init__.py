@@ -13,7 +13,7 @@ def make_data_reader(classname,
     _reader.name = 'python'
     _reader.role = 'train'
     _reader.shuffle = True
-    _reader.percent_of_data_to_use = 1.0
+    _reader.fraction_of_data_to_use = 1.0
     _reader.python.module = classname
     _reader.python.module_dir = data_dir
     _reader.python.sample_function = sample

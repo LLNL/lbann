@@ -20,7 +20,7 @@ num_epochs = 5
 mini_batch_size = 256
 num_nodes = 2
 imagenet_fraction = 0.0031971 # Train with 4096 out of 1.28M samples
-validation_percent = 0.1
+validation_fraction = 0.1
 random_seed = 20191206
 
 # ==============================================
@@ -98,8 +98,8 @@ def construct_data_reader(lbann):
     reader.shuffle = False
     reader.data_filedir = lbann.contrib.lc.paths.imagenet_dir(data_set='train')
     reader.data_filename = lbann.contrib.lc.paths.imagenet_labels(data_set='train')
-    reader.percent_of_data_to_use = imagenet_fraction
-    reader.validation_percent = validation_percent
+    reader.fraction_of_data_to_use = imagenet_fraction
+    reader.validation_fraction = validation_fraction
     reader.num_labels = 1000
     reader.shuffle = True
 

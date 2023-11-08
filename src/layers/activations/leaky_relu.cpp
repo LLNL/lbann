@@ -84,7 +84,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute()
 {
   local_bp<TensorDataType>(this->m_negative_slope,
-                           this->get_local_prev_activations(),
+                           this->get_local_activations(),
                            this->get_local_prev_error_signals(),
                            this->get_local_error_signals());
 }

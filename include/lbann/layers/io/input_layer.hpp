@@ -27,11 +27,10 @@
 #ifndef LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 #define LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 
+#include "lbann/data_readers/metadata.hpp"
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/distconv.hpp"
-
-#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 
 namespace lbann {
 
@@ -71,7 +70,7 @@ public:
   bool child_shuffle_required(size_t output_index) const override;
 
   // Nothing to do here as everything is done in fp_compute_distconv.
-  void fp_setup(El::Int mini_batch_size) override {}
+  void fp_setup() override {}
   void fp_compute();
 
 private:
@@ -138,15 +137,17 @@ public:
   // }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
   void setup_data(size_t max_mini_batch_size) override;
 
   /** Setup output tensors.
    *  Sets up the effective (global) mini-batch size.
    */
-  void fp_setup_outputs(El::Int mini_batch_size) override;
+  void fp_setup_outputs() override;
 
   void fp_compute() override;
 
@@ -158,8 +159,8 @@ public:
   /**
    * Get the dimensions of the underlying data.
    */
-  std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata,
-                                 int child_index = 0) const;
+  std::vector<El::Int> get_data_dims(const DataReaderMetaData& dr_metadata,
+                                     int child_index = 0) const;
 
   /** @name Serialization */
   ///@{
@@ -196,13 +197,7 @@ protected:
   {
     return Dev == El::Device::CPU && T_layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
-  {
-    this->get_distconv_adapter_ptr() =
-      std::make_unique<distconv_adapter_type>(*this,
-                                              m_data_field,
-                                              dr_metadata.shuffle_required);
-  }
+  void setup_distconv_adapter() override;
   distconv_adapter_type& get_distconv_adapter() override;
   const distconv_adapter_type& get_distconv_adapter() const override;
   bool keep_original_outputs(int index) const override;

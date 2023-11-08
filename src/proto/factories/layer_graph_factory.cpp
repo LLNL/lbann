@@ -101,7 +101,6 @@ void setup_hints(
 
 std::vector<OwningLayerPtr>
 construct_layer_graph(lbann_comm* comm,
-                      int training_dr_linearized_data_size,
                       const lbann_data::Trainer& proto_trainer,
                       const lbann_data::Model& proto_model)
 {
@@ -140,7 +139,6 @@ construct_layer_graph(lbann_comm* comm,
       (layout_str.empty() ? data_layout::DATA_PARALLEL
                           : data_layout_from_string(layout_str));
 
-    const auto& num_parallel_readers = proto_trainer.num_parallel_readers();
     El::Device device = El::Device::CPU;
 #ifdef LBANN_HAS_GPU
     // Input layers must be on CPU
@@ -161,11 +159,8 @@ construct_layer_graph(lbann_comm* comm,
   do {                                                                         \
     if (proto_datatype == TypeToProtoDataType<TensorDataType>::value &&        \
         layout == T_layout && device == T_device) {                            \
-      l = construct_layer<TensorDataType, T_layout, T_device>(                 \
-        comm,                                                                  \
-        training_dr_linearized_data_size,                                      \
-        num_parallel_readers,                                                  \
-        proto_layer);                                                          \
+      l = construct_layer<TensorDataType, T_layout, T_device>(comm,            \
+                                                              proto_layer);    \
     }                                                                          \
   } while (0)
 
@@ -176,6 +171,11 @@ construct_layer_graph(lbann_comm* comm,
 #include "lbann/macros/instantiate_device.hpp"
 
 #undef TEMPLATE_INSTANTIATION
+
+    // Check that layer has been constructed
+    if (l == nullptr) {
+      LBANN_ERROR("Could not construct layer ", name);
+    }
 
     // Set up parallel strategy.
     ParallelStrategy& ps = l->get_parallel_strategy();
@@ -192,14 +192,6 @@ construct_layer_graph(lbann_comm* comm,
     ps.replications = proto_layer.parallel_strategy().replications();
     ps.depth_groups = proto_layer.parallel_strategy().depth_groups();
     ps.depth_splits = proto_layer.parallel_strategy().depth_splits();
-    ps.enable_subgraph = proto_layer.parallel_strategy().enable_subgraph();
-    ps.sub_branch_tag = proto_layer.parallel_strategy().sub_branch_tag();
-    ps.sub_branch_resource_percentage =
-      proto_layer.parallel_strategy().sub_branch_resource_percentage();
-
-    // Check that layer has been constructed
-    if (l == nullptr)
-      LBANN_ERROR("Could not construct layer ", name);
 
     // Initialize layer name and check it is unique
     if (!name.empty()) {

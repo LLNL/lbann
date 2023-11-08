@@ -37,8 +37,8 @@ namespace lbann {
 template <typename TensorDataType, data_layout L, El::Device D>
 void uniform_layer<TensorDataType, L, D>::fp_compute()
 {
-  const auto& mean = (m_max + m_min) / El::To<TensorDataType>(2);
-  const auto& radius = (m_max - m_min) / El::To<TensorDataType>(2);
+  TensorDataType const mean = (m_max + m_min) / El::To<TensorDataType>(2);
+  TensorDataType const radius = (m_max - m_min) / El::To<TensorDataType>(2);
   auto& output = this->get_activations();
   const auto& mode =
     this->m_model->get_execution_context().get_execution_mode();

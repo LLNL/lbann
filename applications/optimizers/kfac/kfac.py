@@ -23,7 +23,7 @@ DAMPING_PARAM_NAMES = ["act", "err", "bn_act", "bn_err"]
 
 desc = ("Train a MLP or CNN on MNIST data with the K-FAC optimizer.")
 parser = argparse.ArgumentParser(description=desc)
-lbann.contrib.args.add_scheduler_arguments(parser)
+lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_lenet_kfac')
 
 # K-FAC configs.
 parser.add_argument("--kfac", dest="kfac", action="store_const",
@@ -51,8 +51,6 @@ parser.add_argument("--use-eigen", dest="use_eigen",
                     const=True, default=False)
 
 # Job configs.
-parser.add_argument("--job-name", action="store", default="lbann_lenet_kfac", type=str,
-                    help="scheduler job name (default: lbann_lenet_kfac)")
 parser.add_argument("--batch-job", dest="batch_job",
                     action="store_const",
                     const=True, default=False,
@@ -87,7 +85,7 @@ args = parser.parse_args()
 # ----------------------------------
 
 # Setup data reader
-data_reader = data.mnist.make_data_reader(validation_percent=0)
+data_reader = data.mnist.make_data_reader(validation_fraction=0)
 num_classes = 10
 
 # Input data

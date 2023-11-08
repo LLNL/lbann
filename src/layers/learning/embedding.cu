@@ -26,7 +26,7 @@
 
 #define LBANN_EMBEDDING_LAYER_INSTANTIATE
 #include "lbann/layers/learning/embedding.hpp"
-#include "lbann/optimizers/optimizer_impl.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
 
 namespace lbann {
@@ -85,6 +85,7 @@ __global__ void bp_kernel(El::Int num_embeddings,
                           El::Int input_size,
                           El::Int mini_batch_size,
                           El::Int padding_idx,
+                          TensorDataType gradient_scale,
                           const TensorDataType* __restrict__ indices,
                           El::Int indices_ldim,
                           const TensorDataType* __restrict__ output_grad,
@@ -106,7 +107,7 @@ __global__ void bp_kernel(El::Int num_embeddings,
           const auto& dy =
             output_grad[i + j * embedding_dim + k * output_grad_ldim];
           auto& dw = embeddings_grad[i + ind * embeddings_grad_ldim];
-          gpu_lib::atomic_add(&dw, dy);
+          gpu_lib::atomic_add(&dw, gradient_scale * dy);
         }
       }
     }
@@ -175,15 +176,25 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute()
   // Local data
   const auto& local_input =
     dynamic_cast<const MatType&>(this->get_local_prev_activations());
-  auto& local_embedding_grad =
-    dynamic_cast<MatType&>(this->m_embeddings_grad->Matrix());
   const auto& local_output_grad =
     dynamic_cast<const MatType&>(this->get_local_prev_error_signals());
+
+  TensorDataType dst_scale, gradient_scale;
+  auto& embeddings_grad =
+    opt.get_gradient_buffer(dst_scale, gradient_scale, true);
+  auto& local_embedding_grad = dynamic_cast<MatType&>(embeddings_grad.Matrix());
+
   const auto& input_size = this->get_input_size();
   const auto& local_mini_batch_size = local_input.Width();
 
   // Launch GPU kernel
-  El::Zero(local_embedding_grad);
+  if (El::To<float>(dst_scale) == 0.0f) {
+    El::Zero(local_embedding_grad);
+  }
+  else if (El::To<float>(dst_scale) != 1.0f) {
+    El::Scale(dst_scale, local_embedding_grad);
+  }
+
   if (!local_input.IsEmpty()) {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_embedding_grad),
                                        gpu::get_sync_info(local_output_grad),
@@ -204,6 +215,7 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute()
                                 input_size,
                                 local_mini_batch_size,
                                 this->m_padding_idx,
+                                gradient_scale,
                                 local_input.LockedBuffer(),
                                 local_input.LDim(),
                                 local_output_grad.LockedBuffer(),
@@ -211,9 +223,6 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute()
                                 local_embedding_grad.Buffer(),
                                 local_embedding_grad.LDim());
   }
-  opt.add_to_gradient(*this->m_embeddings_grad,
-                      El::TypeTraits<TensorDataType>::One(),
-                      true);
 }
 
 // Explicit instantiation

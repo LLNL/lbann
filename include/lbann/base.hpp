@@ -33,7 +33,6 @@
 #include "lbann_config.hpp"
 
 #include "lbann/Elemental_extensions.hpp"
-#include "lbann/utils/cyg_profile.hpp"
 #include "lbann/utils/enum_iterator.hpp"
 #include "lbann/utils/file_utils.hpp"
 
@@ -198,6 +197,17 @@ enum class matrix_format
   STAR_VC,
   MC_STAR,
   invalid
+};
+
+/// Backpropagation requirements from a layer or operator
+enum BackpropRequirements
+{
+  PROPAGATE_NOTHING = 0, // Stop gradient computation to parents (including
+                         // error signals)
+  ERROR_SIGNALS = 1,     // Error signals from child layers
+  PREV_ACTIVATIONS = 2,  // Input activations from forward pass
+  ACTIVATIONS = 4,       // Output activations from forward pass
+  WEIGHTS = 8,           // Weights
 };
 
 /// @todo This should move to hydrogen

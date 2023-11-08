@@ -60,6 +60,8 @@ public:
   std::string get_type() const override { return "reshape"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
 protected:
   /** Add layer specific data to prototext */
@@ -68,9 +70,9 @@ protected:
   friend class cereal::access;
   reshape_layer() : reshape_layer(nullptr, {1}) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
 
     const auto& input_dims = this->get_input_dims();
     auto output_dims = this->get_output_dims();
@@ -109,11 +111,11 @@ protected:
     }
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) override
+  void fp_setup_outputs() override
   {
     El::LockedView(this->get_activations(), this->get_prev_activations());
   }
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override
+  void bp_setup_gradient_wrt_inputs() override
   {
     El::LockedView(this->get_error_signals(), this->get_prev_error_signals());
   }

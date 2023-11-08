@@ -1,0 +1,24 @@
+data_reader {
+  reader {
+    name: "synthetic"
+    role: "train"
+    shuffle: true
+    num_samples: 1281167
+    num_labels: 1000
+    synth_dimensions: "3 224 224"
+    validation_fraction: 0.0
+    absolute_sample_count: 0
+    fraction_of_data_to_use: 1.0
+  }
+
+  reader {
+    name: "synthetic"
+    role: "validate"
+    shuffle: true
+    num_samples: 50000
+    num_labels: 1000
+    synth_dimensions: "3 224 224"
+    absolute_sample_count: 0
+    fraction_of_data_to_use: 1.0
+  }
+}

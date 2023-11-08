@@ -93,11 +93,6 @@ public:
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class channelwise_fully_connected_layer : public data_type_layer<TensorDataType>
 {
-
-  static_assert(Layout == data_layout::DATA_PARALLEL,
-                "channelwise_fully_connected layer "
-                "only supports data parallel layout");
-
 public:
   /** @brief Constructor.
    *  @param output_channel_dims    Output tensor dimensions,
@@ -120,6 +115,11 @@ public:
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | WEIGHTS | PREV_ACTIVATIONS;
+  }
 
   description get_description() const override;
 
@@ -131,6 +131,9 @@ public:
 
   ///@}
 
+  bool transpose() const noexcept { return m_transpose; }
+  bool has_bias() const noexcept { return m_has_bias; }
+
 protected:
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
@@ -138,7 +141,7 @@ protected:
   friend class cereal::access;
   channelwise_fully_connected_layer();
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
   void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;
@@ -152,7 +155,7 @@ protected:
                                                             Device>;
 
 protected:
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+  void setup_distconv_adapter() override;
   bool is_distconv_supported() const override;
   channelwise_fully_connected_distconv_adapter<TensorDataType, Layout, Device>&
   get_distconv_adapter() override;
@@ -167,6 +170,13 @@ private:
   bool m_has_bias;
   /** Whether to transpose linearity. */
   bool m_transpose;
+
+  template <typename U, El::Device D>
+  friend void
+  fp_compute_impl(channelwise_fully_connected_layer<U, Layout, D>& l);
+  template <typename U, El::Device D>
+  friend void
+  bp_compute_impl(channelwise_fully_connected_layer<U, Layout, D>& l);
 };
 
 // Builder function
@@ -178,7 +188,11 @@ LBANN_DEFINE_LAYER_BUILDER(channelwise_fully_connected);
   extern template class channelwise_fully_connected_layer<                     \
     T,                                                                         \
     data_layout::DATA_PARALLEL,                                                \
-    Device>
+    Device>;                                                                   \
+  extern template class channelwise_fully_connected_layer<                     \
+    T,                                                                         \
+    data_layout::MODEL_PARALLEL,                                               \
+    Device>;
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
 #endif // LBANN_CHANNELWISE_FULLY_CONNECTED_LAYER_INSTANTIATE

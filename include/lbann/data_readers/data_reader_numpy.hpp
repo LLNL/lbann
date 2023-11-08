@@ -61,9 +61,9 @@ public:
   int get_num_labels() const override { return m_num_labels; }
   int get_linearized_data_size() const override { return m_num_features; }
   int get_linearized_label_size() const override { return m_num_labels; }
-  const std::vector<int> get_data_dims() const override
+  const std::vector<El::Int> get_data_dims() const override
   {
-    std::vector<int> dims(m_data.shape.begin() + 1, m_data.shape.end());
+    std::vector<El::Int> dims(m_data.shape.begin() + 1, m_data.shape.end());
     if (m_supported_input_types.at(INPUT_DATA_TYPE_LABELS) ||
         m_supported_input_types.at(INPUT_DATA_TYPE_RESPONSES)) {
       dims.back() -= 1;

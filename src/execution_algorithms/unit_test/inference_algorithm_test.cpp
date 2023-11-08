@@ -61,16 +61,6 @@ model {
 }
 )ptext";
 
-auto mock_datareader_metadata(int class_n)
-{
-  lbann::DataReaderMetaData md;
-  auto& md_dims = md.data_dims;
-  // This is all that should be needed for this test.
-  md_dims[lbann::data_reader_target_mode::CLASSIFICATION] = {class_n};
-  md_dims[lbann::data_reader_target_mode::INPUT] = {1, 1, class_n};
-  return md;
-}
-
 template <typename T>
 auto make_model(lbann::lbann_comm& comm, int class_n)
 {
@@ -78,14 +68,14 @@ auto make_model(lbann::lbann_comm& comm, int class_n)
   if (!pb::TextFormat::ParseFromString(model_prototext, &my_proto))
     throw "Parsing protobuf failed.";
   // Construct a trainer so that the model can register the input layer
-  lbann::construct_trainer(&comm, my_proto.mutable_trainer(), my_proto);
-  auto metadata = mock_datareader_metadata(class_n);
+  auto& trainer =
+    lbann::construct_trainer(&comm, my_proto.mutable_trainer(), my_proto);
+  unit_test::utilities::mock_data_reader(trainer, {1, 1, class_n}, class_n);
   auto my_model = lbann::proto::construct_model(&comm,
-                                                -1,
                                                 my_proto.optimizer(),
                                                 my_proto.trainer(),
                                                 my_proto.model());
-  my_model->setup(1UL, metadata, {&comm.get_trainer_grid()});
+  my_model->setup(class_n, {&comm.get_trainer_grid()});
   return my_model;
 }
 

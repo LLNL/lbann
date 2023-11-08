@@ -45,11 +45,13 @@ set_full_path(THIS_DIR_HEADERS
   dump_outputs.hpp
   dump_weights.hpp
   early_stopping.hpp
+  evaluate_progress.hpp
   gpu_memory_usage.hpp
+  gradient_clipping.hpp
   hang.hpp
-  imcomm.hpp
   learning_rate.hpp
   ltfb.hpp
+  memory_profiler.hpp
   mixup.hpp
   monitor_io.hpp
   perturb_adam.hpp
@@ -59,6 +61,7 @@ set_full_path(THIS_DIR_HEADERS
   print_model_description.hpp
   print_statistics.hpp
   profiler.hpp
+  progress_bar.hpp
   replace_weights.hpp
   save_images.hpp
   save_model.hpp

@@ -44,10 +44,7 @@ import lbann.contrib.launcher
 desc = ('Construct and run CANDLE on Pilot1 data. '
         'Running the experiment is only supported on LC systems.')
 parser = argparse.ArgumentParser(description=desc)
-lbann.contrib.args.add_scheduler_arguments(parser)
-parser.add_argument(
-    '--job-name', action='store', default='lbann_image_ae', type=str,
-    help='scheduler job name (default: lbann_CANDLE)')
+lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_image_ae')
 parser.add_argument(
     '--mini-batch-size', action='store', default=128, type=int,
     help='mini-batch size (default: 128)', metavar='NUM')
@@ -152,7 +149,6 @@ decode1 = lbann.FullyConnected(relu9,
                                name="decode1",
                                data_layout="model_parallel",
                                hint_layer=data,
-                               #num_neurons_from_data_reader=True,
                                has_bias=True)
 
 relu10 = lbann.Relu(decode1, name="relu10", data_layout="model_parallel")

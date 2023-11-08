@@ -39,16 +39,16 @@ template <typename TDT>
 void do_tensor_copy(const BaseDistMat& src, El::AbstractDistMatrix<TDT>& tgt)
 {
   bool copy_async = false;
-#if defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
+#if defined(LBANN_HAS_GPU)
   auto src_dist_data = src.DistData();
   auto tgt_dist_data = tgt.DistData();
   // Asynchronously copy CPU data to GPU data if they are otherwise aligned
-  if ((src.dist_data.device == El::Device::CPU) &&
+  if ((src_dist_data.device == El::Device::CPU) &&
       (tgt_dist_data.device == El::Device::GPU)) {
     src_dist_data.device = El::Device::GPU;
     copy_async = (src_dist_data == tgt_dist_data);
   }
-#endif // defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
+#endif // defined(LBANN_HAS_GPU)
   if (copy_async) {
     El::CopyAsync(src, tgt);
   }
@@ -152,11 +152,16 @@ void utils::details::do_tensor_copy_between_grids(
 
 template <typename TDT>
 void view_or_copy_tensor(const BaseDistMat& src,
-                         El::AbstractDistMatrix<TDT>& tgt)
+                         El::AbstractDistMatrix<TDT>& tgt,
+                         bool locked_view)
 {
 
   if (src.DistData() == tgt.DistData()) {
-    El::LockedView(tgt, dynamic_cast<const El::AbstractDistMatrix<TDT>&>(src));
+    if (locked_view) {
+      El::LockedView(tgt, dynamic_cast<const El::AbstractDistMatrix<TDT>&>(src));
+    } else {
+      El::View(tgt, dynamic_cast<El::AbstractDistMatrix<TDT>&>(const_cast<BaseDistMat&>(src)));
+    }
   }
   else {
     do_tensor_copy(src, tgt);

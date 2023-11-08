@@ -181,7 +181,7 @@ RandomPairwiseExchange::evaluate_model(model& m,
 
   // Mark the data store as loading - Note that this is a temporary fix
   // for the current use of the tournament
-  m.mark_data_store_explicitly_loading(execution_mode::tournament);
+  dc.mark_data_store_explicitly_loading(execution_mode::tournament);
 
   // Evaluate model on validation set
   get_trainer().evaluate(&m, execution_mode::tournament);
@@ -206,7 +206,7 @@ RandomPairwiseExchange::evaluate_model(model& m,
 
   // Mark the data store as loaded - Note that this is a temporary fix
   // for the current use of the tournament
-  m.make_data_store_preloaded(execution_mode::tournament);
+  dc.make_data_store_preloaded(execution_mode::tournament);
 
   // Clean up and return metric value
   m.reset_mode(ctxt, original_mode);
@@ -335,9 +335,7 @@ void RandomPairwiseExchange::select_next(model& m,
     m_mutate_algo->mutate(m, step);
 
     auto& trainer = get_trainer();
-    auto&& metadata = dc.get_dr_metadata();
     m.setup(trainer.get_max_mini_batch_size(),
-            metadata,
             trainer.get_grids(),
             /*force*/ true);
   }

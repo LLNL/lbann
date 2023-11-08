@@ -29,11 +29,7 @@
 # Just in case
 source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
 
-# Load up the spack environment
-SPACK_ARCH=$(spack arch)
-SPACK_ARCH_TARGET=$(spack arch -t)
-spack env activate lbann-${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET}
-spack load lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET} arch=${SPACK_ARCH}
+cd ${LBANN_BUILD_DIR}
 
 # Configure the output directory
 OUTPUT_DIR=${CI_PROJECT_DIR}/${RESULTS_DIR}
@@ -45,9 +41,8 @@ mkdir -p ${OUTPUT_DIR}
 
 FAILED_JOBS=""
 
-LBANN_HASH=$(spack find --format {hash:7} lbann@${SPACK_ENV_NAME}-${SPACK_ARCH_TARGET})
-SPACK_BUILD_DIR="spack-build-${LBANN_HASH}"
-cd ${SPACK_BUILD_DIR}
+echo "Running sequential catch tests"
+
 srun --jobid=${JOB_ID} -N 1 -n 1 -t 5 \
      ./unit_test/seq-catch-tests \
      -r JUnit \
@@ -57,6 +52,9 @@ if [[ $? -ne 0 ]]; then
 fi
 
 LBANN_NNODES=$(scontrol show job ${JOB_ID} | sed -n 's/.*NumNodes=\([0-9]\).*/\1/p')
+
+echo "Running MPI catch tests with ${LBANN_NNODES} nodes and ${TEST_TASKS_PER_NODE} tasks per node"
+
 srun --jobid=${JOB_ID} \
      -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
      --ntasks-per-node=$TEST_TASKS_PER_NODE \
@@ -67,6 +65,8 @@ srun --jobid=${JOB_ID} \
 if [[ $? -ne 0 ]]; then
     FAILED_JOBS+=" mpi"
 fi
+
+echo "Running MPI filesystem catch tests"
 
 srun --jobid=${JOB_ID} \
      -N ${LBANN_NNODES} -n $(($TEST_TASKS_PER_NODE * ${LBANN_NNODES})) \
@@ -85,7 +85,7 @@ fi
 # someone would look at it.
 if [[ -n "${FAILED_JOBS}" ]];
 then
-    echo "Some Catch2 tests failed:${FAILED_JOBS}" > ${OUTPUT_DIR}/catch-tests-failed.txt
+    echo "Some Catch2 tests failed:${FAILED_JOBS}" | tee ${OUTPUT_DIR}/catch-tests-failed.txt
 fi
 
 # Return "success" so that the pytest-based testing can run.

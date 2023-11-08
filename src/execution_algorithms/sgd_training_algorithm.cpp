@@ -35,9 +35,15 @@
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/timer_map.hpp"
 
 #include "lbann/proto/training_algorithm.pb.h"
+
+// FIXME (trb): This is a quick hack for a short-term deliverable.
+#ifdef LBANN_HAS_CALIPER
+#include <adiak.hpp>
+#endif
 
 #include <iostream>
 #include <memory>
@@ -52,7 +58,7 @@ SGDTrainingAlgorithm::SGDTrainingAlgorithm(
   : TrainingAlgorithm{std::move(name)},
     m_timers{"<default>"},
     m_stopping_criteria{std::move(stop)},
-    m_validation_context{execution_mode::validation, 1UL},
+    m_validation_context{execution_mode::validation},
     m_validation_epochs{1UL},
     m_suppress_timer{suppress_timer}
 {}
@@ -99,10 +105,6 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
 
   auto& evaluation_context = m_validation_context;
   auto& num_validation_epochs = m_validation_epochs;
-  evaluation_context.set_current_mini_batch_size(
-    dc.get_mini_batch_size(execution_mode::validation));
-  evaluation_context.set_effective_mini_batch_size(
-    dc.get_mini_batch_size(execution_mode::validation));
 
   // Initialize some state so it knows we're training now.
   c.set_execution_mode(execution_mode::training);
@@ -113,57 +115,85 @@ void SGDTrainingAlgorithm::train(SGDExecutionContext& c,
   do_train_begin_cbs(model, ScopeTimer{train_timer, "train_begin callbacks"});
 
   // Start iterating
-  bool is_start_of_epoch = true;
+  [[maybe_unused]] size_t total_batches = 0;
   c.start_timer();
-  while (!term(c)) {
+  LBANN_CALIPER_LOOP_BEGIN(train_epoch, "train_epoch");
+  for ([[maybe_unused]] size_t epoch = 0; !term(c); ++epoch) {
 
-    if (is_start_of_epoch) {
-      // Initialize epoch
-      model.reset_mode(c, execution_mode::training);
-      model.reset_epoch_statistics(execution_mode::training);
-      dc.reset_mode(c);
-      do_epoch_begin_cbs(model,
-                         ScopeTimer{train_timer, "epoch_begin callbacks"});
-      is_start_of_epoch = false;
-    }
+    LBANN_CALIPER_LOOP_ITER(train_epoch, epoch);
+
+    // Initialize epoch
+    model.reset_mode(c, execution_mode::training);
+    model.reset_epoch_statistics(execution_mode::training);
+    dc.reset_mode(c);
+    do_epoch_begin_cbs(model, ScopeTimer{train_timer, "epoch_begin callbacks"});
 
     // Train a mini batch. Returns "true" if the data_coordinator
-    // detects the end of an epoch.
-    if (train_mini_batch(c,
+    // detects the end of an epoch. The termination criteria must be
+    // checked every iteration as there may be a batch limit rather
+    // than an epoch limit.
+    LBANN_CALIPER_LOOP_BEGIN(
+      train_batch,
+      (epoch == 0UL ? "train_minibatch_epoch_0" : "train_minibatch"));
+
+    if (get_trainer().background_io_activity_allowed()) {
+      // Fetch the first batch
+      dc.fetch_active_batch_synchronous(execution_mode::training);
+      El::Int current_mini_batch_size =
+        dc.get_current_mini_batch_size(execution_mode::training);
+      model.set_current_mini_batch_size(current_mini_batch_size);
+    }
+
+    bool end_of_epoch = false;
+    while (!term(c) && !end_of_epoch) {
+      LBANN_CALIPER_LOOP_ITER(train_batch, c.get_step());
+      end_of_epoch =
+        train_mini_batch(c,
                          model,
                          dc,
-                         ScopeTimer{train_timer, "train minibatch"})) {
-      // Finalize epoch
-      c.inc_epoch();
-      model.reconcile_weight_values();
-      do_epoch_end_cbs(model, ScopeTimer{train_timer, "epoch_end callbacks"});
+                         ScopeTimer{train_timer, "train minibatch"});
+      ++total_batches;
+    }
+    LBANN_CALIPER_LOOP_END(train_batch);
 
-      // Evaluate on validation set
-      //
-      // FIXME (trb 05/04/2021): Upon further refactor, this should
-      // move out of the main training cycle and become part of an
-      // "evaluation policy" or something of that nature, ideally with
-      // its own context that we needn't know about.
-      if (dc.is_execution_mode_valid(execution_mode::validation)) {
-        evaluate(evaluation_context,
-                 model,
-                 dc,
-                 execution_mode::validation,
-                 EpochTerminationCriteria(num_validation_epochs));
-        ++num_validation_epochs;
+    // Finalize epoch
+    c.inc_epoch();
 
-        // FIXME (trb 06/07/21): The early stopping callback is part
-        // of the evaluation callbacks but it's meant to affect
-        // training. This fixes a bug in which the training context
-        // was meant to stop but was never properly told.
-        c.set_early_stop(evaluation_context.get_early_stop());
-      }
+    // FIXME (tbennun 10/09/23): This is weight averaging and should not be done
+    // unless requested. Commented out for now to test for any regressions.
+    // model.reconcile_weight_values();
 
-      // Trigger new epoch stuff next iteration (if there is one).
-      is_start_of_epoch = true;
+    do_epoch_end_cbs(model, ScopeTimer{train_timer, "epoch_end callbacks"});
+
+    // Evaluate on validation set
+    //
+    // FIXME (trb 05/04/2021): Upon further refactor, this should
+    // move out of the main training cycle and become part of an
+    // "evaluation policy" or something of that nature, ideally with
+    // its own context that we needn't know about.
+    if (dc.is_execution_mode_valid(execution_mode::validation)) {
+      evaluate(evaluation_context,
+               model,
+               dc,
+               execution_mode::validation,
+               EpochTerminationCriteria(num_validation_epochs));
+      ++num_validation_epochs;
+
+      // FIXME (trb 06/07/21): The early stopping callback is part
+      // of the evaluation callbacks but it's meant to affect
+      // training. This fixes a bug in which the training context
+      // was meant to stop but was never properly told.
+      c.set_early_stop(evaluation_context.get_early_stop());
     }
   }
+  LBANN_CALIPER_LOOP_END(train_epoch);
   c.stop_timer();
+#ifdef LBANN_HAS_CALIPER
+  if (is_caliper_initialized()) {
+    adiak::value("total training epochs", c.get_epoch());
+    adiak::value("total training batches", total_batches);
+  }
+#endif
 
   // Reset the model back to the training execution context prior to
   // end of training callbacks
@@ -189,7 +219,20 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
 
   bool finished = false;
 
-  dc.fetch_data(execution_mode::training);
+#ifdef LBANN_HAS_GPU
+  m_data_prefetch_sync_event.synchronize();
+#endif // LBANN_HAS_GPU
+
+  if (get_trainer().background_io_activity_allowed()) {
+    dc.fetch_data_asynchronous(execution_mode::training);
+  }
+  else {
+    dc.fetch_active_batch_synchronous(execution_mode::training);
+  }
+
+  El::Int current_mini_batch_size =
+    dc.get_current_mini_batch_size(execution_mode::training);
+  model.set_current_mini_batch_size(current_mini_batch_size);
 
 #if defined(LBANN_HAVE_OMP_TASKLOOP)
   LBANN_OMP_PARALLEL
@@ -204,14 +247,14 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
         model.forward_prop(execution_mode::training);
       }
 
-      // check if the data coordinator has finished the epoch and kickoff
-      // background I/O
-      finished = dc.epoch_complete(execution_mode::training);
+#ifdef LBANN_HAS_GPU
+      m_data_prefetch_sync_event.record(
+        El::SyncInfo<El::Device::GPU>{}.Stream());
+#endif // LBANN_HAS_GPU
 
       // Result is not needed until the end of the mini-batch.
-      model.get_objective_function()->start_evaluation(
-        execution_mode::training,
-        c.get_current_mini_batch_size());
+      model.get_objective_function()->start_evaluation(execution_mode::training,
+                                                       current_mini_batch_size);
 
       // Backward prop step
       model.get_objective_function()->differentiate();
@@ -221,12 +264,14 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
       }
       model.get_objective_function()->compute_weight_regularization();
 
+      // Swap buffers in data coordinator
+      finished = dc.ready_for_next_fetch(execution_mode::training);
+
       // Finish evaluation.
       model.get_objective_function()->finish_evaluation(
         execution_mode::training,
-        c.get_current_mini_batch_size());
-      model.evaluate_metrics(execution_mode::training,
-                             c.get_current_mini_batch_size());
+        current_mini_batch_size);
+      model.evaluate_metrics(execution_mode::training, current_mini_batch_size);
 
       // Update step
       model.update_weights();
@@ -241,6 +286,22 @@ bool SGDTrainingAlgorithm::train_mini_batch(SGDExecutionContext& c,
                    execution_mode::training,
                    ScopeTimer{timer, "batch_end callbacks"});
   return finished;
+}
+
+[[maybe_unused]] static char const* loop_label(execution_mode mode)
+{
+  switch (mode) {
+  case execution_mode::validation:
+    return "validation_batch";
+  case execution_mode::testing:
+    return "testing_batch";
+  case execution_mode::prediction:
+    return "prediction_batch";
+  case execution_mode::tournament:
+    return "tournament_batch";
+  default:
+    return "unknown_evaluation_batch";
+  }
 }
 
 void SGDTrainingAlgorithm::evaluate(SGDExecutionContext& c,
@@ -273,7 +334,15 @@ void SGDTrainingAlgorithm::evaluate(SGDExecutionContext& c,
   do_evaluate_begin_cbs(model,
                         mode,
                         ScopeTimer{eval_timer, "eval_begin callbacks"});
+  LBANN_CALIPER_LOOP_BEGIN(eval_batch, loop_label(mode));
+  if (get_trainer().background_io_activity_allowed()) {
+    // Fetch the first step in an evaluation
+    dc.fetch_active_batch_synchronous(mode);
+    El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
+    model.set_current_mini_batch_size(current_mini_batch_size);
+  }
   while (!term(c)) {
+    LBANN_CALIPER_LOOP_ITER(eval_batch, c.get_step());
     if (evaluate_mini_batch(c,
                             model,
                             dc,
@@ -281,6 +350,7 @@ void SGDTrainingAlgorithm::evaluate(SGDExecutionContext& c,
                             ScopeTimer{eval_timer, "eval minibatch"}))
       c.inc_epoch();
   }
+  LBANN_CALIPER_LOOP_END(eval_batch);
   do_evaluate_end_cbs(model,
                       mode,
                       ScopeTimer{eval_timer, "eval_end callbacks"});
@@ -295,19 +365,22 @@ bool SGDTrainingAlgorithm::evaluate_mini_batch(SGDExecutionContext& c,
   model.reset_mode(c, mode);
   dc.reset_mode(c);
   do_batch_begin_cbs(model, mode, ScopeTimer{timer, "batch_begin callbacks"});
-  dc.fetch_data(mode);
+  if (get_trainer().background_io_activity_allowed()) {
+    dc.fetch_data_asynchronous(mode);
+  }
+  else {
+    dc.fetch_active_batch_synchronous(mode);
+  }
+  El::Int current_mini_batch_size = dc.get_current_mini_batch_size(mode);
+  model.set_current_mini_batch_size(current_mini_batch_size);
   model.forward_prop(mode);
-  // check if the data coordinator has finished the epoch and kickoff
-  // background I/O
-  const bool finished = dc.epoch_complete(mode);
+  bool const finished = dc.ready_for_next_fetch(mode);
 
-  model.get_objective_function()->start_evaluation(
-    mode,
-    c.get_current_mini_batch_size());
-  model.get_objective_function()->finish_evaluation(
-    mode,
-    c.get_current_mini_batch_size());
-  model.evaluate_metrics(mode, c.get_current_mini_batch_size());
+  model.get_objective_function()->start_evaluation(mode,
+                                                   current_mini_batch_size);
+  model.get_objective_function()->finish_evaluation(mode,
+                                                    current_mini_batch_size);
+  model.evaluate_metrics(mode, current_mini_batch_size);
   model.update_layers();
   c.inc_step();
   do_batch_end_cbs(model, mode, ScopeTimer{timer, "batch_end callbacks"});
@@ -448,7 +521,7 @@ std::string SGDTrainingAlgorithm::get_type() const { return "sgd"; }
 
 SGDExecutionContext* SGDTrainingAlgorithm::do_get_new_execution_context() const
 {
-  return new SGDExecutionContext(execution_mode::invalid, 0);
+  return new SGDExecutionContext(execution_mode::invalid);
 }
 } // namespace lbann
 

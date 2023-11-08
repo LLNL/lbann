@@ -61,7 +61,7 @@ lbann_summary::~lbann_summary()
 void lbann_summary::report_image(std::string const& tag,
                                  std::string const& img_format,
                                  CPUMat const& image,
-                                 std::vector<int> const& dims_in,
+                                 std::vector<El::Int> const& dims_in,
                                  int step)
 {
   std::vector<size_t> dims(dims_in.begin(), dims_in.end());

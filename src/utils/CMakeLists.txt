@@ -49,7 +49,6 @@ set_full_path(THIS_DIR_SOURCES
   random.cpp
   random_number_generators.cpp
   serialization.cpp
-  stack_profiler.cpp
   stack_trace.cpp
   statistics.cpp
   summary.cpp

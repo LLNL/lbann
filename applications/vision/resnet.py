@@ -11,10 +11,8 @@ import data.imagenet
 desc = ('Construct and run ResNet on ImageNet-1K data. '
         'Running the experiment is only supported on LC systems.')
 parser = argparse.ArgumentParser(description=desc)
-lbann.contrib.args.add_scheduler_arguments(parser)
-parser.add_argument(
-    '--job-name', action='store', default='lbann_resnet', type=str,
-    help='scheduler job name (default: lbann_resnet)')
+lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_resnet')
+lbann.contrib.args.add_profiling_arguments(parser)
 parser.add_argument(
     '--resnet', action='store', default=50, type=int,
     choices=(18, 34, 50, 101, 152),
@@ -50,6 +48,9 @@ parser.add_argument(
 parser.add_argument(
     '--random-seed', action='store', default=0, type=int,
     help='random seed for LBANN RNGs', metavar='NUM')
+parser.add_argument(
+    '--synthetic', action='store_true', default=False,
+    help='Use synthetic data')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 args = parser.parse_args()
 
@@ -135,6 +136,7 @@ if args.warmup:
     callbacks.append(
         lbann.CallbackLinearGrowthLearningRate(
             target=0.1 * args.mini_batch_size / 256, num_epochs=5))
+callbacks.extend(lbann.contrib.args.create_profile_callbacks(args))
 model = lbann.Model(args.num_epochs,
                     layers=layers,
                     objective_function=obj,
@@ -145,14 +147,21 @@ model = lbann.Model(args.num_epochs,
 opt = lbann.contrib.args.create_optimizer(args)
 
 # Setup data reader
-data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
+data_reader = data.imagenet.make_data_reader(
+    num_classes=args.num_classes,
+    synthetic=args.synthetic)
 
 # Setup trainer
 trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size, random_seed=args.random_seed)
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
+if args.synthetic:
+    lbann_args = []
+else:
+    lbann_args = ['--use_data_store', '--preload_data_store', '--node_sizes_vary']
+lbann_args += lbann.contrib.args.get_profile_args(args)
 lbann.contrib.launcher.run(trainer, model, data_reader, opt,
                            job_name=args.job_name,
-                           lbann_args=" --use_data_store --preload_data_store --node_sizes_vary",
+                           lbann_args=lbann_args,
                            **kwargs)

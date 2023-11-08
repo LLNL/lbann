@@ -41,7 +41,17 @@
 #include <utility>
 #include <vector>
 
-static char const* cutt_err_string(cuttResult err) noexcept
+#define LBANN_CHECK_CUTT(cmd)                                                  \
+  do {                                                                         \
+    cuttResult _check_cutt_err_result = (cmd);                                 \
+    if (CUTT_SUCCESS != _check_cutt_err_result) {                              \
+      LBANN_ERROR("cuTT operation \"" #cmd "\" FAILED (",                      \
+                  cutt_err_string(_check_cutt_err_result),                     \
+                  ")");                                                        \
+    }                                                                          \
+  } while (0)
+
+static inline char const* cutt_err_string(cuttResult err) noexcept
 {
   switch (err) {
   case CUTT_SUCCESS:
@@ -61,17 +71,7 @@ static char const* cutt_err_string(cuttResult err) noexcept
   }
 }
 
-#define CHECK_CUTT(cmd)                                                        \
-  do {                                                                         \
-    cuttResult _check_cutt_err_result = (cmd);                                 \
-    if (CUTT_SUCCESS != _check_cutt_err_result) {                              \
-      LBANN_ERROR("cuTT operation \"" #cmd "\" FAILED (",                      \
-                  cutt_err_string(_check_cutt_err_result),                     \
-                  ")");                                                        \
-    }                                                                          \
-  } while (0)
-
-namespace {
+namespace lbann {
 
 /** @brief cuTT-based implementation of tensor permute.
  *
@@ -149,8 +149,17 @@ public:
   ///@}
 
 private:
+  using BatchSizeT = El::Int;
+  using Plan = cuttHandle;
+  using PlanMap = std::unordered_map<BatchSizeT, Plan>;
+  // The key here corresponds to the minibatch size. This is chosen to
+  // be robust to variable batch sizes beyond the simple last-batch
+  // "remainder", however unlikely any other case may be.
+
+private:
   template <typename DataT>
-  cuttHandle get_mb_plan(ColMajorPerm const& perm,
+  cuttHandle get_mb_plan(PlanMap& plan_map,
+                         ColMajorPerm const& perm,
                          DimsType const& in_dims,
                          DimsType const& out_dims,
                          El::Matrix<DataT, El::Device::GPU> const& in,
@@ -165,14 +174,20 @@ private:
                   El::Matrix<DataT, El::Device::GPU> const& out) const;
 
   template <typename DataT>
-  void do_mb_permute(ColMajorPerm const& perm,
+  bool is_mb_permutable(El::Matrix<DataT, El::Device::GPU> const& in,
+                        El::Matrix<DataT, El::Device::GPU> const& out) const;
+
+  template <typename DataT>
+  void do_mb_permute(PlanMap& plan_map,
+                     ColMajorPerm const& perm,
                      DimsType const& in_dims,
                      DimsType const& out_dims,
                      El::Matrix<DataT, El::Device::GPU> const& in,
                      El::Matrix<DataT, El::Device::GPU>& out) const;
 
   template <typename DataT>
-  void do_sample_permute(ColMajorPerm const& perm,
+  void do_sample_permute(Plan& plan,
+                         ColMajorPerm const& perm,
                          DimsType const& in_dims,
                          DimsType const& out_dims,
                          El::Matrix<DataT, El::Device::GPU> const& in,
@@ -183,8 +198,12 @@ private:
   ColMajorPerm m_inv_perm;
   DimsType m_input_dims;
   DimsType m_output_dims;
-  mutable std::map<El::Int, cuttHandle> m_mb_plan_map;
-  mutable cuttHandle m_sample_plan = 0U;
+
+  // Plan memoization -- lazily constructed.
+  mutable PlanMap m_fwd_plans;
+  mutable PlanMap m_inv_plans;
+  mutable Plan m_sample_fwd_plan = 0U;
+  mutable Plan m_sample_inv_plan = 0U;
 }; // class cuTT_PermuteImpl
 
 inline cuTT_PermuteImpl::cuTT_PermuteImpl(ColMajorPerm perm)
@@ -194,12 +213,24 @@ inline cuTT_PermuteImpl::cuTT_PermuteImpl(ColMajorPerm perm)
   LBANN_ASSERT_DEBUG(is_valid(m_inv_perm));
 }
 
-inline cuTT_PermuteImpl::~cuTT_PermuteImpl()
+inline cuTT_PermuteImpl::~cuTT_PermuteImpl() noexcept
 {
-  for (auto const& [_, plan] : m_mb_plan_map)
-    CHECK_CUTT(cuttDestroy(plan));
-  if (m_sample_plan)
-    CHECK_CUTT(cuttDestroy(m_sample_plan));
+  try {
+    for (auto& [_, plan] : m_fwd_plans)
+      if (plan)
+        LBANN_CHECK_CUTT(cuttDestroy(plan));
+    for (auto& [_, plan] : m_inv_plans)
+      if (plan)
+        LBANN_CHECK_CUTT(cuttDestroy(plan));
+    if (m_sample_fwd_plan)
+      LBANN_CHECK_CUTT(cuttDestroy(m_sample_fwd_plan));
+    if (m_sample_inv_plan)
+      LBANN_CHECK_CUTT(cuttDestroy(m_sample_inv_plan));
+  }
+  catch (lbann::exception const& e) {
+    std::cerr << e.what();
+    std::terminate();
+  }
 }
 
 inline auto cuTT_PermuteImpl::perm() const noexcept -> ColMajorPerm const&
@@ -225,6 +256,7 @@ inline void cuTT_PermuteImpl::set_dims(DimsType input_dims)
 
 template <typename DataT>
 cuttHandle cuTT_PermuteImpl::get_mb_plan(
+  PlanMap& plan_map,
   ColMajorPerm const& perm,
   DimsType const& in_dims,
   DimsType const& out_dims,
@@ -235,21 +267,21 @@ cuttHandle cuTT_PermuteImpl::get_mb_plan(
   LBANN_ASSERT_DEBUG(perm.size() == in_dims.size() &&
                      perm.size() == out_dims.size());
 
-  auto const mbs = in.Width();
-  if (!m_mb_plan_map.count(mbs)) {
+  auto const key = in.Width();
+  if (plan_map.count(key) == 0UL) {
     std::vector<int> permutation(perm.get()), dimensions(in_dims.get());
     permutation.push_back(static_cast<int>(perm.size()));
     dimensions.push_back(in.Width());
-    cuttHandle plan;
-    CHECK_CUTT(cuttPlan(&plan,
-                        dimensions.size(),
-                        dimensions.data(),
-                        permutation.data(),
-                        sizeof(DataT),
-                        out.GetSyncInfo().Stream()));
-    m_mb_plan_map[mbs] = plan;
+    cuttHandle plan = 0U;
+    LBANN_CHECK_CUTT(cuttPlan(&plan,
+                              dimensions.size(),
+                              dimensions.data(),
+                              permutation.data(),
+                              sizeof(DataT),
+                              out.GetSyncInfo().Stream()));
+    plan_map.emplace(key, plan);
   }
-  return m_mb_plan_map[mbs];
+  return plan_map[key];
 }
 
 template <typename DataT>
@@ -260,16 +292,24 @@ cuttHandle cuTT_PermuteImpl::get_sample_plan(
   El::Matrix<DataT, El::Device::GPU> const& in,
   El::Matrix<DataT, El::Device::GPU> const& out) const
 {
-  if (m_sample_plan == 0U) {
-    std::vector<int> permutation(perm.get()), dimensions(in_dims.get());
-    CHECK_CUTT(cuttPlan(&m_sample_plan,
-                        dimensions.size(),
-                        dimensions.data(),
-                        permutation.data(),
-                        sizeof(DataT),
-                        out.GetSyncInfo().Stream()));
-  }
-  return m_sample_plan;
+  std::vector<int> permutation(perm.get()), dimensions(in_dims.get());
+  Plan plan = 0UL;
+  LBANN_CHECK_CUTT(cuttPlan(&plan,
+                            dimensions.size(),
+                            dimensions.data(),
+                            permutation.data(),
+                            sizeof(DataT),
+                            out.GetSyncInfo().Stream()));
+  return plan;
+}
+
+template <typename DataT>
+bool cuTT_PermuteImpl::is_mb_permutable(
+  El::Matrix<DataT, El::Device::GPU> const& in,
+  El::Matrix<DataT, El::Device::GPU> const& out) const
+{
+  return in.LDim() == in.Height() && out.LDim() == out.Height() &&
+         in.Width() > 1;
 }
 
 template <typename DataT>
@@ -279,20 +319,15 @@ void cuTT_PermuteImpl::permute(El::Matrix<DataT, El::Device::GPU> const& in,
   if (in.Width() == El::Int{0})
     return;
 
-  auto const& in_dims = m_input_dims;
-  auto const& out_dims = m_output_dims;
-  auto const& perm = m_perm;
-
-  auto multisync =
-    El::MakeMultiSync(El::SyncInfoFromMatrix(out), El::SyncInfoFromMatrix(in));
-
-  if (in.LDim() == in.Height() && out.LDim() == out.Height() &&
-      in.Width() > 1) {
-    do_mb_permute(perm, in_dims, out_dims, in, out);
-  }
-  else {
-    do_sample_permute(perm, in_dims, out_dims, in, out);
-  }
+  if (is_mb_permutable(in, out))
+    do_mb_permute(m_fwd_plans, m_perm, m_input_dims, m_output_dims, in, out);
+  else
+    do_sample_permute(m_sample_fwd_plan,
+                      m_inv_perm,
+                      m_input_dims,
+                      m_output_dims,
+                      in,
+                      out);
 }
 
 template <typename DataT>
@@ -303,55 +338,62 @@ void cuTT_PermuteImpl::inverse_permute(
   if (in.Width() == El::Int{0})
     return;
 
-  // Aliases to help this read better.
-  auto const& in_dims = m_output_dims;
-  auto const& out_dims = m_input_dims;
-  auto const& perm = m_inv_perm;
-
-  auto multisync =
-    El::MakeMultiSync(El::SyncInfoFromMatrix(out), El::SyncInfoFromMatrix(in));
-
-  if (in.LDim() == in.Height() && out.LDim() == out.Height() &&
-      in.Width() > 1) {
-    do_mb_permute(perm, in_dims, out_dims, in, out);
-  }
-  else {
-    do_sample_permute(perm, in_dims, out_dims, in, out);
-  }
+  if (is_mb_permutable(in, out))
+    do_mb_permute(m_inv_plans,
+                  m_inv_perm,
+                  m_output_dims,
+                  m_input_dims,
+                  in,
+                  out);
+  else
+    do_sample_permute(m_sample_inv_plan,
+                      m_inv_perm,
+                      m_output_dims,
+                      m_input_dims,
+                      in,
+                      out);
 }
 
 template <typename DataT>
 void cuTT_PermuteImpl::do_mb_permute(
+  PlanMap& plan_map,
   ColMajorPerm const& perm,
   DimsType const& in_dims,
   DimsType const& out_dims,
   El::Matrix<DataT, El::Device::GPU> const& in,
   El::Matrix<DataT, El::Device::GPU>& out) const
 {
-  auto const plan = get_mb_plan(perm, in_dims, out_dims, in, out);
-  CHECK_CUTT(cuttExecute(plan,
-                         const_cast<DataT*>(in.LockedBuffer()), // UGH
-                         out.Buffer()));
+  auto multisync =
+    El::MakeMultiSync(El::SyncInfoFromMatrix(out), El::SyncInfoFromMatrix(in));
+  auto const plan = get_mb_plan(plan_map, perm, in_dims, out_dims, in, out);
+  LBANN_CHECK_CUTT(
+    cuttExecute(plan, const_cast<DataT*>(in.LockedBuffer()), out.Buffer()));
 }
 
 template <typename DataT>
 void cuTT_PermuteImpl::do_sample_permute(
+  Plan& sample_plan,
   ColMajorPerm const& perm,
   DimsType const& in_dims,
   DimsType const& out_dims,
   El::Matrix<DataT, El::Device::GPU> const& in,
   El::Matrix<DataT, El::Device::GPU>& out) const
 {
-  auto const plan = get_sample_plan(perm, in_dims, out_dims, in, out);
-  DataT* const in_buf = const_cast<DataT*>(in.LockedBuffer()); // UGH
+  auto multisync =
+    El::MakeMultiSync(El::SyncInfoFromMatrix(out), El::SyncInfoFromMatrix(in));
+  if (sample_plan == 0U)
+    sample_plan = get_sample_plan(perm, in_dims, out_dims, in, out);
+
+  DataT* const in_buf = const_cast<DataT*>(in.LockedBuffer());
   DataT* const out_buf = out.Buffer();
+
   auto const batch_size = in.Width();
   auto const in_stride = in.LDim();
   auto const out_stride = out.LDim();
   for (El::Int sample = 0; sample < batch_size; ++sample) {
-    CHECK_CUTT(cuttExecute(plan,
-                           in_buf + sample * in_stride,
-                           out_buf + sample * out_stride));
+    LBANN_CHECK_CUTT(cuttExecute(sample_plan,
+                                 in_buf + sample * in_stride,
+                                 out_buf + sample * out_stride));
   }
 }
 
@@ -361,9 +403,8 @@ inline void cuTT_PermuteImpl::swap(cuTT_PermuteImpl& other)
   std::swap(m_inv_perm, other.m_inv_perm);
   std::swap(m_input_dims, other.m_input_dims);
   std::swap(m_output_dims, other.m_output_dims);
-  std::swap(m_mb_plan_map, other.m_mb_plan_map);
-  std::swap(m_sample_plan, other.m_sample_plan);
 }
 
-} // namespace
+} // namespace lbann
+#undef LBANN_CHECK_CUTT
 #endif // LBANN_SRC_LAYERS_TRANSFORM_CUTT_PERMUTEIMPL_HPP_INCLUDED

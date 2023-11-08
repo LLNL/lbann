@@ -30,6 +30,7 @@
 #include "lbann/base.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/proto/factories.hpp"
+#include "lbann/utils/reference_counter.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 
@@ -61,7 +62,6 @@ class access;
 namespace lbann {
 
 // Forward declarations
-struct DataReaderMetaData;
 class lbann_comm;
 class description;
 class Layer;
@@ -205,14 +205,6 @@ public:
   template <typename TensorDataType>
   std::unique_ptr<optimizer> create_optimizer() const;
 
-  /** @brief Set a flag that can be used to enable / disable the
-   *         background I/O activities
-   */
-  void allow_background_io_activity(bool enable) noexcept;
-
-  /** @brief Are background I/O activities enabled by the input layers */
-  bool background_io_activity_allowed() const noexcept;
-
   // ===========================================
   // Setup
   // ===========================================
@@ -220,7 +212,6 @@ public:
   /** @details Must be called after model specification and before
    *  execution. */
   void setup(size_t max_mini_batch_size,
-             DataReaderMetaData& dr_metadata,
              const std::vector<El::Grid*>& grids,
              bool force = false);
 
@@ -330,12 +321,18 @@ private:
    */
   void setup_layer_execution_order();
 
+  /** @brief Set up grid tags for all layers.
+   *
+   *  Called in setup function.
+   */
+
+  void setup_layer_grid_tags(const std::vector<El::Grid*>& grids);
+
   /** @brief Set up layers.
    *
    *  Called in setup function.
    */
   void setup_layers(size_t max_mini_batch_size,
-                    DataReaderMetaData& dr_metadata,
                     const std::vector<El::Grid*>& grids);
 
   /** @brief Set up weights.
@@ -372,7 +369,7 @@ private:
                                       int num_subgrids);
   void get_resources_for_input_layer(std::vector<int>& masterSubGrid,
                                      int num_subgrids);
-  void setup_subcommunicators();
+  void setup_subcommunicators(const std::vector<El::Grid*>& grids);
 
   ///@}
 
@@ -396,10 +393,6 @@ public:
   /** Grab the training context of the model */
   ExecutionContext& get_execution_context();
 
-  void make_data_store_preloaded(execution_mode mode);
-
-  void mark_data_store_explicitly_loading(execution_mode mode);
-
   /** @brief Reset model pointer and execution mode. */
   void reset_mode(ExecutionContext& context, execution_mode mode);
   /** @brief Reset model statistics for an epoch. */
@@ -408,7 +401,7 @@ public:
   /** @brief Forward propagation step. */
   void forward_prop(execution_mode mode);
   /** @brief Backward propagation step. */
-  void backward_prop();
+  void backward_prop(bool compute_weight_grads_only = true);
   /** Evaluate any metrics in the model */
   void evaluate_metrics(execution_mode mode, size_t current_mini_batch_size);
   /** @brief Clear each optimizer's gradient.
@@ -427,6 +420,11 @@ public:
    *  are set to the average across the processes.
    */
   void reconcile_weight_values();
+
+  PointerRangeReferenceCounter& get_activation_reference_counter()
+  {
+    return m_activation_refcnt;
+  }
 
   // ===========================================
   // Callbacks
@@ -458,11 +456,12 @@ public:
   void do_weight_optimize_begin_cbs(weights* w);
   /** @brief Execute callbacks at the end of weight optimization. */
   void do_weight_optimize_end_cbs(weights* w);
-
-#ifdef LBANN_HAS_DISTCONV
-  /* @brief Return the maximum mini-batch size used by Distconv. */
-  size_t get_max_mini_batch_size_distconv() const noexcept;
-#endif
+  /** @brief Return the maximum mini-batch size. */
+  El::Int get_max_mini_batch_size() const noexcept;
+  /** @brief Return the current mini-batch size. */
+  El::Int get_current_mini_batch_size() const noexcept;
+  /** @brief Set the current mini-batch size. */
+  void set_current_mini_batch_size(El::Int) noexcept;
 
 private:
   friend cereal::access;
@@ -547,9 +546,6 @@ private:
   /** @brief Current callbacks to process. */
   std::vector<std::shared_ptr<callback_base>> m_callbacks;
 
-  /** @brief Flag that allows input layers to fetch data in the background */
-  bool m_background_io_allowed = true;
-
   /** @brief Is the model setup
    *  @details Flag to indicate if the setup function has been called
    */
@@ -595,18 +591,30 @@ private:
 
   void ensure_input_layers_first();
 
+  /** @brief The maximum mini-batch size.
+   *  @details This should be set before setup_distconv() is called.
+   */
+  El::Int m_max_mini_batch_size;
+
+  /** @brief The current mini-batch size.
+   *  @details This should be set on each step by the execution
+   *  algorithm using the value that the data coordinator gets from
+   *  the data readers.
+   *
+   *  Number of samples being processed in the current step (iteration),
+   *  used for correctly averaging gradients.
+
+   */
+  El::Int m_current_mini_batch_size;
+
+  /** @brief Reference counter for activations. */
+  PointerRangeReferenceCounter m_activation_refcnt;
+
 #ifdef LBANN_HAS_DISTCONV
 private:
   void setup_distconv();
   void setup_distributions();
   void print_distributions() const;
-
-private:
-  /** @brief The maximum mini-batch size used by Distconv.
-   *  @details This should be set before setup_distconv() is called.
-   */
-  size_t m_max_mini_batch_size_distconv;
-
 #endif // LBANN_HAS_DISTCONV
 };     // class model
 
@@ -666,16 +674,6 @@ inline std::unique_ptr<optimizer> model::create_optimizer() const
   if (m_default_optimizer_msg)
     return proto::construct_optimizer<TensorDataType>(*m_default_optimizer_msg);
   return nullptr;
-}
-
-inline void model::allow_background_io_activity(bool enable) noexcept
-{
-  m_background_io_allowed = enable;
-}
-
-inline bool model::background_io_activity_allowed() const noexcept
-{
-  return m_background_io_allowed;
 }
 
 inline void model::set_subgrid_communication_type(int type) noexcept
@@ -738,12 +736,31 @@ inline void model::set_num_resources_branch_layers(int num) noexcept
   num_resources_branch_layers = num;
 }
 
-#ifdef LBANN_HAS_DISTCONV
-inline size_t model::get_max_mini_batch_size_distconv() const noexcept
+inline El::Int model::get_max_mini_batch_size() const noexcept
 {
-  return m_max_mini_batch_size_distconv;
+  return m_max_mini_batch_size;
 }
-#endif
+
+inline El::Int model::get_current_mini_batch_size() const noexcept
+{
+  return m_current_mini_batch_size;
+}
+
+inline void model::set_current_mini_batch_size(El::Int mini_batch_size) noexcept
+{
+  if (mini_batch_size > m_max_mini_batch_size) {
+    LBANN_WARNING(
+      "LOGICAL ERROR: the current mini-batch size ",
+      mini_batch_size,
+      " is being set to larger than the established maximum mini-batch size ",
+      m_max_mini_batch_size,
+      ".  Note that this should work properly as all matrices will be resized, "
+      "but this is a logical error as the maximum mini-batch size should be "
+      "established at setup time to avoid dynamic allocation.");
+  }
+  m_current_mini_batch_size = mini_batch_size;
+  return;
+}
 
 } // namespace lbann
 

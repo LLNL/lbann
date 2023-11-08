@@ -96,9 +96,17 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  // Multi-stage log softmax can run in-place (local workspace acts as an
+  // intermediate buffer)
+  bool can_run_inplace() const override { return true; }
+  int get_backprop_requirements() const override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    return ERROR_SIGNALS | ACTIVATIONS;
+  }
+
+  void setup_dims() override
+  {
+    data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
 

@@ -81,10 +81,9 @@ void reduction_layer<T, L, D>::write_specific_proto(
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void reduction_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void reduction_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
   this->set_output_dims({1});
 }
 
@@ -126,7 +125,7 @@ void reduction_layer<TensorDataType, Layout, Device>::fp_compute()
     break;
   case reduction_mode::AVERAGE:
     El::Gemv(El::TRANSPOSE,
-             one / El::To<TensorDataType>(input.Height()),
+             El::To<TensorDataType>(one / El::To<TensorDataType>(input.Height())),
              input.LockedMatrix(),
              ones,
              zero,
@@ -187,7 +186,7 @@ void reduction_layer<TensorDataType, Layout, Device>::bp_compute()
   case reduction_mode::AVERAGE:
     El::Gemm(El::NORMAL,
              El::NORMAL,
-             one / El::To<TensorDataType>(input_grad.Height()),
+             El::To<TensorDataType>(one / El::To<TensorDataType>(input_grad.Height())),
              ones,
              local_output_grad,
              zero,

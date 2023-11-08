@@ -33,11 +33,6 @@
 
 namespace lbann {
 
-// Forward declaration.
-namespace callback {
-class imcomm;
-}
-
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class convolution_distconv_adapter
@@ -78,9 +73,6 @@ class convolution_layer : public base_convolution_layer<TensorDataType, Device>
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "convolution layer only supports DATA_PARALLEL");
 
-private:
-  friend class callback::imcomm;
-
 public:
   convolution_layer(int num_data_dims,
                     int num_output_channels,
@@ -111,6 +103,13 @@ public:
 
   El::Device get_device_allocation() const override { return Device; }
 
+  bool can_run_inplace() const override { return false; }
+
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | WEIGHTS | PREV_ACTIVATIONS;
+  }
+
 #ifdef LBANN_HAS_ONNX
   std::string get_onnx_op_type() const override { return "Conv"; }
   void fill_onnx_node(onnx::GraphProto& graph) const override;
@@ -131,7 +130,7 @@ protected:
   friend class cereal::access;
   convolution_layer();
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
   std::vector<int> get_kernel_dims() const override;
   void fp_compute() override;
   void bp_compute() override;
@@ -140,7 +139,7 @@ protected:
   friend class convolution_distconv_adapter<TensorDataType, Layout, Device>;
 
 protected:
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+  void setup_distconv_adapter() override;
   bool is_distconv_supported() const override;
 #endif // LBANN_HAS_DISTCONV
 };

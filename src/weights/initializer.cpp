@@ -30,6 +30,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/random.hpp"
 
@@ -76,6 +77,7 @@ void constant_initializer<TensorDataType>::write_proto(
 template <typename TensorDataType>
 void value_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix)
 {
+  LBANN_CALIPER_MARK_SCOPE("value_initializer::fill");
 
   // Check that number of values matches weights matrix
   if (matrix.Height() * matrix.Width() != (El::Int)m_values.size()) {
@@ -270,11 +272,12 @@ description uniform_initializer<TensorDataType>::get_description() const
 template <typename TensorDataType>
 void uniform_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix)
 {
+  typedef TensorDataType T;
   uniform_fill(matrix,
                matrix.Height(),
                matrix.Width(),
-               (m_max + m_min) / El::To<TensorDataType>(2),
-               (m_max - m_min) / El::To<TensorDataType>(2));
+               El::To<T>((m_max + m_min) / El::To<T>(2)),
+               El::To<T>((m_max - m_min) / El::To<T>(2)));
 }
 
 template <typename TensorDataType>
@@ -334,6 +337,14 @@ build_value_initializer_from_pbuf(google::protobuf::Message const& msg)
 {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::ValueInitializer const&>(msg);
+  if (params.values().size() > 0 && params.values_d().size() > 0) {
+    LBANN_ERROR("A value initializer must contain either single-precision "
+                "values or double-precision values (in values_d), not both.");
+  }
+  if (params.values_d().size() > 0)
+    return std::make_unique<value_initializer<TensorDataType>>(
+      protobuf::to_vector<TensorDataType>(params.values_d()));
+
   return std::make_unique<value_initializer<TensorDataType>>(
     protobuf::to_vector<TensorDataType>(params.values()));
 }
@@ -355,7 +366,7 @@ build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg)
     dynamic_cast<lbann_data::Initializer::UniformInitializer const&>(msg);
   const auto& min = El::To<TensorDataType>(params.min());
   const auto& max = El::To<TensorDataType>(params.max());
-  if (min != 0.0 || max != 0.0) {
+  if (min != El::To<TensorDataType>(0.0) || max != El::To<TensorDataType>(0.0)) {
     return std::make_unique<uniform_initializer<TensorDataType>>(min, max);
   }
   else {
@@ -367,12 +378,13 @@ template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_normal_initializer_from_pbuf(google::protobuf::Message const& msg)
 {
+  typedef TensorDataType T;
   const auto& params =
     dynamic_cast<lbann_data::Initializer::NormalInitializer const&>(msg);
   const auto& mean = El::To<TensorDataType>(params.mean());
   const auto& standard_deviation =
     El::To<TensorDataType>(params.standard_deviation());
-  if (mean != 0.0 || standard_deviation != 0.0) {
+  if (mean != El::To<T>(0.0) || standard_deviation != El::To<T>(0.0)) {
     return std::make_unique<normal_initializer<TensorDataType>>(
       mean,
       standard_deviation);

@@ -17,13 +17,123 @@ Experiments & Applications:
 
 Internal features:
 
-I/O & data readers:
+I/O & data ingestion:
 
 Build system:
 
 Bug fixes:
 
 Retired features:
+
+============================== Release Notes: v0.104 ==============================
+C++ API:
+
+Support for new training algorithms:
+
+Support for new network structures:
+ - Added GPT-3 transformers and training recipes
+
+Support for new layers:
+ - Select operator (set tensor value based on predicate)
+ - Model parallelism for channel-wise fully-connected layers
+
+Python front-end:
+ - Support for PyTorch Module conversion to LBANN graphs (requires PyTorch 2.0
+   or newer, compiled with PyTorch Dynamo)
+
+Performance optimizations:
+ - Support in-place computations for capable layers as a memory optimization
+ - Allow distconv-enabled convolution and batchnorm layers to reuse their
+   input activations as error signals as a memory optimization if the parent
+   layer does not need its activations in the backward pass. This optimization
+   can be disabled by setting the environment variable
+   DISTCONV_DISABLE_MEM_OPT=1.
+ - Added support for selective weight sharding (also known as
+   Fully-Sharded Data Parallelism, or FSDP). To enable, set sharded=true
+   on weight objects.
+ - Allow distconv to be disabled at runtime with LBANN_DISABLE_DISTCONV=1.
+ - Activations are now deallocated when no longer needed via a reference counter,
+   disable with LBANN_DISABLE_ACT_GC=1.
+ - Added option for LBANN to set the number of OMP threads to modest
+   default (4) if the environment doesn't specify anything.
+ - Save memory on backpropagation by not replicating gradients between
+   GradientManager and data_type_optimizer
+ - Save more memory in FSDP by synchronizing previous outstanding
+   async communication calls and freeing up local gradient contributions
+ - FSDP: release full weight views after backprop
+ - Batching heads in multi-head attention into single operations
+   instead of on a per-head basis
+ - Stacking the weights and biases for queries/keys/values in
+   self-attention
+
+Model portability & usability:
+ - Added support for profiling with Caliper
+
+Experiments & Applications:
+ - Updated CosmoFlow model to automatically scale the model
+   architecture and parallelism with input size.
+ - Added a PyTorch reference implementation of CosmoFlow.
+
+Internal features:
+ - Removed the mini_batch_size parameter from the following functions
+   in the layer class hierarchy: fp_setup_inputs, fp_setup_outputs, bp_setup_gradient_wrt_inputs
+   and the distconv_adapter class: fp_setup, bp_setup
+ - Support global and local gradient norm clipping with the clip_gradient_norm callback
+ - Interactive progress bar with the progress_bar callback
+ - Evaluate progress callback allows for periodic monitoring during
+   training with independent data set (intra-epoch evaluation)
+ - Detailed memory usage profiling with the memory_profiler callback
+ - Refactored subgraph parallelism
+
+I/O & data readers:
+ - Renamed percent_of_data_to_use more accurately to fraction_of_data_to_use.
+ - DataReaderMetaData, training_dr_linearized_data_size, and num_parallel_readers
+   were removed from the model and layer API, and instead reside in the data
+   ingestion pipeline.
+ - Fixed implementation of background I/O to achive better decoupling
+   of background data fetch. Can be enabled / disabled with runtime
+   flag.
+ - Set the default number of I/O threads to 4
+ - Changed the I/O and transform pipeline to use a bank of RNGs that
+   is now indexed by the sample ID in the load sequence, rather than the
+   I/O thread ID.  This eliminates variablility when using different
+   numbers of I/O threads.
+ - Moved state tracking current position in a data set from the data
+   reader to the dataset class.
+ - Split the I/O RNGs into two banks one for training and one for all
+   other execution modes.
+
+Build system:
+ - Updated build script to use CachedCMakeProject mode, which should
+   simplfy the overall workflow
+ - Set a default time limit for CI tests to avoid unnecessary stalls
+
+Bug fixes:
+ - Fixed a bug where in-place layers sometimes attached a locked view
+   of a matrix to a mutable view.
+ - Fixed a bug when trying to use the legacy HDF5 data reader without data store.
+ - Fixed concurrency bugs in the data store
+ - Fixed DistConv memory optimization bug
+
+Retired features:
+ - Support for autoencoder strategy in the summarize images callback was removed
+ - Removed deprecated Layer protobuf fields: weight_data,
+   num_neurons_from_data_reader
+ - Removed support for calculating a global mini-batch across multiple
+   models using the imcomm callback or multiple trainers.  The
+   mini-batch is now strictly contained to a single model in a single
+   trainer.  This deprecates an unused (and old) multi-model
+   execution mode using imcomm callback that predated LTFB.
+ - Removed the notion of effective mini-batch size versus current mini-batch size.
+ - Remove world master mini-batch adjustment.
+ - Remove model offset field.  No longer necessary since data sets do not span models.
+ - Remove the cached value of the current mini-batch size from the SGD
+   execution context.  It is now only cached in the model.
+ - Removed the imcomm "inter-model" callback
+ - Removed the num-parallel-readers parameter to the I/O subsystem.
+   This eliminates an older version of I/O parallelism that relied on
+   a non-data-parallel I/O buffer and had different ranks fetching
+   entire mini-batches.  It is superseded by standard data-parallel I/O.
 
 ============================== Release Notes: v0.103 ==============================
 C++ API:
@@ -141,6 +251,8 @@ Build system:
    significantly decreases the startup time of running a CI job
  - Enforce consistent GPU targets in Spack environment
  - Switched from Bamboo to GitLab CI framework
+ - Added support for a moduler GitLab CI script on Lassen
+ - Added CI pipelines for +distconv and +nvshmem where appropriate
 
 Bug fixes:
  - Fixed GPU kernels that launched with more blocks than allowed

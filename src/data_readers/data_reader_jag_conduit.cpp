@@ -104,21 +104,10 @@ int data_reader_jag_conduit::get_local_id(const std::string role) const
 void data_reader_jag_conduit::shuffle_indices(rng_gen& gen)
 {
   generic_data_reader::shuffle_indices(gen);
-  m_sample_list.compute_epochs_file_usage(get_shuffled_indices(),
-                                          get_mini_batch_size(),
-                                          *m_comm);
-}
-
-int data_reader_jag_conduit::compute_max_num_parallel_readers()
-{
-  set_sample_stride(get_num_parallel_readers());
-  set_iteration_stride(1);
-  return get_num_parallel_readers();
-}
-
-bool data_reader_jag_conduit::check_num_parallel_readers(long data_set_size)
-{
-  return true;
+  m_sample_list.compute_epochs_file_usage(
+    get_shuffled_indices(),
+    get_trainer().get_max_mini_batch_size(),
+    *m_comm);
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(bool shuffle)
@@ -1188,14 +1177,14 @@ const std::vector<int> data_reader_jag_conduit::get_dims(
   return {};
 }
 
-const std::vector<int> data_reader_jag_conduit::get_data_dims() const
+const std::vector<El::Int> data_reader_jag_conduit::get_data_dims() const
 {
 #if 1
   return {get_linearized_data_size()};
 #else
-  std::vector<int> all_dim;
+  std::vector<El::Int> all_dim;
   for (const auto t : m_independent) {
-    const std::vector<int> ld = get_dims(t);
+    const std::vector<El::Int> ld = get_dims(t);
     all_dim.insert(all_dim.end(), ld.begin(), ld.end());
   }
   if (all_dim.empty()) {
@@ -1690,10 +1679,12 @@ bool data_reader_jag_conduit::fetch_label(CPUMat& Y, int data_id, int mb_idx)
           mb_idx,
           1); // fake sample is set to 1; adversarial model
   else {      // fake sample (second half of minibatch is set to 0;discriminator
-         // model
+              // model
     // mb_idx < (m_mb_size/2) ? Y.Set(1,mb_idx,1) :
     // Y.Set(m_gan_label_value,mb_idx,1);
-    mb_idx < (get_current_mini_batch_size() / 2)
+    mb_idx < ((int)get_trainer()
+                .get_max_mini_batch_size() /*get_current_mini_batch_size()*/
+              / 2)
       ? Y.Set(1, mb_idx, 1)
       : Y.Set(m_gan_label_value, mb_idx, 1);
   }

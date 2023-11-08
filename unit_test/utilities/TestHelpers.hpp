@@ -26,15 +26,15 @@
 #ifndef LBANN_UNIT_TEST_UTILITIES_TEST_HELPERS_HPP_INCLUDED
 #define LBANN_UNIT_TEST_UTILITIES_TEST_HELPERS_HPP_INCLUDED
 
+#include <lbann/data_coordinator/data_coordinator.hpp>
+#include <lbann/trainers/trainer.hpp>
 #include <lbann/utils/argument_parser.hpp>
 #include <lbann/utils/options.hpp>
 
 #include <memory>
 
-namespace unit_test
-{
-namespace utilities
-{
+namespace unit_test {
+namespace utilities {
 
 template <typename T>
 bool IsValidPtr(std::unique_ptr<T> const& ptr) noexcept
@@ -66,6 +66,21 @@ inline lbann::default_arg_parser_type& reset_global_argument_parser()
   arg_parser.clear();
   lbann::construct_all_options();
   return arg_parser;
+}
+
+inline void mock_data_reader(lbann::trainer& trainer,
+                             const std::vector<El::Int>& sample_size,
+                             int num_classes)
+{
+  lbann::DataReaderMetaData md;
+  auto& md_dims = md.data_dims;
+  md_dims[lbann::data_reader_target_mode::CLASSIFICATION] = {num_classes};
+  md_dims[lbann::data_reader_target_mode::INPUT] = sample_size;
+
+  // Set up the data reader in the data coordinator
+  // TODO: This is a bit awkward and can be better refactored
+  auto& dc = trainer.get_data_coordinator();
+  dc.set_mock_dr_metadata(md);
 }
 
 } // namespace utilities

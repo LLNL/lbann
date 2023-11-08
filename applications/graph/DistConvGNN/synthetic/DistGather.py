@@ -10,9 +10,6 @@ desc = ("Benchmarking code for distributed gather with NVSHMEM")
 
 parser = argparse.ArgumentParser(description=desc)
 
-parser.add_argument('--job-name', action='store', default='distributed_gather', type=str,
-                    help='job name', metavar='NAME')
-
 parser.add_argument('--mini-batch-size', action='store', default=4, type=int,
                     help='mini-batch size (default: 4)', metavar='NUM')
 
@@ -32,7 +29,7 @@ parser.add_argument('--enable-distconv', action='store_true')
 parser.add_argument('--disable-distconv', dest='enable-distconv',action='store_false')
 parser.set_defaults(feature=True)
 
-lbann.contrib.args.add_scheduler_arguments(parser)
+lbann.contrib.args.add_scheduler_arguments(parser, 'distributed_gather')
 args = parser.parse_args()
 
 MINI_BATCH_SIZE = args.mini_batch_size
@@ -65,7 +62,7 @@ def make_data_reader():
   _reader.name = 'python'
   _reader.role = 'train'
   _reader.shuffle = False
-  _reader.percent_of_data_to_use = 1.0
+  _reader.fraction_of_data_to_use = 1.0
   _reader.python.module = 'scatter_gather_dataset'
   _reader.python.module_dir = os.path.dirname(os.path.realpath(__file__))
   _reader.python.sample_function = 'get_sample'

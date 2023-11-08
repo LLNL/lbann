@@ -46,11 +46,11 @@ message Reader {
   string data_filename = 6;
   string label_filename = 7;
   string sample_list = 8;
-  double validation_percent = 9;
-  double tournament_percent = 10;
+  double validation_fraction = 9;
+  double tournament_fraction = 10;
   int64 absolute_sample_count = 11;
   int64 first_n = 200;
-  double percent_of_data_to_use = 12;
+  double fraction_of_data_to_use = 12;
 
   // for SMILES data reader
   string metadata_filename = 13;

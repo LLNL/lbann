@@ -30,15 +30,30 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/options.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
+
+#if defined (LBANN_HAS_ROCM) && defined (LBANN_HAS_GPU_FP16)
+namespace {
+bool isfinite(fp16 const& x)
+{
+  return std::isfinite(float(x));
+}
+}
+#endif
 
 template <typename TensorDataType>
 adam<TensorDataType>::adam(TensorDataType learning_rate,
                            TensorDataType beta1,
                            TensorDataType beta2,
-                           TensorDataType eps)
-  : BaseType(learning_rate), m_beta1(beta1), m_beta2(beta2), m_eps(eps)
+                           TensorDataType eps,
+                           TensorDataType adamw_weight_decay)
+  : BaseType(learning_rate),
+    m_beta1(beta1),
+    m_beta2(beta2),
+    m_eps(eps),
+    m_adamw_weight_decay(adamw_weight_decay)
 {}
 
 template <typename TensorDataType>
@@ -47,6 +62,7 @@ adam<TensorDataType>::adam(const adam& other)
     m_beta1(other.m_beta1),
     m_beta2(other.m_beta2),
     m_eps(other.m_eps),
+    m_adamw_weight_decay(other.m_adamw_weight_decay),
     m_current_beta1(other.m_current_beta1),
     m_current_beta2(other.m_current_beta2),
     m_moment1(other.m_moment1 ? other.m_moment1->Copy() : nullptr),
@@ -61,6 +77,7 @@ adam<TensorDataType>::operator=(const adam<TensorDataType>& other)
   m_beta1 = other.m_beta1;
   m_beta2 = other.m_beta2;
   m_eps = other.m_eps;
+  m_adamw_weight_decay = other.m_adamw_weight_decay;
   m_current_beta1 = other.m_current_beta1;
   m_current_beta2 = other.m_current_beta2;
   m_moment1.reset(other.m_moment1 ? other.m_moment1->Copy() : nullptr);
@@ -75,7 +92,18 @@ description adam<TensorDataType>::get_description() const
   desc.add("beta1", m_beta1);
   desc.add("beta2", m_beta2);
   desc.add("eps", m_eps);
+  if (m_adamw_weight_decay != El::To<TensorDataType>(0)) {
+    desc.add("AdamW weight decay", m_adamw_weight_decay);
+  }
   return desc;
+}
+
+template <typename TensorDataType>
+size_t adam<TensorDataType>::get_state_size() const
+{
+  size_t allocated = m_moment1->AllocatedMemory() * sizeof(TensorDataType);
+  allocated += m_moment2->AllocatedMemory() * sizeof(TensorDataType);
+  return data_type_optimizer<TensorDataType>::get_state_size() + allocated;
 }
 
 template <typename TensorDataType>
@@ -115,18 +143,15 @@ template <typename TensorDataType>
 void adam<TensorDataType>::setup(WeightsType* w)
 {
   OptimizerType::setup(w);
-  const auto& gradient = this->get_gradient();
+  const auto& gradient = this->get_gradient_sharded();
   m_moment1.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
   m_moment2.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
 #ifdef LBANN_HAS_GPU
   if (m_moment1->GetLocalDevice() == El::Device::GPU &&
       m_moment2->GetLocalDevice() == El::Device::GPU) {
-    const auto& arg_parser = global_argument_parser();
-    if (!arg_parser.get<bool>(
-          LBANN_OPTION_USE_GPU_DEFAULT_MEMORY_IN_FORWARD_PROP)) {
-      m_moment1->Matrix().SetMemoryMode(0); // Directly-allocated memory
-      m_moment2->Matrix().SetMemoryMode(0); // Directly-allocated memory
-    }
+    int memory_mode = 0; // Direct allocation
+    m_moment1->Matrix().SetMemoryMode(memory_mode);
+    m_moment2->Matrix().SetMemoryMode(memory_mode);
   }
 #endif // LBANN_HAS_GPU
   El::Zeros(*m_moment1, gradient.Height(), gradient.Width());
@@ -141,6 +166,7 @@ void adam<TensorDataType>::write_proto(lbann_data::Optimizer& proto) const
   opt->set_beta1(m_beta1);
   opt->set_beta2(m_beta2);
   opt->set_eps(m_eps);
+  opt->set_adamw_weight_decay(m_adamw_weight_decay);
 }
 
 template <typename TensorDataType>
@@ -178,7 +204,10 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
                                             const AbsDistMatrixType& gradient,
                                             const TensorDataType& correction)
 {
+  LBANN_CALIPER_MARK_SCOPE("adam::step_compute");
   static const auto one = TensorDataType(1.);
+
+  const TensorDataType lr = El::To<TensorDataType>(this->get_learning_rate());
 
   // Get local matrix data
   const size_t local_height = values.LocalHeight();
@@ -197,14 +226,15 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
     for (size_t i = 0; i < local_size; ++i) {
       auto& x = values_buffer[i];
       const auto& g = gradient_buffer[i] + m_eps; // Avoid denormalized floats
-      if (std::isinf(g) || std::isnan(g)) {
+      if (!isfinite(g)) {
         continue;
       }
       auto& m1 = moment1_buffer[i];
       auto& m2 = moment2_buffer[i];
       m1 = m_beta1 * m1 + (one - m_beta1) * g;
       m2 = m_beta2 * m2 + (one - m_beta2) * g * g;
-      x -= correction * m1 / (El::Sqrt(m2) + m_eps);
+      x -= correction * (m1 / (El::Sqrt(m2) + m_eps)) +
+           lr * m_adamw_weight_decay * x;
     }
   }
   else {
@@ -220,14 +250,15 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
         auto& x = values_buffer[row + col * values_ldim];
         const auto& g = gradient_buffer[row + col * gradient_ldim] +
                         m_eps; // Avoid denormalized floats
-        if (std::isinf(g) || std::isnan(g)) {
+        if (!isfinite(g)) {
           continue;
         }
         auto& m1 = moment1_buffer[row + col * moment1_ldim];
         auto& m2 = moment2_buffer[row + col * moment2_ldim];
         m1 = m_beta1 * m1 + (one - m_beta1) * g;
         m2 = m_beta2 * m2 + (one - m_beta2) * g * g;
-        x -= correction * m1 / (El::Sqrt(m2) + m_eps);
+        x -= correction * (m1 / (El::Sqrt(m2) + m_eps)) +
+             lr * m_adamw_weight_decay * x;
       }
     }
   }
@@ -242,7 +273,8 @@ build_adam_optimizer_from_pbuf(google::protobuf::Message const& msg)
     TensorDataType(params.learn_rate()),
     TensorDataType(params.beta1()),
     TensorDataType(params.beta2()),
-    TensorDataType(params.eps()));
+    TensorDataType(params.eps()),
+    TensorDataType(params.adamw_weight_decay()));
 }
 
 #define PROTO(T)                                                               \

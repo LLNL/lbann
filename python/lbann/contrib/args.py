@@ -1,8 +1,14 @@
 """Helper functions to add common command-line arguments."""
+
+from typing import Any
+
 import argparse
+
+import lbann
 import lbann.core.optimizer
 
-def add_scheduler_arguments(parser):
+
+def add_scheduler_arguments(parser, default_job_name):
     """Add command-line arguments for common scheduler settings.
 
     Adds the following options: `--nodes`, `--procs-per-node`,
@@ -11,33 +17,52 @@ def add_scheduler_arguments(parser):
     `get_scheduler_kwargs` can assist with extracting them.
 
     Args:
-        parser (argparse.ArgumentParser): command-line argument
-            parser.
+        parser (argparse.ArgumentParser): command-line argument parser.
+        default_job_name (str): The default job name to use in batch script.
 
     """
     if not isinstance(parser, argparse.ArgumentParser):
         raise TypeError('expected an argparse.ArgumentParser')
-    parser.add_argument(
-        '--nodes', action='store', type=int,
-        help='number of compute nodes', metavar='NUM')
-    parser.add_argument(
-        '--procs-per-node', action='store', type=int,
-        help='number of processes per compute node', metavar='NUM')
-    parser.add_argument(
-        '--partition', action='store', type=str,
-        help='scheduler partition', metavar='NAME')
-    parser.add_argument(
-        '--account', action='store', type=str,
-        help='scheduler account', metavar='NAME')
-    parser.add_argument(
-        '--reservation', action='store', type=str,
-        help='scheduler reservation', metavar='NAME')
-    parser.add_argument(
-        '--time-limit', action='store', type=int,
-        help='time limit (in minutes)', metavar='MIN')
-    parser.add_argument(
-        '--setup-only', action='store_true',
-        help='set up (but do not run) the experiment')
+    parser.add_argument('--nodes',
+                        action='store',
+                        type=int,
+                        help='number of compute nodes',
+                        metavar='NUM')
+    parser.add_argument('--procs-per-node',
+                        action='store',
+                        type=int,
+                        help='number of processes per compute node',
+                        metavar='NUM')
+    parser.add_argument('--partition',
+                        action='store',
+                        type=str,
+                        help='scheduler partition',
+                        metavar='NAME')
+    parser.add_argument('--account',
+                        action='store',
+                        type=str,
+                        help='scheduler account',
+                        metavar='NAME')
+    parser.add_argument('--reservation',
+                        action='store',
+                        type=str,
+                        help='scheduler reservation',
+                        metavar='NAME')
+    parser.add_argument('--time-limit',
+                        action='store',
+                        type=int,
+                        help='time limit (in minutes)',
+                        metavar='MIN')
+    parser.add_argument('--setup-only',
+                        action='store_true',
+                        help='set up (but do not run) the experiment')
+    parser.add_argument('--job-name',
+                        action='store',
+                        default=default_job_name,
+                        type=str,
+                        help=f'job name (default: {default_job_name})',
+                        metavar='NAME')
+
 
 def get_scheduler_kwargs(args):
     """Generate keyword arguments for a scheduler.
@@ -65,7 +90,10 @@ def get_scheduler_kwargs(args):
     if args.setup_only: kwargs['setup_only'] = True
     return kwargs
 
-def get_distconv_environment(parallel_io=False, num_io_partitions=1):
+
+def get_distconv_environment(parallel_io=False,
+                             num_io_partitions=1,
+                             init_nvshmem=False):
     """Return recommended Distconv variables.
 
     Args:
@@ -74,8 +102,8 @@ def get_distconv_environment(parallel_io=False, num_io_partitions=1):
         num_io_partitions (int):
             The number of processes to read a single sample.
     """
-
-    return {
+    # TODO: Use the default halo exchange and shuffle method. See https://github.com/LLNL/lbann/issues/1659
+    environment = {
         'DISTCONV_WS_CAPACITY_FACTOR': 0.8,
         'LBANN_DISTCONV_HALO_EXCHANGE': 'AL',
         'LBANN_DISTCONV_TENSOR_SHUFFLER': 'AL',
@@ -85,9 +113,16 @@ def get_distconv_environment(parallel_io=False, num_io_partitions=1):
         'LBANN_DISTCONV_RANK_STRIDE': 1,
         'LBANN_DISTCONV_COSMOFLOW_PARALLEL_IO': parallel_io,
         'LBANN_DISTCONV_NUM_IO_PARTITIONS': num_io_partitions,
+        "LBANN_KEEP_ERROR_SIGNALS": "1",
     }
+    if init_nvshmem:
+        environment["LBANN_INIT_NVSHMEM"] = 1
 
-def add_optimizer_arguments(parser, default_optimizer='momentum',
+    return environment
+
+
+def add_optimizer_arguments(parser,
+                            default_optimizer='momentum',
                             default_learning_rate=0.01):
     """Add command-line arguments for optimizers.
 
@@ -105,14 +140,20 @@ def add_optimizer_arguments(parser, default_optimizer='momentum',
     if not isinstance(parser, argparse.ArgumentParser):
         raise TypeError('expected an argparse.ArgumentParser')
     parser.add_argument(
-        '--optimizer', action='store', default=default_optimizer, type=str,
-        choices=('momentum', 'sgd', 'adam', 'adagrad', 'rmsprop'),
+        '--optimizer',
+        action='store',
+        default=default_optimizer,
+        type=str,
+        choices=('momentum', 'sgd', 'adam', 'adamw', 'adagrad', 'rmsprop'),
         help='optimizer (default: {})'.format(default_optimizer))
-    parser.add_argument(
-        '--optimizer-learning-rate',
-        action='store', default=default_learning_rate, type=float,
-        help='optimizer learning rate (default: {})'.format(default_learning_rate),
-        metavar='VAL')
+    parser.add_argument('--optimizer-learning-rate',
+                        action='store',
+                        default=default_learning_rate,
+                        type=float,
+                        help='optimizer learning rate (default: {})'.format(
+                            default_learning_rate),
+                        metavar='VAL')
+
 
 def create_optimizer(args):
     """Create optimizer from command-line arguments.
@@ -144,12 +185,158 @@ def create_optimizer(args):
     elif opt == 'sgd':
         return lbann.core.optimizer.SGD(learn_rate=lr)
     elif opt == 'adam':
-        return lbann.core.optimizer.Adam(learn_rate=lr, beta1=0.9, beta2=0.99,
+        return lbann.core.optimizer.Adam(learn_rate=lr,
+                                         beta1=0.9,
+                                         beta2=0.99,
                                          eps=1e-8)
+    elif opt == 'adamw':
+        return lbann.core.optimizer.Adam(learn_rate=lr,
+                                         beta1=0.9,
+                                         beta2=0.99,
+                                         eps=1e-8,
+                                         weight_decay=1e-2)
     elif opt == 'adagrad':
         return lbann.core.optimizer.AdaGrad(learn_rate=lr, eps=1e-8)
     elif opt == 'rmsprop':
-        return lbann.core.optimizer.RMSprop(learn_rate=lr, decay_rate=0.99,
+        return lbann.core.optimizer.RMSprop(learn_rate=lr,
+                                            decay_rate=0.99,
                                             eps=1e-8)
     else:
         raise ValueError('invalid optimizer type ({})'.format(opt))
+
+
+def add_profiling_arguments(parser: argparse.ArgumentParser) -> None:
+    """Add command-line arguments for common profiler settings within
+    LBANN.
+
+    Adds the following options: `--profile`, `--memory-profile`,
+    `--profile-init`, `--caliper` and `--caliper-config`.
+
+    `--caliper-config` implies `--caliper`. `--caliper` without a
+    `--caliper-config` will use the default configuration in LBANN.
+    These options will only have an effect if LBANN has been built
+    with Caliper support.
+
+    The caller is responsible for using them.
+
+    Args:
+        parser (argparse.ArgumentParser): command-line argument parser.
+
+    """
+    if not isinstance(parser, argparse.ArgumentParser):
+        raise TypeError('expected an argparse.ArgumentParser')
+    parser.add_argument('--profile',
+                        action='store_true',
+                        default=False,
+                        help='enable profiling instrumentation and markers')
+    parser.add_argument('--memory-profile',
+                        action='store_true',
+                        default=False,
+                        help='enable itemized memory usage analysis')
+    parser.add_argument('--profile-init',
+                        action='store_true',
+                        default=False,
+                        help='enable profiling initialization')
+    parser.add_argument('--caliper',
+                        action='store_true',
+                        default=False,
+                        help='enable Caliper')
+    parser.add_argument('--caliper-config',
+                        action='store',
+                        default=None,
+                        type=str,
+                        help='Configuration string for Caliper')
+    parser.add_argument('--memory-profile-verbose',
+                        action='store_true',
+                        default=False,
+                        help='increase memory usage analysis verbosity')
+
+def create_profile_callbacks(args: argparse.Namespace) -> Any:
+    """Create a profiler callback from command-line arguments.
+
+    The parsed arguments must be generated by an
+    `argparse.ArgumentParser` that has been processed by
+    `add_profiling_arguments`.
+
+    Args:
+        args (argparse.Namespace): A namespace returned by
+            `argparse.ArgumentParser.parse_args`.
+
+    Return:
+        None or lbann.CallbackProfiler
+
+    """
+    try:
+        profile = args.profile
+        profile_init = not args.profile_init
+        memprofile = args.memory_profile
+        memprof_verbose = args.memory_profile_verbose
+    except AttributeError:
+        raise ValueError('passed arguments have not been processed by '
+                         '`add_profiling_arguments`')
+
+    result = []
+    if profile:
+        result.append(lbann.CallbackProfiler(skip_init=profile_init))
+    if memprofile:
+        result.append(lbann.CallbackMemoryProfiler(
+            detailed_first_step=memprof_verbose))
+
+    return result
+
+
+def get_profile_args(args: argparse.Namespace) -> list[str]:
+    """Get LBANN command-line arguments for profiling.
+
+    The parsed arguments must be generated by an
+    `argparse.ArgumentParser` that has been processed by
+    `add_profiling_arguments`.
+
+    Args:
+        args (argparse.Namespace): A namespace returned by
+            `argparse.ArgumentParser.parse_args`.
+
+    Return:
+        list[str]: A list of command-line arguments to add.
+
+    """
+    try:
+        caliper = args.caliper
+        caliper_config = args.caliper_config
+    except AttributeError:
+        raise ValueError('passed arguments have not been processed by '
+                         '`add_profiling_arguments`')
+
+    if lbann.has_feature('CALIPER'):
+        if caliper_config:
+            return ['--caliper', '--caliper_config', f'"{caliper_config}"']
+        if caliper:
+            return ['--caliper']
+    elif caliper_config or caliper:
+        raise RuntimeError(
+            'Requested Caliper but LBANN does not have Caliper support.')
+    return []
+
+
+def add_training_arguments(args: argparse.Namespace,
+                           default_minibatch_size=256):
+    """Add command-line arguments for common training settings within LBANN."""
+    args.add_argument(
+        '--mini-batch-size',
+        action='store',
+        default=default_minibatch_size,
+        type=int,
+        help=f'mini-batch size (default: {default_minibatch_size})',
+        metavar='NUM')
+    args.add_argument('--num-epochs',
+                      action='store',
+                      default=20,
+                      type=int,
+                      help='number of epochs (default: 20)',
+                      metavar='NUM')
+    args.add_argument('--progress',
+                      action='store_true',
+                      help='Print progress bar')
+    args.add_argument('--checkpoint',
+                      action='store_true',
+                      help='Save checkpoints and weights after every epoch')

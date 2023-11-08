@@ -46,6 +46,8 @@ static std::string stringify_vec(std::vector<T> const& vec)
   return oss.str();
 }
 
+using namespace lbann;
+
 TEST_CASE("Computing dims", "[permute][layer][cutt]")
 {
   std::vector<int> const lbann_dims = {3, 4, 5, 6};

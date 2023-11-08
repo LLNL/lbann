@@ -77,6 +77,8 @@ public:
   std::string get_type() const override { return "sum"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return true; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
 protected:
   /** Add layer specific data to prototext */
@@ -98,9 +100,9 @@ protected:
     }
   }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
 
     // Check that input dimensions match
@@ -134,11 +136,9 @@ protected:
     }
 #endif // LBANN_HAS_DISTCONV
     auto& output = this->get_activations();
-    auto parents = this->get_parent_layers();
+    const auto& parents = this->get_parent_layers();
 
-    if (this->is_subgraph_parallelism_enabled() &&
-        this->get_parallel_strategy().enable_subgraph == true) {
-      auto subgrid_tags = (*this->m_parent_tags);
+    if (this->subgraph_parallelism_execution()) {
       int tag = 0;
 
       std::vector<bool> is_initialized_tensor(this->m_num_spliting_groups,
@@ -146,7 +146,7 @@ protected:
 
       // Copy data internally with same branch tag
       for (int i = 0; i < this->get_num_parents(); ++i) {
-        tag = subgrid_tags[i];
+        tag = parents[i]->get_grid_tag() - 1;
 
         if (is_initialized_tensor[tag]) {
 
@@ -214,12 +214,14 @@ protected:
     }
   }
 
-  void fp_setup_outputs(El::Int mini_batch_size) override
+  void fp_setup_outputs() override
   {
 
     if (this->get_num_children() < 1) {
       return;
     }
+    auto mini_batch_size =
+      this->infer_mini_batch_size_from_parents_or_default_to_current();
     // Determine distributed matrix alignment
     const bool align_outputs = this->get_num_parents() > 0;
     const auto& alignment_dist =
@@ -235,22 +237,21 @@ protected:
 
       auto& output = this->get_activations(i);
       output.Empty(false);
-      if (align_outputs &&
-          this->get_parallel_strategy().enable_subgraph == false) {
+      if (align_outputs && this->subgraph_parallelism_execution() == false) {
         output.AlignWith(alignment_dist);
       }
       output.Resize(this->get_output_size(i), mini_batch_size);
+      this->setup_reference_counter(output);
     }
   }
 
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override
+  void bp_setup_gradient_wrt_inputs() override
   {
     int tag = 0;
+    const auto& parents = this->get_parent_layers();
     const auto& gradient_wrt_output = this->get_prev_error_signals();
 
-    if (this->is_subgraph_parallelism_enabled() &&
-        this->get_parallel_strategy().enable_subgraph == true) {
-      auto subgrid_tags = (*this->m_parent_tags);
+    if (this->subgraph_parallelism_execution()) {
 
       if (this->get_communication_flag() == COLL_OPT)
       // If vector copy is enable, broadcast the gradients from parent grid to
@@ -288,7 +289,7 @@ protected:
       } // end vector copy condition
 
       for (int i = 0; i < this->get_num_parents(); ++i) {
-        tag = subgrid_tags[i];
+        tag = parents[i]->get_grid_tag() - 1;
 
         El::LockedView(this->get_error_signals(i),
                        this->get_branch_tag_input(tag));
@@ -312,7 +313,7 @@ protected:
   {
     return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  void setup_distconv_adapter() override
   {
     this->get_distconv_adapter_ptr() =
       std::make_unique<sum_distconv_adapter<TensorDataType, T_layout, Dev>>(

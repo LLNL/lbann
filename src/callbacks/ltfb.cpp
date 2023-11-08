@@ -418,8 +418,8 @@ public:
       using WeightsType = data_type_weights<TensorDataType>;
       auto& recv_weights = dynamic_cast<WeightsType&>(*w_ptr);
       auto send_weights = recv_weights;
-      El::SendRecv(send_weights.get_values().LockedMatrix(),
-                   recv_weights.get_values().Matrix(),
+      El::SendRecv(send_weights.get_values_sharded().LockedMatrix(),
+                   recv_weights.get_values_sharded().Matrix(),
                    comm.get_world_comm(),
                    partner_rank_in_world,
                    partner_rank_in_world);
@@ -672,7 +672,7 @@ EvalType evaluate(model& m, const std::string& metric_name)
   }
   // Mark the data store as loading - Note that this is a temporary fix
   // for the current use of the tournament
-  m.mark_data_store_explicitly_loading(execution_mode::tournament);
+  dc.mark_data_store_explicitly_loading(execution_mode::tournament);
 
   // Evaluate model on validation set
   get_trainer().evaluate(&m, execution_mode::tournament);
@@ -698,7 +698,7 @@ EvalType evaluate(model& m, const std::string& metric_name)
 
   // Mark the data store as loaded - Note that this is a temporary fix
   // for the current use of the tournament
-  m.make_data_store_preloaded(execution_mode::tournament);
+  dc.make_data_store_preloaded(execution_mode::tournament);
 
   // Clean up and return metric value
   m.reset_mode(c, original_mode);
@@ -813,9 +813,7 @@ void ltfb::on_batch_begin(model* m)
     local_model.swap_metrics(partner_model);
     local_model.swap_objective_function(partner_model);
     auto& trainer_ = get_trainer();
-    auto&& metadata = trainer_.get_data_coordinator().get_dr_metadata();
     local_model.setup(trainer_.get_max_mini_batch_size(),
-                      metadata,
                       trainer_.get_grids(),
                       true);
   }

@@ -77,6 +77,7 @@ OperatorFactory<InT, OutT, D> build_default_factory()
     LBANN_REGISTER_BUILDER(Exp, exp);
     LBANN_REGISTER_BUILDER(Expm1, expm1);
     LBANN_REGISTER_BUILDER(Floor, floor);
+    LBANN_REGISTER_BUILDER(Gelu, gelu);
     LBANN_REGISTER_BUILDER(Greater, greater);
     LBANN_REGISTER_BUILDER(GreaterConstant, greater_constant);
     LBANN_REGISTER_BUILDER(GreaterEqual, greater_equal);
@@ -108,6 +109,7 @@ OperatorFactory<InT, OutT, D> build_default_factory()
     LBANN_REGISTER_BUILDER(SafeDivide, safe_divide);
     LBANN_REGISTER_BUILDER(SafeReciprocal, safe_reciprocal);
     LBANN_REGISTER_BUILDER(Scale, scale);
+    LBANN_REGISTER_BUILDER(Select, select);
     LBANN_REGISTER_BUILDER(Selu, selu);
     LBANN_REGISTER_BUILDER(Sigmoid, sigmoid);
     LBANN_REGISTER_BUILDER(SigmoidBinaryCrossEntropy,

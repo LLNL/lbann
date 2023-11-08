@@ -41,7 +41,6 @@
 namespace lbann {
 
 // Forward-declarations
-struct DataReaderMetaData;
 class data_coordinator;
 class description;
 class lbann_comm;
@@ -198,7 +197,7 @@ public:
     return m_max_mini_batch_size;
   }
 
-  /** @brief Are background I/O activities enabled by the input layers */
+  /** @brief Are background I/O activities enabled by the data coordinator */
   bool background_io_activity_allowed() const noexcept
   {
     return m_background_io_allowed;
@@ -352,6 +351,11 @@ trainer& get_trainer();
  *         rank.
  */
 trainer const& get_const_trainer();
+
+/** @brief Check to see if a trainer visible to this rank has been
+ *         created.  This should only be not true in some catch tests.
+ */
+bool trainer_exists();
 
 } // namespace lbann
 

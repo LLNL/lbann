@@ -31,7 +31,7 @@
 #include "lbann/base.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+#include "lbann/data_readers/metadata.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/execution_algorithms/sgd_training_algorithm.hpp"
 #include "lbann/execution_algorithms/training_algorithm.hpp"
@@ -80,7 +80,8 @@ void trainer::serialize(Archive& ar)
      CEREAL_NVP(m_max_mini_batch_size),
      CEREAL_NVP(m_root_random_seed),
      CEREAL_NVP(m_random_seed),
-     CEREAL_NVP(m_data_seq_random_seed));
+     CEREAL_NVP(m_data_seq_random_seed),
+     CEREAL_NVP(m_background_io_allowed));
 }
 
 ////////////////////////////////////////////////////////////
@@ -123,6 +124,12 @@ void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool,
                                   get_max_mini_batch_size(),
                                   data_readers);
 
+  for (auto& [mode, reader] : data_readers) {
+    if (!reader->supports_background_io()) {
+      allow_background_io_activity(false);
+    }
+  }
+
   // Set up callbacks first - allow checkpoint / restart to reload state
   for (auto& cb : m_callbacks) {
     cb->setup(this);
@@ -143,8 +150,7 @@ trainer::check_and_build_execution_context(TrainingAlgorithm& alg,
     if (dynamic_cast<observer_ptr<SGDTrainingAlgorithm>>(&alg) != nullptr) {
       /// @todo BVE FIXME Figure out how to get a good mini-batch size
       /// in here
-      context =
-        std::make_unique<SGDExecutionContext>(mode, get_max_mini_batch_size());
+      context = std::make_unique<SGDExecutionContext>(mode);
     }
     else {
       LBANN_ERROR("Unknown execution algorithm type.");
@@ -167,8 +173,7 @@ trainer::check_and_build_execution_context(ExecutionContext& c,
     //    observer_ptr<training_algorithm> alg = const_cast
     if (dynamic_cast<observer_ptr</*const */ SGDExecutionContext>>(&c) !=
         nullptr) {
-      context =
-        std::make_unique<SGDExecutionContext>(mode, get_max_mini_batch_size());
+      context = std::make_unique<SGDExecutionContext>(mode);
     }
     else {
       LBANN_ERROR("Unknown execution context type");
@@ -252,11 +257,7 @@ void trainer::train(observer_ptr<model> model,
                                              std::move(stopping),
                                              /*suppress_timer=*/false);
   }
-  DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
-  m_training_alg->setup_models({model},
-                               get_max_mini_batch_size(),
-                               dr_metadata,
-                               get_grids());
+  m_training_alg->setup_models({model}, get_max_mini_batch_size(), get_grids());
 
   // FIXME (trb 04/27/2021): This is a hack to support the current
   // checkpoint/restart mechanisms. This needs to be refactored to be
@@ -293,11 +294,7 @@ void trainer::evaluate(observer_ptr<model> model,
   ctxt->set_execution_mode(mode);
   model->reset_mode(*ctxt, execution_mode::invalid);
 
-  DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
-  sgd->setup_models({model},
-                    get_max_mini_batch_size(),
-                    dr_metadata,
-                    get_grids());
+  sgd->setup_models({model}, get_max_mini_batch_size(), get_grids());
 
   if (m_comm->get_grid_type() == GridType::NO_GRID or
       m_comm->get_grid_type() == GridType::PRIMARY_GRID) {

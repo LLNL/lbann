@@ -83,6 +83,10 @@ public:
   ///@{
 
   std::string get_type() const final { return "abs"; }
+  int get_backprop_requirements() const final
+  {
+    return ERROR_SIGNALS | PREV_ACTIVATIONS;
+  }
 
   ///@}
   /** @name Serialization */

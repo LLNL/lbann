@@ -95,8 +95,8 @@ def construct_data_reader():
     data_reader.name = 'python'
     data_reader.role = 'train'
     data_reader.shuffle = True
-    data_reader.percent_of_data_to_use = 1.0
-    data_reader.validation_percent = 0.1
+    data_reader.fraction_of_data_to_use = 1.0
+    data_reader.validation_fraction = 0.1
     data_reader.python.module = 'dataset'
     data_reader.python.module_dir = module_dir
     data_reader.python.sample_function = 'get_sample'

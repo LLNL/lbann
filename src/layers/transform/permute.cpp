@@ -174,9 +174,9 @@ description PermuteLayer<T>::get_description() const
 }
 
 template <typename T>
-void PermuteLayer<T>::setup_dims(DataReaderMetaData& dr_metadata)
+void PermuteLayer<T>::setup_dims()
 {
-  data_type_layer<T>::setup_dims(dr_metadata);
+  data_type_layer<T>::setup_dims();
   this->set_output_dims(m_impl->setup_dims(this->get_input_dims(0)), 0);
 }
 

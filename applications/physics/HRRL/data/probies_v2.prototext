@@ -3,9 +3,9 @@ data_reader {
     name: "hdf5_data_reader"
     role: "train"
     sample_list: "/p/vast1/lbann/datasets/HRRL/pub/sample_list/expv1_train.sample_list"
-    validation_percent: 0.1
-    tournament_percent: 0.1
-    percent_of_data_to_use: 1.0
+    validation_fraction: 0.1
+    tournament_fraction: 0.1
+    fraction_of_data_to_use: 1.0
     data_schema_filename: "/p/vast1/lbann/datasets/HRRL/pub/hrrl_data_schema.yaml"
     experiment_schema_filename: "/p/vast1/lbann/datasets/HRRL/pub/hrrl_experiment_schema.yaml"
     enable_responses: true
@@ -14,7 +14,7 @@ data_reader {
     name: "hdf5_data_reader"
     role: "test"
     sample_list: "/p/vast1/lbann/datasets/HRRL/pub/sample_list/expv1_test.sample_list"
-    percent_of_data_to_use: 1.0
+    fraction_of_data_to_use: 1.0
     data_schema_filename: "/p/vast1/lbann/datasets/HRRL/pub/hrrl_data_schema.yaml"
     experiment_schema_filename: "/p/vast1/lbann/datasets/HRRL/pub/hrrl_experiment_schema.yaml"
     enable_responses: true

@@ -24,11 +24,13 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/comm_impl.hpp"
-#include "lbann/data_readers/data_reader.hpp"
-#include "lbann/execution_algorithms/execution_context.hpp"
+#include <lbann/comm_impl.hpp>
 #include <lbann/data_coordinator/data_coordinator.hpp>
+#include <lbann/data_readers/data_reader.hpp>
+#include <lbann/data_store/data_store_conduit.hpp>
+#include <lbann/execution_algorithms/execution_context.hpp>
 #include <lbann/trainers/trainer.hpp>
+#include <lbann/utils/dim_helpers.hpp>
 #include <lbann/utils/distconv.hpp>
 #include <lbann/utils/serialize.hpp>
 
@@ -93,7 +95,8 @@ void data_coordinator::setup(
   // Initialize the data sets
   for (auto m : execution_mode_iterator()) {
     if (this->m_data_readers.count(m)) {
-      this->m_datasets[m].total_samples() = m_data_readers[m]->get_num_data();
+      this->m_datasets[m].setup(m_data_readers[m]->get_num_data(),
+                                m_data_readers[m]->get_role());
     }
   }
 
@@ -109,10 +112,10 @@ void data_coordinator::setup(
   /** Calculate how many iterations are required for training, testing,
    *  and validation given a specified mini-batch size.
    */
-  for (auto&& dr : m_data_readers) {
-    if (!dr.second)
+  for (auto& [mode, dataset] : m_datasets) {
+    if (!dataset.initialized())
       continue;
-    calculate_num_iterations_per_epoch(max_mini_batch_size, dr.second);
+    calculate_num_iterations_per_epoch(max_mini_batch_size, dataset);
   }
 
   auto& arg_parser = global_argument_parser();
@@ -130,39 +133,33 @@ void data_coordinator::setup(
       r.second->setup_data_store(max_mini_batch_size);
     }
   }
+  // for (auto&& dr : m_data_readers) {
+  //   if (!dr.second)
+  //     continue;
+  //   dr.second->print_config();
+  // }
+  // for (auto& [mode, dataset] : m_datasets) {
+  //   if (!dataset.initialized())
+  //     dataset.print_config();
+  // }
 }
 
 void data_coordinator::calculate_num_iterations_per_epoch(
   int max_mini_batch_size,
-  generic_data_reader* data_reader)
+  dataset& dataset)
 {
-  if (data_reader == nullptr) {
+  if (!dataset.initialized()) {
     return;
   }
+
   // If the data reader does not have any data bail out (e.g. unused validation
   // reader)
-  if (data_reader->get_num_data() == 0) {
+  if (dataset.get_num_data() == 0) {
     return;
   }
 
-  if (max_mini_batch_size > data_reader->get_num_data()) {
-    max_mini_batch_size = data_reader->get_num_data();
-  }
-
-  /// Check to make sure that there is enough data for all of the parallel
-  /// readers
-  int num_parallel_readers_per_model =
-    compute_max_num_parallel_readers(data_reader->get_num_data(),
-                                     max_mini_batch_size,
-                                     this->m_comm->get_procs_per_trainer());
-  data_reader->set_num_parallel_readers(num_parallel_readers_per_model);
-  if (num_parallel_readers_per_model == 0 ||
-      (num_parallel_readers_per_model !=
-         this->m_comm->get_procs_per_trainer() &&
-       num_parallel_readers_per_model != max_mini_batch_size)) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: generic_data_distribution: number of parallel readers is zero");
+  if (max_mini_batch_size > dataset.get_num_data()) {
+    max_mini_batch_size = dataset.get_num_data();
   }
 
 #ifdef LBANN_HAS_DISTCONV
@@ -180,33 +177,29 @@ void data_coordinator::calculate_num_iterations_per_epoch(
     dc::get_input_rank(*(this->m_comm)) / dc::get_number_of_io_partitions();
 #endif
   /// Set mini-batch size and stride
-  data_reader->set_mini_batch_size(max_mini_batch_size);
-  data_reader->set_stride_to_next_mini_batch(batch_stride);
+  dataset.set_mini_batch_size(max_mini_batch_size);
+  dataset.set_stride_to_next_mini_batch(batch_stride);
 #ifdef LBANN_HAS_DISTCONV
-  data_reader->set_sample_stride(num_parallel_readers_per_model /
-                                 dc::get_number_of_io_partitions());
+  dataset.set_sample_stride(this->m_comm->get_procs_per_trainer() /
+                            dc::get_number_of_io_partitions());
 #else
-  data_reader->set_sample_stride(num_parallel_readers_per_model);
+  dataset.set_sample_stride(this->m_comm->get_procs_per_trainer());
 #endif
-  data_reader->set_iteration_stride(1);
   /// Set data reader base offset and model offset
-  data_reader->set_base_offset(base_offset);
-  data_reader->set_model_offset(0);
-  data_reader->set_initial_position();
+  dataset.set_base_offset(base_offset);
+  dataset.set_initial_position();
 
   /// By default each data reader will plan to process the entire data set
   int num_iterations_per_epoch =
-    ceil((float)data_reader->get_num_data() / (float)max_mini_batch_size);
-  int last_mini_batch_size = data_reader->get_num_data() % max_mini_batch_size;
+    ceil((float)dataset.get_num_data() / (float)max_mini_batch_size);
+  int last_mini_batch_size = dataset.get_num_data() % max_mini_batch_size;
   if (last_mini_batch_size == 0) {
     last_mini_batch_size = max_mini_batch_size;
   }
-  data_reader->set_num_iterations_per_epoch(num_iterations_per_epoch);
-  data_reader->set_last_mini_batch_size(last_mini_batch_size);
-  data_reader->set_stride_to_last_mini_batch(
-    data_reader->get_stride_to_next_mini_batch());
-  data_reader->set_global_mini_batch_size(max_mini_batch_size);
-  data_reader->set_global_last_mini_batch_size(last_mini_batch_size);
+  dataset.set_num_iterations_per_epoch(num_iterations_per_epoch);
+  dataset.set_last_mini_batch_size(last_mini_batch_size);
+  dataset.set_stride_to_last_mini_batch(
+    dataset.get_stride_to_next_mini_batch());
   return;
 }
 
@@ -220,7 +213,7 @@ data_coordinator::get_data_reader(const execution_mode mode) const
   return data_reader;
 }
 
-TargetModeDimMap data_coordinator::get_data_dims()
+TargetModeDimMap data_coordinator::get_data_dims() const
 {
   TargetModeDimMap map;
   generic_data_reader* dr;
@@ -230,21 +223,22 @@ TargetModeDimMap data_coordinator::get_data_dims()
       map[data_reader_target_mode::INPUT] = dr->get_data_dims();
       if (dr->has_labels()) {
         map[data_reader_target_mode::CLASSIFICATION] =
-          std::vector<int>(1, dr->get_num_labels());
+          std::vector<El::Int>(1, dr->get_num_labels());
       }
       else {
-        map[data_reader_target_mode::CLASSIFICATION] = std::vector<int>(1, 0);
+        map[data_reader_target_mode::CLASSIFICATION] =
+          std::vector<El::Int>(1, 0);
       }
       if (dr->has_responses()) {
         map[data_reader_target_mode::REGRESSION] =
-          std::vector<int>(1, dr->get_num_responses());
+          std::vector<El::Int>(1, dr->get_num_responses());
       }
       else {
-        map[data_reader_target_mode::REGRESSION] = std::vector<int>(1, 0);
+        map[data_reader_target_mode::REGRESSION] = std::vector<El::Int>(1, 0);
       }
       map[data_reader_target_mode::RECONSTRUCTION] = dr->get_data_dims();
       map[data_reader_target_mode::LABEL_RECONSTRUCTION] = dr->get_data_dims();
-      map[data_reader_target_mode::NA] = std::vector<int>(1, 0);
+      map[data_reader_target_mode::NA] = std::vector<El::Int>(1, 0);
       return map;
     }
   }
@@ -255,7 +249,7 @@ TargetModeDimMap data_coordinator::get_data_dims()
 /**
  * Get the dimensions of the underlying data.
  */
-SPModeSlicePoints data_coordinator::get_slice_points()
+SPModeSlicePoints data_coordinator::get_slice_points() const
 {
   SPModeSlicePoints map;
   generic_data_reader* dr;
@@ -276,22 +270,35 @@ SPModeSlicePoints data_coordinator::get_slice_points()
   return {};
 }
 
-DataReaderMetaData data_coordinator::get_dr_metadata()
+DataReaderMetaData data_coordinator::get_dr_metadata() const
 {
+  if (m_mock_data_reader_metadata)
+    return *m_mock_data_reader_metadata;
+
   DataReaderMetaData drm;
   drm.data_dims = get_data_dims();
   drm.slice_points = get_slice_points();
 #ifdef LBANN_HAS_DISTCONV
-  const auto training_dr = m_data_readers[execution_mode::training];
+  const auto training_dr = m_data_readers.at(execution_mode::training);
   drm.shuffle_required = training_dr->is_tensor_shuffle_required();
 #endif // LBANN_HAS_DISTCONV
   return drm;
 }
 
+void data_coordinator::set_mock_dr_metadata(const DataReaderMetaData& drm)
+{
+  m_mock_data_reader_metadata = std::make_unique<DataReaderMetaData>(drm);
+}
+
+void data_coordinator::clear_mock_dr_metadata()
+{
+  m_mock_data_reader_metadata.reset();
+}
+
 /**
  * Check to see if the data readers have labels
  */
-bool data_coordinator::has_labels()
+bool data_coordinator::has_labels() const
 {
   bool flag = false;
   generic_data_reader* dr;
@@ -310,7 +317,7 @@ bool data_coordinator::has_labels()
 /**
  * Check to see if the data readers have responses
  */
-bool data_coordinator::has_responses()
+bool data_coordinator::has_responses() const
 {
   bool flag = false;
   generic_data_reader* dr;
@@ -349,6 +356,29 @@ long data_coordinator::get_linearized_size(
       linearized_size = tmp_size;
     }
   }
+  auto it = m_active_data_fields_dim_map.find(data_field);
+  if (it != m_active_data_fields_dim_map.end()) {
+    auto& dim_map = it->second;
+    if (linearized_size != get_linear_size(dim_map)) {
+      if (linearized_size == -1) {
+        LBANN_WARNING("Unable to find data readers; using data field map for "
+                      "linearized size for data field: ",
+                      data_field,
+                      " = ",
+                      get_linear_size(dim_map));
+        linearized_size = get_linear_size(dim_map);
+      }
+      else {
+        LBANN_ERROR("The data readers and data field map disagree on the "
+                    "linearized size of the field: ",
+                    data_field,
+                    ": ",
+                    linearized_size,
+                    " != ",
+                    get_linear_size(dim_map));
+      }
+    }
+  }
   return linearized_size;
 }
 
@@ -357,26 +387,7 @@ long data_coordinator::get_linearized_size(
  */
 long data_coordinator::get_linearized_data_size() const
 {
-  long linearized_data_size = -1;
-  generic_data_reader* dr;
-  for (auto mode : execution_mode_iterator()) {
-    dr = get_data_reader(mode);
-    if (dr != nullptr) {
-      long tmp_data_size = dr->get_linearized_data_size();
-      if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
-        LBANN_ERROR(
-          "data_coordinator: ",
-          to_string(mode),
-          " data set size (",
-          std::to_string(tmp_data_size),
-          ") does not match the currently established data set size (",
-          std::to_string(linearized_data_size),
-          ")");
-      }
-      linearized_data_size = tmp_data_size;
-    }
-  }
-  return linearized_data_size;
+  return get_linearized_size(INPUT_DATA_TYPE_SAMPLES);
 }
 
 /**
@@ -384,27 +395,7 @@ long data_coordinator::get_linearized_data_size() const
  */
 long data_coordinator::get_linearized_label_size() const
 {
-  long linearized_label_size = -1;
-  generic_data_reader* dr;
-  for (auto mode : execution_mode_iterator()) {
-    dr = get_data_reader(mode);
-    if (dr != nullptr) {
-      long tmp_label_size = dr->get_linearized_label_size();
-      if (linearized_label_size != -1 &&
-          linearized_label_size != tmp_label_size) {
-        LBANN_ERROR(
-          "data_coordinator: ",
-          to_string(mode),
-          " label set size (",
-          std::to_string(tmp_label_size),
-          ") does not match the currently established data set size (",
-          std::to_string(linearized_label_size),
-          ")");
-      }
-      linearized_label_size = tmp_label_size;
-    }
-  }
-  return linearized_label_size;
+  return get_linearized_size(INPUT_DATA_TYPE_LABELS);
 }
 
 /**
@@ -412,27 +403,7 @@ long data_coordinator::get_linearized_label_size() const
  */
 long data_coordinator::get_linearized_response_size() const
 {
-  long linearized_response_size = -1;
-  generic_data_reader* dr;
-  for (auto mode : execution_mode_iterator()) {
-    dr = get_data_reader(mode);
-    if (dr != nullptr) {
-      long tmp_response_size = dr->get_linearized_response_size();
-      if (linearized_response_size != -1 &&
-          linearized_response_size != tmp_response_size) {
-        LBANN_ERROR(
-          "data_coordinator: ",
-          to_string(mode),
-          " response set size (",
-          std::to_string(tmp_response_size),
-          ") does not match the currently established data set size (",
-          std::to_string(linearized_response_size),
-          ")");
-      }
-      linearized_response_size = tmp_response_size;
-    }
-  }
-  return linearized_response_size;
+  return get_linearized_size(INPUT_DATA_TYPE_RESPONSES);
 }
 
 // At the start of the epoch, set the execution mode and make sure
@@ -442,13 +413,18 @@ void data_coordinator::reset_mode(ExecutionContext& context)
   m_execution_context = static_cast<observer_ptr<ExecutionContext>>(&context);
 }
 
+bool data_coordinator::dataset_exists(execution_mode m) const
+{
+  return m_datasets.count(m) > 0;
+}
+
 dataset& data_coordinator::get_dataset(execution_mode m)
 {
   if (m_datasets.count(m)) {
     return m_datasets.at(m);
   }
   else {
-    LBANN_ERROR("get_dataset: invalid execution mode");
+    LBANN_ERROR("get_dataset: invalid execution mode ", to_string(m));
   }
 }
 
@@ -458,33 +434,35 @@ const dataset& data_coordinator::get_dataset(execution_mode m) const
     return m_datasets.at(m);
   }
   else {
-    LBANN_ERROR("get_dataset: invalid execution mode");
+    LBANN_ERROR("get_dataset: invalid execution mode: ", to_string(m));
   }
 }
 
-dataset* data_coordinator::select_first_valid_dataset()
+dataset& data_coordinator::select_first_valid_dataset()
 {
   for (auto m : execution_mode_iterator()) {
-    if (m_datasets.count(m)) {
-      return &m_datasets.at(m);
+    if (m_datasets.count(m) && m_datasets.at(m).initialized()) {
+      return m_datasets.at(m);
     }
   }
-  return nullptr;
+  LBANN_ERROR("select_first_valid_dataset: no valid execution modes found");
 }
 
 long data_coordinator::get_num_samples(execution_mode m) const
 {
-  if (m_datasets.count(m)) {
+  if (m_datasets.count(m) && m_datasets.at(m).initialized()) {
     return m_datasets.at(m).get_num_samples_processed();
   }
   else {
+    LBANN_WARNING(
+      "I am getting the number of smaples and it is defaulting to 0");
     return 0;
   }
 }
 
 long data_coordinator::get_total_num_samples(execution_mode m) const
 {
-  if (m_datasets.count(m)) {
+  if (m_datasets.count(m) && m_datasets.at(m).initialized()) {
     return m_datasets.at(m).get_total_samples();
   }
   else {
@@ -507,69 +485,17 @@ bool data_coordinator::is_execution_mode_valid(execution_mode mode) const
 
 void data_coordinator::calculate_num_iterations_per_epoch(int mini_batch_size)
 {
-  for (auto&& dr : m_data_readers) {
-    if (!dr.second)
+  for (auto& [mode, dataset] : m_datasets) {
+    if (!dataset.initialized())
       continue;
-    calculate_num_iterations_per_epoch(mini_batch_size, dr.second);
+    calculate_num_iterations_per_epoch(mini_batch_size, dataset);
   }
-}
-
-int data_coordinator::compute_max_num_parallel_readers(
-  long data_set_size,
-  int mini_batch_size,
-  int requested_num_parallel_readers) const
-{
-  return compute_max_num_parallel_readers(data_set_size,
-                                          mini_batch_size,
-                                          requested_num_parallel_readers,
-                                          this->m_comm);
-}
-
-int data_coordinator::compute_max_num_parallel_readers(
-  long data_set_size,
-  int mini_batch_size,
-  int requested_num_parallel_readers,
-  const lbann_comm* comm)
-{
-  int num_parallel_readers = requested_num_parallel_readers;
-
-  if (comm->get_procs_per_trainer() != num_parallel_readers) {
-    if (comm->am_trainer_master()) {
-      std::cout << "Warning the requested number of parallel readers "
-                << num_parallel_readers << " does not match the grid size "
-                << comm->get_procs_per_trainer()
-                << " OVERRIDING requested number of parallel readers."
-                << std::endl;
-    }
-    num_parallel_readers = comm->get_procs_per_trainer();
-  }
-
-#if 0
-  if(mini_batch_size < num_parallel_readers) {
-    if (comm->am_trainer_master()) {
-      std::cout << "Warning the requested number of parallel readers "
-                << num_parallel_readers
-                << " is larger than the requested mini-batch size "
-                << mini_batch_size
-                << " OVERRIDING requested number of parallel readers."
-                << std::endl;
-    }
-    num_parallel_readers = mini_batch_size;
-  }
-#endif
-  return num_parallel_readers;
-}
-
-int data_coordinator::get_num_parallel_readers(execution_mode mode) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_num_parallel_readers() : 0;
 }
 
 bool data_coordinator::at_new_epoch(execution_mode mode) const
 {
-  const generic_data_reader* dr = get_data_reader(mode);
-  return (dr != nullptr && dr->at_new_epoch());
+  const dataset& ds = get_dataset(mode);
+  return (ds.initialized() && ds.at_new_epoch());
 }
 
 bool data_coordinator::at_new_epoch() const
@@ -578,86 +504,56 @@ bool data_coordinator::at_new_epoch() const
 }
 
 void data_coordinator::register_active_data_field(
-  data_field_type const data_field)
+  data_field_type const& data_field,
+  std::vector<El::Int> const& data_field_dim_map)
 {
   m_active_data_fields.insert(data_field);
+  m_active_data_fields_dim_map[data_field] = data_field_dim_map;
 }
 
 size_t data_coordinator::get_num_iterations_per_epoch(execution_mode mode) const
 {
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_num_iterations_per_epoch()
-                                  : 0;
+  if (!dataset_exists(mode)) {
+    return 0;
+  }
+  const dataset& dataset = get_dataset(mode);
+  return (dataset.initialized()) ? dataset.get_num_iterations_per_epoch() : 0;
 }
 
 int data_coordinator::get_current_step_in_epoch(execution_mode mode) const
 {
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_current_step_in_epoch()
-                                  : 0;
+  if (!dataset_exists(mode)) {
+    return 0;
+  }
+  const dataset& dataset = get_dataset(mode);
+  return (dataset.initialized()) ? dataset.get_current_step_in_epoch() : 0;
 }
 
 int data_coordinator::get_mini_batch_size(execution_mode mode) const
 {
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_mini_batch_size() : 0;
+  if (!dataset_exists(mode)) {
+    return 0;
+  }
+  const dataset& dataset = get_dataset(mode);
+  return (dataset.initialized()) ? dataset.get_mini_batch_size() : 0;
 }
 
 int data_coordinator::get_last_mini_batch_size(execution_mode mode) const
 {
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_last_mini_batch_size() : 0;
+  if (!dataset_exists(mode)) {
+    return 0;
+  }
+  const dataset& dataset = get_dataset(mode);
+  return (dataset.initialized()) ? dataset.get_last_mini_batch_size() : 0;
 }
 
 int data_coordinator::get_current_mini_batch_size(execution_mode mode) const
 {
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_current_mini_batch_size()
-                                  : 0;
-}
-
-int data_coordinator::get_global_mini_batch_size(execution_mode mode) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr) ? data_reader->get_global_mini_batch_size()
-                                  : 0;
-}
-
-int data_coordinator::get_current_global_mini_batch_size(
-  execution_mode mode) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr)
-           ? data_reader->get_current_global_mini_batch_size()
-           : 0;
-}
-
-int data_coordinator::get_global_last_mini_batch_size(execution_mode mode) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr)
-           ? data_reader->get_global_last_mini_batch_size()
-           : 0;
-}
-
-int data_coordinator::get_world_master_mini_batch_adjustment(
-  execution_mode mode) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr)
-           ? data_reader->get_world_master_mini_batch_adjustment()
-           : 0;
-}
-
-int data_coordinator::get_current_world_master_mini_batch_adjustment(
-  execution_mode mode,
-  int model_rank) const
-{
-  const generic_data_reader* data_reader = get_data_reader(mode);
-  return (data_reader != nullptr)
-           ? data_reader->get_current_world_master_mini_batch_adjustment(
-               model_rank)
-           : 0;
+  if (!dataset_exists(mode)) {
+    return 0;
+  }
+  const dataset& dataset = get_dataset(mode);
+  return (dataset.initialized()) ? dataset.get_current_mini_batch_size() : 0;
 }
 
 // save state of IO to a checkpoint
@@ -725,7 +621,6 @@ bool data_coordinator::load_from_checkpoint_shared(persist& p)
     //   unpack_cereal_archive_binary_string<data_coordinator>(*this, buf);
     // }
   }
-
   return true;
 }
 
@@ -777,6 +672,31 @@ bool data_coordinator::load_from_checkpoint_distributed(persist& p)
   // read_cereal_archive<data_coordinator>(*this, p, execution_mode::training,
   // "_dc.xml");
   return true;
+}
+
+// only used in LTFB; from that file:
+// "Note that this is a temporary fix
+// for the current use of the tournament"
+void data_coordinator::make_data_store_preloaded(execution_mode mode)
+{
+  auto* dr = this->get_data_reader(mode);
+  auto* data_store = dr->get_data_store_ptr();
+  if (data_store != nullptr && !data_store->is_fully_loaded()) {
+    dr->get_data_store_ptr()->set_loading_is_complete();
+    dr->get_data_store_ptr()->set_is_explicitly_loading(false);
+  }
+}
+
+// only used in LTFB; from that file:
+// "Note that this is a temporary fix
+// for the current use of the tournament"
+void data_coordinator::mark_data_store_explicitly_loading(execution_mode mode)
+{
+  auto* dr = this->get_data_reader(mode);
+  auto* data_store = dr->get_data_store_ptr();
+  if (data_store != nullptr && !data_store->is_fully_loaded()) {
+    dr->get_data_store_ptr()->set_is_explicitly_loading(true);
+  }
 }
 
 } // namespace lbann

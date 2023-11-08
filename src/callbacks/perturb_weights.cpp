@@ -142,7 +142,7 @@ void perturb_weights::perturb(model& m)
 
     // Check layer name
     if (w->get_name() == m_output_name) {
-      auto& values = w->get_values();
+      auto& values = w->get_values_sharded();
       auto& new_values =
         dynamic_cast<El::AbstractDistMatrix<DataType>&>(values);
 

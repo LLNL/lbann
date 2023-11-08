@@ -41,10 +41,7 @@ import mnist
 desc = ('An LBANN implementation of MNIST VAE in Doersch\'s autoencoder tutorial. '
         'Running the experiment is only supported on LC systems.')
 parser = argparse.ArgumentParser(description=desc)
-lbann.contrib.args.add_scheduler_arguments(parser)
-parser.add_argument(
-    '--job-name', action='store', default='lbann_vae_mnist', type=str,
-    help='scheduler job name (default: lbann_vae_mnist)')
+lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_vae_mnist')
 parser.add_argument(
     '--mini-batch-size', action='store', default=100, type=int,
     help='mini-batch size (default: 100)', metavar='NUM')

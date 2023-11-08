@@ -58,7 +58,9 @@ void initialize()
 
       // Initialize Python session and release GIL
       Py_Initialize();
+#if !(PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 7)
       PyEval_InitThreads();
+#endif
       init_thread_state = PyEval_SaveThread();
       if (!is_active()) {
         LBANN_ERROR("error initializing embedded Python session");

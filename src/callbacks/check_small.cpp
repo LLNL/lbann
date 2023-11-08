@@ -97,7 +97,7 @@ void check_small::on_backward_prop_end(model* m)
   for (weights* w : m->get_weights()) {
     auto& dtw = dynamic_cast<data_type_weights<DataType>&>(*w);
     auto* opt = dtw.get_optimizer();
-    if (opt != nullptr && !is_good(opt->get_gradient())) {
+    if (opt != nullptr && !is_good(opt->get_gradient_sharded())) {
       LBANN_ERROR(name(),
                   ": "
                   "[",

@@ -45,12 +45,14 @@ set_full_path(THIS_DIR_SOURCES
   dump_outputs.cpp
   dump_weights.cpp
   early_stopping.cpp
+  evaluate_progress.cpp
   gpu_memory_usage.cpp
+  gradient_clipping.cpp
   hang.cpp
-  imcomm.cpp
   learning_rate.cpp
   load_model.cpp
   ltfb.cpp
+  memory_profiler.cpp
   mixup.cpp
   monitor_io.cpp
   perturb_adam.cpp
@@ -60,6 +62,7 @@ set_full_path(THIS_DIR_SOURCES
   print_model_description.cpp
   print_statistics.cpp
   profiler.cpp
+  progress_bar.cpp
   replace_weights.cpp
   save_images.cpp
   save_model.cpp

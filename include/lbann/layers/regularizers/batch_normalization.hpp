@@ -74,6 +74,8 @@ public:
   dc::Shape get_per_channel_stat_shape() const;
   dc::Dist get_per_channel_stat_dist(const dc::Dist& input_dist) const;
   void setup_layer(size_t workspace_capacity) override;
+  std::unique_ptr<TensorDevType>
+  setup_error_signals_i(int index) const override;
   void fp_compute();
   void bp_compute();
 
@@ -136,6 +138,13 @@ private:
    *  is local. If it is 0, statistics are aggregated globally.
    */
   int m_statistics_group_size;
+  /** @brief Add Bessel's correction to the batch normalization denominator.
+   *
+   *  Bessel's correction makes the layer more statistically robust;
+   *  disabling it, however, makes the layer compatible with PyTorch's
+   *  implementation.
+   */
+  bool m_bessel_correction;
   /**
    * Cache of node-local num_per_sum results for node-local stats.
    * Indexed by effective mini-batch size.
@@ -173,14 +182,17 @@ public:
    *  @param epsilon A small number to avoid division by zero.
    *  @param statistics_group_size Number of processors to aggregate
    *         statistics over. Defaults to 1 (i.e. local aggregation).
+   *  @param bessel_correction Add Bessel's correction to the denominator.
    */
   batch_normalization_layer(TensorDataType decay = 0.9,
                             TensorDataType epsilon = 1e-5,
-                            int statistics_group_size = 1)
+                            int statistics_group_size = 1,
+                            bool bessel_correction = true)
     : data_type_layer<TensorDataType>(nullptr),
       m_decay(decay),
       m_epsilon(epsilon),
-      m_statistics_group_size(statistics_group_size)
+      m_statistics_group_size(statistics_group_size),
+      m_bessel_correction(bessel_correction)
   {
 #ifdef LBANN_DETERMINISTIC
     // Force global computation.
@@ -193,6 +205,7 @@ public:
       m_decay(other.m_decay),
       m_epsilon(other.m_epsilon),
       m_statistics_group_size(other.m_statistics_group_size),
+      m_bessel_correction(other.m_bessel_correction),
       m_num_per_sum_cache(other.m_num_per_sum_cache),
       m_mean_and_var(other.m_mean_and_var ? other.m_mean_and_var->Copy()
                                           : nullptr),
@@ -217,6 +230,7 @@ public:
     m_decay = other.m_decay;
     m_epsilon = other.m_epsilon;
     m_statistics_group_size = other.m_statistics_group_size;
+    m_bessel_correction = other.m_bessel_correction;
     m_num_per_sum_cache = other.m_num_per_sum_cache;
 
     // Deep copy matrices
@@ -246,6 +260,11 @@ public:
   std::string get_type() const override { return "batch normalization"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | WEIGHTS | PREV_ACTIVATIONS;
+  }
 
   description get_description() const override
   {
@@ -253,6 +272,7 @@ public:
     desc.add("Decay", m_decay);
     desc.add("Epsilon", m_epsilon);
     desc.add("Statistics group size", m_statistics_group_size);
+    desc.add("Bessel's correction", m_bessel_correction);
     return desc;
   }
 
@@ -268,9 +288,9 @@ protected:
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
 
@@ -282,7 +302,7 @@ protected:
 
     // Display warning if mini-batch size is small
     const auto& output = this->get_activations();
-    const auto& mini_batch_size = output.Width();
+    const auto& mini_batch_size = max_mini_batch_size;
     const auto& local_mini_batch_size = mini_batch_size / output.DistSize();
     if (m_statistics_group_size == 0 && mini_batch_size <= 4) {
       if (output.DistRank() == 0) {
@@ -304,7 +324,7 @@ protected:
         err << "LBANN warning: " << get_type() << " layer \""
             << this->get_name() << "\" "
             << "is aggregating statistics over " << m_statistics_group_size
-            << "processors and the aggregated mini-batch size ("
+            << " processors and the aggregated mini-batch size ("
             << (m_statistics_group_size * local_mini_batch_size) << ") "
             << "may be too small to get good statistics";
         std::cerr << err.str() << std::endl;
@@ -439,7 +459,7 @@ protected:
   {
     return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  void setup_distconv_adapter() override
   {
     this->get_distconv_adapter_ptr() = std::make_unique<
       batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>>(

@@ -70,7 +70,6 @@ construct_trainer(lbann_comm* comm, const lbann_data::Trainer& proto_trainer);
 
 /** Construct a model specified with a prototext. */
 std::unique_ptr<model> construct_model(lbann_comm* comm,
-                                       int training_dr_linearized_data_size,
                                        const lbann_data::Optimizer& proto_opt,
                                        const lbann_data::Trainer& proto_trainer,
                                        const lbann_data::Model& proto_model);
@@ -78,15 +77,12 @@ std::unique_ptr<model> construct_model(lbann_comm* comm,
 /** Construct a layer graph specified with a prototext. */
 std::vector<OwningLayerPtr>
 construct_layer_graph(lbann_comm* comm,
-                      int training_dr_linearized_data_size,
                       const lbann_data::Trainer& proto_trainer,
                       const lbann_data::Model& proto_model);
 
 /** Construct a layer specified with prototext. */
 template <typename TensorDataType, data_layout layout, El::Device Dev>
 std::unique_ptr<Layer> construct_layer(lbann_comm* comm,
-                                       int training_dr_linearized_data_size,
-                                       int num_parallel_readers,
                                        const lbann_data::Layer& proto_layer);
 
 /** Construct an operator specified with prototext. */

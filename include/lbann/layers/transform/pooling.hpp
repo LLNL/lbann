@@ -226,6 +226,11 @@ public:
   std::string get_type() const override { return "pooling"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | PREV_ACTIVATIONS | ACTIVATIONS;
+  }
 
 #ifdef LBANN_HAS_ONNX
   void fill_onnx_node(onnx::GraphProto& graph) const override;
@@ -292,9 +297,9 @@ protected:
   friend class cereal::access;
   pooling_layer() : pooling_layer(nullptr, 1, 1, 1, 1, pooling_mode::MAX) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override
+  void setup_dims() override
   {
-    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    data_type_layer<TensorDataType>::setup_dims();
     const auto& input_dims = this->get_input_dims();
     auto output_dims = input_dims;
     for (size_t i = 0; i < output_dims.size() - 1; ++i) {
@@ -346,7 +351,7 @@ private:
 
 protected:
   bool is_distconv_supported() const override;
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override
+  void setup_distconv_adapter() override
   {
     this->get_distconv_adapter_ptr() =
       std::make_unique<pooling_distconv_adapter<TensorDataType, T_layout, Dev>>(

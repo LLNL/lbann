@@ -74,13 +74,15 @@ public:
   std::string get_type() const final;
   data_layout get_data_layout() const final;
   El::Device get_device_allocation() const final;
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
   description get_description() const final;
 
 protected:
   friend class cereal::access;
   PermuteLayer();
 
-  void setup_dims(DataReaderMetaData& dr_metadata) final;
+  void setup_dims() final;
   void fp_compute() final;
   void bp_compute() final;
 

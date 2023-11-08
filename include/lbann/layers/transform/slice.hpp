@@ -27,7 +27,6 @@
 #ifndef LBANN_LAYERS_TRANSFORM_SLICE_HPP_INCLUDED
 #define LBANN_LAYERS_TRANSFORM_SLICE_HPP_INCLUDED
 
-#include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
@@ -67,6 +66,8 @@ public:
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
+  bool can_run_inplace() const override { return false; }
+  int get_backprop_requirements() const override { return ERROR_SIGNALS; }
 
   description get_description() const override;
 
@@ -94,10 +95,10 @@ protected:
   friend class cereal::access;
   slice_layer() : slice_layer(nullptr) {}
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
 
-  void fp_setup_outputs(El::Int mini_batch_size) override;
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
+  void fp_setup_outputs() override;
+  void bp_setup_gradient_wrt_inputs() override;
   void fp_compute() override;
   void bp_compute() override;
   void fp_compute_subgrid();
@@ -119,7 +120,8 @@ private:
    *  Parameters for CUDA kernels are copied into this buffer and
    *  asynchronously transferred to GPU.
    */
-  std::vector<unsigned char> m_workspace;
+  std::shared_ptr<hydrogen::simple_buffer<unsigned char, El::Device::CPU>>
+    m_workspace;
   /** @brief CUDA event for workspace buffer.
    *
    *  Makes sure asynchronous GPU memory transfers are completed
@@ -154,6 +156,16 @@ slice_layer<TensorDataType, Layout, Device>::slice_layer(lbann_comm* comm)
   : data_type_layer<TensorDataType>(comm),
     m_set_slice_points_from_data_reader(false),
     m_var_category(slice_points_mode::NA)
+#ifdef LBANN_HAS_GPU
+    ,
+    m_workspace
+{
+  std::make_shared<hydrogen::simple_buffer<unsigned char, El::Device::CPU>>(
+    0UL,
+    hydrogen::SyncInfo<El::Device::CPU>{},
+    1U /*=pinned*/)
+}
+#endif /* LBANN_HAS_GPU */
 {
   this->m_expected_num_child_layers = -1; // No limit on children
 }
@@ -197,97 +209,6 @@ description slice_layer<TensorDataType, Layout, Device>::get_description() const
   return desc;
 }
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
-{
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
-
-  // Setup the slice points if they are to be established by the data reader
-  if (m_set_slice_points_from_data_reader) {
-    std::vector<size_t> slice_points;
-    std::string slice_point_method_name = "'get_slice_points_from_reader'";
-    for (auto& slice_point : dr_metadata.slice_points[m_var_category]) {
-      slice_points.push_back(slice_point);
-    }
-
-    if (slice_points.size() < 2u) {
-      LBANN_ERROR(slice_point_method_name, " is not supported by the reader.");
-      return;
-    }
-    m_slice_points = std::move(slice_points);
-  }
-
-  // Check that slice parameters are valid
-  const auto& input_dims = this->get_input_dims();
-  const size_t num_outputs = this->get_num_children();
-  if (m_slice_dim >= input_dims.size()) {
-    std::ostringstream err;
-    err << this->get_type() << " layer \"" << this->get_name() << "\" "
-        << "is slicing along dimension " << m_slice_dim << ", "
-        << "but it has a " << input_dims.size() << "-D input tensor "
-        << "(parent layer \"" << this->get_parent_layers()[0]->get_name()
-        << "\" "
-        << "outputs with dimensions ";
-    for (size_t d = 0; d < input_dims.size(); ++d) {
-      err << (d > 0 ? " x " : "") << input_dims[d];
-    }
-    err << ")";
-    LBANN_ERROR(err.str());
-  }
-  if (m_slice_points.size() <= num_outputs) {
-    LBANN_ERROR(this->get_type(),
-                " layer \"",
-                this->get_name(),
-                "\" ",
-                "has ",
-                num_outputs,
-                " children, "
-                "but only ",
-                m_slice_points.size(),
-                " slice points");
-  }
-  if (!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
-    LBANN_ERROR(this->get_type(),
-                " layer \"",
-                this->get_name(),
-                "\" ",
-                "has unsorted slice points");
-  }
-  if (m_slice_points.back() > static_cast<size_t>(input_dims[m_slice_dim])) {
-    LBANN_ERROR(this->get_type(),
-                " layer \"",
-                this->get_name(),
-                "\" ",
-                "has a slice point of ",
-                m_slice_points.back(),
-                ", ",
-                "which is outside the expected range "
-                "[0 ",
-                input_dims[m_slice_dim],
-                "]");
-  }
-
-  // Model-parallel implementation only supports flat data
-  if (Layout == data_layout::MODEL_PARALLEL && input_dims.size() != 1) {
-    LBANN_ERROR(this->get_type(),
-                " layer \"",
-                this->get_name(),
-                "\" ",
-                "attempted to slice along dimension ",
-                m_slice_dim,
-                ", ",
-                "but model-parallel slice layer only supports flat data");
-  }
-
-  // Set output tensor dimensions
-  auto output_dims = input_dims;
-  for (size_t i = 0; i < num_outputs; ++i) {
-    output_dims[m_slice_dim] = m_slice_points[i + 1] - m_slice_points[i];
-    this->set_output_dims(output_dims, i);
-  }
-}
-
 template <typename TensorDataType, El::Device Device>
 void fp_setup_outputs_impl(
   slice_layer<TensorDataType, data_layout::MODEL_PARALLEL, Device>& l)
@@ -320,12 +241,12 @@ void fp_setup_outputs_impl(
     auto& output = l.get_activations(j);
     // output.AlignWith(input);
     output.Resize(l.get_output_size(j), input.Width());
+    l.setup_reference_counter(output);
   }
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType, Layout, Device>::fp_setup_outputs(
-  El::Int mini_batch_size)
+void slice_layer<TensorDataType, Layout, Device>::fp_setup_outputs()
 {
   fp_setup_outputs_impl(*this);
 }
@@ -402,7 +323,7 @@ void slice_layer<TensorDataType, Layout, Device>::fp_compute()
   const size_t num_dims = input_dims.size();
 
   if (this->m_slice_dim == num_dims - 1 &&
-      this->get_parallel_strategy().enable_subgraph == true) {
+      this->subgraph_parallelism_execution()) {
     fp_compute_subgrid();
   }
   else {
@@ -433,8 +354,7 @@ void slice_layer<TensorDataType, Layout, Device>::bp_compute_subgrid()
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType, Layout, Device>::bp_setup_gradient_wrt_inputs(
-  El::Int mini_batch_size)
+void slice_layer<TensorDataType, Layout, Device>::bp_setup_gradient_wrt_inputs()
 {
   const auto& output0_grad = this->get_prev_error_signals(0);
   auto& input_grad = this->get_error_signals();
@@ -451,7 +371,7 @@ void slice_layer<TensorDataType, Layout, Device>::bp_compute()
   const size_t num_dims = input_dims.size();
 
   if (this->m_slice_dim == num_dims - 1 &&
-      this->get_parallel_strategy().enable_subgraph == true) {
+      this->subgraph_parallelism_execution()) {
     bp_compute_subgrid();
   }
   else {

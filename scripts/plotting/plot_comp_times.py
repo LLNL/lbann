@@ -19,7 +19,7 @@ def plot_times(files, names, output_name):
       f,
       event_names=['objective_time', 'objective_evaluation_time',
                    'objective_differentiation_time', 'metric_evaluation_time'],
-      layer_event_names=['fp_time', 'bp_time', 'update_time', 'imcomm_time', 'opt_time'],
+      layer_event_names=['fp_time', 'bp_time', 'update_time', 'opt_time'],
       model=0))
   fig, ax = plt.subplots(1, 1)
   bar_width = 0.35
@@ -32,16 +32,11 @@ def plot_times(files, names, output_name):
     fp_tot = OrderedDict()
     bp_tot = OrderedDict()
     update_tot = OrderedDict()
-    imcomm_tot = OrderedDict()
     opt_tot = OrderedDict()
     for layer in result['fp_time'].keys():
       fp_tot[layer] = np.sum(result['fp_time'][layer])
       bp_tot[layer] = np.sum(result['bp_time'][layer])
       update_tot[layer] = np.sum(result['update_time'][layer])
-      if 'imcomm_time' in result and layer in result['imcomm_time']:
-        imcomm_tot[layer] = np.sum(result['imcomm_time'][layer])
-      else:
-        imcomm_tot[layer] = 0
       if 'opt_time' in result and layer in result['opt_time']:
         opt_tot[layer] = np.sum(result['opt_time'][layer])
       else:
@@ -59,7 +54,6 @@ def plot_times(files, names, output_name):
     fp_tot = np.array(list(fp_tot.values()) + [obj_val_tot, metric_tot])
     bp_tot = np.array(list(bp_tot.values()) + [obj_grad_tot, 0.0])
     update_tot = np.array(list(update_tot.values()) + [0.0, 0.0])
-    imcomm_tot = np.array(list(imcomm_tot.values()) + [0.0, 0.0])
     opt_tot = np.array(list(opt_tot.values()) + [0.0, 0.0])
     ax.bar(starts + i*bar_width, fp_tot, bar_width, color='blue')
     ax.bar(starts + i*bar_width, bp_tot, bar_width, bottom=fp_tot,
@@ -68,7 +62,7 @@ def plot_times(files, names, output_name):
            color='yellow')
     ax.bar(starts + i*bar_width, opt_tot, bar_width,
            bottom=fp_tot+bp_tot+update_tot, color='magenta')
-    rects = ax.bar(starts + i*bar_width, imcomm_tot, bar_width,
+    rects = ax.bar(starts + i*bar_width, bar_width,
                    bottom=fp_tot+bp_tot+update_tot+opt_tot, color='red')
     # Add the name to this bar.
     ax.text(rects[0].get_x() + rects[0].get_width() / 2,
@@ -84,7 +78,7 @@ def plot_times(files, names, output_name):
   #for label in ax.xaxis.get_ticklabels()[::2]:
   #  label.set_visible(False)
   ax.set_title('Per-layer runtime breakdown')
-  ax.legend(('FP', 'BP', 'Update', 'Opt', 'Imcomm'))
+  ax.legend(('FP', 'BP', 'Update', 'Opt'))
   plt.tight_layout()
   plt.savefig(output_name + '.pdf')
 

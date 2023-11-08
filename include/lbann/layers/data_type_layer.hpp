@@ -131,6 +131,11 @@ public:
   /** Get error signal tensor corresponding to parent layer. */
   const InputAbsDistMatrixType&
   get_error_signals(const Layer& parent) const override;
+  bool owns_activations() const override { return m_activations_created; }
+
+  El::Int current_output_mini_batch_size() const override;
+  El::Int
+  infer_mini_batch_size_from_parents_or_default_to_current() const override;
 
   /** Get temp Grad Tensor. */
   OutputAbsDistMatrixType& get_temp_grad();
@@ -200,6 +205,11 @@ protected:
   // ===========================================================
 
   /** Get previous activation tensor. */
+  InputAbsDistMatrixType& get_prev_activations(int parent_index = 0);
+  /** Get previous error signal tensor. */
+  OutputAbsDistMatrixType& get_prev_error_signals(int child_index = 0);
+
+  /** Get previous activation tensor. */
   const InputAbsDistMatrixType&
   get_prev_activations(int parent_index = 0) const;
   /** Get previous error signal tensor. */
@@ -233,6 +243,9 @@ protected:
    */
   void setup_data(size_t max_mini_batch_size) override;
 
+  /** Creates a new reference counter entry in the model object, if exists. */
+  void setup_reference_counter(OutputAbsDistMatrixType& mat);
+
   // ===========================================================
   // Forward prop step helper functions
   // ===========================================================
@@ -242,12 +255,12 @@ protected:
    *  setup as a view or copy of the corresponding parent layer's
    *  output tensor.
    */
-  void fp_setup_inputs(El::Int mini_batch_size) override;
+  void fp_setup_inputs() override;
   /** Setup output tensors.
    *  Called by the 'forward_prop' function. Each output tensor is
    *  resized to match the mini-batch size.
    */
-  void fp_setup_outputs(El::Int mini_batch_size) override;
+  void fp_setup_outputs() override;
 
   // ===========================================================
   // Back prop step helper functions
@@ -257,7 +270,7 @@ protected:
    *  Called by the 'back_prop' function. Each gradient w.r.t. input
    *  tensor is resized to match the mini-batch size.
    */
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
+  void bp_setup_gradient_wrt_inputs() override;
   /** Compute objective funciton gradients.
    *  Called by the 'back_prop' function. Given the input, output, and
    *  gradient w.r.t. output tensors, the gradient w.r.t. input
@@ -280,9 +293,6 @@ protected:
    */
   weights& master_weights(size_t idx) { return get_weights(idx); }
   weights const& master_weights(size_t idx) const { return get_weights(idx); }
-
-  void setup_inter_subgrid_comm_based_on_childs(const El::Grid& grid);
-  void setup_inter_subgrid_comm_based_on_parents(const El::Grid& grid);
 
 private:
   /** @brief Attempt to take ownership of the previous error signal.
@@ -413,6 +423,12 @@ private:
    */
   bool m_persistent_error_signals = false;
 
+  /** @brief Whether activations were creating during forward propagation.
+   * This boolean is reset in the beginning of `forward_prop()` and set in
+   * `setup_reference_counter`.
+   */
+  bool m_activations_created = false;
+
 #ifdef LBANN_HAS_DISTCONV
   friend class data_type_distconv_adapter<InputTensorDataType,
                                           OutputTensorDataType>;
@@ -424,7 +440,7 @@ public:
   get_distconv_adapter() const override;
 
 protected:
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+  void setup_distconv_adapter() override;
 #endif // LBANN_HAS_DISTCONV
 
 #ifdef LBANN_HAS_GPU

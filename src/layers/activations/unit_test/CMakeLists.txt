@@ -25,6 +25,7 @@
 ################################################################################
 set_full_path(THIS_DIR_MPI_CATCH2_TEST_FILES
   identity_test.cpp
+  inplace_test.cpp
   )
 
 set(LBANN_MPI_CATCH2_TEST_FILES

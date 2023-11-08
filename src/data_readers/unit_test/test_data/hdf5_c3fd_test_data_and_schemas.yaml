@@ -1,0 +1,86 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
+const std::string hdf5_c3fd_data_sample=R"FOO(RUN_ID:
+  000000001:
+    NodeFeatures: [0.1, 0.2, 1.1, 1.2, 2.1, 2.2, 3.1, 3.2]
+    EdgeFeatures: [0, 0, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1]
+    COOList: [0, 1, 0, 2, 1, 0, 1, 3, 2, 0, 2, 3, 3, 1, 3, 2]
+)FOO";
+
+const std::string hdf5_c3fd_data_schema = R"FOO(
+# Re, the "ordering" fields: ordering is relative and need not be unique;
+# it specifies, e.g, the order in which a set of scalars
+# would be appended to a vector.
+#
+# metadata values in the below schema can be over-ridden by values in
+# the experiment_schema.yaml
+#
+# For reference: the metadata nodes may contain additional info,
+# e.g, scale and bias for normalization.
+#
+# The intent is that the the schema and metadata values below should
+# be reasonably static, while the experiment_schema species the
+# subset of values to use in an experiment
+#
+#
+NodeFeatures:
+  metadata:
+    dims: [4, 2]
+    channels: 1
+    ordering: 0
+    scale: [1.0]
+    bias: [0.0]
+EdgeFeatures:
+  metadata:
+    dims: [8, 3]
+    channels: 1
+    ordering: 1
+    scale: [1.0]
+    bias: [0.0]
+COOList:
+  metadata:
+    dims: [8, 2]
+    channels: 1
+    ordering: 2
+    scale: [1.0]
+    bias: [0.0]
+)FOO";
+
+const std::string hdf5_c3fd_experiment_schema = R"FOO(
+NodeFeatures:
+  metadata:
+    pack: "node_fts"
+    coerce: "float"
+EdgeFeatures:
+  metadata:
+    pack: "edge_fts"
+    coerce: "float"
+COOList:
+  metadata:
+    pack: "coo_list"
+    coerce: "float"
+)FOO";

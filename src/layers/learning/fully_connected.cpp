@@ -27,7 +27,7 @@
 #define LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
 #include "lbann/layers/learning/fully_connected.hpp"
 
-#include "lbann/optimizers/optimizer_impl.hpp"
+#include "lbann/optimizers/optimizer.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/variance_scaling_initializers.hpp"
 

@@ -117,13 +117,8 @@ message Layer {
   // ===========================================
   // Deprecated options
   // ===========================================
-
-  /// Deprecated
-  bool num_neurons_from_data_reader = 400;
   /// Deprecated
   bool freeze = 401;
-  /// Deprecated and unused
-  repeated WeightsData weights_data = 402;
 
   // ===========================================
   // Concrete layer types
@@ -459,9 +454,20 @@ message Layer {
      */
     int64 statistics_group_size = 6;
 
+    /** @brief Disable Bessel's correction to the batch normalization
+     * denominator.
+     *
+     *  Default: false
+     *
+     *  Bessel's correction makes the layer more statistically robust;
+     *  disabling it, however, makes the layer compatible with PyTorch's
+     *  implementation.
+     */
+    bool no_bessel_correction = 7;
+
     /// Deprecated and unused
     double scale_init = 2;
-    /// Deprecated and unsued
+    /// Deprecated and unused
     double bias_init = 3;
     /// Deprecated
     string stats_aggregation = 5;
@@ -563,6 +569,16 @@ message Layer {
      *  @details Default: 1e-5
      */
     google.protobuf.DoubleValue epsilon = 1;
+
+    /**
+     * Apply an elementwise learned scaling factor after normalization
+     */
+    bool scale = 2;
+
+    /**
+     * Apply an elementwise learned bias after normalization
+     */
+    bool bias = 3;
   }
 
   /** @brief Normalize over data channels
@@ -1418,11 +1434,18 @@ message Layer {
 
   /** @brief Softmax across channel dimension
    *
-   *  The input tensor is sliced along the first tensor dimension (the
-   *  "channel" dimension for image data in CHW format) and the
+   *  The input tensor is sliced along the chosen tensor dimension (by default,
+   *  the "channel" dimension for image data in CHW format) and the
    *  softmax function is computed for each slice.
    */
-  message ChannelwiseSoftmax {}
+  message ChannelwiseSoftmax {
+    /** @brief The tensor dimension to use (defaults to first) */
+    int64 dim = 1;
+
+    /** @brief If true, only performs softmax on the chosen dimension. Otherwise
+               all dimensions _but_ ``dim`` will be used. */
+    bool single_dim_mode = 2;
+  }
 
   /** @brief Embedding layer with distributed weights
    *
@@ -1543,13 +1566,6 @@ message ParallelStrategy {
    *  or negative, the process grid is chosen based on heuristics.
    */
   google.protobuf.Int64Value grid_tag = 21;
-
-  /// @todo Remove
-  int64 sub_branch_tag = 15;
-  /// @todo Remove
-  int64 sub_branch_resource_percentage = 16;
-  /// @todo Remove
-  bool enable_subgraph = 17;
 }
 
 // =============================================
@@ -1567,14 +1583,13 @@ message WeightsData {
   int64 height = 2;
   int64 width = 3;
   repeated float data = 4 [packed = true];
-  Imcomm imcomm = 55;
 }
 /// Deprecated
 enum Imcomm {
   DEFAULT = 0;  // add Layer to Imcomm callback if all_learning_layers = true in
                 // the CallbackImComm
-  EXCLUDE = 1;  //*do not* add Layer to Imcomm callback if all_learning_layers =
-                //true in the CallbackImComm
+  EXCLUDE = 1;  // *do not* add Layer to Imcomm callback if all_learning_layers
+                // = true in the CallbackImComm
   INCLUDE =
       2;  // add Layer to Imcomm callback regardless of whether
           // all_learning_layers in the CallbackImComm is set to true or false

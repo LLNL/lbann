@@ -59,10 +59,7 @@ generic_data_reader::~generic_data_reader()
 template <class Archive>
 void generic_data_reader::serialize(Archive& ar)
 {
-  ar(CEREAL_NVP(m_current_mini_batch_idx),
-     CEREAL_NVP(m_current_pos),
-     CEREAL_NVP(m_shuffled_indices),
-     CEREAL_NVP(m_supported_input_types));
+  ar(CEREAL_NVP(m_shuffled_indices), CEREAL_NVP(m_supported_input_types));
 }
 
 void generic_data_reader::shuffle_indices()
@@ -81,18 +78,6 @@ void generic_data_reader::shuffle_indices(rng_gen& gen)
 void generic_data_reader::setup(int num_io_threads,
                                 observer_ptr<thread_pool> io_thread_pool)
 {
-  m_base_offset = 0;
-  m_sample_stride = 1;
-  m_stride_to_next_mini_batch = 0;
-  m_stride_to_last_mini_batch = 0;
-  m_current_mini_batch_idx = 0;
-  m_num_iterations_per_epoch = 0;
-  m_global_mini_batch_size = 0;
-  m_global_last_mini_batch_size = 0;
-  m_world_master_mini_batch_adjustment = 0;
-
-  set_initial_position();
-
   shuffle_indices();
 
   m_io_thread_pool = io_thread_pool;
@@ -100,23 +85,28 @@ void generic_data_reader::setup(int num_io_threads,
 
 int lbann::generic_data_reader::fetch(std::vector<conduit::Node>& samples,
                                       El::Matrix<El::Int>& indices_fetched,
-                                      size_t mb_size)
+                                      El::Int current_position_in_data_set,
+                                      El::Int sample_stride,
+                                      size_t mb_size,
+                                      const execution_mode mode)
 {
   // Check to make sure that a valid map was passed
   if (samples.empty()) {
     LBANN_ERROR("fetch function called with no valid buffers");
   }
 
-  if (!position_valid()) {
-    if (position_is_overrun()) {
+  // BVE FIXME
+  if (!(current_position_in_data_set < get_num_data()) /*position_valid()*/) {
+    if (current_position_in_data_set >=
+        get_num_data() /*position_is_overrun()*/) {
       return 0;
     }
     else {
-      LBANN_ERROR(std::string{} +
-                  "generic data reader load error: !position_valid" +
-                  " -- current pos = " + std::to_string(m_current_pos) +
-                  " and there are " +
-                  std::to_string(m_shuffled_indices.size()) + " indices");
+      LBANN_ERROR(
+        std::string{} + "generic data reader load error: !position_valid" +
+        " -- current pos = " + std::to_string(current_position_in_data_set) +
+        " and there are " + std::to_string(m_shuffled_indices.size()) +
+        " indices");
     }
   }
 
@@ -141,17 +131,23 @@ int lbann::generic_data_reader::fetch(std::vector<conduit::Node>& samples,
         std::bind(&generic_data_reader::fetch_data_block_conduit,
                   this,
                   std::ref(samples),
+                  current_position_in_data_set,
                   t,
                   m_io_thread_pool->get_num_threads(),
+                  sample_stride,
                   mb_size,
-                  std::ref(indices_fetched)));
+                  std::ref(indices_fetched),
+                  mode));
     }
   }
   fetch_data_block_conduit(samples,
+                           current_position_in_data_set,
                            m_io_thread_pool->get_local_thread_id(),
                            m_io_thread_pool->get_num_threads(),
+                           sample_stride,
                            mb_size,
-                           indices_fetched);
+                           indices_fetched,
+                           mode);
 
   // Wait for all of the threads to finish
   m_io_thread_pool->finish_work_group();
@@ -169,7 +165,10 @@ int lbann::generic_data_reader::fetch(std::vector<conduit::Node>& samples,
 int lbann::generic_data_reader::fetch(
   std::map<data_field_type, CPUMat*>& input_buffers,
   El::Matrix<El::Int>& indices_fetched,
-  size_t mb_size)
+  El::Int current_position_in_data_set,
+  El::Int sample_stride,
+  size_t mb_size,
+  const execution_mode mode)
 {
   // Check to make sure that a valid map was passed
   if (input_buffers.empty()) {
@@ -217,16 +216,18 @@ int lbann::generic_data_reader::fetch(
   }
 #endif
 
-  if (!position_valid()) {
-    if (position_is_overrun()) {
+  if (!(current_position_in_data_set < get_num_data())) {
+    // @todo BVE FIXME check to see if this is still necessary
+    if (current_position_in_data_set >=
+        get_num_data() /*position_is_overrun()*/) {
       return 0;
     }
     else {
-      LBANN_ERROR(std::string{} +
-                  "generic data reader load error: !position_valid" +
-                  " -- current pos = " + std::to_string(m_current_pos) +
-                  " and there are " +
-                  std::to_string(m_shuffled_indices.size()) + " indices");
+      LBANN_ERROR(
+        std::string{} + "generic data reader load error: !position_valid" +
+        " -- current pos = " + std::to_string(current_position_in_data_set) +
+        " and there are " + std::to_string(m_shuffled_indices.size()) +
+        " indices");
     }
   }
 
@@ -262,17 +263,23 @@ int lbann::generic_data_reader::fetch(
         std::bind(&generic_data_reader::fetch_data_block,
                   this,
                   std::ref(input_buffers),
+                  current_position_in_data_set,
                   t,
                   m_io_thread_pool->get_num_threads(),
+                  sample_stride,
                   mb_size,
-                  std::ref(indices_fetched)));
+                  std::ref(indices_fetched),
+                  mode));
     }
   }
   fetch_data_block(input_buffers,
+                   current_position_in_data_set,
                    m_io_thread_pool->get_local_thread_id(),
                    m_io_thread_pool->get_num_threads(),
+                   sample_stride,
                    mb_size,
-                   indices_fetched);
+                   indices_fetched,
+                   mode);
 
   // Wait for all of the threads to finish
   m_io_thread_pool->finish_work_group();
@@ -287,17 +294,18 @@ int lbann::generic_data_reader::fetch(
   return mb_size;
 }
 
-void lbann::generic_data_reader::start_data_store_mini_batch_exchange()
+void lbann::generic_data_reader::start_data_store_mini_batch_exchange(
+  El::Int current_position_in_data_set,
+  El::Int current_mini_batch_size,
+  bool at_new_epoch)
 {
-  int loaded_batch_size = get_loaded_mini_batch_size();
-
   // Make sure that every rank participates in the data store prior
   // to seeing if the local rank's position is valid.  Note that
   // every rank will hold data that may be used in the last mini-batch
   if (data_store_active()) {
-    m_data_store->start_exchange_mini_batch_data(m_current_pos - m_base_offset -
-                                                   m_model_offset,
-                                                 loaded_batch_size);
+    m_data_store->start_exchange_mini_batch_data(current_position_in_data_set,
+                                                 current_mini_batch_size,
+                                                 at_new_epoch);
   }
   return;
 }
@@ -315,16 +323,17 @@ void lbann::generic_data_reader::finish_data_store_mini_batch_exchange()
 
 bool lbann::generic_data_reader::fetch_data_block(
   std::map<data_field_type, CPUMat*>& input_buffers,
+  El::Int current_position_in_data_set,
   El::Int block_offset,
   El::Int block_stride,
+  El::Int sample_stride,
   El::Int mb_size,
-  El::Matrix<El::Int>& indices_fetched)
+  El::Matrix<El::Int>& indices_fetched,
+  execution_mode mode)
 {
-  locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
-
-  //  CPUMat& X
   for (int s = block_offset; s < mb_size; s += block_stride) {
-    int n = m_current_pos + (s * m_sample_stride);
+    locked_io_rng_ref io_rng = set_io_generators_local_index(s, mode);
+    int n = current_position_in_data_set + (s * sample_stride);
     int index = m_shuffled_indices[n];
     indices_fetched.Set(s, 0, index);
 
@@ -396,22 +405,23 @@ bool lbann::generic_data_reader::fetch_data_block(
 
 bool lbann::generic_data_reader::fetch_data_block_conduit(
   std::vector<conduit::Node>& samples,
+  El::Int current_position_in_data_set,
   El::Int block_offset,
   El::Int block_stride,
+  El::Int sample_stride,
   El::Int mb_size,
-  El::Matrix<El::Int>& indices_fetched)
+  El::Matrix<El::Int>& indices_fetched,
+  execution_mode mode)
 {
-  locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
-
   if (static_cast<size_t>(mb_size) > samples.size()) {
     LBANN_ERROR("unable to fetch data to conduit nodes, vector length ",
                 samples.size(),
                 " is smaller than mini-batch size",
                 mb_size);
   }
-  //  CPUMat& X
   for (int s = block_offset; s < mb_size; s += block_stride) {
-    int n = m_current_pos + (s * m_sample_stride);
+    locked_io_rng_ref io_rng = set_io_generators_local_index(s, mode);
+    int n = current_position_in_data_set + (s * sample_stride);
     int index = m_shuffled_indices[n];
     indices_fetched.Set(s, 0, index);
 
@@ -424,48 +434,16 @@ bool lbann::generic_data_reader::fetch_data_block_conduit(
   return true;
 }
 
-bool generic_data_reader::update(bool is_active_reader)
+void generic_data_reader::update(bool epoch_complete)
 {
-  bool reader_not_done = true; // BVE The sense of this should be fixed
-  m_current_mini_batch_idx++;
-
-  if (is_active_reader) {
-    m_current_pos = get_next_position();
-    m_loaded_mini_batch_idx += m_iteration_stride;
-  }
-  if (m_loaded_mini_batch_idx >= m_num_iterations_per_epoch) {
-    reader_not_done = false;
-  }
-  if ((size_t)m_current_pos >= m_shuffled_indices.size()) {
-    reader_not_done = false;
-  }
-  if (m_current_mini_batch_idx == m_num_iterations_per_epoch) {
-    // for working with 1B jag samples, we may not process all the data
-    if ((m_comm->get_rank_in_trainer() < m_num_parallel_readers) &&
-        (m_current_pos < (int)m_shuffled_indices.size())) {
-      throw lbann_exception(
-        std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-        " :: generic data reader update error: the epoch is complete," +
-        " but not all of the data has been used -- current pos = " +
-        std::to_string(m_current_pos) + " and there are " +
-        std::to_string(m_shuffled_indices.size()) + " indices" +
-        " : iteration=" + std::to_string(m_current_mini_batch_idx) + "C [" +
-        std::to_string(m_loaded_mini_batch_idx) + "L] of " +
-        std::to_string(m_num_iterations_per_epoch) + "+" +
-        std::to_string(m_iteration_stride) + " : " +
-        " index stride=" + std::to_string(m_stride_to_next_mini_batch) + "/" +
-        std::to_string(m_stride_to_last_mini_batch));
-    }
-
+  if (epoch_complete) {
     shuffle_indices();
-    if (priming_data_store()) {
+    if (m_data_store != nullptr && priming_data_store()) {
       m_data_store->set_shuffled_indices(&m_shuffled_indices);
     }
-
-    set_initial_position();
   }
 
-  return reader_not_done;
+  return;
 }
 
 int generic_data_reader::get_linearized_size(
@@ -487,66 +465,6 @@ int generic_data_reader::get_linearized_size(
     LBANN_ERROR("Unknown data_field_type value provided: " + data_field);
   }
   return 0;
-}
-
-int generic_data_reader::get_loaded_mini_batch_size() const
-{
-  if (m_loaded_mini_batch_idx >= (m_num_iterations_per_epoch - 1)) {
-    return m_last_mini_batch_size;
-  }
-  else {
-    return m_mini_batch_size;
-  }
-}
-
-int generic_data_reader::get_current_mini_batch_size() const
-{
-  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch - 1)) {
-    return m_last_mini_batch_size + m_world_master_mini_batch_adjustment;
-  }
-  else {
-    return m_mini_batch_size;
-  }
-}
-
-int generic_data_reader::get_current_global_mini_batch_size() const
-{
-  if (m_current_mini_batch_idx == (m_num_iterations_per_epoch - 1)) {
-    return m_global_last_mini_batch_size;
-  }
-  else {
-    return m_global_mini_batch_size;
-  }
-}
-
-/// Returns the current adjustment to the mini-batch size based on if
-/// the world master (model 0) has any extra samples
-/// Note that any rank in model 0 does not need to add in this offset
-/// since the model will already be aware of the extra samples
-int generic_data_reader::get_current_world_master_mini_batch_adjustment(
-  int model_rank) const
-{
-  if (model_rank != 0 &&
-      m_current_mini_batch_idx == (m_num_iterations_per_epoch - 1)) {
-    return m_world_master_mini_batch_adjustment;
-  }
-  else {
-    return 0;
-  }
-}
-
-int generic_data_reader::get_next_position() const
-{
-  /// If the next mini-batch for this rank is going to be the last
-  /// mini-batch, take the proper (possibly reduced) step to
-  /// setup for the last mini-batch
-  if ((m_current_mini_batch_idx + m_iteration_stride - 1) ==
-      (m_num_iterations_per_epoch - 1)) {
-    return m_current_pos + m_stride_to_last_mini_batch;
-  }
-  else {
-    return m_current_pos + m_stride_to_next_mini_batch;
-  }
 }
 
 int generic_data_reader::get_num_unused_data(execution_mode m) const
@@ -582,13 +500,13 @@ generic_data_reader::get_unused_indices(execution_mode m)
 void generic_data_reader::error_check_counts() const
 {
   size_t count = get_absolute_sample_count();
-  double use_percent = get_use_percent();
-  if (count == 1 and use_percent == 0.0) {
-    LBANN_ERROR("get_use_percent() and get_absolute_sample_count() are both "
+  double use_fraction = get_use_fraction();
+  if (count == 1 and use_fraction == 0.0) {
+    LBANN_ERROR("get_use_fraction() and get_absolute_sample_count() are both "
                 "zero; exactly one must be zero");
   }
-  if (!(count == 0 or use_percent == 0.0)) {
-    LBANN_ERROR("get_use_percent() and get_absolute_sample_count() are both "
+  if (!(count == 0 or use_fraction == 0.0)) {
+    LBANN_ERROR("get_use_fraction() and get_absolute_sample_count() are both "
                 "non-zero; exactly one must be zero");
   }
   if (count != 0) {
@@ -604,21 +522,21 @@ size_t generic_data_reader::get_num_indices_to_use() const
   error_check_counts();
   // note: exactly one of the following is guaranteed to be non-zero
   size_t count = get_absolute_sample_count();
-  double use_percent = get_use_percent();
+  double use_fraction = get_use_fraction();
 
   size_t r = 0.;
   if (count) {
     r = count;
   }
-  else if (use_percent) {
-    r = use_percent * get_num_data();
+  else if (use_fraction) {
+    r = use_fraction * get_num_data();
     if (r == 0) {
       LBANN_ERROR("get_num_indices_to_use() computed zero indices; probably: "
-                  "percent_of_data_to_use is too small WRT num_data;  "
+                  "fraction_of_data_to_use is too small WRT num_data;  "
                   "get_absolute_sample_count: ",
                   get_absolute_sample_count(),
-                  " use_percent: ",
-                  get_use_percent(),
+                  " use_fraction: ",
+                  get_use_fraction(),
                   " num data: ",
                   get_num_data(),
                   " for role: ",
@@ -642,26 +560,26 @@ void generic_data_reader::resize_shuffled_indices()
 void generic_data_reader::select_subset_of_data()
 {
   // Calculate the total number of samples for subsets
-  double total_split_percent = 0.;
+  double total_split_fraction = 0.;
   for (auto m : execution_mode_iterator()) {
-    total_split_percent += get_execution_mode_split_percent(m);
+    total_split_fraction += get_execution_mode_split_fraction(m);
   }
   long total_num_data = get_num_data();
-  long total_unused = total_split_percent * total_num_data;
+  long total_unused = total_split_fraction * total_num_data;
   long total_used = total_num_data - total_unused;
   auto starting_unused_offset = m_shuffled_indices.begin() + total_used;
   for (auto m : execution_mode_iterator()) {
-    double split_percent = get_execution_mode_split_percent(m);
+    double split_fraction = get_execution_mode_split_fraction(m);
 
-    if (split_percent == 0.) {
+    if (split_fraction == 0.) {
       continue;
     }
 
-    long split = split_percent * total_num_data;
+    long split = split_fraction * total_num_data;
     if (split == 0) {
       LBANN_ERROR(to_string(m),
                   " % of ",
-                  split_percent,
+                  split_fraction,
                   " was requested, but the number of validation indices was "
                   "computed as zero. Probably: % ",
                   to_string(m),
@@ -715,7 +633,7 @@ bool generic_data_reader::save_to_checkpoint_shared(persist& p,
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                               "_dr.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                               "_dr.bin"
+                                              "_dr.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
     );
   }
@@ -733,12 +651,9 @@ bool lbann::generic_data_reader::load_from_checkpoint_shared(
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                                        "_dr.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                                        "_dr.bin"
+                                                       "_dr.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   );
-  // Adjust current position to deal with fact that it was just loaded to all
-  // ranks from rank 0 (differs by rank #)
-  m_current_pos += m_comm->get_rank_in_trainer();
   return true;
 }
 
@@ -751,7 +666,7 @@ bool generic_data_reader::save_to_checkpoint_distributed(persist& p,
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                             "_dr.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                             "_dr.bin"
+                                            "_dr.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
 
   );
@@ -768,7 +683,7 @@ bool lbann::generic_data_reader::load_from_checkpoint_distributed(
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                            "_dr.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                            "_dr.bin"
+                                           "_dr.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   );
   return true;
@@ -875,41 +790,42 @@ size_t generic_data_reader::get_absolute_sample_count() const
   return m_absolute_sample_count;
 }
 
-void generic_data_reader::set_execution_mode_split_percent(execution_mode m,
-                                                           double s)
+void generic_data_reader::set_execution_mode_split_fraction(execution_mode m,
+                                                            double s)
 {
   if (s < 0 or s > 1.0) {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: set_validation_percent() - must be: s >= 0, s <= 1.0; you passed: " +
-      std::to_string(s));
+    throw lbann_exception(std::string{} + __FILE__ + " " +
+                          std::to_string(__LINE__) +
+                          " :: set_validation_fraction() - must be: s >= 0, s "
+                          "<= 1.0; you passed: " +
+                          std::to_string(s));
   }
-  m_execution_mode_split_percentage[m] = s;
+  m_execution_mode_split_fraction[m] = s;
 }
 
 double
-generic_data_reader::get_execution_mode_split_percent(execution_mode m) const
+generic_data_reader::get_execution_mode_split_fraction(execution_mode m) const
 {
-  if (m_execution_mode_split_percentage.count(m)) {
-    return m_execution_mode_split_percentage.at(m);
+  if (m_execution_mode_split_fraction.count(m)) {
+    return m_execution_mode_split_fraction.at(m);
   }
   else {
     return 0;
   }
 }
 
-void generic_data_reader::set_use_percent(double s)
+void generic_data_reader::set_use_fraction(double s)
 {
   if (s < 0 or s > 1.0) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: set_use_percent() - must be: s >= 0, s <= 1.0; you passed: " +
+      " :: set_use_fraction() - must be: s >= 0, s <= 1.0; you passed: " +
       std::to_string(s));
   }
-  m_use_percent = s;
+  m_use_fraction = s;
 }
 
-double generic_data_reader::get_use_percent() const { return m_use_percent; }
+double generic_data_reader::get_use_fraction() const { return m_use_fraction; }
 
 void generic_data_reader::instantiate_data_store()
 {
@@ -967,7 +883,10 @@ void generic_data_reader::setup_data_store(int mini_batch_size)
 
 bool generic_data_reader::data_store_active() const
 {
-  if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
+  if (m_data_store == nullptr) {
+    return false;
+  }
+  if (m_data_store->is_fully_loaded()) {
     return true;
   }
 
@@ -975,8 +894,7 @@ bool generic_data_reader::data_store_active() const
     get_trainer().get_data_coordinator().get_execution_context());
   /// Use the data store for all modes except testing
   /// i.e. training, validation, tournament
-  return (m_data_store != nullptr &&
-          (((c.get_execution_mode() == execution_mode::training) &&
+  return ((((c.get_execution_mode() == execution_mode::training) &&
             c.get_epoch() > 0) ||
            ((c.get_execution_mode() == execution_mode::validation) &&
             c.get_epoch() > 0)));
@@ -984,11 +902,11 @@ bool generic_data_reader::data_store_active() const
 
 bool generic_data_reader::priming_data_store() const
 {
-  const auto& c = static_cast<const SGDExecutionContext&>(
-    get_trainer().get_data_coordinator().get_execution_context());
   if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
     return false;
   }
+  const auto& c = static_cast<const SGDExecutionContext&>(
+    get_trainer().get_data_coordinator().get_execution_context());
 
   /// Use the data store for all modes except testing
   /// i.e. training, validation, tournament
@@ -1006,11 +924,6 @@ void generic_data_reader::set_data_store(data_store_conduit* g)
     delete m_data_store;
   }
   m_data_store = g;
-}
-
-void generic_data_reader::set_mini_batch_size(const int s)
-{
-  m_mini_batch_size = s;
 }
 
 void generic_data_reader::set_role(std::string role) { m_role = role; }
@@ -1050,6 +963,17 @@ void generic_data_reader::preload_data_store()
   }
 }
 
+void generic_data_reader::print_config()
+{
+  LBANN_MSG("Data reader configuration \n",
+            " role                       = ",
+            m_role,
+            "\n",
+            " num samples                = ",
+            get_num_data(),
+            "\n");
+}
+
 void generic_data_reader::print_get_methods(const std::string filename)
 {
   if (!get_comm()->am_world_master()) {
@@ -1070,10 +994,10 @@ void generic_data_reader::print_get_methods(const std::string filename)
   out << "get_num_data " << get_num_data() << std::endl;
   out << "get_absolute_sample_count" << get_absolute_sample_count()
       << std::endl;
-  out << "get_use_percent " << get_use_percent() << std::endl;
+  out << "get_use_fraction " << get_use_fraction() << std::endl;
   for (auto m : execution_mode_iterator()) {
-    out << "get_execution_mode_split_percent[" << to_string(m) << "] "
-        << get_execution_mode_split_percent(m) << std::endl;
+    out << "get_execution_mode_split_fraction[" << to_string(m) << "] "
+        << get_execution_mode_split_fraction(m) << std::endl;
   }
   out.close();
 }

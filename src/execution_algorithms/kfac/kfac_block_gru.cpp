@@ -1088,7 +1088,8 @@ void kfac_block_gru<Device>::get_gradient_matrix(
   auto& weights = this->m_layer->get_weights(ids.first);
   optimizer* opt = weights.get_optimizer();
   auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(opt);
-  const auto& gradients = dto->get_gradient().LockedMatrix();
+  auto& grad = dto->get_gradient_sharded();
+  const auto& gradients = grad.LockedMatrix();
   LBANN_ASSERT(static_cast<size_t>(gradients.Height()) == hidden_size * 3);
   const auto gradients_mat = El::LockedView(
     (El::Matrix<DataType, Device>&)gradients,
@@ -1379,13 +1380,11 @@ void kfac_block_gru<Device>::start_communication_forward_end(lbann_comm* comm)
         }
       }
 
-      int iter = 0;
       for (auto& weight : this->m_weight_values) {
         weight = std::make_unique<
           El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(
           comm->get_secondary_grid(),
           0);
-        iter++;
       }
     }
 
@@ -1437,7 +1436,7 @@ void kfac_block_gru<Device>::start_communication_forward_end(lbann_comm* comm)
       for (auto& weight : this->m_weight_values) {
         auto& weights = this->m_layer->get_weights(iter);
         const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
-        auto& weight_values = dtw->get_values();
+        const auto& weight_values = dtw->get_values();
         const auto weight_ptr = dynamic_cast<
           const El::
             DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
@@ -1497,7 +1496,7 @@ void kfac_block_gru<Device>::start_communication_forward_end(lbann_comm* comm)
       const auto& weights = this->m_layer->get_weights(i);
       const auto& dtw =
         dynamic_cast<const data_type_weights<DataType>*>(&weights);
-      auto& weight_values = dtw->get_values();
+      auto& weight_values = dtw->get_values_sharded();
       const auto weight_ptr = dynamic_cast<
         const El::
           DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>*>(
@@ -1722,13 +1721,11 @@ void kfac_block_gru<Device>::initialize_activations_and_errors(
             0);
       }
 
-      int iter = 0;
       for (auto& weight : this->m_weight_values) {
         weight = std::make_unique<
           El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, Device>>(
           comm->get_secondary_grid(),
           0);
-        iter++;
       }
     }
 
@@ -1781,7 +1778,7 @@ void kfac_block_gru<Device>::initialize_activations_and_errors(
     for (int i = 0; i < num_weights; ++i) {
       auto& weights = this->m_layer->get_weights(i);
       const auto& dtw = dynamic_cast<data_type_weights<DataType>*>(&weights);
-      El::LockedView(*this->m_weight_values[i], dtw->get_values());
+      El::LockedView(*this->m_weight_values[i], dtw->get_values_sharded());
     }
   }
 }

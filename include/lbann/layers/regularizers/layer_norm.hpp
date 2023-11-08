@@ -29,6 +29,7 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/proto/datatype_helpers.hpp"
 
 #include "lbann/proto/layers.pb.h"
@@ -65,7 +66,9 @@ public:
   /**
    *  @param epsilon    Small number to avoid division by zero
    */
-  layer_norm_layer(TensorDataType epsilon = El::To<TensorDataType>(1e-5));
+  layer_norm_layer(TensorDataType epsilon = El::To<TensorDataType>(1e-5),
+                   bool scale = false,
+                   bool bias = false);
 
   layer_norm_layer(const layer_norm_layer& other);
   layer_norm_layer& operator=(const layer_norm_layer& other);
@@ -75,6 +78,11 @@ public:
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
   description get_description() const override;
+  bool can_run_inplace() const override { return true; }
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | PREV_ACTIVATIONS;
+  }
 
   /** @name Serialization */
   ///@{
@@ -88,7 +96,7 @@ protected:
   /** Add layer specific data to prototext */
   void write_specific_proto(lbann_data::Layer& proto) const final;
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_dims() override;
   void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;
@@ -100,6 +108,12 @@ private:
   /** Small number to avoid division by zero. */
   TensorDataType m_epsilon;
 
+  /** @brief Apply elementwise scale after normalization (learned weights). */
+  bool m_scale;
+
+  /** @brief Apply elementwise bias after normalization (learned weights). */
+  bool m_bias;
+
   /** @brief Per-sample statistics.
    *
    *  The means and variances are fused for performance.
@@ -110,6 +124,12 @@ private:
    *  The means and variances are fused for performance.
    */
   std::unique_ptr<AbsDistMatType> m_statistics_gradient;
+
+  /** @brief Gradient w.r.t. scale. */
+  std::unique_ptr<AbsDistMatType> m_scale_gradient;
+
+  /** @brief Gradient w.r.t. bias. */
+  std::unique_ptr<AbsDistMatType> m_bias_gradient;
 };
 
 // =========================================================
@@ -123,12 +143,19 @@ void layer_norm_layer<T, L, D>::write_specific_proto(
   proto.set_datatype(proto::ProtoDataType<T>);
   auto* msg = proto.mutable_layer_norm();
   msg->mutable_epsilon()->set_value(m_epsilon);
+  msg->set_scale(m_scale);
+  msg->set_bias(m_bias);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 layer_norm_layer<TensorDataType, Layout, Device>::layer_norm_layer(
-  TensorDataType epsilon)
-  : data_type_layer<TensorDataType>(nullptr), m_epsilon(epsilon)
+  TensorDataType epsilon,
+  bool scale,
+  bool bias)
+  : data_type_layer<TensorDataType>(nullptr),
+    m_epsilon(epsilon),
+    m_scale(scale),
+    m_bias(bias)
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -136,10 +163,16 @@ layer_norm_layer<TensorDataType, Layout, Device>::layer_norm_layer(
   const layer_norm_layer<TensorDataType, Layout, Device>& other)
   : data_type_layer<TensorDataType>(other),
     m_epsilon(other.m_epsilon),
+    m_scale(other.m_scale),
+    m_bias(other.m_bias),
     m_statistics(other.m_statistics ? other.m_statistics->Copy() : nullptr),
     m_statistics_gradient(other.m_statistics_gradient
                             ? other.m_statistics_gradient->Copy()
-                            : nullptr)
+                            : nullptr),
+    m_scale_gradient(other.m_scale_gradient ? other.m_scale_gradient->Copy()
+                                            : nullptr),
+    m_bias_gradient(other.m_bias_gradient ? other.m_bias_gradient->Copy()
+                                          : nullptr)
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -149,10 +182,16 @@ layer_norm_layer<TensorDataType, Layout, Device>::operator=(
 {
   data_type_layer<TensorDataType>::operator=(other);
   m_epsilon = other.m_epsilon;
+  m_scale = other.m_scale;
+  m_bias = other.m_bias;
   m_statistics.reset(other.m_statistics ? other.m_statistics->Copy() : nullptr);
   m_statistics_gradient.reset(other.m_statistics_gradient
                                 ? other.m_statistics_gradient->Copy()
                                 : nullptr);
+  m_scale_gradient.reset(other.m_scale_gradient ? other.m_scale_gradient->Copy()
+                                                : nullptr);
+  m_bias_gradient.reset(other.m_bias_gradient ? other.m_bias_gradient->Copy()
+                                              : nullptr);
   return *this;
 }
 
@@ -189,14 +228,15 @@ layer_norm_layer<TensorDataType, Layout, Device>::get_description() const
 {
   auto desc = data_type_layer<TensorDataType>::get_description();
   desc.add("Epsilon", m_epsilon);
+  desc.add("Affine Scale", m_scale);
+  desc.add("Affine Bias", m_bias);
   return desc;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void layer_norm_layer<TensorDataType, Layout, Device>::setup_dims(
-  DataReaderMetaData& dr_metadata)
+void layer_norm_layer<TensorDataType, Layout, Device>::setup_dims()
 {
-  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  data_type_layer<TensorDataType>::setup_dims();
   this->set_output_dims(this->get_input_dims());
 }
 
@@ -205,10 +245,82 @@ void layer_norm_layer<TensorDataType, Layout, Device>::setup_data(
   size_t max_mini_batch_size)
 {
   data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
+  const auto& output_dims = this->get_output_dims();
+  std::vector<size_t> out_dims{output_dims.begin(), output_dims.end()};
   auto dist = this->get_prev_activations().DistData();
   dist.colDist = El::STAR;
   m_statistics.reset(AbsDistMatrixType::Instantiate(dist));
   m_statistics_gradient.reset(AbsDistMatrixType::Instantiate(dist));
+
+  // Setup weights
+  using WeightsType = data_type_weights<TensorDataType>;
+  if ((m_scale && m_bias && this->num_weights() > 2) ||
+      (!m_scale && !m_bias && this->num_weights() > 0) ||
+      (m_scale && !m_bias && this->num_weights() > 1) ||
+      (!m_scale && m_bias && this->num_weights() > 1)) {
+    LBANN_ERROR("attempted to setup ",
+                this->get_type(),
+                " layer \"",
+                this->get_name(),
+                "\" ",
+                "with an invalid number of weights ",
+                "(",
+                this->num_weights(),
+                ") and scale = ",
+                m_scale,
+                ", bias = ",
+                m_bias);
+  }
+  this->set_num_weights((m_scale ? 1 : 0) + (m_bias ? 1 : 0));
+
+  // Setup default weights if not given
+  int weight_idx = 0;
+
+  // Replicate weights across minibatch
+  dist = this->get_prev_activations().DistData();
+  dist.rowDist = El::STAR;
+
+  if (m_scale) {
+    if (!this->has_weights(weight_idx)) {
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
+      auto init = std::make_unique<constant_initializer<TensorDataType>>(
+        El::TypeTraits<TensorDataType>::One());
+      auto opt = this->m_model->template create_optimizer<TensorDataType>();
+      w->set_name(this->get_name() + "_scale_weights");
+      w->set_optimizer(std::move(opt));
+      w->set_initializer(std::move(init));
+      this->set_weights(weight_idx, w);
+      this->m_model->add_weights(std::move(w));
+    }
+    auto& weights = this->get_weights(weight_idx);
+    weights.set_dims(out_dims);
+    weights.set_matrix_distribution(dist);
+    m_scale_gradient.reset(AbsDistMatrixType::Instantiate(dist));
+    m_scale_gradient->AlignWith(dist);
+    m_scale_gradient->Resize(weights.get_matrix_height(),
+                             weights.get_matrix_width());
+    ++weight_idx;
+  }
+  if (m_bias) {
+    if (!this->has_weights(weight_idx)) {
+      auto w = std::make_shared<WeightsType>(*this->get_comm());
+      auto init = std::make_unique<constant_initializer<TensorDataType>>(
+        El::TypeTraits<TensorDataType>::Zero());
+      auto opt = this->m_model->template create_optimizer<TensorDataType>();
+      w->set_name(this->get_name() + "_bias_weights");
+      w->set_optimizer(std::move(opt));
+      w->set_initializer(std::move(init));
+      this->set_weights(weight_idx, w);
+      this->m_model->add_weights(std::move(w));
+    }
+    auto& weights = this->get_weights(weight_idx);
+    weights.set_dims(out_dims);
+    weights.set_matrix_distribution(dist);
+    m_bias_gradient.reset(AbsDistMatrixType::Instantiate(dist));
+    m_bias_gradient->AlignWith(dist);
+    m_bias_gradient->Resize(weights.get_matrix_height(),
+                            weights.get_matrix_width());
+  }
 }
 
 LBANN_DEFINE_LAYER_BUILDER(layer_norm);

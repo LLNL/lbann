@@ -99,9 +99,9 @@ void ras_lipid_conduit_data_reader::load()
   if (count) {
     LBANN_ERROR("You cannot use absolute sample count with this data reader");
   }
-  double use_percent = get_use_percent();
-  if (use_percent != 1) {
-    LBANN_ERROR("use_percent for < 1.0 is not yet implemented; please contact "
+  double use_fraction = get_use_fraction();
+  if (use_fraction != 1) {
+    LBANN_ERROR("use_fraction for < 1.0 is not yet implemented; please contact "
                 "Dave Hysom");
   }
 
@@ -428,9 +428,7 @@ void ras_lipid_conduit_data_reader::get_samples_per_file()
   int me = m_comm->get_rank_in_trainer();
   int np = m_comm->get_procs_per_trainer();
   std::vector<int> work;
-  int x = 0;
   for (size_t j = me; j < m_filenames.size(); j += np) {
-    ++x;
     std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(m_filenames[j]);
     size_t n = 0;
     for (const auto& t2 : a) {

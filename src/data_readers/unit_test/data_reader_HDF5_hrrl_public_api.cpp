@@ -42,132 +42,10 @@
 #include <ostream>
 #include <string.h>
 
-#include "./test_data/hdf5_hrrl_experiment_schema.yaml"
-#include "./test_data/hdf5_hrrl_test_data_and_schema.yaml"
+#include "./data_reader_common_HDF5_test_utils.hpp"
+
+#include "./test_data/hdf5_hrrl_test_data_and_schemas.yaml"
 #include "lbann/data_readers/data_reader_HDF5.hpp"
-
-class DataReaderHDF5WhiteboxTester
-{
-public:
-  void normalize(lbann::hdf5_data_reader& x,
-                 conduit::Node& node,
-                 const std::string& path,
-                 const conduit::Node& metadata)
-  {
-    x.normalize(node, path, metadata);
-  }
-  void repack_image(lbann::hdf5_data_reader& x,
-                    conduit::Node& node,
-                    const std::string& path,
-                    const conduit::Node& metadata)
-  {
-    x.repack_image(node, path, metadata);
-  }
-
-  void pack(lbann::hdf5_data_reader& x, conduit::Node& node, size_t index)
-  {
-    x.pack(node, index);
-  }
-
-  void parse_schemas(lbann::hdf5_data_reader& x) { return x.parse_schemas(); }
-
-  conduit::Node& get_data_schema(lbann::hdf5_data_reader& x)
-  {
-    return x.m_data_schema;
-  }
-
-  conduit::Node& get_experiment_schema(lbann::hdf5_data_reader& x)
-  {
-    return x.m_experiment_schema;
-  }
-
-  void set_data_schema(lbann::hdf5_data_reader& x, const conduit::Node& s)
-  {
-    x.set_data_schema(s);
-  }
-
-  void set_experiment_schema(lbann::hdf5_data_reader& x, const conduit::Node& s)
-  {
-    x.set_experiment_schema(s);
-  }
-
-  void print_metadata(lbann::hdf5_data_reader& x, std::ostream& os = std::cout)
-  {
-    x.print_metadata(os);
-  }
-
-  void set_delete_packed_fields(lbann::hdf5_data_reader& x, const bool flag)
-  {
-    x.set_delete_packed_fields(flag);
-  }
-
-  bool fetch_data_field(lbann::hdf5_data_reader& dr,
-                        lbann::data_field_type data_field,
-                        lbann::CPUMat& X,
-                        int data_id,
-                        int mb_idx)
-  {
-    conduit::Node sample;
-    dr.fetch_conduit_node(sample, data_id);
-    return lbann::data_packer::extract_data_field_from_sample(data_field,
-                                                              sample,
-                                                              X,
-                                                              mb_idx);
-  }
-
-  bool fetch_datum(lbann::hdf5_data_reader& dr,
-                   lbann::CPUMat& X,
-                   int data_id,
-                   int mb_idx)
-  {
-    conduit::Node sample;
-    dr.fetch_conduit_node(sample, data_id);
-    return lbann::data_packer::extract_data_field_from_sample(
-      INPUT_DATA_TYPE_SAMPLES,
-      sample,
-      X,
-      mb_idx);
-  }
-
-  bool fetch_response(lbann::hdf5_data_reader& dr,
-                      lbann::CPUMat& X,
-                      int data_id,
-                      int mb_idx)
-  {
-    conduit::Node sample;
-    dr.fetch_conduit_node(sample, data_id);
-    return lbann::data_packer::extract_data_field_from_sample(
-      INPUT_DATA_TYPE_RESPONSES,
-      sample,
-      X,
-      mb_idx);
-  }
-
-  bool fetch_label(lbann::hdf5_data_reader& dr,
-                   lbann::CPUMat& X,
-                   int data_id,
-                   int mb_idx)
-  {
-    conduit::Node sample;
-    dr.fetch_conduit_node(sample, data_id);
-    return lbann::data_packer::extract_data_field_from_sample(
-      INPUT_DATA_TYPE_LABELS,
-      sample,
-      X,
-      mb_idx);
-  }
-
-  int get_linearized_size(lbann::hdf5_data_reader& dr,
-                          lbann::data_field_type const& data_field)
-  {
-    return dr.get_linearized_size(data_field);
-  }
-  void construct_linearized_size_lookup_tables(lbann::hdf5_data_reader& dr,
-                                               conduit::Node& node)
-  {
-    return dr.construct_linearized_size_lookup_tables(node);
-  }
-};
 
 TEST_CASE("hdf5 data reader data field fetch tests",
           "[data_reader][hdf5][hrrl][data_field]")
@@ -185,7 +63,7 @@ TEST_CASE("hdf5 data reader data field fetch tests",
 
   // Setup the data schema for this HRRL data set
   conduit::Node& data_schema = white_box_tester.get_data_schema(*hdf5_dr);
-  data_schema.parse(hdf5_hrrl_data_schema_test, "yaml");
+  data_schema.parse(hdf5_hrrl_data_schema, "yaml");
   conduit::Node& experiment_schema =
     white_box_tester.get_experiment_schema(*hdf5_dr);
   experiment_schema.parse(hdf5_hrrl_experiment_schema, "yaml");
@@ -220,7 +98,6 @@ TEST_CASE("hdf5 data reader data field fetch tests",
   auto io_thread_pool = std::make_unique<lbann::thread_pool>();
   io_thread_pool->launch_pinned_threads(1, 1);
   hdf5_dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
-  hdf5_dr->set_num_parallel_readers(1);
 
   SECTION("fetch data field")
   {
@@ -341,7 +218,7 @@ TEST_CASE("Data reader hdf5 conduit fetch tests",
 
   // Setup the data schema for this HRRL data set
   conduit::Node& data_schema = white_box_tester.get_data_schema(*hdf5_dr);
-  data_schema.parse(hdf5_hrrl_data_schema_test, "yaml");
+  data_schema.parse(hdf5_hrrl_data_schema, "yaml");
   conduit::Node& experiment_schema =
     white_box_tester.get_experiment_schema(*hdf5_dr);
   experiment_schema.parse(hdf5_hrrl_experiment_schema, "yaml");
@@ -352,6 +229,9 @@ TEST_CASE("Data reader hdf5 conduit fetch tests",
   hdf5_dr->set_comm(&comm);
 
   El::Int num_samples = 1;
+
+  lbann::dataset dataset;
+  dataset.setup(num_samples, "training");
 
   auto data_store = new lbann::data_store_conduit(hdf5_dr);
   hdf5_dr->set_data_store(data_store);
@@ -373,7 +253,6 @@ TEST_CASE("Data reader hdf5 conduit fetch tests",
   auto io_thread_pool = lbann::make_unique<lbann::thread_pool>();
   io_thread_pool->launch_pinned_threads(1, 1);
   hdf5_dr->setup(io_thread_pool->get_num_threads(), io_thread_pool.get());
-  hdf5_dr->set_num_parallel_readers(1);
 
   hdf5_dr->m_shuffled_indices.emplace_back(0);
 
@@ -382,7 +261,11 @@ TEST_CASE("Data reader hdf5 conduit fetch tests",
     std::vector<conduit::Node> samples(1);
     El::Matrix<El::Int> indices_fetched;
     indices_fetched.Resize(1, 1);
-    auto valid = hdf5_dr->fetch(samples, indices_fetched, 1);
+    auto valid = hdf5_dr->fetch(samples,
+                                indices_fetched,
+                                dataset.get_position(),
+                                dataset.get_sample_stride(),
+                                1);
     REQUIRE(valid > 0);
 
     // Check the primary data fields
@@ -446,7 +329,11 @@ TEST_CASE("Data reader hdf5 conduit fetch tests",
     std::vector<conduit::Node> samples;
     El::Matrix<El::Int> indices_fetched;
     indices_fetched.Resize(1, 1);
-    CHECK_THROWS(hdf5_dr->fetch(samples, indices_fetched, 1));
+    CHECK_THROWS(hdf5_dr->fetch(samples,
+                                indices_fetched,
+                                dataset.get_position(),
+                                dataset.get_sample_stride(),
+                                1));
   }
 
   SECTION("fetch conduit node - mini-batch too large")
@@ -454,6 +341,10 @@ TEST_CASE("Data reader hdf5 conduit fetch tests",
     std::vector<conduit::Node> samples(1);
     El::Matrix<El::Int> indices_fetched;
     indices_fetched.Resize(1, 1);
-    CHECK_THROWS(hdf5_dr->fetch(samples, indices_fetched, 2));
+    CHECK_THROWS(hdf5_dr->fetch(samples,
+                                indices_fetched,
+                                dataset.get_position(),
+                                dataset.get_sample_stride(),
+                                2));
   }
 }

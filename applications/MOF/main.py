@@ -21,16 +21,13 @@ parser.add_argument(
 	'--atoms', action='store', default = 11,type=int, 
 	help="Number of atom species (default: 11)", metavar = 'NUM')
 parser.add_argument(
-    '--job-name', action='store', default='mofae', type=str,
-    help='job name', metavar='NAME')
-parser.add_argument(
     '--mini-batch-size', action='store', default=128, type=int,
     help='mini-batch size (default: 128)', metavar='NUM')
 parser.add_argument(
     '--num-epochs', action='store', default=100, type=int,
     help='number of epochs (default: 100)', metavar='NUM')
 
-lbann.contrib.args.add_scheduler_arguments(parser)
+lbann.contrib.args.add_scheduler_arguments(parser, 'mofae')
 args = parser.parse_args()
 
 

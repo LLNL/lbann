@@ -208,7 +208,7 @@ Arguments:
 
    :padding: (``list[int]`` or ``int``): Convolution padding
 
-   :padding: (``list[int]`` or ``int``): Padding for output tensor.
+   :output_padding: (``list[int]`` or ``int``): Padding for output tensor.
      The output tensor size is ambiguous when the convolution is
      strided. If this is not set, then we will output the smallest
      valid output tensor.

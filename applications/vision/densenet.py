@@ -336,10 +336,7 @@ def get_args():
     desc = ('Construct and run DenseNet on ImageNet data. '
             'Running the experiment is only supported on LC systems.')
     parser = argparse.ArgumentParser(description=desc)
-    lbann.contrib.args.add_scheduler_arguments(parser)
-    parser.add_argument(
-        '--job-name', action='store', default='lbann_densenet', type=str,
-        help='scheduler job name (default: lbann_densenet)')
+    lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_densenet')
     parser.add_argument(
         '--mini-batch-size', action='store', default=256, type=int,
         help='mini-batch size (default: 256)', metavar='NUM')
@@ -472,14 +469,14 @@ def set_up_experiment(args,
                         callbacks=callbacks)
 
     # Set up data reader
-    data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes, small_testing=True)
+    data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
 
-    percentage = 0.001 * 2 * (args.mini_batch_size / 16) * 2
+    fraction = 0.001 * 2 * (args.mini_batch_size / 16) * 2
 
-    if (percentage > 1):
-        data_reader.reader[0].percent_of_data_to_use = 1.0
+    if (fraction > 1):
+        data_reader.reader[0].fraction_of_data_to_use = 1.0
     else:
-        data_reader.reader[0].percent_of_data_to_use = percentage
+        data_reader.reader[0].fraction_of_data_to_use = fraction
 
     # Set up optimizer
     if args.optimizer == 'sgd':

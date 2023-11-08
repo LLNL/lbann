@@ -33,9 +33,13 @@
 #include "lbann/proto/init_image_data_readers.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/file_utils.hpp"
+#if defined(LBANN_HAS_CALIPER)
+#include "lbann/utils/profiling.hpp"
+#endif
 
 #include "lbann/data_readers/data_reader_HDF5.hpp"
 #include "lbann/utils/options.hpp"
+#include "lbann/utils/protobuf.hpp"
 
 #include "lbann/proto/lbann.pb.h"
 #include "lbann/proto/reader.pb.h"
@@ -52,9 +56,6 @@
 
 namespace lbann {
 
-int get_requested_num_parallel_readers(const lbann_comm& comm,
-                                       const lbann_data::LbannPB& p);
-
 void init_data_readers(
   lbann_comm* comm,
   const lbann_data::LbannPB& p,
@@ -70,7 +71,7 @@ void init_data_readers(
 
   // A separate explicit validation/tournament set is created only if a reader
   // with role "validate/tournament" is found in the list of data readers.
-  // Otherwise, a validation set is created as a percentage of data from the
+  // Otherwise, a validation set is created as a fraction of data from the
   // train set.
   bool separate_validation = false;
   bool separate_tournament = false;
@@ -113,9 +114,6 @@ void init_data_readers(
       set_transform_pipeline = false;
       auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
       const lbann_data::Model& pb_model = p.model();
-      const lbann_data::Trainer& pb_trainer = p.trainer();
-      reader->set_mini_batch_size(
-        static_cast<int>(pb_trainer.mini_batch_size()));
       reader->set_data_sample_list(readme.sample_list());
       reader_jag_conduit->set_list_per_trainer(
         readme.sample_list_per_trainer());
@@ -125,8 +123,6 @@ void init_data_readers(
       for (int i = 0; i < pb_model.layer_size(); ++i) {
         const auto& proto_layer = pb_model.layer(i);
         if (proto_layer.has_input()) {
-          const auto num_readers = get_requested_num_parallel_readers(*comm, p);
-          reader_jag_conduit->set_num_parallel_readers(num_readers);
           reader_jag_conduit->set_local_id(readme.role());
           break;
         }
@@ -222,9 +218,9 @@ void init_data_readers(
       LBANN_ERROR("attempted to construct numpy_npz data reader, "
                   "but LBANN is not built with CNPY");
 #endif // LBANN_HAS_CNPY
-#ifdef LBANN_HAS_DISTCONV
     }
     else if (name == "cosmoflow_hdf5" || name == "hdf5") {
+#ifdef LBANN_HAS_DISTCONV
       if (name == "cosmoflow_hdf5") {
         LBANN_WARNING("The \"cosmoflow_hdf5\" data reader is deprecated. Use "
                       "\"hdf5\" instead.");
@@ -251,6 +247,9 @@ void init_data_readers(
       const auto paths = glob(filedir + readme.data_file_pattern());
       reader_hdf5->set_hdf5_paths(paths);
       reader = reader_hdf5;
+#else
+      LBANN_ERROR("attempted to construct cosmoflow_hdf5 or hdf5 data reader, "
+                  "but LBANN is not built with Distconv");
 #endif // LBANN_HAS_DISTCONV
     }
     else if (name == "pilot2_molecular_reader") {
@@ -338,7 +337,7 @@ void init_data_readers(
           reader_csv->set_skip_rows(readme.skip_rows());
           reader_csv->set_has_header(readme.has_header());
           reader_csv->set_absolute_sample_count(readme.absolute_sample_count());
-          reader_csv->set_use_percent(readme.percent_of_data_to_use());
+          reader_csv->set_use_fraction(readme.fraction_of_data_to_use());
           reader_csv->set_first_n(readme.first_n());
           npy_readers.push_back(reader_csv);
         }
@@ -416,17 +415,17 @@ void init_data_readers(
     }
     else if (name == "synthetic") {
       if (readme.num_labels() != 0) {
-        reader =
-          new data_reader_synthetic(readme.num_samples(),
-                                    parse_list<int>(readme.synth_dimensions()),
-                                    readme.num_labels(),
-                                    shuffle);
+        reader = new data_reader_synthetic(
+          readme.num_samples(),
+          parse_list<El::Int>(readme.synth_dimensions()),
+          readme.num_labels(),
+          shuffle);
       }
       else {
         reader = new data_reader_synthetic(
           readme.num_samples(),
-          parse_list<int>(readme.synth_dimensions()),
-          parse_list<int>(readme.synth_response_dimensions()),
+          parse_list<El::Int>(readme.synth_dimensions()),
+          parse_list<El::Int>(readme.synth_response_dimensions()),
           shuffle);
       }
     }
@@ -491,7 +490,7 @@ void init_data_readers(
     }
 
     reader->set_absolute_sample_count(readme.absolute_sample_count());
-    reader->set_use_percent(readme.percent_of_data_to_use());
+    reader->set_use_fraction(readme.fraction_of_data_to_use());
     reader->set_first_n(readme.first_n());
 
     reader->set_gan_labelling(readme.gan_labelling());
@@ -513,10 +512,10 @@ void init_data_readers(
       reader->set_role("error");
     }
     if (readme.role() == "train") {
-      reader->set_execution_mode_split_percent(execution_mode::validation,
-                                               readme.validation_percent());
-      reader->set_execution_mode_split_percent(execution_mode::tournament,
-                                               readme.tournament_percent());
+      reader->set_execution_mode_split_fraction(execution_mode::validation,
+                                                readme.validation_fraction());
+      reader->set_execution_mode_split_fraction(execution_mode::tournament,
+                                                readme.tournament_fraction());
     }
 
     reader->load();
@@ -525,26 +524,26 @@ void init_data_readers(
       data_readers[execution_mode::training] = reader;
     }
     else if (readme.role() == "test") {
-      // While the default validation_percent is 0.0, this line is added to be
+      // While the default validation_fraction is 0.0, this line is added to be
       // consistent with the case of "train"
-      reader->set_execution_mode_split_percent(execution_mode::validation, 0.);
+      reader->set_execution_mode_split_fraction(execution_mode::validation, 0.);
       data_readers[execution_mode::testing] = reader;
     }
     else if (readme.role() == "validate") {
-      reader->set_execution_mode_split_percent(execution_mode::validation, 0.);
+      reader->set_execution_mode_split_fraction(execution_mode::validation, 0.);
       data_readers[execution_mode::validation] = reader;
     }
     else if (readme.role() == "tournament") {
-      reader->set_execution_mode_split_percent(execution_mode::tournament, 0.);
+      reader->set_execution_mode_split_fraction(execution_mode::tournament, 0.);
       data_readers[execution_mode::tournament] = reader;
     }
 
     if (readme.role() == "train") {
       for (auto m : execution_mode_iterator()) {
         if ((m == execution_mode::validation &&
-             readme.validation_percent() > 0. && !separate_validation) ||
+             readme.validation_fraction() > 0. && !separate_validation) ||
             (m == execution_mode::tournament &&
-             readme.tournament_percent() > 0. && !separate_tournament)) {
+             readme.tournament_fraction() > 0. && !separate_tournament)) {
           generic_data_reader* split_reader = nullptr;
 
           if (name == "mnist") {
@@ -677,14 +676,14 @@ void init_data_readers(
           if (master) {
             size_t num_train = reader->get_num_data();
             size_t num_split = split_reader->get_num_data();
-            double validate_percent =
+            double validate_fraction =
               ((double)num_split / (double)(num_train + num_split)) * 100.0;
-            double train_percent =
+            double train_fraction =
               ((double)num_train / (double)(num_train + num_split)) * 100.0;
-            std::cout << "Training using " << train_percent
+            std::cout << "Training using " << train_fraction
                       << "% of the training data set, which is "
                       << reader->get_num_data() << " samples." << std::endl
-                      << to_string(m) << " training using " << validate_percent
+                      << to_string(m) << " training using " << validate_fraction
                       << "% of the training data set, which is "
                       << split_reader->get_num_data() << " samples.";
             std::cout << std::endl;
@@ -728,32 +727,19 @@ void init_data_readers(
 
 void read_prototext_file(const std::string& fn,
                          lbann_data::LbannPB& pb,
-                         const bool master)
+                         const bool /*master*/)
 {
-  std::ostringstream err;
-  int fd = open(fn.c_str(), O_RDONLY);
-  if (fd == -1) {
-    if (master) {
-      err << __FILE__ << " " << __LINE__ << " :: failed to open " << fn
-          << " for reading";
-      throw lbann_exception(err.str());
-    }
-  }
-  using FIS = google::protobuf::io::FileInputStream;
-  auto input = std::unique_ptr<FIS, std::function<void(FIS*)>>(
-    new google::protobuf::io::FileInputStream(fd),
-    [](FIS* x) {
-      x->Close();
-      delete x;
-    });
-  bool success = google::protobuf::TextFormat::Parse(input.get(), &pb);
-  if (!success) {
-    if (master) {
-      err << __FILE__ << " " << __LINE__
-          << " :: failed to read or parse prototext file: " << fn << std::endl;
-      throw lbann_exception(err.str());
-    }
-  }
+  if (fn.rfind("protobin") != std::string::npos)
+    lbann::protobuf::load(fn, pb);
+  else
+    lbann::protobuf::text::load(fn, pb);
+}
+
+void read_prototext_string(const std::string& contents,
+                           lbann_data::LbannPB& pb,
+                           const bool /*master*/)
+{
+  lbann::protobuf::text::fill(contents, pb);
 }
 
 bool write_prototext_file(const std::string& fn, lbann_data::LbannPB& pb)
@@ -771,48 +757,6 @@ bool write_prototext_file(const std::string& fn, lbann_data::LbannPB& pb)
   delete output;
   close(fd);
   return true;
-}
-
-bool check_if_num_parallel_readers_set(const lbann_comm& comm,
-                                       const lbann_data::Trainer& trainer)
-{
-  const bool master = comm.am_world_master();
-  const int parallel_io = trainer.num_parallel_readers();
-
-  if (parallel_io == 0) {
-    if (master) {
-      std::cout << "\tMax Parallel I/O Fetch: " << comm.get_procs_per_trainer()
-                << " (Limited to # Processes)" << std::endl;
-    }
-    return false;
-  }
-  if (master) {
-    std::cout << "\tMax Parallel I/O Fetch: " << parallel_io << std::endl;
-  }
-  return true;
-}
-
-void set_num_parallel_readers(const lbann_comm& comm, lbann_data::LbannPB& p)
-{
-  lbann_data::Trainer* trainer = p.mutable_trainer();
-  const bool is_set = check_if_num_parallel_readers_set(comm, *trainer);
-
-  if (!is_set) {
-    const int parallel_io = comm.get_procs_per_trainer();
-    trainer->set_num_parallel_readers(parallel_io); // adjust the prototext
-  }
-}
-
-int get_requested_num_parallel_readers(const lbann_comm& comm,
-                                       const lbann_data::LbannPB& p)
-{
-  const lbann_data::Trainer& trainer = p.trainer();
-  const bool is_set = check_if_num_parallel_readers_set(comm, trainer);
-
-  if (!is_set) {
-    return comm.get_procs_per_trainer();
-  }
-  return trainer.num_parallel_readers();
 }
 
 void set_data_readers_filenames(const std::string& which,
@@ -869,21 +813,21 @@ void set_data_readers_sample_list(const std::string& which,
   }
 }
 
-void set_data_readers_percent(lbann_data::LbannPB& p)
+void set_data_readers_fraction(lbann_data::LbannPB& p)
 {
   auto& arg_parser = global_argument_parser();
-  double percent = arg_parser.get<float>(LBANN_OPTION_DATA_READER_PERCENT);
-  if (percent <= 0 || percent > 1.0) {
+  double fraction = arg_parser.get<float>(LBANN_OPTION_DATA_READER_FRACTION);
+  if (fraction <= 0 || fraction > 1.0) {
     std::ostringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
-        << " --data_reader_percent=<float> must be > 0 and <= 1.0";
+        << " --data_reader_fraction=<float> must be > 0 and <= 1.0";
     throw lbann_exception(err.str());
   }
   lbann_data::DataReader* readers = p.mutable_data_reader();
   int size = readers->reader_size();
   for (int j = 0; j < size; j++) {
     lbann_data::Reader* r = readers->mutable_reader(j);
-    r->set_percent_of_data_to_use(percent);
+    r->set_fraction_of_data_to_use(fraction);
   }
 }
 
@@ -933,7 +877,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     for (int j = 0; j < size; j++) {
       int n = arg_parser.get<int>(LBANN_OPTION_ABSOLUTE_SAMPLE_COUNT);
       lbann_data::Reader* readme = d_reader->mutable_reader(j);
-      readme->set_percent_of_data_to_use(0.0);
+      readme->set_fraction_of_data_to_use(0.0);
       readme->set_absolute_sample_count(n);
     }
   }
@@ -967,17 +911,8 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   if (arg_parser.get<std::string>(LBANN_OPTION_SAMPLE_LIST_TEST) != "") {
     set_data_readers_sample_list("test", p);
   }
-  if (arg_parser.get<float>(LBANN_OPTION_DATA_READER_PERCENT) != -1.0) {
-    set_data_readers_percent(p);
-  }
-  if (arg_parser.get<bool>(LBANN_OPTION_NO_IM_COMM)) {
-    int sz = model->callback_size();
-    for (int j = 0; j < sz; j++) {
-      lbann_data::Callback* c = model->mutable_callback(j);
-      if (c->has_imcomm()) {
-        c->clear_imcomm();
-      }
-    }
+  if (arg_parser.get<float>(LBANN_OPTION_DATA_READER_FRACTION) != -1.0) {
+    set_data_readers_fraction(p);
   }
   if (arg_parser.get<int>(LBANN_OPTION_MINI_BATCH_SIZE) != -1) {
     trainer->set_mini_batch_size(
@@ -989,10 +924,6 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   if (arg_parser.get<int>(LBANN_OPTION_HYDROGEN_BLOCK_SIZE) != -1) {
     trainer->set_hydrogen_block_size(
       arg_parser.get<int>(LBANN_OPTION_HYDROGEN_BLOCK_SIZE));
-  }
-  if (arg_parser.get<int>(LBANN_OPTION_NUM_PARALLEL_READERS) != -1) {
-    trainer->set_num_parallel_readers(
-      arg_parser.get<int>(LBANN_OPTION_NUM_PARALLEL_READERS));
   }
   if (arg_parser.get<bool>(LBANN_OPTION_DISABLE_CUDA)) {
     model->set_disable_cuda(arg_parser.get<bool>(LBANN_OPTION_DISABLE_CUDA));
@@ -1033,6 +964,11 @@ void print_parameters(const lbann_comm& comm,
 #else
   bool const enable_determinism = false;
 #endif // LBANN_DETERMINISTIC
+#if defined(LBANN_HAS_CALIPER)
+  bool const enable_caliper = is_caliper_initialized();
+#else
+  bool const enable_caliper = false;
+#endif
 
   std::cout << "\nRunning with these parameters:\n"
             << " General:\n"
@@ -1043,9 +979,9 @@ void print_parameters(const lbann_comm& comm,
             << '\n'
             << "  procs_per_trainer:          " << comm.get_procs_per_trainer()
             << '\n'
-            << "  num_parallel_readers:       " << t.num_parallel_readers()
-            << '\n'
             << "  serialize_io:               " << t.serialize_io() << '\n'
+            << "  caliper:                    "
+            << (enable_caliper ? "enabled" : "disabled") << '\n'
             << "  cuda:                       "
             << (disable_cuda ? "disabled" : "enabled") << '\n'
             << "  cudnn:                      "
@@ -1072,7 +1008,7 @@ void print_parameters(const lbann_comm& comm,
                    << static_cast<unsigned int>(data_seq_random_seeds[i])
                    << " ";
     }
-    else {
+    else if (rank_in_trainer == max_rng_seeds) {
       root_rng << "... ";
       rng << "... ";
       data_seq_rng << "... ";

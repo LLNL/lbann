@@ -10,10 +10,7 @@ import lbann.contrib.launcher
 
 desc = ('Train LeNet on MNIST data using LBANN.')
 parser = argparse.ArgumentParser(description=desc)
-lbann.contrib.args.add_scheduler_arguments(parser)
-parser.add_argument(
-    '--job-name', action='store', default='lbann_lenet', type=str,
-    help='scheduler job name (default: lbann_lenet)')
+lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_lenet')
 args = parser.parse_args()
 
 # ----------------------------------

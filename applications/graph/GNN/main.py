@@ -13,7 +13,7 @@ desc = (" Training a Graph Convolutional Model using LBANN" )
 
 parser = argparse.ArgumentParser(description=desc)
 
-lbann.contrib.args.add_scheduler_arguments(parser) 
+lbann.contrib.args.add_scheduler_arguments(parser, 'GCN_TEST')
 lbann.contrib.args.add_optimizer_arguments(parser) 
 
 parser.add_argument(
@@ -23,10 +23,6 @@ parser.add_argument(
 parser.add_argument(
     '--mini-batch-size', action='store',default=32, type=int,
     help="mini-batch size (default: 32)", metavar='NUM')
-
-parser.add_argument(
-    '--job-name', action='store', default="GCN_TEST", type=str,
-    help="Job name for scheduler", metavar='NAME')
 
 parser.add_argument(
     '--model', action = 'store', default='GCN', type=str,

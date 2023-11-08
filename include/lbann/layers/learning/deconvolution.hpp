@@ -32,11 +32,6 @@
 
 namespace lbann {
 
-// Forward declaration.
-namespace callback {
-class imcomm;
-}
-
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class deconvolution_distconv_adapter
@@ -74,9 +69,6 @@ class deconvolution_layer
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "deconvolution layer only supports DATA_PARALLEL");
 
-private:
-  friend class callback::imcomm;
-
 public:
   deconvolution_layer(int num_data_dims,
                       int num_output_channels,
@@ -99,7 +91,14 @@ public:
 
   El::Device get_device_allocation() const override { return Device; }
 
-  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  bool can_run_inplace() const override { return false; }
+
+  int get_backprop_requirements() const override
+  {
+    return ERROR_SIGNALS | WEIGHTS | PREV_ACTIVATIONS;
+  }
+
+  void setup_dims() override;
 
   /** @name Serialization */
   ///@{
@@ -124,7 +123,7 @@ protected:
   friend class deconvolution_distconv_adapter<TensorDataType, Layout, Device>;
 
 protected:
-  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
+  void setup_distconv_adapter() override;
   bool is_distconv_supported() const override;
 #endif // LBANN_HAS_DISTCONV
 
