@@ -281,7 +281,7 @@ set_center_specific_spack_dependencies()
                 CENTER_BLAS_LIBRARY="blas=accelerate"
                 ;;
             "m1")
-                CENTER_DEPENDENCIES="^hdf5+hl ^python@3.10 ^protobuf@3.21.5"
+                CENTER_DEPENDENCIES="^hdf5+hl ^python@3.10 ^protobuf@3.21.5 ^py-protobuf@4.21.5"
                 CENTER_BLAS_LIBRARY="blas=accelerate"
                 CENTER_COMPILER="%apple-clang"
                 ;;
