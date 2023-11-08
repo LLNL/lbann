@@ -4,6 +4,33 @@ C++ API:
 Support for new training algorithms:
 
 Support for new network structures:
+
+Support for new layers:
+
+Python front-end:
+
+Performance optimizations:
+
+Model portability & usability:
+
+Experiments & Applications:
+
+Internal features:
+
+I/O & data ingestion:
+
+Build system:
+
+Bug fixes:
+
+Retired features:
+
+============================== Release Notes: v0.104 ==============================
+C++ API:
+
+Support for new training algorithms:
+
+Support for new network structures:
  - Added GPT-3 transformers and training recipes
 
 Support for new layers:
