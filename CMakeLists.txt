@@ -852,6 +852,9 @@ if (LBANN_DEBUG_PRINT_SUBTARGETS)
   lbann_print_all_subtargets(lbann)
 endif ()
 
+# Build the LBANN drivers
+add_subdirectory(src/drivers)
+
 # Add the rest of the things
 add_subdirectory(data_utils)
 add_subdirectory(model_zoo)
