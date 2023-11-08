@@ -22,7 +22,7 @@ for i in roots:
         module_list.append(module)
 
 # Find the dependent modules of LBANN
-deps = list(itertools.chain(lbann[1].dependencies()))
+deps = list(itertools.chain(lbann[1].dependencies(deptype=("link", "run"))))
 for i in deps:
     module = i.format('{name}/{version}-{hash:7}')
     if module not in module_list:
