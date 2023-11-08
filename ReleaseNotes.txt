@@ -4,10 +4,11 @@ C++ API:
 Support for new training algorithms:
 
 Support for new network structures:
-  - Added GPT-3 transformers and training recipes
+ - Added GPT-3 transformers and training recipes
 
 Support for new layers:
-  - Select operator (set tensor value based on predicate)
+ - Select operator (set tensor value based on predicate)
+ - Model parallelism for channel-wise fully-connected layers
 
 Python front-end:
  - Support for PyTorch Module conversion to LBANN graphs (requires PyTorch 2.0
@@ -20,24 +21,42 @@ Performance optimizations:
    layer does not need its activations in the backward pass. This optimization
    can be disabled by setting the environment variable
    DISTCONV_DISABLE_MEM_OPT=1.
- - Allow weights to be distributed across ranks by sharding them. Enable by
-   setting sharded=True in any weights object.
+ - Added support for selective weight sharding (also known as
+   Fully-Sharded Data Parallelism, or FSDP). To enable, set sharded=true
+   on weight objects.
  - Allow distconv to be disabled at runtime with LBANN_DISABLE_DISTCONV=1.
  - Activations are now deallocated when no longer needed via a reference counter,
    disable with LBANN_DISABLE_ACT_GC=1.
  - Added option for LBANN to set the number of OMP threads to modest
    default (4) if the environment doesn't specify anything.
+ - Save memory on backpropagation by not replicating gradients between
+   GradientManager and data_type_optimizer
+ - Save more memory in FSDP by synchronizing previous outstanding
+   async communication calls and freeing up local gradient contributions
+ - FSDP: release full weight views after backprop
+ - Batching heads in multi-head attention into single operations
+   instead of on a per-head basis
+ - Stacking the weights and biases for queries/keys/values in
+   self-attention
 
 Model portability & usability:
+ - Added support for profiling with Caliper
 
 Experiments & Applications:
+ - Updated CosmoFlow model to automatically scale the model
+   architecture and parallelism with input size.
+ - Added a PyTorch reference implementation of CosmoFlow.
 
 Internal features:
- - Fixed a bug where in-place layers sometimes attached a locked view
-   of a matrix to a mutable view.
  - Removed the mini_batch_size parameter from the following functions
    in the layer class hierarchy: fp_setup_inputs, fp_setup_outputs, bp_setup_gradient_wrt_inputs
    and the distconv_adapter class: fp_setup, bp_setup
+ - Support global and local gradient norm clipping with the clip_gradient_norm callback
+ - Interactive progress bar with the progress_bar callback
+ - Evaluate progress callback allows for periodic monitoring during
+   training with independent data set (intra-epoch evaluation)
+ - Detailed memory usage profiling with the memory_profiler callback
+ - Refactored subgraph parallelism
 
 I/O & data readers:
  - Renamed percent_of_data_to_use more accurately to fraction_of_data_to_use.
@@ -63,6 +82,11 @@ Build system:
  - Set a default time limit for CI tests to avoid unnecessary stalls
 
 Bug fixes:
+ - Fixed a bug where in-place layers sometimes attached a locked view
+   of a matrix to a mutable view.
+ - Fixed a bug when trying to use the legacy HDF5 data reader without data store.
+ - Fixed concurrency bugs in the data store
+ - Fixed DistConv memory optimization bug
 
 Retired features:
  - Support for autoencoder strategy in the summarize images callback was removed
