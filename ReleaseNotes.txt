@@ -43,7 +43,8 @@ Model portability & usability:
  - Added support for profiling with Caliper
 
 Experiments & Applications:
- - Updated CosmoFlow model to automatically scale the model architecture and parallelism with input size.
+ - Updated CosmoFlow model to automatically scale the model
+   architecture and parallelism with input size.
  - Added a PyTorch reference implementation of CosmoFlow.
 
 Internal features:
