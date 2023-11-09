@@ -40,7 +40,11 @@ std::unique_ptr<lbann::Layer> lbann::build_batch_normalization_layer_from_pbuf(
 {
   const auto& params = proto_layer.batch_normalization();
   if constexpr (L == data_layout::DATA_PARALLEL &&
-                (std::is_same_v<T, float> || std::is_same_v<T, double>)) {
+                (std::is_same_v<T, float> || std::is_same_v<T, double>
+#ifdef LBANN_HAS_GPU_FP16
+                 || (std::is_same_v<T, fp16> && (D == El::Device::GPU))
+#endif
+                  )) {
     int statistics_group_size = params.statistics_group_size();
     if (statistics_group_size < 0) {
       statistics_group_size = 0; // Global statistics.
@@ -70,24 +74,36 @@ std::unique_ptr<lbann::Layer> lbann::build_batch_normalization_layer_from_pbuf(
     auto const decay = params.decay() == 0.0 ? 0.9 : params.decay();
     auto const epsilon = params.epsilon() == 0.0 ? 1e-5 : params.epsilon();
     auto const bessel = params.no_bessel_correction() ? false : true;
-    if constexpr (std::is_same_v<T, float>)
+    if constexpr (std::is_same_v<T, float>) {
       return std::make_unique<
         batch_normalization_layer<float, data_layout::DATA_PARALLEL, D>>(
         decay,
         epsilon,
         statistics_group_size,
         bessel);
-    else
+    }
+    else if constexpr (std::is_same_v<T, double>) {
       return std::make_unique<
         batch_normalization_layer<double, data_layout::DATA_PARALLEL, D>>(
         decay,
         epsilon,
         statistics_group_size,
         bessel);
+    }
+#ifdef LBANN_HAS_GPU_FP16
+    else if constexpr (std::is_same_v<T, fp16> && D == El::Device::GPU) {
+      return std::make_unique<
+        batch_normalization_layer<fp16, data_layout::DATA_PARALLEL, D>>(
+        decay,
+        epsilon,
+        statistics_group_size,
+        bessel);
+    }
+#endif
   }
   else {
     LBANN_ERROR("batch normalization layer is only supported for \"float\" and "
-                "\"double\" with a data-parallel layout");
+                "\"double\" (and \"half\" on GPU) with a data-parallel layout");
     return nullptr;
   }
 }

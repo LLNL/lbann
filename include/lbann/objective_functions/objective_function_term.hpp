@@ -99,6 +99,9 @@ public:
   /** Set list of pointers to weights. */
   void set_weights_pointers(std::vector<ViewingWeightsPtr> w);
 
+  /** Set the scale factor for automatic mixed precision. */
+  void set_amp_scale(EvalType scale);
+
   /** Add Objective function data to prototext */
   virtual void
   write_specific_proto(lbann_data::ObjectiveFunction& proto) const = 0;
@@ -106,6 +109,13 @@ public:
 protected:
   /** Scaling factor for objective function term. */
   EvalType m_scale_factor;
+
+  /** Scaling factor for automatic mixed precision.
+   *
+   * This is distinct from any user-specified scaling term and is only
+   * used for internal loss scaling, not user reporting.
+   */
+  EvalType m_amp_scale_factor = 0;
 
   /** Layers used to compute objective function term. */
   std::vector<ViewingLayerPtr> m_layers;

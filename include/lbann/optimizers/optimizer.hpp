@@ -37,9 +37,11 @@
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/memory.hpp"
 
+#include <functional>
 #include <memory>
 #include <string>
 #include <typeindex>
+#include <vector>
 #include <unordered_set>
 
 namespace lbann_data {
@@ -98,6 +100,8 @@ public:
   virtual std::string get_type() const = 0;
   /** @brief Human-readable description. */
   virtual description get_description() const;
+
+  virtual size_t get_state_size() const = 0;
 
   virtual double get_learning_rate() const = 0;
   virtual void set_learning_rate(double) = 0;
@@ -280,6 +284,14 @@ public:
    *  if a synchronization is needed but hasn't been started.
    */
   void finish_gradient_sync();
+
+  /** @brief Return all raw gradient buffers.
+   *
+   * This will complete gradient allreduces.
+   *
+   * This is meant for internal use with AMP.
+   */
+  std::vector<std::reference_wrapper<El::BaseDistMatrix>> get_raw_gradients();
 
 private:
   /** @brief LBANN communicator. */

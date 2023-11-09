@@ -27,9 +27,11 @@
 #ifndef LBANN_OPTIMIZERS_DATA_TYPE_OPTIMIZER_IMPL_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_DATA_TYPE_OPTIMIZER_IMPL_HPP_INCLUDED
 
+#include "lbann/utils/amp.hpp"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/typename.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 
 #include "lbann/optimizers/data_type_optimizer.hpp"
@@ -67,6 +69,7 @@ template <typename TensorDataType>
 description data_type_optimizer<TensorDataType>::get_description() const
 {
   description desc = optimizer::get_description();
+  desc.add("Data type", TypeName<TensorDataType>());
   desc.add("Learning rate", m_learning_rate);
   return desc;
 }
@@ -107,7 +110,7 @@ auto data_type_optimizer<TensorDataType>::get_gradient()
                                               matrix_dist.device));
 
   // If the gradient is not sharded, return a view
-  if (m_gradient->DistData() == matrix_dist) {
+  if (!this->is_sharded()) {
     El::LockedView(*result, *m_gradient);
   }
   else {

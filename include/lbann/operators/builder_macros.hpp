@@ -44,8 +44,10 @@ namespace details {
 template <typename InputT, typename OutputT, El::Device D>
 void AssertConsistentTypeParameters(lbann_data::Operator const& op)
 {
-  LBANN_ASSERT(proto::ProtoDataType<InputT> == op.input_datatype());
-  LBANN_ASSERT(proto::ProtoDataType<OutputT> == op.output_datatype());
+  LBANN_ASSERT(proto::ProtoDataType<InputT> ==
+               proto::resolve_default_datatype(op.input_datatype()));
+  LBANN_ASSERT(proto::ProtoDataType<OutputT> ==
+               proto::resolve_default_datatype(op.output_datatype()));
   LBANN_ASSERT(proto::ProtoDevice<D> ==
                proto::resolve_default_device(op.device_allocation()));
 }

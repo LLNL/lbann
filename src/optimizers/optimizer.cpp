@@ -56,6 +56,23 @@ void optimizer::finish_gradient_sync()
   }
 }
 
+std::vector<std::reference_wrapper<El::BaseDistMatrix>>
+optimizer::get_raw_gradients() {
+  this->start_gradient_sync();
+  this->finish_gradient_sync();
+
+  std::vector<std::reference_wrapper<El::BaseDistMatrix>> grads;
+  for (auto& grad_mgr_v : m_local_gradient_contributions) {
+    auto& grad_mgr = *(grad_mgr_v.second);
+    if (grad_mgr.get_status() != optimizer_gradient_status::ready) {
+      LBANN_ERROR("Optimizer gradient not ready");
+    }
+    auto& grad = grad_mgr.global_gradient();
+    grads.push_back(grad);
+  }
+  return grads;
+}
+
 std::string to_string(optimizer_gradient_status status)
 {
   switch (status) {

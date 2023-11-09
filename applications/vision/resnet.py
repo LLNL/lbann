@@ -5,6 +5,7 @@ import lbann.models.resnet
 import lbann.contrib.args
 import lbann.contrib.models.wide_resnet
 import lbann.contrib.launcher
+import lbann.util.amp
 import data.imagenet
 
 # Command-line arguments
@@ -12,7 +13,9 @@ desc = ('Construct and run ResNet on ImageNet-1K data. '
         'Running the experiment is only supported on LC systems.')
 parser = argparse.ArgumentParser(description=desc)
 lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_resnet')
+lbann.contrib.args.add_training_arguments(parser, default_epochs=90)
 lbann.contrib.args.add_profiling_arguments(parser)
+lbann.contrib.args.add_amp_arguments(parser)
 parser.add_argument(
     '--resnet', action='store', default=50, type=int,
     choices=(18, 34, 50, 101, 152),
@@ -36,12 +39,6 @@ parser.add_argument(
           '(default: 1)'))
 parser.add_argument(
     '--warmup', action='store_true', help='use a linear warmup')
-parser.add_argument(
-    '--mini-batch-size', action='store', default=256, type=int,
-    help='mini-batch size (default: 256)', metavar='NUM')
-parser.add_argument(
-    '--num-epochs', action='store', default=90, type=int,
-    help='number of epochs (default: 90)', metavar='NUM')
 parser.add_argument(
     '--num-classes', action='store', default=1000, type=int,
     help='number of ImageNet classes (default: 1000)', metavar='NUM')
@@ -111,12 +108,6 @@ top1 = lbann.CategoricalAccuracy(probs, labels)
 top5 = lbann.TopKCategoricalAccuracy(probs, labels, k=5)
 layers = list(lbann.traverse_layer_graph([images, labels]))
 
-# Setup tensor core operations (just to demonstrate enum usage)
-tensor_ops_mode = lbann.ConvTensorOpsMode.NO_TENSOR_OPS
-for l in layers:
-    if type(l) == lbann.Convolution:
-        l.conv_tensor_op_mode=tensor_ops_mode
-
 # Setup objective function
 l2_reg_weights = set()
 for l in layers:
@@ -137,11 +128,18 @@ if args.warmup:
         lbann.CallbackLinearGrowthLearningRate(
             target=0.1 * args.mini_batch_size / 256, num_epochs=5))
 callbacks.extend(lbann.contrib.args.create_profile_callbacks(args))
+if args.progress:
+    callbacks.append(
+        lbann.CallbackProgressBar(newline_interval=100,
+                                  print_mem_usage=True))
 model = lbann.Model(args.num_epochs,
                     layers=layers,
                     objective_function=obj,
                     metrics=metrics,
                     callbacks=callbacks)
+
+# Enable AMP if requested.
+lbann.util.amp.enable_amp(model, args)
 
 # Setup optimizer
 opt = lbann.contrib.args.create_optimizer(args)

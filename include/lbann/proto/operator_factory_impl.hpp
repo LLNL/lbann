@@ -150,8 +150,10 @@ template <typename InputT, typename OutputT, El::Device D>
 auto lbann::proto::construct_operator(lbann_data::Operator const& msg)
   -> std::unique_ptr<Operator<InputT, OutputT, D>>
 {
-  LBANN_ASSERT(ProtoDataType<InputT> == msg.input_datatype());
-  LBANN_ASSERT(ProtoDataType<OutputT> == msg.output_datatype());
+  LBANN_ASSERT(ProtoDataType<InputT> ==
+               proto::resolve_default_datatype(msg.input_datatype()));
+  LBANN_ASSERT(ProtoDataType<OutputT> ==
+               proto::resolve_default_datatype(msg.output_datatype()));
   LBANN_ASSERT(ProtoDevice<D> ==
                proto::resolve_default_device(msg.device_allocation()));
 

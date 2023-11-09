@@ -237,8 +237,9 @@ void l2_weight_regularization::compute_weight_regularization()
     auto& w = *ptr.lock();
     auto* opt = w.get_optimizer();
     if (opt != nullptr) {
-      DispatcherType::Exec(AddToGrad(*opt, m_scale_factor),
-                           w.get_values_sharded());
+      const EvalType scale = m_scale_factor *
+        (m_amp_scale_factor > 0 ? m_amp_scale_factor : 1);
+      DispatcherType::Exec(AddToGrad(*opt, scale), w.get_values_sharded());
     }
   }
 }

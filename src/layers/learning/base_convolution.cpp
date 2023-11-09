@@ -219,9 +219,7 @@ base_convolution_layer<TensorDataType, Device>::get_description() const
 #ifdef LBANN_HAS_DNN_LIB
   if (Device == El::Device::GPU) {
     desc.add("DNN Math Mode",
-             (m_convolution_math_type == dnn_lib::DNN_DEFAULT_MATH
-                ? "NO tensor cores."
-                : "USE tensor cores."));
+             dnn_lib::get_math_type_description(m_convolution_math_type));
   }
 #endif // LBANN_HAS_DNN_LIB
 
@@ -444,7 +442,7 @@ void base_convolution_layer<TensorDataType, Device>::setup_gpu()
   m_convolution_dnn_desc.set(m_pads,
                              m_strides,
                              m_dilations,
-                             dnn_lib::get_data_type<TensorDataType>(),
+                             dnn_lib::get_convolution_data_type<TensorDataType>(),
                              dnn_lib::DNN_CROSS_CORRELATION);
   m_convolution_dnn_desc.set_math_mode(m_convolution_math_type);
   m_convolution_dnn_desc.set_group_count(m_groups);
@@ -520,8 +518,8 @@ void base_convolution_layer<TensorDataType, Device>::apply_convolution_dnn(
   workspace_size = workspace.Height() * sizeof(TensorDataType);
 
   // Perform convolution on the GPU
-  // Determine convolution algorithm
-  fwd_conv_alg convolution_dnn_algorithm =
+  // Determine convolution algorithm and math mode.
+  dnn_lib::fwd_conv_alg_config convolution_dnn_algorithm_config =
     get_forward_algo_dnn(input.Width(),
                          input_desc,
                          input.LockedBuffer(),
@@ -534,13 +532,14 @@ void base_convolution_layer<TensorDataType, Device>::apply_convolution_dnn(
                          workspace.Buffer());
 
   // Apply convolution
+  m_convolution_dnn_desc.set_math_mode(convolution_dnn_algorithm_config.second);
   dnn_lib::convolution_forward(one,
                                input_desc,
                                input,
                                m_kernel_dnn_desc,
                                kernel.LockedMatrix(),
                                m_convolution_dnn_desc,
-                               convolution_dnn_algorithm,
+                               convolution_dnn_algorithm_config.first,
                                workspace,
                                zero,
                                output_desc,
@@ -611,8 +610,8 @@ void base_convolution_layer<TensorDataType, Device>::
   workspace_size = workspace.Height() * sizeof(TensorDataType);
 
   // Perform transposed convolution on the GPU
-  // Determine transposed convolution algorithm
-  bwd_data_conv_alg transposed_convolution_dnn_algorithm =
+  // Determine transposed convolution algorithm and math mode.
+  dnn_lib::bwd_data_conv_alg_config transposed_convolution_dnn_algorithm_config =
     get_backward_data_algo_dnn(input.Width(),
                                m_kernel_dnn_desc,
                                kernel.LockedBuffer(),
@@ -623,14 +622,17 @@ void base_convolution_layer<TensorDataType, Device>::
                                output.Buffer(),
                                workspace_size,
                                workspace.Buffer());
+
   // Perform transposed convolution
+  m_convolution_dnn_desc.set_math_mode(
+    transposed_convolution_dnn_algorithm_config.second);
   dnn_lib::convolution_backward_data(one,
                                      m_kernel_dnn_desc,
                                      kernel.LockedMatrix(),
                                      input_desc,
                                      input,
                                      m_convolution_dnn_desc,
-                                     transposed_convolution_dnn_algorithm,
+                                     transposed_convolution_dnn_algorithm_config.first,
                                      workspace,
                                      zero,
                                      output_desc,
@@ -739,7 +741,7 @@ void base_convolution_layer<TensorDataType, Device>::compute_gradients_dnn(
                                                        multisync);
         workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
         workspace_size = workspace.Height() * sizeof(TensorDataType);
-        bwd_filter_conv_alg kernel_gradient_dnn_algorithm =
+        dnn_lib::bwd_filter_conv_alg_config kernel_gradient_dnn_algorithm_config =
           get_backward_filter_algo_dnn(local_input.Width(),
                                        gradient_wrt_output_desc,
                                        local_gradient_wrt_output.LockedBuffer(),
@@ -749,13 +751,15 @@ void base_convolution_layer<TensorDataType, Device>::compute_gradients_dnn(
                                        m_kernel_dnn_desc,
                                        workspace_size,
                                        workspace.Buffer());
+        m_convolution_dnn_desc.set_math_mode(
+          kernel_gradient_dnn_algorithm_config.second);
         dnn_lib::convolution_backward_filter(gradient_scale,
                                              gradient_wrt_output_desc,
                                              local_gradient_wrt_output,
                                              input_desc,
                                              local_input,
                                              m_convolution_dnn_desc,
-                                             kernel_gradient_dnn_algorithm,
+                                             kernel_gradient_dnn_algorithm_config.first,
                                              workspace,
                                              dst_scale,
                                              m_kernel_dnn_desc,
@@ -770,7 +774,7 @@ void base_convolution_layer<TensorDataType, Device>::compute_gradients_dnn(
                                                        multisync);
         workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
         workspace_size = workspace.Height() * sizeof(TensorDataType);
-        bwd_filter_conv_alg kernel_gradient_dnn_algorithm =
+        dnn_lib::bwd_filter_conv_alg_config kernel_gradient_dnn_algorithm_config =
           get_backward_filter_algo_dnn(local_input.Width(),
                                        input_desc,
                                        local_input.LockedBuffer(),
@@ -780,13 +784,15 @@ void base_convolution_layer<TensorDataType, Device>::compute_gradients_dnn(
                                        m_kernel_dnn_desc,
                                        workspace_size,
                                        workspace.Buffer());
+        m_convolution_dnn_desc.set_math_mode(
+          kernel_gradient_dnn_algorithm_config.second);
         dnn_lib::convolution_backward_filter(gradient_scale,
                                              input_desc,
                                              local_input,
                                              gradient_wrt_output_desc,
                                              local_gradient_wrt_output,
                                              m_convolution_dnn_desc,
-                                             kernel_gradient_dnn_algorithm,
+                                             kernel_gradient_dnn_algorithm_config.first,
                                              workspace,
                                              dst_scale,
                                              m_kernel_dnn_desc,
@@ -1093,7 +1099,7 @@ void base_convolution_layer<TensorDataType, Device>::compute_gradients_im2col(
 
 #ifdef LBANN_HAS_DNN_LIB
 template <typename TensorDataType, El::Device Device>
-fwd_conv_alg
+dnn_lib::fwd_conv_alg_config
 base_convolution_layer<TensorDataType, Device>::get_forward_algo_dnn(
   const int local_mini_batch_size,
   const dnn_lib::TensorDescriptor& input_desc,
@@ -1129,7 +1135,7 @@ base_convolution_layer<TensorDataType, Device>::get_forward_algo_dnn(
 }
 
 template <typename TensorDataType, El::Device Device>
-bwd_data_conv_alg
+dnn_lib::bwd_data_conv_alg_config
 base_convolution_layer<TensorDataType, Device>::get_backward_data_algo_dnn(
   const int local_mini_batch_size,
   const dnn_lib::FilterDescriptor& kernel_desc,
@@ -1165,7 +1171,7 @@ base_convolution_layer<TensorDataType, Device>::get_backward_data_algo_dnn(
 }
 
 template <typename TensorDataType, El::Device Device>
-bwd_filter_conv_alg
+dnn_lib::bwd_filter_conv_alg_config
 base_convolution_layer<TensorDataType, Device>::get_backward_filter_algo_dnn(
   const int local_mini_batch_size,
   const dnn_lib::TensorDescriptor& input_desc,

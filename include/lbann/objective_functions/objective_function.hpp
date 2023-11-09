@@ -111,6 +111,9 @@ public:
   /** Set list of pointers to weights. */
   void set_weights_pointers(std::vector<ViewingWeightsPtr> w);
 
+  /** Set loss scale factor for automatic mixed precision. */
+  void set_amp_scale(EvalType scale);
+
   /** Get the time spent evaluating the objective function. */
   EvalType get_evaluation_time() const { return m_evaluation_time; }
   /** Get the time spent computing the objective function gradient. */

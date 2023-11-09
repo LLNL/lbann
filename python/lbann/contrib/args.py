@@ -319,7 +319,8 @@ def get_profile_args(args: argparse.Namespace) -> list[str]:
 
 
 def add_training_arguments(args: argparse.Namespace,
-                           default_minibatch_size=256):
+                           default_minibatch_size=256,
+                           default_epochs=20):
     """Add command-line arguments for common training settings within LBANN."""
     args.add_argument(
         '--mini-batch-size',
@@ -330,9 +331,9 @@ def add_training_arguments(args: argparse.Namespace,
         metavar='NUM')
     args.add_argument('--num-epochs',
                       action='store',
-                      default=20,
+                      default=default_epochs,
                       type=int,
-                      help='number of epochs (default: 20)',
+                      help=f'number of epochs (default: {default_epochs})',
                       metavar='NUM')
     args.add_argument('--progress',
                       action='store_true',
@@ -340,3 +341,12 @@ def add_training_arguments(args: argparse.Namespace,
     args.add_argument('--checkpoint',
                       action='store_true',
                       help='Save checkpoints and weights after every epoch')
+
+
+def add_amp_arguments(args: argparse.ArgumentParser) -> None:
+    """Add automatic mixed precision arguments."""
+    args.add_argument(
+        '--amp',
+        action='store_true',
+        default=False,
+        help='Enable automatic mixed precision')

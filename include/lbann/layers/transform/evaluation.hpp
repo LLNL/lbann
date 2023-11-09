@@ -48,6 +48,8 @@ public:
   EvalType get_scale() const { return m_scale; }
   /** Set scaling factor. */
   void set_scale(EvalType scale) { m_scale = scale; }
+  /** Set the AMP scaling factor. */
+  void set_amp_scale(EvalType scale) { m_amp_scale = scale; }
   /** Get evaluated value. */
   EvalType get_value(bool scaled = true);
 
@@ -78,6 +80,10 @@ protected:
 private:
   /** Scaling factor to apply to evaluated value. */
   EvalType m_scale = 0;
+  /** Scaling factor for automatic mixed precision.
+   *  This is used only to scale the backpropagated loss value.
+   */
+  EvalType m_amp_scale = 0;
   /** Evaluated value.
    *  The value may be stored in pinned memory.
    */

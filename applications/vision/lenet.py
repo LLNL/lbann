@@ -3,6 +3,7 @@ import lbann
 import data.mnist
 import lbann.contrib.args
 import lbann.contrib.launcher
+import lbann.util.amp
 
 # ----------------------------------
 # Command-line arguments
@@ -11,6 +12,7 @@ import lbann.contrib.launcher
 desc = ('Train LeNet on MNIST data using LBANN.')
 parser = argparse.ArgumentParser(description=desc)
 lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_lenet')
+lbann.contrib.args.add_amp_arguments(parser)
 args = parser.parse_args()
 
 # ----------------------------------
@@ -75,6 +77,8 @@ model = lbann.Model(num_epochs,
                     callbacks=[lbann.CallbackPrintModelDescription(),
                                lbann.CallbackPrint(),
                                lbann.CallbackTimer()])
+
+lbann.util.amp.enable_amp(model, args)
 
 # Setup optimizer
 opt = lbann.SGD(learn_rate=0.01, momentum=0.9)

@@ -151,7 +151,7 @@ construct_layer_graph(lbann_comm* comm,
     (void)model_disable_gpus;
 #endif // LBANN_HAS_GPU
 
-    auto proto_datatype = proto_layer.datatype();
+    auto proto_datatype = resolve_default_datatype(proto_layer.datatype());
 
     // Construct layer
     OwningLayerPtr l;

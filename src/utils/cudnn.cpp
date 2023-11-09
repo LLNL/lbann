@@ -725,6 +725,16 @@ ConvolutionDescriptor::operator DescriptorHandle_t() const noexcept
   return desc_;
 }
 
+cudnnMathType_t ConvolutionDescriptor::get_math_mode() const
+{
+  if (!desc_) {
+    return get_default_convolution_math_type();
+  }
+  cudnnMathType_t math_type;
+  CHECK_CUDNN(cudnnGetConvolutionMathType(desc_, &math_type));
+  return math_type;
+}
+
 void ConvolutionDescriptor::swap(ConvolutionDescriptor& other)
 {
   std::swap(desc_, other.desc_);
@@ -1287,6 +1297,13 @@ entrywise_layer_tensor_manager<TensorDataType>::get_error_signals(
 
 namespace {
 
+// Helepr types for an algorithm and its math mode.
+using cudnn_fwd_conv_alg_config = std::pair<cudnnConvolutionFwdAlgo_t, cudnnMathType_t>;
+using cudnn_bwd_data_conv_alg_config = std::pair<cudnnConvolutionBwdDataAlgo_t, cudnnMathType_t>;
+using cudnn_bwd_filter_conv_alg_config = std::pair<cudnnConvolutionBwdFilterAlgo_t, cudnnMathType_t>;
+template <typename AlgoType>
+using cudnn_alg_config = std::pair<AlgoType, cudnnMathType_t>;
+
 // Non-deterministic algorithms.
 std::vector<cudnnConvolutionFwdAlgo_t> nondet_fwd_algos = {};
 std::vector<cudnnConvolutionBwdDataAlgo_t> nondet_bwd_data_algos = {
@@ -1296,13 +1313,13 @@ std::vector<cudnnConvolutionBwdFilterAlgo_t> nondet_bwd_filter_algos = {
   CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3};
 
 template <typename AlgoType, typename PerfType>
-AlgoType find_best_heuristic_algorithm(
+cudnn_alg_config<AlgoType> find_best_heuristic_algorithm(
   const std::vector<PerfType>& perf_results,
   const std::vector<AlgoType>& nondeterministic_algos,
   bool deterministic,
   size_t max_ws_size)
 {
-  std::vector<AlgoType> algos;
+  std::vector<cudnn_alg_config<AlgoType>> algos;
   for (const auto& p : perf_results) {
     if (p.status != CUDNN_STATUS_SUCCESS) {
       continue;
@@ -1315,7 +1332,7 @@ AlgoType find_best_heuristic_algorithm(
     if (p.memory > max_ws_size) {
       continue;
     }
-    algos.push_back(p.algo);
+    algos.emplace_back(cudnn_alg_config<AlgoType>(p.algo, p.mathType));
   }
   if (algos.empty()) {
     LBANN_ERROR("No valid convolution algorithms.");
@@ -1324,18 +1341,24 @@ AlgoType find_best_heuristic_algorithm(
 }
 
 template <typename AlgoType, typename PerfType>
-AlgoType
+cudnn_alg_config<AlgoType>
 find_best_algorithm(const std::vector<PerfType>& perf_results,
                     const std::vector<AlgoType>& nondeterministic_algos,
                     bool deterministic,
                     size_t max_ws_size)
 {
-  std::map<AlgoType, float> time_map;
+  std::map<cudnn_alg_config<AlgoType>, float> time_map;
   for (const auto& p : perf_results) {
+    const auto config = cudnn_alg_config<AlgoType>(p.algo, p.mathType);
     if (p.status != CUDNN_STATUS_SUCCESS) {
       // If an algorithm fails, we still add it in case the failure is
       // nondeterministic.
-      time_map[p.algo] = std::numeric_limits<float>::max();
+      // TODO: Using FLT_MAX here means this will never be selected if
+      // some other instance performs better because this either
+      // overwrites it or overflows to inf.
+      // If there are nondeterministic failures, we should probably
+      // ignore the algorithm.
+      time_map[config] = std::numeric_limits<float>::max();
       continue;
     }
     if (deterministic && std::find(nondeterministic_algos.begin(),
@@ -1346,33 +1369,33 @@ find_best_algorithm(const std::vector<PerfType>& perf_results,
     if (p.memory > max_ws_size) {
       continue;
     }
-    if (time_map.count(p.algo) == 0) {
-      time_map[p.algo] = p.time;
+    if (time_map.count(config) == 0) {
+      time_map[config] = p.time;
     }
     else {
-      time_map[p.algo] += p.time;
+      time_map[config] += p.time;
     }
   }
   if (time_map.empty()) {
     LBANN_ERROR("No valid convolution algorithms.");
   }
-  AlgoType best_algo = time_map.begin()->first;
+  cudnn_alg_config<AlgoType> best_config = time_map.begin()->first;
   float min_time = std::numeric_limits<float>::max();
   for (const auto& x : time_map) {
-    AlgoType algo = x.first;
+    cudnn_alg_config<AlgoType> config = x.first;
     float time = x.second;
     if (time < min_time) {
       min_time = time;
-      best_algo = algo;
+      best_config = config;
     }
   }
   if (min_time == std::numeric_limits<float>::max()) {
     LBANN_ERROR("No valid convolution algorithms.");
   }
-  return best_algo;
+  return best_config;
 }
 
-cudnnConvolutionFwdAlgo_t
+cudnn_fwd_conv_alg_config
 get_fwd_algo_heuristic(bool deterministic,
                        const TensorDescriptor& input_desc,
                        const FilterDescriptor& kernel_desc,
@@ -1399,7 +1422,7 @@ get_fwd_algo_heuristic(bool deterministic,
                                        ws_size);
 }
 
-cudnnConvolutionBwdDataAlgo_t
+cudnn_bwd_data_conv_alg_config
 get_bwd_data_algo_heuristic(bool deterministic,
                             const FilterDescriptor& kernel_desc,
                             const TensorDescriptor& prev_error_signal_desc,
@@ -1427,7 +1450,7 @@ get_bwd_data_algo_heuristic(bool deterministic,
                                        ws_size);
 }
 
-cudnnConvolutionBwdFilterAlgo_t
+cudnn_bwd_filter_conv_alg_config
 get_bwd_filter_algo_heuristic(bool deterministic,
                               const TensorDescriptor& input_desc,
                               const TensorDescriptor& prev_error_signal_desc,
@@ -1455,7 +1478,7 @@ get_bwd_filter_algo_heuristic(bool deterministic,
                                        ws_size);
 }
 
-cudnnConvolutionFwdAlgo_t
+cudnn_fwd_conv_alg_config
 get_fwd_algo_autotune(bool deterministic,
                       const TensorDescriptor& input_desc,
                       const void* input,
@@ -1489,7 +1512,7 @@ get_fwd_algo_autotune(bool deterministic,
                                                        perf_results.data(),
                                                        ws,
                                                        ws_size));
-    if (trial > num_skip) {
+    if (trial >= num_skip) {
       for (const auto& p : perf_results) {
         perf_results_all.push_back(p);
       }
@@ -1501,7 +1524,7 @@ get_fwd_algo_autotune(bool deterministic,
                              ws_size);
 }
 
-cudnnConvolutionBwdDataAlgo_t
+cudnn_bwd_data_conv_alg_config
 get_bwd_data_algo_autotune(bool deterministic,
                            const FilterDescriptor& kernel_desc,
                            const void* kernel,
@@ -1536,7 +1559,7 @@ get_bwd_data_algo_autotune(bool deterministic,
                                                   perf_results.data(),
                                                   ws,
                                                   ws_size));
-    if (trial > num_skip) {
+    if (trial >= num_skip) {
       for (const auto& p : perf_results) {
         perf_results_all.push_back(p);
       }
@@ -1548,7 +1571,7 @@ get_bwd_data_algo_autotune(bool deterministic,
                              ws_size);
 }
 
-cudnnConvolutionBwdFilterAlgo_t
+cudnn_bwd_filter_conv_alg_config
 get_bwd_filter_algo_autotune(bool deterministic,
                              const TensorDescriptor& input_desc,
                              const void* input,
@@ -1583,7 +1606,7 @@ get_bwd_filter_algo_autotune(bool deterministic,
                                                     perf_results.data(),
                                                     ws,
                                                     ws_size));
-    if (trial > num_skip) {
+    if (trial >= num_skip) {
       for (const auto& p : perf_results) {
         perf_results_all.push_back(p);
       }
@@ -1597,19 +1620,20 @@ get_bwd_filter_algo_autotune(bool deterministic,
 
 } // namespace
 
-fwd_conv_alg get_fwd_algorithm(bool autotune,
-                               bool deterministic,
-                               const TensorDescriptor& input_desc,
-                               const void* input,
-                               const FilterDescriptor& kernel_desc,
-                               const void* kernel,
-                               const ConvolutionDescriptor& conv_desc,
-                               const TensorDescriptor& output_desc,
-                               void* output,
-                               size_t ws_size,
-                               void* ws)
+fwd_conv_alg_config
+get_fwd_algorithm(bool autotune,
+                  bool deterministic,
+                  const TensorDescriptor& input_desc,
+                  const void* input,
+                  const FilterDescriptor& kernel_desc,
+                  const void* kernel,
+                  const ConvolutionDescriptor& conv_desc,
+                  const TensorDescriptor& output_desc,
+                  void* output,
+                  size_t ws_size,
+                  void* ws)
 {
-  cudnnConvolutionFwdAlgo_t a;
+  cudnn_fwd_conv_alg_config a;
   if (autotune) {
     a = get_fwd_algo_autotune(deterministic,
                               input_desc,
@@ -1630,10 +1654,10 @@ fwd_conv_alg get_fwd_algorithm(bool autotune,
                                output_desc,
                                ws_size);
   }
-  return from_cudnn(a);
+  return fwd_conv_alg_config(from_cudnn(a.first), a.second);
 }
 
-bwd_data_conv_alg
+bwd_data_conv_alg_config
 get_bwd_data_algorithm(bool autotune,
                        bool deterministic,
                        const FilterDescriptor& kernel_desc,
@@ -1646,7 +1670,7 @@ get_bwd_data_algorithm(bool autotune,
                        size_t ws_size,
                        void* ws)
 {
-  cudnnConvolutionBwdDataAlgo_t a;
+  cudnn_bwd_data_conv_alg_config a;
   if (autotune) {
     a = get_bwd_data_algo_autotune(deterministic,
                                    kernel_desc,
@@ -1667,10 +1691,10 @@ get_bwd_data_algorithm(bool autotune,
                                     error_signal_desc,
                                     ws_size);
   }
-  return from_cudnn(a);
+  return bwd_data_conv_alg_config(from_cudnn(a.first), a.second);
 }
 
-bwd_filter_conv_alg
+bwd_filter_conv_alg_config
 get_bwd_filter_algorithm(bool autotune,
                          bool deterministic,
                          const TensorDescriptor& input_desc,
@@ -1683,7 +1707,7 @@ get_bwd_filter_algorithm(bool autotune,
                          size_t ws_size,
                          void* ws)
 {
-  cudnnConvolutionBwdFilterAlgo_t a;
+  cudnn_bwd_filter_conv_alg_config a;
   if (autotune) {
     a = get_bwd_filter_algo_autotune(deterministic,
                                      input_desc,
@@ -1704,16 +1728,21 @@ get_bwd_filter_algorithm(bool autotune,
                                       kernel_gradient_desc,
                                       ws_size);
   }
-  return from_cudnn(a);
+  return bwd_filter_conv_alg_config(from_cudnn(a.first), a.second);
 }
 
 namespace {
-cudnnMathType_t default_tensor_ops_mode = CUDNN_DEFAULT_MATH;
+cudnnMathType_t default_tensor_ops_mode = CUDNN_TENSOR_OP_MATH;
 }
 
 void default_to_tensor_ops() noexcept
 {
-  default_tensor_ops_mode = CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
+  default_tensor_ops_mode = CUDNN_TENSOR_OP_MATH;
+}
+
+void disable_tensor_ops() noexcept
+{
+  default_tensor_ops_mode = CUDNN_FMA_MATH;
 }
 
 cudnnMathType_t get_default_convolution_math_type() noexcept
@@ -1728,31 +1757,77 @@ cudnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
   case lbann_data::DEFAULT_TENSOR_OPS:
     return dnn_lib::get_default_convolution_math_type();
   case lbann_data::NO_TENSOR_OPS:
-    return CUDNN_DEFAULT_MATH;
+    return CUDNN_FMA_MATH;
   case lbann_data::USE_TENSOR_OPS:
+    return CUDNN_TENSOR_OP_MATH;
+  case lbann_data::USE_TENSOR_OPS_ALLOW_CONVERSION:
     return CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
   default:
     LBANN_ERROR("Bad math type value.");
   }
-  return CUDNN_DEFAULT_MATH;
+  return CUDNN_FMA_MATH;
 }
 
 ProtoTensorOpEnumType convert_to_proto_math_type(cudnnMathType_t mt)
 {
   switch (mt) {
   case CUDNN_DEFAULT_MATH:
+  case CUDNN_FMA_MATH:
+    // Note: These two are technically different in that DEFAULT_MATH
+    // allows TF32 conversion, but we basically never want to use that.
     return lbann_data::NO_TENSOR_OPS;
-  case CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION:
+  case CUDNN_TENSOR_OP_MATH:
     return lbann_data::USE_TENSOR_OPS;
+  case CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION:
+    return lbann_data::USE_TENSOR_OPS_ALLOW_CONVERSION;
   default:
     return lbann_data::DEFAULT_TENSOR_OPS;
   }
+}
+
+std::string get_math_type_description(dnnMathType_t mt) {
+  switch (mt) {
+  case CUDNN_DEFAULT_MATH:
+    return "No Tensor Cores + TF32 conversion";
+  case CUDNN_FMA_MATH:
+    return "No tensor cores";
+  case CUDNN_TENSOR_OP_MATH:
+    return "Tensor cores supported";
+  case CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION:
+    return "Tensor cores + datatype downconversion";
+  default:
+    return "Unknown math type";
+  }
+}
+
+template <typename TensorDataType>
+dnnDataType_t get_convolution_data_type() {
+  LBANN_ERROR("Invalid data type for cuDNN");
+}
+
+#ifdef LBANN_HAS_GPU_FP16
+// Half should use float for the convolution descriptor.
+// This corresponds to the PSEUDO_HALF_CONFIG in cuDNN.
+template <>
+dnnDataType_t get_convolution_data_type<fp16>() {
+  return get_data_type<float>();
+}
+#endif
+// Use the same type otherwise.
+template <>
+dnnDataType_t get_convolution_data_type<float>() {
+  return get_data_type<float>();
+}
+template <>
+dnnDataType_t get_convolution_data_type<double>() {
+  return get_data_type<double>();
 }
 
 #ifdef LBANN_HAS_HALF
 // Explicitly force gcc 10.3.1 to add a global symbol definition
 // rather than optimizing it to a local symbol definition.
 template cudnnDataType_t get_data_type<half_float::half>();
+template cudnnDataType_t get_convolution_data_type<half_float::half>();
 #endif
 
 #define PROTO(T)                                                               \

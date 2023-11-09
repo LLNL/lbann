@@ -49,6 +49,27 @@ enum class batch_normalization_stats_aggregation
   global
 };
 
+/**
+ * Define the accumulation type for batchnorm.
+ *
+ * This is the same as the input type, except for half, where it is
+ * float to ensure numerical stability.
+ *
+ * This is also type all weights are expected to be in.
+ */
+template <typename TensorDataType>
+struct BNAccT {
+  using type = TensorDataType;
+};
+#ifdef LBANN_HAS_GPU_FP16
+template <>
+struct BNAccT<fp16> {
+  using type = float;
+};
+#endif
+template <typename T>
+using BNAcc = typename BNAccT<T>::type;
+
 #ifdef LBANN_HAS_DISTCONV
 namespace dc {
 using Shape = ::distconv::tensor::Shape;
@@ -116,22 +137,25 @@ public:
   /** @name Public Types */
   ///@{
 
+  /** @brief Accumulation type for this object. */
+  using AccT = BNAcc<TensorDataType>;
+
   /** @brief The tensor type expected in this object. */
-  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+  using AbsDistMatrixType = El::AbstractDistMatrix<AccT>;
 
   /** @brief The concrete weights type used by this object. */
-  using WeightsType = data_type_weights<TensorDataType>;
+  using WeightsType = data_type_weights<AccT>;
 
   /** @brief The concrete optimizer type used by this object. */
-  using OptimizerType = data_type_optimizer<TensorDataType>;
+  using OptimizerType = data_type_optimizer<AccT>;
 
   ///@}
 
 private:
   /// Decay rate for running statistics
-  TensorDataType m_decay;
+  AccT m_decay;
   /// Small number for numerical stability
-  TensorDataType m_epsilon;
+  AccT m_epsilon;
   /** @brief Size of process group for computing statistics
    *
    *  If this is 1, the group consists of one process and aggregation
@@ -341,9 +365,9 @@ protected:
     this->set_num_weights(4);
     if (!this->has_weights(0)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = std::make_unique<constant_initializer<TensorDataType>>(
-        El::TypeTraits<TensorDataType>::One());
-      auto opt = this->m_model->template create_optimizer<TensorDataType>();
+      auto init = std::make_unique<constant_initializer<AccT>>(
+        El::TypeTraits<AccT>::One());
+      auto opt = this->m_model->template create_optimizer<AccT>();
       w->set_name(this->get_name() + "_scale");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
@@ -352,9 +376,9 @@ protected:
     }
     if (!this->has_weights(1)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = std::make_unique<constant_initializer<TensorDataType>>(
-        El::TypeTraits<TensorDataType>::Zero());
-      auto opt = this->m_model->template create_optimizer<TensorDataType>();
+      auto init = std::make_unique<constant_initializer<AccT>>(
+        El::TypeTraits<AccT>::Zero());
+      auto opt = this->m_model->template create_optimizer<AccT>();
       w->set_name(this->get_name() + "_bias");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
@@ -363,8 +387,8 @@ protected:
     }
     if (!this->has_weights(2)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = std::make_unique<constant_initializer<TensorDataType>>(
-        El::TypeTraits<TensorDataType>::Zero());
+      auto init = std::make_unique<constant_initializer<AccT>>(
+        El::TypeTraits<AccT>::Zero());
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
       this->set_weights(2, w);
@@ -372,8 +396,8 @@ protected:
     }
     if (!this->has_weights(3)) {
       auto w = std::make_shared<WeightsType>(*this->get_comm());
-      auto init = std::make_unique<constant_initializer<TensorDataType>>(
-        El::TypeTraits<TensorDataType>::One());
+      auto init = std::make_unique<constant_initializer<AccT>>(
+        El::TypeTraits<AccT>::One());
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
       this->set_weights(3, w);
@@ -392,15 +416,15 @@ protected:
     }
 
     // Initialize matrices
-    m_mean_and_var.reset(new StarMatDT<TensorDataType, Dev>(*dist.grid));
-    m_mean_v.reset(new StarMatDT<TensorDataType, Dev>(*dist.grid));
-    m_var_v.reset(new StarMatDT<TensorDataType, Dev>(*dist.grid));
+    m_mean_and_var.reset(new StarMatDT<AccT, Dev>(*dist.grid));
+    m_mean_v.reset(new StarMatDT<AccT, Dev>(*dist.grid));
+    m_var_v.reset(new StarMatDT<AccT, Dev>(*dist.grid));
     m_mean_and_var_gradient.reset(
-      new StarMatDT<TensorDataType, Dev>(*dist.grid));
-    m_mean_gradient_v.reset(new StarMatDT<TensorDataType, Dev>(*dist.grid));
-    m_var_gradient_v.reset(new StarMatDT<TensorDataType, Dev>(*dist.grid));
-    m_scale_gradient.reset(new StarMatDT<TensorDataType, Dev>(*dist.grid));
-    m_bias_gradient.reset(new StarMatDT<TensorDataType, Dev>(*dist.grid));
+      new StarMatDT<AccT, Dev>(*dist.grid));
+    m_mean_gradient_v.reset(new StarMatDT<AccT, Dev>(*dist.grid));
+    m_var_gradient_v.reset(new StarMatDT<AccT, Dev>(*dist.grid));
+    m_scale_gradient.reset(new StarMatDT<AccT, Dev>(*dist.grid));
+    m_bias_gradient.reset(new StarMatDT<AccT, Dev>(*dist.grid));
     El::Zeros(*m_mean_and_var, num_channels, 2);
     El::Zeros(*m_mean_and_var_gradient, num_channels, 2);
     El::Zeros(*m_scale_gradient, num_channels, 1);

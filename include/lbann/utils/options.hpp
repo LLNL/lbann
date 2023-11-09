@@ -57,8 +57,7 @@ namespace lbann {
 #define LBANN_OPTION_PRINT_AFFINITY "print_affinity"
 #define LBANN_OPTION_SERIALIZE_IO "serialize_io"
 #define LBANN_OPTION_STACK_TRACE_TO_FILE "stack_trace_to_file"
-#define LBANN_OPTION_USE_CUBLAS_TENSOR_OPS "use_cublas_tensor_ops"
-#define LBANN_OPTION_USE_CUDNN_TENSOR_OPS "use_cudnn_tensor_ops"
+#define LBANN_OPTION_DISABLE_CUDNN_TENSOR_OPS "disable_cudnn_tensor_ops"
 #define LBANN_OPTION_USE_DATA_STORE "use_data_store"
 #define LBANN_OPTION_VERBOSE "verbose"
 #define LBANN_OPTION_USE_GPU_DIRECT_MEMORY_IN_FORWARD_PROP                     \

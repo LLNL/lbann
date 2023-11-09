@@ -24,21 +24,33 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-syntax = "proto3";
+#ifndef LBANN_UTILS_PRINT_HELPERS_HPP_INCLUDED
+#define LBANN_UTILS_PRINT_HELPERS_HPP_INCLUDED
 
-package lbann_data;
+#include <ostream>
+#include <string>
+#include <vector>
 
-enum DataType {
-  DEFAULT_DATATYPE = 0;
-  FLOAT = 1;
-  DOUBLE = 2;
-  FP16 = 3;
-  COMPLEX_FLOAT = 4;
-  COMPLEX_DOUBLE = 5;
+namespace lbann {
+
+/**
+ * Print a vector to an output stream.
+ *
+ * Requires the contained type have a valid operator<< implemented.
+ */
+template <typename T, typename A>
+void print_vector(
+  const std::vector<T, A>& v,
+  std::ostream& os,
+  std::string prefix = "") {
+  os << prefix;
+  os << "[";
+  for (size_t i = 0; i < v.size(); ++i) {
+    os << (i > 0 ? ", " : "") << v[i];
+  }
+  os << "]";
 }
 
-enum DeviceAllocation {
-  DEFAULT_DEVICE = 0;
-  CPU = 1;
-  GPU = 2;
-}
+}  // namespace lbann
+
+#endif  // LBANN_UTILS_PRINT_HELPERS_HPP_INCLUDED

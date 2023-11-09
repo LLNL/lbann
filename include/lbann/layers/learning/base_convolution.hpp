@@ -161,11 +161,11 @@ protected:
   dnn_lib::data_parallel_layer_tensor_manager<TensorDataType>
     m_tensors_dnn_desc;
   /** Forward algorithm cache (mini-batch size -> algo). */
-  std::unordered_map<int, fwd_conv_alg> m_fwd_dnn_algos;
+  std::unordered_map<int, dnn_lib::fwd_conv_alg_config> m_fwd_dnn_algos;
   /** Backward data algorithm cache (mini-batch size -> algo). */
-  std::unordered_map<int, bwd_data_conv_alg> m_bwd_data_dnn_algos;
+  std::unordered_map<int, dnn_lib::bwd_data_conv_alg_config> m_bwd_data_dnn_algos;
   /** Backward filter algorithm cache (mini-batch size -> algo). */
-  std::unordered_map<int, bwd_filter_conv_alg> m_bwd_filter_dnn_algos;
+  std::unordered_map<int, dnn_lib::bwd_filter_conv_alg_config> m_bwd_filter_dnn_algos;
 
 #endif // LBANN_HAS_DNN_LIB
 
@@ -236,7 +236,7 @@ private:
 #ifdef LBANN_HAS_DNN_LIB
 
   /** Get the DNN library algorithm to use for forward prop. */
-  fwd_conv_alg
+  dnn_lib::fwd_conv_alg_config
   get_forward_algo_dnn(const int local_mini_batch_size,
                        const dnn_lib::TensorDescriptor& input_desc,
                        const TensorDataType* input,
@@ -249,7 +249,8 @@ private:
                        TensorDataType* ws);
 
   /** Get the DNN library algorithm to use for backward-data. */
-  bwd_data_conv_alg get_backward_data_algo_dnn(
+  dnn_lib::bwd_data_conv_alg_config
+  get_backward_data_algo_dnn(
     const int local_mini_batch_size,
     const dnn_lib::FilterDescriptor& kernel_desc,
     const TensorDataType* kernel,
@@ -265,7 +266,8 @@ private:
    * Get the DNN library algorithm to use for backward-filter.
    * Buffer space for kernel_gradient is allocated via temporary workspace.
    */
-  bwd_filter_conv_alg get_backward_filter_algo_dnn(
+  dnn_lib::bwd_filter_conv_alg_config
+  get_backward_filter_algo_dnn(
     const int local_mini_batch_size,
     const dnn_lib::TensorDescriptor& input_desc,
     const TensorDataType* input,

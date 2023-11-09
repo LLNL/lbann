@@ -348,6 +348,12 @@ public:
    */
   virtual std::string get_type() const = 0;
 
+  /** @brief Return the layer's input type. */
+  virtual std::type_index get_input_datatype() const = 0;
+
+  /** @brief Return the layer's output type. */
+  virtual std::type_index get_output_datatype() const = 0;
+
   /** @brief Get a string representing the layer datatype */
   virtual std::string get_datatype_name() const = 0;
 

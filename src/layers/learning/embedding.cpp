@@ -101,7 +101,6 @@ void embedding_layer<TensorDataType, Layout, Device>::bp_compute()
   else if (dst_scale != one) {
     El::Scale(dst_scale, local_embedding_grad);
   }
-
   MatType embedding_grad_v, output_grad_v;
   for (size_t j = 0; j < local_mini_batch_size; ++j) {
     for (size_t i = 0; i < input_size; ++i) {

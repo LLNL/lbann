@@ -36,11 +36,126 @@
 
 #include "lbann/proto/callbacks.pb.h"
 
+#include "h2/patterns/multimethods/SwitchDispatcher.hpp"
+
 #include <algorithm>
 #include <string>
 
 namespace lbann {
 namespace callback {
+namespace {
+
+using Datatypes = h2::meta::TL<float, double
+                               #ifdef LBANN_HAS_HALF
+                               , cpu_fp16
+                               #endif
+                               #ifdef LBANN_HAS_GPU_FP16
+                               , fp16
+                               #endif
+                               >;
+// Need a unary template
+template <typename T>
+using UnaryConstDTL = const data_type_layer<T,T>;
+
+template <typename T>
+using ConstADM = std::add_const_t<El::AbstractDistMatrix<T>>;
+
+using LayerTypes = h2::meta::tlist::ExpandTL<UnaryConstDTL, Datatypes>;
+using DistMatrixTypes = h2::meta::tlist::ExpandTL<ConstADM, Datatypes>;
+
+// Now create the functors
+/**
+ * @brief Prints out the shape and allocated size of a matrix to the stream
+ * given in the second argument. Returns the allocated size as well.
+ */
+template <typename T>
+size_t report_dist_matrix(El::AbstractDistMatrix<T> const& m, std::ostream& stream)
+{
+  size_t const allocated = m.AllocatedMemory() * sizeof(T);
+  stream << m.Height() << " x " << m.Width()
+         << " (local shape: " << m.LocalHeight() << " x " << m.LocalWidth()
+         << "). Size: " << allocated / 1048576.0 << " MiB" << std::endl;
+  return allocated;
+}
+
+template <typename T>
+size_t get_activation_and_error_signal_size(data_type_layer<T> const& dtl,
+                                            std::ostream& reps)
+{
+  size_t allocated = 0;
+  for (int i = 0; i < dtl.get_num_children(); ++i) {
+    auto const& act = dtl.get_activations(i);
+    if (dtl.get_num_children() == 1)
+      reps << "    Activations: ";
+    else
+      reps << "    Activations (" << i << "): ";
+
+    allocated += report_dist_matrix(act, reps);
+  }
+  return allocated;
+}
+
+struct ReportDistMatrix {
+  template <typename T>
+  size_t operator()(std::ostream& os, El::AbstractDistMatrix<T> const& m)
+  {
+    return report_dist_matrix(m, os);
+  }
+  template <typename... Args>
+  static size_t DeductionError(Args&&...) {
+    LBANN_ERROR("Unknown matrix type.");
+  }
+  static size_t DispatchError(std::ostream&, El::BaseDistMatrix const&)
+  {
+    LBANN_ERROR("Failed to dispatch \"report_dist_matrix\"");
+  }
+};
+
+// This makes two things easier. First, it allows us to call the
+// int-indexed "get_activations" function, rather than having to go
+// through the pointers to the child layers. Second, it allows us to
+// amortize our dynamic_cast stack over multiple calls to
+// "report_dist_matrix", which should (statically) dispatch directly
+// here rather than going through the dynamically dispatched overload.
+struct GetActivationAndErrorSignalSize {
+  /**
+   *  @brief Print and get maximal activation/error signal size for a layer.
+   */
+  template <typename T>
+  size_t operator()(std::ostream& reps, data_type_layer<T> const& dtl) {
+    return get_activation_and_error_signal_size(dtl, reps);
+  }
+  template <typename... Args>
+  static size_t DeductionError(Args&&...) {
+    LBANN_ERROR("Unknown layer type.");
+  }
+  static size_t DispatchError(std::ostream&, Layer const& l)
+  {
+    LBANN_ERROR("Failed to dispatch for layer \"", l.get_name(), "\"");
+  }
+}; // struct GetActivationAndErrorSignalSize
+
+size_t report_dist_matrix(El::BaseDistMatrix const& m, std::ostream& os)
+{
+  using Dispatcher =
+    h2::multimethods::SwitchDispatcher<ReportDistMatrix,
+                                       size_t,
+                                       El::BaseDistMatrix const,
+                                       DistMatrixTypes>;
+  return Dispatcher::Exec(ReportDistMatrix{}, m, os);
+}
+
+size_t get_activation_and_error_signal_size(Layer const& x, std::ostream& os)
+{
+  using Dispatcher =
+    h2::multimethods::SwitchDispatcher<GetActivationAndErrorSignalSize,
+                                       size_t,
+                                       Layer const,
+                                       LayerTypes>;
+  return Dispatcher::Exec(GetActivationAndErrorSignalSize{}, x, os);
+}
+
+} // namespace
 
 /**
  * @brief Returns the currently used memory, or 0 if LBANN was not compiled with
@@ -82,21 +197,6 @@ static inline size_t get_total_gpu_memory()
 #else
   return 0;
 #endif
-}
-
-/**
- * @brief Prints out the shape and allocated size of a matrix to the stream
- * given in the second argument. Returns the allocated size as well.
- */
-template <typename T>
-static inline size_t report_dist_matrix(const El::AbstractDistMatrix<T>& m,
-                                        std::stringstream& stream)
-{
-  size_t allocated = m.AllocatedMemory() * sizeof(T);
-  stream << m.Height() << " x " << m.Width()
-         << " (local shape: " << m.LocalHeight() << " x " << m.LocalWidth()
-         << "). Size: " << allocated / 1048576.0 << " MiB" << std::endl;
-  return allocated;
 }
 
 memory_profiler::memory_profiler(bool detailed_first_step)
@@ -173,22 +273,15 @@ void memory_profiler::report_mem_usage(model* m)
 
   // Traverse the graph layer by layer
   for (auto& layer : m->get_layers()) {
-    std::stringstream reps;
+    std::ostringstream reps;
     size_t layer_total = 0, layer_total_acts = 0;
 
     reps << "  " << layer->get_name() << " (" << layer->get_type()
          << "):" << std::endl;
 
     // Get maximal activation/error signal size (suboptimal approximation)
-    auto& dtl = dynamic_cast<data_type_layer<DataType>&>(*layer);
-    for (int i = 0; i < dtl.get_num_children(); ++i) {
-      auto const& act = dtl.get_activations(i);
-      if (dtl.get_num_children() == 1)
-        reps << "    Activations: ";
-      else
-        reps << "    Activations (" << i << "): ";
-
-      size_t allocated = report_dist_matrix(act, reps);
+    {
+      size_t const allocated = get_activation_and_error_signal_size(*layer, reps);
       layer_total_acts += allocated;
       layer_total += allocated;
     }
@@ -217,15 +310,13 @@ void memory_profiler::report_mem_usage(model* m)
         }
 
         // Report weight tensor
-        auto* dtw = dynamic_cast<data_type_weights<DataType>*>(w);
-        size_t allocated = report_dist_matrix(dtw->get_values_sharded(), reps);
-
+        size_t allocated = report_dist_matrix(w->get_values_sharded(), reps);
         weight_mem += allocated;
         layer_total += allocated;
         already_reported[w] = layer->get_name();
 
         // Optimizer state accounting
-        auto* opt = dtw->get_optimizer();
+        auto* opt = w->get_optimizer();
         if (opt != nullptr) {
           allocated = opt->get_state_size();
           if (allocated > 0) {
@@ -281,15 +372,14 @@ void memory_profiler::report_mem_usage(model* m)
       reps << "  DETACHED weight " << weight->get_name() << ": ";
 
       // Report weight tensor
-      auto* dtw = dynamic_cast<data_type_weights<DataType>*>(weight);
-      size_t allocated = report_dist_matrix(dtw->get_values_sharded(), reps);
+      size_t allocated = report_dist_matrix(weight->get_values_sharded(), reps);
       weight_mem += allocated;
       weight_total += allocated;
       already_reported[weight] = weight->get_name();
       reps << std::endl;
 
       // Optimizer state accounting
-      auto* opt = dtw->get_optimizer();
+      auto* opt = weight->get_optimizer();
       if (opt != nullptr) {
         allocated = opt->get_state_size();
         if (allocated > 0) {

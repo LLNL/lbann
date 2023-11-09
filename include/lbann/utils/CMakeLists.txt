@@ -25,6 +25,7 @@
 ################################################################################
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
+  amp.hpp
   any.hpp
   argument_parser.hpp
   beta.hpp
@@ -62,6 +63,7 @@ set_full_path(THIS_DIR_HEADERS
   onnx_utils.hpp
   options.hpp
   peek_map.hpp
+  print_helpers.hpp
   profiling.hpp
   protobuf.hpp
   protobuf_serializable.hpp

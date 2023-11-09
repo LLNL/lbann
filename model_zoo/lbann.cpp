@@ -130,29 +130,20 @@ int main(int argc, char* argv[])
       comm->global_barrier();
     }
 
-    // Setup cuDNN and cuBLAS defaults
-    auto use_cudnn_tensor_ops =
-      arg_parser.get<bool>(LBANN_OPTION_USE_CUDNN_TENSOR_OPS);
-    auto use_cublas_tensor_ops =
-      arg_parser.get<bool>(LBANN_OPTION_USE_CUBLAS_TENSOR_OPS);
+    // Set up cuDNN defaults.
+    auto disable_cudnn_tensor_ops =
+      arg_parser.get<bool>(LBANN_OPTION_DISABLE_CUDNN_TENSOR_OPS);
     if (master) {
       std::cout << "Default tensor core settings:\n"
-                << "   cuDNN: " << (use_cudnn_tensor_ops ? "" : "NOT ")
-                << "using tensor core math."
-                << "\n"
-                << "  cuBLAS: " << (use_cublas_tensor_ops ? "" : "NOT ")
+                << "   cuDNN: " << (disable_cudnn_tensor_ops ? "NOT " : "")
                 << "using tensor core math."
                 << "\n"
                 << std::endl;
     }
 #ifdef LBANN_HAS_DNN_LIB
-    if (use_cudnn_tensor_ops)
-      dnn_lib::default_to_tensor_ops();
+    if (disable_cudnn_tensor_ops)
+      dnn_lib::disable_tensor_ops();
 #endif // LBANN_HAS_DNN_LIB
-#ifdef LBANN_HAS_CUDA
-    if (use_cublas_tensor_ops)
-      El::gpu_blas::RequestTensorOperations();
-#endif // LBANN_HAS_CUDA
 
     // this must be called after call to arg_parser.parse();
     if (!arg_parser.get<bool>(LBANN_OPTION_DISABLE_SIGNAL_HANDLER)) {

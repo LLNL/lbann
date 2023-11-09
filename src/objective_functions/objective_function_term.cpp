@@ -74,6 +74,11 @@ void objective_function_term::set_weights_pointers(
   m_weights = std::move(w);
 }
 
+void objective_function_term::set_amp_scale(EvalType scale)
+{
+  m_amp_scale_factor = scale;
+}
+
 } // namespace lbann
 
 #define LBANN_CLASS_NAME objective_function_term

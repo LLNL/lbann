@@ -148,6 +148,7 @@ private:
     LBANN_REGISTER_BUILDER(InTopK, in_top_k);
     LBANN_REGISTER_BUILDER(Pooling, pooling);
     LBANN_REGISTER_BUILDER(Reduction, reduction);
+    LBANN_REGISTER_BUILDER(Reshape, reshape);
     LBANN_REGISTER_BUILDER(Scatter, scatter);
     LBANN_REGISTER_BUILDER(Slice, slice);
     LBANN_REGISTER_BUILDER(Sort, sort);
@@ -231,15 +232,6 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer>
 construct_layer_legacy(lbann_comm* comm, const lbann_data::Layer& proto_layer)
 {
-
-  // Transform layers
-  if (proto_layer.has_reshape()) {
-    const auto& params = proto_layer.reshape();
-    return std::make_unique<reshape_layer<TensorDataType, Layout, Device>>(
-      comm,
-      protobuf::to_vector<int>(params.dims()));
-  }
-
   // Throw exception if layer has not been constructed
   LBANN_ERROR("could not construct layer ", proto_layer.name());
   return nullptr;

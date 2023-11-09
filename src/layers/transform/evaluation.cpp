@@ -296,8 +296,9 @@ template <typename TensorDataType>
 void abstract_evaluation_layer<TensorDataType>::bp_compute()
 {
   const auto mini_batch_size = this->m_model->get_current_mini_batch_size();
+  const EvalType scale = m_scale * (m_amp_scale > 0 ? m_amp_scale : 1);
   El::Fill(this->get_error_signals(),
-           TensorDataType(m_scale / mini_batch_size));
+           TensorDataType(scale / mini_batch_size));
 }
 
 template <typename TensorDataType>

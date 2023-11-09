@@ -65,6 +65,7 @@ Performance optimizations:
    instead of on a per-head basis
  - Stacking the weights and biases for queries/keys/values in
    self-attention
+ - Support for automatic mixed precision.
 
 Model portability & usability:
  - Added support for profiling with Caliper

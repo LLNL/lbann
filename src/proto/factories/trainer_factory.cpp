@@ -41,7 +41,8 @@ std::unique_ptr<trainer>
 construct_trainer(lbann_comm* comm, const lbann_data::Trainer& proto_trainer)
 {
 
-  auto proto_datatype = proto_trainer.data_coordinator().datatype();
+  auto proto_datatype = resolve_default_datatype(
+    proto_trainer.data_coordinator().datatype());
   std::unique_ptr<data_coordinator> dc;
 #define TEMPLATE_INSTANTIATION(TensorDataType)                                 \
   do {                                                                         \
@@ -56,6 +57,10 @@ construct_trainer(lbann_comm* comm, const lbann_data::Trainer& proto_trainer)
 
 #undef PROTO
 #undef TEMPLATE_INSTANTIATION
+
+  if (dc == nullptr) {
+    LBANN_ERROR("Could not construct data coordinator");
+  }
 
   // Instantiate trainer
   auto t = std::make_unique<trainer>(

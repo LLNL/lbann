@@ -73,7 +73,7 @@ public:
   virtual description get_description() const override;
 
   /** @brief Returns the optimizer state size in bytes. */
-  virtual size_t get_state_size() const;
+  size_t get_state_size() const override;
 
   /** @brief Must be called before training.
    *

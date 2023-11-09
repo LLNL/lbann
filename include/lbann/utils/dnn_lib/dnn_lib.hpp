@@ -358,6 +358,9 @@ public:
    */
   operator DescriptorHandle_t() const noexcept;
 
+  /** @brief Return the current math mode. */
+  dnnMathType_t get_math_mode() const;
+
   ///@}
   /** @name Modifiers */
   ///@{
@@ -666,29 +669,13 @@ public:
 // DNN library algorithm selection
 ////////////////////////////////////////////////////////////
 
-/**
- * Select a forward convolution algorithm.
- *
- * If autotuning, memory for DNN library algorithm runs is needed and should be
- * provided via the pointer arguments.
- *
- * @param autotune True to attempt all DNN library algorithms and select the
- * fastest.
- * @param deterministic True to require deterministic algorithms.
- */
-fwd_conv_alg get_fwd_algorithm(bool autotune,
-                               bool deterministic,
-                               const TensorDescriptor& input_desc,
-                               const void* input,
-                               const FilterDescriptor& kernel_desc,
-                               const void* kernel,
-                               const ConvolutionDescriptor& conv_desc,
-                               const TensorDescriptor& output_desc,
-                               void* output,
-                               size_t ws_size,
-                               void* ws);
+// Helper types to manage both an algorithm and its math mode.
+using fwd_conv_alg_config = std::pair<fwd_conv_alg, dnnMathType_t>;
+using bwd_data_conv_alg_config = std::pair<bwd_data_conv_alg, dnnMathType_t>;
+using bwd_filter_conv_alg_config = std::pair<bwd_filter_conv_alg, dnnMathType_t>;
 
-/** Select a backward data convolution algorithm.
+/**
+ * Select a forward convolution algorithm and math mode.
  *
  * If autotuning, memory for DNN library algorithm runs is needed and should be
  * provided via the pointer arguments.
@@ -697,7 +684,29 @@ fwd_conv_alg get_fwd_algorithm(bool autotune,
  * fastest.
  * @param deterministic True to require deterministic algorithms.
  */
-bwd_data_conv_alg
+fwd_conv_alg_config
+get_fwd_algorithm(bool autotune,
+                  bool deterministic,
+                  const TensorDescriptor& input_desc,
+                  const void* input,
+                  const FilterDescriptor& kernel_desc,
+                  const void* kernel,
+                  const ConvolutionDescriptor& conv_desc,
+                  const TensorDescriptor& output_desc,
+                  void* output,
+                  size_t ws_size,
+                  void* ws);
+
+/** Select a backward data convolution algorithm and math mode.
+ *
+ * If autotuning, memory for DNN library algorithm runs is needed and should be
+ * provided via the pointer arguments.
+ *
+ * @param autotune True to attempt all DNN library algorithms and select the
+ * fastest.
+ * @param deterministic True to require deterministic algorithms.
+ */
+bwd_data_conv_alg_config
 get_bwd_data_algorithm(bool autotune,
                        bool deterministic,
                        const FilterDescriptor& kernel_desc,
@@ -710,7 +719,7 @@ get_bwd_data_algorithm(bool autotune,
                        size_t ws_size,
                        void* ws);
 
-/** Select a backward filter convolution algorithm.
+/** Select a backward filter convolution algorithm and math mode.
  *
  * If autotuning, memory for DNN library algorithm runs is needed and should be
  * provided via the pointer arguments.
@@ -719,7 +728,7 @@ get_bwd_data_algorithm(bool autotune,
  * fastest.
  * @param deterministic True to require deterministic algorithms.
  */
-bwd_filter_conv_alg
+bwd_filter_conv_alg_config
 get_bwd_filter_algorithm(bool autotune,
                          bool deterministic,
                          const TensorDescriptor& input_desc,
@@ -732,10 +741,13 @@ get_bwd_filter_algorithm(bool autotune,
                          size_t ws_size,
                          void* ws);
 
-/** @brief Set the default to use tensor core operations, allowing
- *         FP32->FP16 conversions.
+/** @brief Set the default to use tensor core operations when possible
+ * without converting datatypes.
  */
 void default_to_tensor_ops() noexcept;
+
+/** @brief Disable all use of tensor cores. */
+void disable_tensor_ops() noexcept;
 
 /** @brief Get the default math type.
  *
@@ -748,6 +760,16 @@ using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
 dnnMathType_t convert_to_dnn_math_type(ProtoTensorOpEnumType mt);
 /** @brief Converts from DNN library math type to lbann_data. */
 ProtoTensorOpEnumType convert_to_proto_math_type(dnnMathType_t mt);
+/** @brief Get a textual description of a math type. */
+std::string get_math_type_description(dnnMathType_t mt);
+
+/**
+ * @brief Get the data type convolution should be performed in.
+ *
+ * For some backends, this may differ from tensor data types.
+ */
+template <typename TensorDataType>
+dnnDataType_t get_convolution_data_type();
 
 } // namespace dnn_lib
 } // namespace lbann

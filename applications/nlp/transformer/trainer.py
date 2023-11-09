@@ -206,8 +206,6 @@ def make_batch_script(model: lbann.Model,
     script_params['work_dir'] = work_dir
     script_params['job_name'] = args.job_name
     script_params['environment'] = {
-        'LBANN_USE_CUBLAS_TENSOR_OPS': 0,
-        'LBANN_USE_CUDNN_TENSOR_OPS': 0,
         "LBANN_NO_INPLACE": 1,
         "LBANN_DISABLE_DISTCONV": 1,
     }

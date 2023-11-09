@@ -542,6 +542,11 @@ ConvolutionDescriptor::operator DescriptorHandle_t() const noexcept
   return desc_;
 }
 
+dnnMathType_t ConvolutionDescriptor::get_math_mode() const
+{
+  return 0;  // No math mode in MIOpen.
+}
+
 void ConvolutionDescriptor::swap(ConvolutionDescriptor& other)
 {
   std::swap(desc_, other.desc_);
@@ -1450,17 +1455,18 @@ get_bwd_filter_algo_autotune(bool deterministic,
 
 } // namespace
 
-fwd_conv_alg get_fwd_algorithm(bool autotune,
-                               bool deterministic,
-                               const TensorDescriptor& input_desc,
-                               const void* input,
-                               const FilterDescriptor& kernel_desc,
-                               const void* kernel,
-                               const ConvolutionDescriptor& conv_desc,
-                               const TensorDescriptor& output_desc,
-                               void* output,
-                               size_t ws_size,
-                               void* ws)
+fwd_conv_alg_config
+get_fwd_algorithm(bool autotune,
+                  bool deterministic,
+                  const TensorDescriptor& input_desc,
+                  const void* input,
+                  const FilterDescriptor& kernel_desc,
+                  const void* kernel,
+                  const ConvolutionDescriptor& conv_desc,
+                  const TensorDescriptor& output_desc,
+                  void* output,
+                  size_t ws_size,
+                  void* ws)
 {
   miopenConvFwdAlgorithm_t a;
   if (autotune) {
@@ -1487,10 +1493,10 @@ fwd_conv_alg get_fwd_algorithm(bool autotune,
                                ws_size,
                                ws);
   }
-  return from_miopen(a);
+  return fwd_conv_alg_config(from_miopen(a), conv_desc.get_math_mode());
 }
 
-bwd_data_conv_alg
+bwd_data_conv_alg_config
 get_bwd_data_algorithm(bool autotune,
                        bool deterministic,
                        const FilterDescriptor& kernel_desc,
@@ -1528,10 +1534,10 @@ get_bwd_data_algorithm(bool autotune,
                                     ws_size,
                                     ws);
   }
-  return from_miopen(a);
+  return bwd_data_conv_alg_config(from_miopen(a), conv_desc.get_math_mode());
 }
 
-bwd_filter_conv_alg
+bwd_filter_conv_alg_config
 get_bwd_filter_algorithm(bool autotune,
                          bool deterministic,
                          const TensorDescriptor& input_desc,
@@ -1569,7 +1575,7 @@ get_bwd_filter_algorithm(bool autotune,
                                       ws_size,
                                       ws);
   }
-  return from_miopen(a);
+  return bwd_filter_conv_alg_config(from_miopen(a), conv_desc.get_math_mode());
 }
 
 // Placeholder functions for mathtype
@@ -1578,6 +1584,8 @@ int default_tensor_ops_mode = 0;
 }
 
 void default_to_tensor_ops() noexcept { default_tensor_ops_mode = 0; }
+
+void disable_tensor_ops() noexcept { default_tensor_ops_mode = 0; }
 
 int get_default_convolution_math_type() noexcept { return 0; }
 
@@ -1591,6 +1599,38 @@ int convert_to_dnn_math_type(ProtoTensorOpEnumType mt)
 ProtoTensorOpEnumType convert_to_proto_math_type(dnnMathType_t mt)
 {
   return lbann_data::DEFAULT_TENSOR_OPS;
+}
+
+std::string get_math_type_description(dnnMathType_t mt) {
+  return "MIOpen math";  // MIOpen does not have different math types.
+}
+
+// MIOpen does not use a datatype in its convolution descriptor but we
+// mirror cuDNN here.
+template <typename TensorDataType>
+dnnDataType_t get_convolution_data_type() {
+  LBANN_ERROR("Invalid data type for MIOpen");
+}
+#ifdef LBANN_HAS_GPU_FP16
+template <>
+dnnDataType_t get_convolution_data_type<fp16>() {
+  return get_data_type<float>();
+}
+#endif
+#ifdef LBANN_HAS_HALF
+template <>
+dnnDataType_t get_convolution_data_type<half_float::half>() {
+  return get_data_type<float>();
+}
+#endif
+template <>
+dnnDataType_t get_convolution_data_type<float>() {
+  return get_data_type<float>();
+}
+template <>
+dnnDataType_t get_convolution_data_type<double>() {
+  LBANN_WARNING("MIOpen does not support double");
+  return get_data_type<float>();
 }
 
 #define PROTO(T)                                                               \

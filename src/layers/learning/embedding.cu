@@ -194,7 +194,6 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute()
   else if (El::To<float>(dst_scale) != 1.0f) {
     El::Scale(dst_scale, local_embedding_grad);
   }
-
   if (!local_input.IsEmpty()) {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_embedding_grad),
                                        gpu::get_sync_info(local_output_grad),
