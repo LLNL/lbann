@@ -216,7 +216,7 @@ TEST_CASE("cuTT tensor permutation", "[permute][layer][gpu][cutt]")
   // pdims = { 3, 5, 4, 6 }
   // pstrides = { 120, 24, 6, 1 }
   auto const matrix_height = lbann::get_linear_size_as<El::Int>(lbann_dims);
-  El::Int const matrix_width = 7;
+  El::Int const matrix_width = GENERATE(1, 7);
   El::Int const in_matrix_ldim = matrix_height /*+ 4*/;
   El::Int const out_matrix_ldim = matrix_height /*+ 7*/;
   El::Matrix<float, El::Device::GPU> in_mat(matrix_height,
