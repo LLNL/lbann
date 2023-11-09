@@ -225,7 +225,6 @@ void model::serialize(Archive& ar)
     // CEREAL_NVP(m_model_is_setup),
     CEREAL_NVP(m_max_mini_batch_size),
     // CEREAL_NVP(m_current_mini_batch_size),
-    CEREAL_NVP(m_max_mini_batch_size),
     CEREAL_NVP(m_amp_enabled),
     CEREAL_NVP(m_amp_scale_factor),
     CEREAL_NVP(m_amp_growth_factor),
