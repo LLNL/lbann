@@ -316,7 +316,8 @@ function uninstall_specific_versions()
 # This should be a commit hash (NOT a tag) that needs to exist in the
 # spack repository that is checked out. It's a minimum version, so
 # more commits is fine.
-MIN_SPACK_COMMIT=8cd9497522939222dc304ee3708fd3154154f67b
+MIN_SPACK_COMMIT=7a4df732e1a6b6eaf6d6a9675c5857e7e53d5445
+#MIN_SPACK_COMMIT=8cd9497522939222dc304ee3708fd3154154f67b
 
 # "spack" is just a shell function; it may not be exported to this
 # scope. Just to be sure, reload the shell integration.
