@@ -163,15 +163,14 @@ private:
                          DimsType const& in_dims,
                          DimsType const& out_dims,
                          El::Matrix<DataT, El::Device::GPU> const& in,
-                         El::Matrix<DataT, El::Device::GPU> const& out) const;
+                         El::Matrix<DataT, El::Device::GPU>& out) const;
 
   template <typename DataT>
-  cuttHandle
-  get_sample_plan(ColMajorPerm const& perm,
-                  DimsType const& in_dims,
-                  DimsType const& out_dims,
-                  El::Matrix<DataT, El::Device::GPU> const& in,
-                  El::Matrix<DataT, El::Device::GPU> const& out) const;
+  cuttHandle get_sample_plan(ColMajorPerm const& perm,
+                             DimsType const& in_dims,
+                             DimsType const& out_dims,
+                             El::Matrix<DataT, El::Device::GPU> const& in,
+                             El::Matrix<DataT, El::Device::GPU>& out) const;
 
   template <typename DataT>
   bool is_mb_permutable(El::Matrix<DataT, El::Device::GPU> const& in,
@@ -255,13 +254,13 @@ inline void cuTT_PermuteImpl::set_dims(DimsType input_dims)
 }
 
 template <typename DataT>
-cuttHandle cuTT_PermuteImpl::get_mb_plan(
-  PlanMap& plan_map,
-  ColMajorPerm const& perm,
-  DimsType const& in_dims,
-  DimsType const& out_dims,
-  El::Matrix<DataT, El::Device::GPU> const& in,
-  El::Matrix<DataT, El::Device::GPU> const& out) const
+cuttHandle
+cuTT_PermuteImpl::get_mb_plan(PlanMap& plan_map,
+                              ColMajorPerm const& perm,
+                              DimsType const& in_dims,
+                              DimsType const& out_dims,
+                              El::Matrix<DataT, El::Device::GPU> const& in,
+                              El::Matrix<DataT, El::Device::GPU>& out) const
 {
   LBANN_ASSERT_DEBUG(in.Width() == out.Width());
   LBANN_ASSERT_DEBUG(perm.size() == in_dims.size() &&
@@ -273,33 +272,37 @@ cuttHandle cuTT_PermuteImpl::get_mb_plan(
     permutation.push_back(static_cast<int>(perm.size()));
     dimensions.push_back(in.Width());
     cuttHandle plan = 0U;
-    LBANN_CHECK_CUTT(cuttPlan(&plan,
-                              dimensions.size(),
-                              dimensions.data(),
-                              permutation.data(),
-                              sizeof(DataT),
-                              out.GetSyncInfo().Stream()));
+    LBANN_CHECK_CUTT(cuttPlanMeasure(&plan,
+                                     dimensions.size(),
+                                     dimensions.data(),
+                                     permutation.data(),
+                                     sizeof(DataT),
+                                     out.GetSyncInfo().Stream(),
+                                     const_cast<DataT*>(in.LockedBuffer()),
+                                     out.Buffer()));
     plan_map.emplace(key, plan);
   }
   return plan_map[key];
 }
 
 template <typename DataT>
-cuttHandle cuTT_PermuteImpl::get_sample_plan(
-  ColMajorPerm const& perm,
-  DimsType const& in_dims,
-  DimsType const& out_dims,
-  El::Matrix<DataT, El::Device::GPU> const& in,
-  El::Matrix<DataT, El::Device::GPU> const& out) const
+cuttHandle
+cuTT_PermuteImpl::get_sample_plan(ColMajorPerm const& perm,
+                                  DimsType const& in_dims,
+                                  DimsType const& out_dims,
+                                  El::Matrix<DataT, El::Device::GPU> const& in,
+                                  El::Matrix<DataT, El::Device::GPU>& out) const
 {
   std::vector<int> permutation(perm.get()), dimensions(in_dims.get());
   Plan plan = 0UL;
-  LBANN_CHECK_CUTT(cuttPlan(&plan,
-                            dimensions.size(),
-                            dimensions.data(),
-                            permutation.data(),
-                            sizeof(DataT),
-                            out.GetSyncInfo().Stream()));
+  LBANN_CHECK_CUTT(cuttPlanMeasure(&plan,
+                                   dimensions.size(),
+                                   dimensions.data(),
+                                   permutation.data(),
+                                   sizeof(DataT),
+                                   out.GetSyncInfo().Stream(),
+                                   const_cast<DataT*>(in.LockedBuffer()),
+                                   out.Buffer()));
   return plan;
 }
 
@@ -323,7 +326,7 @@ void cuTT_PermuteImpl::permute(El::Matrix<DataT, El::Device::GPU> const& in,
     do_mb_permute(m_fwd_plans, m_perm, m_input_dims, m_output_dims, in, out);
   else
     do_sample_permute(m_sample_fwd_plan,
-                      m_inv_perm,
+                      m_perm,
                       m_input_dims,
                       m_output_dims,
                       in,
