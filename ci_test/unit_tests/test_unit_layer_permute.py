@@ -19,7 +19,7 @@ import tools
 # the functions below to ingest data.
 
 # Data
-_sample_dims = [3, 4, 5, 6];
+_sample_dims = [3, 4, 5, 6]
 _input_size = np.prod(_sample_dims)
 seed = 202200603
 
