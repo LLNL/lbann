@@ -74,10 +74,10 @@ allocate lc resources:
 
 # Build LBANN and establish the Spack environment for this pipeline.
 build and install:
-  rules:
-    - if: '$JOB_ID == ""'
-      when: never
-    - when: always
+  # rules:
+  #   - if: '$JOB_ID == ""'
+  #     when: never
+  #   - when: always
   extends:
     - .tioga common
     - .lbann-base-vars
@@ -92,6 +92,7 @@ build and install:
     #     echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
     #   fi
     # - !reference [.check_allocation, script]
+    - exit 42
     - echo "== BUILDING LBANN =="
     - export FLUX_F58_FORCE_ASCII=t
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
