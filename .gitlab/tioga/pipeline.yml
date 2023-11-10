@@ -59,7 +59,7 @@ allocate lc resources:
     - jobid=$(flux --parent alloc -N ${LBANN_NNODES} --exclusive -t ${TEST_TIME} --job-name=${JOB_NAME} --bg)
     - export JOB_ID=$jobid
 #    - echo "export JOB_ID=$jobid" > lc_allocation_id.txt
-  timeout: 1m
+  timeout: 2m
 #  timeout: 6h
   allow_failure: true
 
@@ -75,10 +75,10 @@ allocate lc resources:
 
 # Build LBANN and establish the Spack environment for this pipeline.
 build and install:
-  variables:
-    ALLOCATED_JOB_ID: "${JOB_ID}"
+  # variables:
+  #   ALLOCATED_JOB_ID: "${JOB_ID}"
   rules:
-    - if: '$ALLOCATED_JOB_ID == "UNALLOCATED"'
+    - if: '"${JOB_ID}" == "UNALLOCATED"'
       when: never
     - when: always
   extends:
