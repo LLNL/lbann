@@ -78,7 +78,7 @@ build and install:
   variables:
     ALLOCATED_JOB_ID: "${JOB_ID}"
   rules:
-    - if: 'ALLOCATED_$JOB_ID == "UNALLOCATED"'
+    - if: '$ALLOCATED_JOB_ID == "UNALLOCATED"'
       when: never
     - when: always
   extends:
