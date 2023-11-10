@@ -64,13 +64,13 @@ allocate lc resources:
 
 .check_allocation:
   script:
-    - >
-    if [ -z "${JOB_ID}" ]; then
-      echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
-      exit 42
-    else
-      echo "== CI JOB RUNNING WITH JOB_ID = ${JOB_ID} =="
-    fi
+    - |
+      if [ -z "$JOB_ID" ]; then
+        echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
+        exit 42
+      else
+        echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
+      fi
 
 # Build LBANN and establish the Spack environment for this pipeline.
 build and install:
