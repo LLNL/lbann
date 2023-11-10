@@ -78,9 +78,12 @@ build and install:
   # variables:
   #   ALLOCATED_JOB_ID: "${JOB_ID}"
   rules:
-    - if: '"${JOB_ID}" == "UNALLOCATED"'
-      when: never
-    - when: always
+    - if: '${JOB_ID} =~ /f*/''
+      when: always
+    # - if: '"${JOB_ID}" == "UNALLOCATED"'
+    #   when: never
+#    - when: always
+    - when: never
   extends:
     - .tioga common
     - .lbann-base-vars
