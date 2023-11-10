@@ -148,7 +148,6 @@
     paths:
       - spack-*.txt
       - spack-ci-env-name.sh
-      - lc_allocation_id.txt
       - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*.cmake
       - LBANN_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*_setup_build_tools.sh
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/install/*
