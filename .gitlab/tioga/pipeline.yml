@@ -58,7 +58,7 @@ allocate lc resources:
     - jobid=$(flux --parent alloc -N ${LBANN_NNODES} --exclusive -t ${TEST_TIME} --job-name=${JOB_NAME} --bg)
     - export JOB_ID=$jobid
 #    - echo "export JOB_ID=$jobid" > lc_allocation_id.txt
-  timeout: 2m
+  timeout: 1m
 #  timeout: 6h
   allow_failure: true
 
@@ -74,19 +74,23 @@ allocate lc resources:
 
 # Build LBANN and establish the Spack environment for this pipeline.
 build and install:
+  rules:
+    - if: '$JOB_ID == ""'
+      when: never
+    - when: always
   extends:
     - .tioga common
     - .lbann-base-vars
     - .lbann-artifacts
   stage: build
   script:
-    - |
-      if [ -z "$JOB_ID" ]; then
-        echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
-        exit 42
-      else
-        echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
-      fi
+    # - |
+    #   if [ -z "$JOB_ID" ]; then
+    #     echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
+    #     exit 42
+    #   else
+    #     echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
+    #   fi
     # - !reference [.check_allocation, script]
     - echo "== BUILDING LBANN =="
     - export FLUX_F58_FORCE_ASCII=t
@@ -111,6 +115,10 @@ build and install:
 
 # Run the Python-based unit tests.
 unit tests:
+  rules:
+    - if: '$JOB_ID == ""'
+      when: never
+    - when: always
   extends:
     - .tioga common
     - .lbann-base-vars
@@ -119,13 +127,13 @@ unit tests:
   dependencies:
     - build and install
   script:
-    - |
-      if [ -z "$JOB_ID" ]; then
-        echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
-        exit 42
-      else
-        echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
-      fi
+    # - |
+    #   if [ -z "$JOB_ID" ]; then
+    #     echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
+    #     exit 42
+    #   else
+    #     echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
+    #   fi
     # - !reference [.check_allocation, script]
     - echo "== RUNNING PYTHON-BASED UNIT TESTS =="
     - echo "Testing $(which lbann)"
@@ -147,6 +155,10 @@ unit tests:
 
 # Run the Python-based integration tests.
 integration tests:
+  rules:
+    - if: '$JOB_ID == ""'
+      when: never
+    - when: always
   extends:
     - .tioga common
     - .lbann-base-vars
@@ -157,13 +169,13 @@ integration tests:
   rules:
     - !reference [.lbann-test-rules, rules]
   script:
-    - |
-      if [ -z "$JOB_ID" ]; then
-        echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
-        exit 42
-      else
-        echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
-      fi
+    # - |
+    #   if [ -z "$JOB_ID" ]; then
+    #     echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
+    #     exit 42
+    #   else
+    #     echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
+    #   fi
     # - !reference [.check_allocation, script]
     - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
     - echo "Testing $(which lbann)"
@@ -188,6 +200,10 @@ integration tests:
 check catch2 tests:
   variables:
     GIT_STRATEGY: none
+  rules:
+    - if: '$JOB_ID == ""'
+      when: never
+    - when: always
   extends:
     - .tioga common
     - .lbann-base-vars
@@ -195,13 +211,13 @@ check catch2 tests:
   dependencies:
     - build and install
   script:
-    - |
-      if [ -z "$JOB_ID" ]; then
-        echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
-        exit 42
-      else
-        echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
-      fi
+    # - |
+    #   if [ -z "$JOB_ID" ]; then
+    #     echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
+    #     exit 42
+    #   else
+    #     echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
+    #   fi
     # - !reference [.check_allocation, script]
     - ([[ $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
   artifacts:
