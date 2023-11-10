@@ -111,15 +111,27 @@
     - echo "export LBANN_BUILD_PARENT_DIR=${LBANN_BUILD_PARENT_DIR}" >> spack-ci-env-name.sh
     - echo "export LBANN_MODFILES_DIR=${LBANN_MODFILES_DIR}" >> spack-ci-env-name.sh
 
-# Cleanup the pipeline's Spack environment.
-# Switching over to reusing Spack environments for each feature branch so don't remove them immediately
-# Cleanup any build directories and spack environments older than 5 days since last use
-.cleanup old spack environment:
+.cleanup old build objects:
+  rules:
+    - exists:
+      - spack-ci-env-name.sh
   script:
     - echo "== CLEAN BUILD DIRECTORY =="
     - source spack-ci-env-name.sh
     - echo "== CLEANING ${LBANN_BUILD_PARENT_DIR}/build =="
     - cmake --build ${LBANN_BUILD_PARENT_DIR}/build --target clean
+
+# Cleanup the pipeline's Spack environment.
+# Switching over to reusing Spack environments for each feature branch so don't remove them immediately
+# Cleanup any build directories and spack environments older than 5 days since last use
+.cleanup old spack environment:
+  script:
+    - echo "== CLEAN CI =="
+    - !reference [.cleanup old build objects, script]
+    ## - echo "== CLEAN BUILD DIRECTORY =="
+    ## - source spack-ci-env-name.sh
+    ## - echo "== CLEANING ${LBANN_BUILD_PARENT_DIR}/build =="
+    ## - cmake --build ${LBANN_BUILD_PARENT_DIR}/build --target clean
     - echo "== REMOVING BUILD RESOURCES =="
     - find ${CI_PROJECT_DIR}/builds -maxdepth 1 -mtime +2 -name "lbann_*" -type d -print -exec rm -r {} \;
     - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +2 -name "LBANN_*_setup_build_tools.sh" -type f -print -exec rm {} \;
@@ -129,6 +141,7 @@
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
     - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +5 -type d -exec basename {} \; | xargs -r spack env rm --yes-to-all
+  allow_failure: true
 
 .lbann-artifacts:
   artifacts:
