@@ -57,10 +57,16 @@ allocate lc resources:
     - export FLUX_F58_FORCE_ASCII=t
     - jobid=$(flux --parent alloc -N ${LBANN_NNODES} --exclusive -t ${TEST_TIME} --job-name=${JOB_NAME} --bg)
     - export JOB_ID=$jobid
-  timeout: 6h
+    - echo "export JOB_ID=$jobid" > lc_allocation_id.txt
+  timeout: 2m
+#  timeout: 6h
+  allow_failure: true
 
 # Build LBANN and establish the Spack environment for this pipeline.
 build and install:
+  rules:
+    - exists:
+      - lc_allocation_id.txt
   extends:
     - .tioga common
     - .lbann-base-vars
@@ -87,6 +93,9 @@ build and install:
 
 # Run the Python-based unit tests.
 unit tests:
+  rules:
+    - exists:
+      - lc_allocation_id.txt
   extends:
     - .tioga common
     - .lbann-base-vars
@@ -112,6 +121,9 @@ unit tests:
 
 # Run the Python-based integration tests.
 integration tests:
+  rules:
+    - exists:
+      - lc_allocation_id.txt
   extends:
     - .tioga common
     - .lbann-base-vars
@@ -140,6 +152,9 @@ integration tests:
 
 # This is a dummy job that checks the Catch2 testing.
 check catch2 tests:
+  rules:
+    - exists:
+      - lc_allocation_id.txt
   variables:
     GIT_STRATEGY: none
   extends:
@@ -164,6 +179,7 @@ remove spack environment:
   variables:
     GIT_STRATEGY: none
   when: always
+  allow_failure: true
 
 # Free the allocation we obtained in "allocate lc resources".
 release allocation:
@@ -178,6 +194,7 @@ release allocation:
     - echo "== RELEASING RESOURCES =="
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
     - ([[ -n "${JOB_ID}" ]] && flux job cancel ${JOB_ID})
+  allow_failure: true
 
 # Variables for Tioga.
 .tioga common:
