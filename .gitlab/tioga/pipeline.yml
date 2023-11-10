@@ -55,6 +55,7 @@ allocate lc resources:
     - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "150m" || echo "120m")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
     - export FLUX_F58_FORCE_ASCII=t
+    - export JOB_ID="UNALLOCATED"
     - jobid=$(flux --parent alloc -N ${LBANN_NNODES} --exclusive -t ${TEST_TIME} --job-name=${JOB_NAME} --bg)
     - export JOB_ID=$jobid
 #    - echo "export JOB_ID=$jobid" > lc_allocation_id.txt
@@ -74,10 +75,12 @@ allocate lc resources:
 
 # Build LBANN and establish the Spack environment for this pipeline.
 build and install:
-  # rules:
-  #   - if: '$JOB_ID == ""'
-  #     when: never
-  #   - when: always
+  variables:
+    ALLOCATED_JOB_ID: "${JOB_ID}"
+  rules:
+    - if: 'ALLOCATED_$JOB_ID == "UNALLOCATED"'
+      when: never
+    - when: always
   extends:
     - .tioga common
     - .lbann-base-vars
@@ -92,7 +95,7 @@ build and install:
     #     echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
     #   fi
     # - !reference [.check_allocation, script]
-    - exit 42
+#    - exit 42
     - echo "== BUILDING LBANN =="
     - export FLUX_F58_FORCE_ASCII=t
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
