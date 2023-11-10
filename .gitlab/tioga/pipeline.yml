@@ -62,15 +62,15 @@ allocate lc resources:
 #  timeout: 6h
   allow_failure: true
 
-.check_allocation:
-  script:
-    - |
-      if [ -z "$JOB_ID" ]; then
-        echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
-        exit 42
-      else
-        echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
-      fi
+# .check_allocation:
+#   script:
+#     - |
+#       if [ -z "$JOB_ID" ]; then
+#         echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
+#         exit 42
+#       else
+#         echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
+#       fi
 
 # Build LBANN and establish the Spack environment for this pipeline.
 build and install:
@@ -80,7 +80,14 @@ build and install:
     - .lbann-artifacts
   stage: build
   script:
-    - !reference [.check_allocation, script]
+    - |
+      if [ -z "$JOB_ID" ]; then
+        echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
+        exit 42
+      else
+        echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
+      fi
+    # - !reference [.check_allocation, script]
     - echo "== BUILDING LBANN =="
     - export FLUX_F58_FORCE_ASCII=t
     - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
@@ -112,7 +119,14 @@ unit tests:
   dependencies:
     - build and install
   script:
-    - !reference [.check_allocation, script]
+    - |
+      if [ -z "$JOB_ID" ]; then
+        echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
+        exit 42
+      else
+        echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
+      fi
+    # - !reference [.check_allocation, script]
     - echo "== RUNNING PYTHON-BASED UNIT TESTS =="
     - echo "Testing $(which lbann)"
     - export FLUX_F58_FORCE_ASCII=t
@@ -143,7 +157,14 @@ integration tests:
   rules:
     - !reference [.lbann-test-rules, rules]
   script:
-    - !reference [.check_allocation, script]
+    - |
+      if [ -z "$JOB_ID" ]; then
+        echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
+        exit 42
+      else
+        echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
+      fi
+    # - !reference [.check_allocation, script]
     - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
     - echo "Testing $(which lbann)"
     - export FLUX_F58_FORCE_ASCII=t
@@ -174,7 +195,14 @@ check catch2 tests:
   dependencies:
     - build and install
   script:
-    - !reference [.check_allocation, script]
+    - |
+      if [ -z "$JOB_ID" ]; then
+        echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
+        exit 42
+      else
+        echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
+      fi
+    # - !reference [.check_allocation, script]
     - ([[ $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
   artifacts:
     reports:
