@@ -30,6 +30,7 @@
 
 variables:
   FF_USE_NEW_BASH_EVAL_STRATEGY: 1
+  FF_ENABLE_BASH_EXIT_CODE_CHECK: 1
 
 stages:
   - run-all-clusters
