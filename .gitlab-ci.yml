@@ -28,6 +28,9 @@
 # clusters. To run testing locally, consult the README in the ci_test
 # directory.
 
+variables:
+  FF_USE_NEW_BASH_EVAL_STRATEGY: 1
+
 stages:
   - run-all-clusters
 
@@ -121,7 +124,6 @@ tioga testing:
 tioga distconv testing:
   stage: run-all-clusters
   variables:
-    FF_USE_NEW_BASH_EVAL_STRATEGY: 1
     JOB_NAME_SUFFIX: _distconv
     SPACK_ENV_BASE_NAME_MODIFIER: "-distconv"
     SPACK_SPECS: "+rocm +distconv"
