@@ -83,6 +83,12 @@ build and install:
   stage: build
   script:
     - |
+      if [ $FF_USE_NEW_BASH_EVAL_STRATEGY ]; then
+        echo "== Using the new exval strategy =="
+      else
+        echo "== Using the old eval strategy =="
+      fi
+    - |
       if [ -z "$JOB_ID" ]; then
         echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
         exit 42
