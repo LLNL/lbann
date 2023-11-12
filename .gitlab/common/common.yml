@@ -181,7 +181,7 @@
         echo "== Not checking the exit code =="
       fi
     - |
-      if [ -z "$JOB_ID" ]; then
+      if [ -z "${JOB_ID}" ]; then
         echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
         exit 42
       else
