@@ -637,19 +637,19 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
 
     ##########################################################################################
     # Set an upstream spack repository that is holding standard dependencies
-    if [[ -r "${CENTER_UPSTREAM_PATH:-}" ]]; then
-        EXISTING_UPSTREAM=`spack config get upstreams`
-        if [[ ${EXISTING_UPSTREAM} == "upstreams: {}" ]]; then
-            read -p "Do you want to add pointer for this spack repository to ${CENTER_UPSTREAM_PATH} (y/N): " response
-            if [[ ${response^^} == "Y" ]]; then
-                CMD="spack config --scope site add upstreams:spack-lbann-vast:install_tree:${CENTER_UPSTREAM_PATH}"
-                echo ${CMD} | tee -a ${LOG}
-                [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-            fi
-        else
-            printf "Spack is using\n${EXISTING_UPSTREAM}\n"
-        fi
-    fi
+    # if [[ -r "${CENTER_UPSTREAM_PATH:-}" ]]; then
+    #     EXISTING_UPSTREAM=`spack config get upstreams`
+    #     if [[ ${EXISTING_UPSTREAM} == "upstreams: {}" ]]; then
+    #         read -p "Do you want to add pointer for this spack repository to ${CENTER_UPSTREAM_PATH} (y/N): " response
+    #         if [[ ${response^^} == "Y" ]]; then
+    #             CMD="spack config --scope site add upstreams:spack-lbann-vast:install_tree:${CENTER_UPSTREAM_PATH}"
+    #             echo ${CMD} | tee -a ${LOG}
+    #             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    #         fi
+    #     else
+    #         printf "Spack is using\n${EXISTING_UPSTREAM}\n"
+    #     fi
+    # fi
 
     # If the dependencies are being installed then you should clean things up
     if [[ -n "${INSTALL_DEPS:-}" ]]; then
@@ -799,12 +799,12 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
         # Find key externals that you don't want to ever rebuild
-        CMD="spack external find --not-buildable --scope env:${LBANN_ENV} bzip2 cuda cudnn git hwloc libfabric nccl ncurses openblas openssl perl rdma-core sqlite spectrum-mpi mvapich2 openmpi netlib-lapack"
+        CMD="spack external find --not-buildable --scope env:${LBANN_ENV} bzip2 cuda cudnn git libfabric nccl ncurses openblas openssl perl rdma-core sqlite spectrum-mpi mvapich2 openmpi netlib-lapack"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
         # Find externals that you are allowed to rebuild
-        CMD="spack external find --scope env:${LBANN_ENV} hdf5"
+        CMD="spack external find --scope env:${LBANN_ENV} hdf5 hwloc"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
