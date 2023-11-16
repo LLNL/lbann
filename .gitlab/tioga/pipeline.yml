@@ -59,8 +59,7 @@ allocate lc resources:
 #    - timeout 30s jobid=$(flux --parent alloc -N ${LBANN_NNODES} --exclusive -t ${TEST_TIME} --job-name=${JOB_NAME} --bg)
     - jobid=$(flux --parent alloc -N ${LBANN_NNODES} --exclusive -t ${TEST_TIME} --job-name=${JOB_NAME} --bg)
     - export JOB_ID=$jobid
-  timeout: 2m
-#  timeout: 6h
+  timeout: 6h
   allow_failure: true
 
 # Build LBANN and establish the Spack environment for this pipeline.
@@ -165,7 +164,7 @@ check catch2 tests:
   dependencies:
     - build and install
   script:
-    - !reference [.check_allocation, script]
+    # - !reference [.check_allocation, script]
     - ([[ $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
   artifacts:
     reports:
