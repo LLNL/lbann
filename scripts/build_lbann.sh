@@ -794,7 +794,12 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         # fi
 
         # Use standard tags for common packages
-        CMD="spack external find --not-buildable --scope env:${LBANN_ENV} --tag core-packages --tag build-tools --tag rocm"
+        CMD="spack external find --not-buildable --scope env:${LBANN_ENV} --tag core-packages --tag rocm"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+        # Permit new build tools to be compiled
+        CMD="spack external find --scope env:${LBANN_ENV} --tag build-tools"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
