@@ -56,7 +56,6 @@ allocate lc resources:
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
     - export FLUX_F58_FORCE_ASCII=t
     - export JOB_ID="UNALLOCATED"
-#    - timeout 30s jobid=$(flux --parent alloc -N ${LBANN_NNODES} --exclusive -t ${TEST_TIME} --job-name=${JOB_NAME} --bg)
     - jobid=$(flux --parent alloc -N ${LBANN_NNODES} --exclusive -t ${TEST_TIME} --job-name=${JOB_NAME} --bg)
     - export JOB_ID=$jobid
   timeout: 6h
@@ -117,9 +116,9 @@ unit tests:
       - ci_test/unit_tests/results.xml
     reports:
       junit: ci_test/unit_tests/results.xml
-  allow_failure:
-    exit_codes:
-      - 42
+  # allow_failure:
+  #   exit_codes:
+  #     - 42
 
 # Run the Python-based integration tests.
 integration tests:
@@ -149,9 +148,9 @@ integration tests:
       - ci_test/integration_tests/results.xml
     reports:
       junit: ci_test/integration_tests/results.xml
-  allow_failure:
-    exit_codes:
-      - 42
+  # allow_failure:
+  #   exit_codes:
+  #     - 42
 
 # This is a dummy job that checks the Catch2 testing.
 check catch2 tests:
@@ -169,9 +168,9 @@ check catch2 tests:
   artifacts:
     reports:
       junit: ${RESULTS_DIR}/*.xml
-  allow_failure:
-    exit_codes:
-      - 42
+  # allow_failure:
+  #   exit_codes:
+  #     - 42
 
 # Cleanup the pipeline's Spack environment.
 remove spack environment:
@@ -205,10 +204,8 @@ release allocation:
   variables:
     # Just the obvious identifier. Which specific node doesn't matter.
     SYSTEM_NAME: tioga
-    # SPACK_USER_CACHE_PATH: /g/g14/lbannusr/spack_repos/.spack_${SYSTEM_NAME}
-    # SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
-    SPACK_USER_CACHE_PATH: /g/g14/lbannusr/spack_repos/.spack_test
-    SPACK_REPO: spack_repos/spack_test.git
+    SPACK_USER_CACHE_PATH: /g/g14/lbannusr/spack_repos/.spack_${SYSTEM_NAME}
+    SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
 
     # These are system-specific specs that should be forwarded to the
     # build script

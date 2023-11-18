@@ -166,24 +166,24 @@
       when: never
     - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
 
-.check_allocation:
-  script:
-    - |
-      if [ $FF_USE_NEW_BASH_EVAL_STRATEGY ]; then
-        echo "== Using the new eval strategy =="
-      else
-        echo "== Using the old eval strategy =="
-      fi
-    - |
-      if [ $FF_ENABLE_BASH_EXIT_CODE_CHECK ]; then
-        echo "== Enable BASH exit code check =="
-      else
-        echo "== Not checking the exit code =="
-      fi
-    - |
-      if [ -z "${JOB_ID}" ]; then
-        echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
-        exit 42
-      else
-        echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
-      fi
+# .check_allocation:
+#   script:
+#     - |
+#       if [ $FF_USE_NEW_BASH_EVAL_STRATEGY ]; then
+#         echo "== Using the new eval strategy =="
+#       else
+#         echo "== Using the old eval strategy =="
+#       fi
+#     - |
+#       if [ $FF_ENABLE_BASH_EXIT_CODE_CHECK ]; then
+#         echo "== Enable BASH exit code check =="
+#       else
+#         echo "== Not checking the exit code =="
+#       fi
+#     - |
+#       if [ -z "${JOB_ID}" ]; then
+#         echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
+#         exit 42
+#       else
+#         echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
+#       fi

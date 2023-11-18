@@ -637,19 +637,19 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
 
     ##########################################################################################
     # Set an upstream spack repository that is holding standard dependencies
-    # if [[ -r "${CENTER_UPSTREAM_PATH:-}" ]]; then
-    #     EXISTING_UPSTREAM=`spack config get upstreams`
-    #     if [[ ${EXISTING_UPSTREAM} == "upstreams: {}" ]]; then
-    #         read -p "Do you want to add pointer for this spack repository to ${CENTER_UPSTREAM_PATH} (y/N): " response
-    #         if [[ ${response^^} == "Y" ]]; then
-    #             CMD="spack config --scope site add upstreams:spack-lbann-vast:install_tree:${CENTER_UPSTREAM_PATH}"
-    #             echo ${CMD} | tee -a ${LOG}
-    #             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-    #         fi
-    #     else
-    #         printf "Spack is using\n${EXISTING_UPSTREAM}\n"
-    #     fi
-    # fi
+    if [[ -r "${CENTER_UPSTREAM_PATH:-}" ]]; then
+        EXISTING_UPSTREAM=`spack config get upstreams`
+        if [[ ${EXISTING_UPSTREAM} == "upstreams: {}" ]]; then
+            read -p "Do you want to add pointer for this spack repository to ${CENTER_UPSTREAM_PATH} (y/N): " response
+            if [[ ${response^^} == "Y" ]]; then
+                CMD="spack config --scope site add upstreams:spack-lbann-vast:install_tree:${CENTER_UPSTREAM_PATH}"
+                echo ${CMD} | tee -a ${LOG}
+                [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+            fi
+        else
+            printf "Spack is using\n${EXISTING_UPSTREAM}\n"
+        fi
+    fi
 
     # If the dependencies are being installed then you should clean things up
     if [[ -n "${INSTALL_DEPS:-}" ]]; then

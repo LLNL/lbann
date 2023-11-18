@@ -177,10 +177,8 @@ release allocation:
   variables:
     # Just the obvious identifier. Which specific node doesn't matter.
     SYSTEM_NAME: pascal
-    # SPACK_USER_CACHE_PATH: /g/g14/lbannusr/spack_repos/.spack_${SYSTEM_NAME}
-    # SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
-    SPACK_USER_CACHE_PATH: /g/g14/lbannusr/spack_repos/.spack_test
-    SPACK_REPO: spack_repos/spack_test.git
+    SPACK_USER_CACHE_PATH: /g/g14/lbannusr/spack_repos/.spack_${SYSTEM_NAME}
+    SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
 
     # These are system-specific specs that should be forwarded to the
     # build script
