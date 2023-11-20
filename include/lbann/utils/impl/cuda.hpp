@@ -321,7 +321,7 @@ void allocator<T>::deallocate(allocator<T>::pointer buffer,
   if (ptr != nullptr) {
 #ifdef HYDROGEN_HAVE_CUB
     auto& memory_pool = El::cub::MemoryPool();
-    CHECK_CUDA(memory_pool.DeviceFree(ptr));
+    CHECK_CUDA(memory_pool.DeviceFree(ptr, m_stream));
 #else
     CHECK_CUDA(cudaFree(ptr));
 #endif // HYDROGEN_HAVE_CUB

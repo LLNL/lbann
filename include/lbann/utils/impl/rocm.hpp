@@ -51,8 +51,8 @@ __device__ __forceinline__ __half gpu_lib::atomic_add(__half* address,
     unsigned int* prv_address_as_uint = (unsigned int*)(address - 1);
     unsigned int old = *prv_address_as_uint;
     unsigned int assumed, updated;
-    __half* old_as_half = ((__half*)&old)+1;
-    __half* updated_as_half = ((__half*)&updated)+1;
+    __half* old_as_half = ((__half*)&old) + 1;
+    __half* updated_as_half = ((__half*)&updated) + 1;
     do {
       assumed = old;
       updated = old;
@@ -61,8 +61,7 @@ __device__ __forceinline__ __half gpu_lib::atomic_add(__half* address,
     } while (assumed != old);
     return *old_as_half;
   }
-  else
-  {
+  else {
     unsigned int* address_as_uint = (unsigned int*)address;
     unsigned int old = *address_as_uint;
     __half* old_as_half = (__half*)&old;
@@ -311,7 +310,7 @@ void allocator<T>::deallocate(allocator<T>::pointer buffer,
   if (ptr != nullptr) {
 #ifdef HYDROGEN_HAVE_CUB
     auto& memory_pool = El::cub::MemoryPool();
-    CHECK_ROCM(memory_pool.DeviceFree(ptr));
+    CHECK_ROCM(memory_pool.DeviceFree(ptr, m_stream));
 #else
     CHECK_ROCM(hipFree(ptr));
 #endif // HYDROGEN_HAVE_CUB

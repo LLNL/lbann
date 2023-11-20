@@ -45,17 +45,20 @@ namespace lbann {
 namespace callback {
 namespace {
 
-using Datatypes = h2::meta::TL<float, double
-                               #ifdef LBANN_HAS_HALF
-                               , cpu_fp16
-                               #endif
-                               #ifdef LBANN_HAS_GPU_FP16
-                               , fp16
-                               #endif
+using Datatypes = h2::meta::TL<float,
+                               double
+#ifdef LBANN_HAS_HALF
+                               ,
+                               cpu_fp16
+#endif
+#ifdef LBANN_HAS_GPU_FP16
+                               ,
+                               fp16
+#endif
                                >;
 // Need a unary template
 template <typename T>
-using UnaryConstDTL = const data_type_layer<T,T>;
+using UnaryConstDTL = const data_type_layer<T, T>;
 
 template <typename T>
 using ConstADM = std::add_const_t<El::AbstractDistMatrix<T>>;
@@ -69,7 +72,8 @@ using DistMatrixTypes = h2::meta::tlist::ExpandTL<ConstADM, Datatypes>;
  * given in the second argument. Returns the allocated size as well.
  */
 template <typename T>
-size_t report_dist_matrix(El::AbstractDistMatrix<T> const& m, std::ostream& stream)
+size_t report_dist_matrix(El::AbstractDistMatrix<T> const& m,
+                          std::ostream& stream)
 {
   size_t const allocated = m.AllocatedMemory() * sizeof(T);
   stream << m.Height() << " x " << m.Width()
@@ -95,14 +99,16 @@ size_t get_activation_and_error_signal_size(data_type_layer<T> const& dtl,
   return allocated;
 }
 
-struct ReportDistMatrix {
+struct ReportDistMatrix
+{
   template <typename T>
   size_t operator()(std::ostream& os, El::AbstractDistMatrix<T> const& m)
   {
     return report_dist_matrix(m, os);
   }
   template <typename... Args>
-  static size_t DeductionError(Args&&...) {
+  static size_t DeductionError(Args&&...)
+  {
     LBANN_ERROR("Unknown matrix type.");
   }
   static size_t DispatchError(std::ostream&, El::BaseDistMatrix const&)
@@ -117,16 +123,19 @@ struct ReportDistMatrix {
 // amortize our dynamic_cast stack over multiple calls to
 // "report_dist_matrix", which should (statically) dispatch directly
 // here rather than going through the dynamically dispatched overload.
-struct GetActivationAndErrorSignalSize {
+struct GetActivationAndErrorSignalSize
+{
   /**
    *  @brief Print and get maximal activation/error signal size for a layer.
    */
   template <typename T>
-  size_t operator()(std::ostream& reps, data_type_layer<T> const& dtl) {
+  size_t operator()(std::ostream& reps, data_type_layer<T> const& dtl)
+  {
     return get_activation_and_error_signal_size(dtl, reps);
   }
   template <typename... Args>
-  static size_t DeductionError(Args&&...) {
+  static size_t DeductionError(Args&&...)
+  {
     LBANN_ERROR("Unknown layer type.");
   }
   static size_t DispatchError(std::ostream&, Layer const& l)
@@ -281,7 +290,8 @@ void memory_profiler::report_mem_usage(model* m)
 
     // Get maximal activation/error signal size (suboptimal approximation)
     {
-      size_t const allocated = get_activation_and_error_signal_size(*layer, reps);
+      size_t const allocated =
+        get_activation_and_error_signal_size(*layer, reps);
       layer_total_acts += allocated;
       layer_total += allocated;
     }
@@ -565,6 +575,11 @@ void memory_profiler::on_batch_end(model* m)
       std::cout << "MEM: Peak memory usage: "
                 << (m_peak_mem_usage - m_initial_memory_usage) / 1048576.0
                 << " MiB." << std::endl;
+
+#ifdef HYDROGEN_HAVE_CUB
+      auto& pool = El::cub::MemoryPool();
+      pool.Report(std::cout);
+#endif // HYDROGEN_HAVE_CUB
     }
   }
 
