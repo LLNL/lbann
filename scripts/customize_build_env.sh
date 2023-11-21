@@ -116,7 +116,8 @@ set_center_specific_modules()
                 MODULE_CMD="module load gcc/10.2.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                MODULE_CMD="module load StdEnv gcc/10.3.1-magic cmake/3.23.1 openmpi/4.1.2 rocm/5.6.0"
+                MODULE_CMD="module load StdEnv gcc/10.3.1-magic cmake/3.23.1 mvapich2/2.3.7 rocm/5.6.0"
+#                MODULE_CMD="module load StdEnv gcc/10.3.1-magic cmake/3.23.1 openmpi/4.1.2 rocm/5.6.0"
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
             "zen3") # Tioga, RZVernal
@@ -182,11 +183,11 @@ set_center_specific_spack_dependencies()
                 fi
             done
         fi
-        # CENTER_UPSTREAM_PATH="/p/vast1/lbann/spack_installed_packages/opt/spack"
+        CENTER_UPSTREAM_PATH="/p/vast1/lbann/spack_installed_packages/opt/spack"
         # MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
         case ${spack_arch_target} in
             "power9le") # Lassen
-                CENTER_UPSTREAM_PATH="/p/gpfs1/lbann/spack_installed_packages/opt/spack"
+                # CENTER_UPSTREAM_PATH="/p/gpfs1/lbann/spack_installed_packages/opt/spack"
                 CENTER_COMPILER_PATHS="/usr/tce/packages/gcc/gcc-8.3.1 /usr/tce/packages/clang/clang-10.0.1-gcc-8.3.1/"
                 CENTER_COMPILER="%gcc@8.3.1"
                 DEPENDENTS_CENTER_COMPILER="%gcc@8.3.1"
@@ -195,7 +196,7 @@ set_center_specific_spack_dependencies()
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_UPSTREAM_PATH="/p/lustre2/lbann/spack_installed_packages/opt/spack"
+                # CENTER_UPSTREAM_PATH="/p/lustre2/lbann/spack_installed_packages/opt/spack"
                 CENTER_COMPILER_PATHS="/usr/tce/packages/gcc/gcc-10.3.1-magic /usr/workspace/brain/tom/pascal/llvm/latest/"
                 CENTER_COMPILER="%gcc"
 #                CENTER_COMPILER="%clang"
@@ -214,7 +215,8 @@ set_center_specific_spack_dependencies()
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_UPSTREAM_PATH="/p/lustre2/lbann/spack_installed_packages/opt/spack"
                 CENTER_COMPILER="%rocmcc@5.6.0"
-                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.6.0 ^python@3.9.12 ^protobuf@3.21.12"
+                CENTER_DEPENDENCIES="^mvapich2@2.3.7 ^hip@5.6.0 ^python@3.9.12 ^protobuf@3.21.12"
+                #CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.6.0 ^python@3.9.12 ^protobuf@3.21.12"
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
             "zen3") # Tioga, RZVernal
@@ -360,7 +362,7 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: openmpi@4.1.2 arch=${spack_arch}
         modules:
-        - openmpi-tce/4.1.2
+        - openmpi/4.1.2
     mvapich2:
       buildable: false
       version:
@@ -368,7 +370,7 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: mvapich2@2.3.7 arch=${spack_arch}
         modules:
-        - mvapich2-tce/2.3.7
+        - mvapich2/2.3.7
 EOF
                 ;;
             "zen3")
