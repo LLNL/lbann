@@ -118,10 +118,12 @@ class FluxBatchScript(BatchScript):
         # Construct flux run invocation
         args = [launcher]
         args.extend(make_iterable(launcher_args))
+        args.append(f'-u')  # Unbuffered
         args.append(f'--setattr=system.cwd={work_dir}')
         args.append(f'--nodes={nodes}')
         args.append(f'--ntasks={nodes * procs_per_node}')
         args.append(f'--exclusive')
+        # args.append(-f'-o exit-timeout=300s') # Useful for profilers that run on a single rank
         # Ramesh had used a -c flag but doesn't  seem to use it right now
         # args.append(f'-c {int(self.cores_per_node / procs_per_node)}') #--cores-per-task
         args.append(f'-o nosetpgrp')
