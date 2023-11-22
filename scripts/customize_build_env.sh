@@ -207,20 +207,20 @@ set_center_specific_spack_dependencies()
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_UPSTREAM_PATH="/p/lustre2/lbann/spack_installed_packages/opt/spack"
+                # CENTER_UPSTREAM_PATH="/p/lustre2/lbann/spack_installed_packages/opt/spack"
                 CENTER_COMPILER="%gcc"
                 CENTER_DEPENDENCIES="^mvapich2@2.3.6 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_UPSTREAM_PATH="/p/lustre2/lbann/spack_installed_packages/opt/spack"
+                # CENTER_UPSTREAM_PATH="/p/lustre2/lbann/spack_installed_packages/opt/spack"
                 CENTER_COMPILER="%rocmcc@5.6.0"
                 CENTER_DEPENDENCIES="^mvapich2@2.3.7 ^hip@5.6.0 ^python@3.9.12 ^protobuf@3.21.12"
                 #CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.6.0 ^python@3.9.12 ^protobuf@3.21.12"
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
             "zen3") # Tioga, RZVernal
-                CENTER_UPSTREAM_PATH="/p/lustre2/lbann/spack_installed_packages/opt/spack"
+                # CENTER_UPSTREAM_PATH="/p/lustre2/lbann/spack_installed_packages/opt/spack"
                 CENTER_COMPILER="%rocmcc@5.6.0"
                 CENTER_DEPENDENCIES="^cray-mpich@8.1.26 ^hip@5.6.0 ^python@3.9.12 ^protobuf@3.21.12"
                 CENTER_BLAS_LIBRARY="blas=libsci"
@@ -316,6 +316,14 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
+    mvapich2:
+      buildable: false
+      version:
+      - '2.3.7'
+      externals:
+      - spec: mvapich2@2.3.7 arch=${spack_arch}
+        modules:
+        - mvapich2/2.3.7
 EOF
                 ;;
             "power9le" | "power8le")
@@ -623,6 +631,8 @@ EOF
 cat <<EOF >> ${yaml}
         - '${DEPENDENTS_CORE_COMPILER}'
 EOF
+
+
         fi
     fi
 
