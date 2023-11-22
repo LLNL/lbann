@@ -108,21 +108,21 @@ set_center_specific_modules()
                 MODULE_CMD_CLANG="module load clang/10.0.1-gcc-8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2"
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
-                MODULE_CMD_GCC="module load gcc/10.3.1-magic cuda/11.8.0 mvapich2/2.3.7 python/3.9.12"
+                MODULE_CMD_GCC="module load gcc/10.3.1 cuda/11.8.0 mvapich2/2.3.7 python/3.9.12"
                 # Note that clang is installed in /usr/workspace/brain/tom/pascal/llvm/latest/ and it is version 17.0.0
-                MODULE_CMD_CLANG="module load gcc/10.3.1-magic cuda/11.8.0 mvapich2/2.3.7 python/3.9.12"
+                MODULE_CMD_CLANG="module load gcc/10.3.1 cuda/11.8.0 mvapich2/2.3.7 python/3.9.12"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
                 MODULE_CMD="module load gcc/10.2.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                MODULE_CMD="module load StdEnv gcc/10.3.1-magic cmake/3.23.1 mvapich2/2.3.7 rocm/5.6.0"
+                MODULE_CMD="module load StdEnv gcc/10.3.1 cmake/3.23.1 mvapich2/2.3.7 rocm/5.6.0"
 #                MODULE_CMD="module load StdEnv gcc/10.3.1-magic cmake/3.23.1 openmpi/4.1.2 rocm/5.6.0"
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
             "zen3") # Tioga, RZVernal
 #                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 amd/5.6.0 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-amd/8.4.0 StdEnv cmake/3.23.1"
-                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.0 perftools-base/23.05.0 amd/5.6.0 craype/2.7.21 cray-libsci/23.05.1.4 PrgEnv-amd/8.4.0 cray-mpich/8.1.26 StdEnv cmake/3.24.2"
+                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.05.0 amd/5.6.0 craype/2.7.21 cray-libsci/23.05.1.4 PrgEnv-amd/8.4.0 cray-mpich/8.1.27 StdEnv cmake/3.24.2"
 #                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/23.02.0 amd/5.6.0 craype/2.7.19 cray-libsci/23.02.1.1 PrgEnv-amd/8.4.0 cray-mpich/8.1.26 StdEnv cmake/3.24.2"
                 ;;
             *)
@@ -222,7 +222,7 @@ set_center_specific_spack_dependencies()
             "zen3") # Tioga, RZVernal
                 # CENTER_UPSTREAM_PATH="/p/lustre2/lbann/spack_installed_packages/opt/spack"
                 CENTER_COMPILER="%rocmcc@5.6.0"
-                CENTER_DEPENDENCIES="^cray-mpich@8.1.26 ^hip@5.6.0 ^python@3.9.12 ^protobuf@3.21.12"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.27 ^hip@5.6.0 ^python@3.9.12 ^protobuf@3.21.12"
                 CENTER_BLAS_LIBRARY="blas=libsci"
                 # Override the conduit variants for the cray compilers
                 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis"
@@ -430,11 +430,11 @@ cat <<EOF  >> ${yaml}
     cray-mpich:
       buildable: false
       version:
-      - '8.1.26'
+      - '8.1.27'
       externals:
-      - spec: cray-mpich@8.1.26 %rocmcc arch=${spack_arch}
+      - spec: cray-mpich@8.1.27 %rocmcc arch=${spack_arch}
         modules:
-        - amd/5.6.0 PrgEnv-amd/8.4.0 cray-mpich/8.1.26
+        - amd/5.6.0 PrgEnv-amd/8.4.0 cray-mpich/8.1.27
       # - spec: cray-mpich@8.1.24 +wrappers %cc arch=${spack_arch}
       #   prefix: /opt/cray/pe/mpich/8.1.24/ofi/crayclang/10.0/
       # - spec: cray-mpich@8.1.24 +wrappers %rocmcc arch=${spack_arch}
