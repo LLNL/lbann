@@ -29,20 +29,28 @@
 #include "lbann/callbacks/gradient_clipping.hpp"
 #include "lbann/comm_impl.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
-#include "lbann/layers/loss/l2_norm2.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/weights/weights.hpp"
 
 #include "callback_helpers.hpp"
 #include "lbann/proto/callbacks.pb.h"
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
 
 #include <vector>
 
 namespace lbann {
 namespace callback {
+
+static inline bool on_subgrid(El::BaseDistMatrix const& mat)
+{
+  return mat.DistData().grid->Size() !=
+         ::lbann::get_trainer().get_comm()->get_trainer_grid().Size();
+}
 
 clip_gradient_norm::clip_gradient_norm()
   : clip_gradient_norm(std::vector<std::string>{})
@@ -84,36 +92,163 @@ void clip_gradient_norm::write_specific_proto(lbann_data::Callback& proto) const
   msg->set_value(m_value);
 }
 
+struct NormComputer
+{
+  model& m;
+  DataType* global_norm_ptr;
+  DataType* global_sharded_norm_ptr;
+  bool* any_weights_sharded;
+  bool compute_global_norm;
+  float norm_value;
+
+  NormComputer(model& arg_m,
+               DataType* arg_global_norm_ptr,
+               DataType* arg_global_sharded_norm_ptr,
+               bool* arg_any_weights_sharded,
+               bool arg_compute_global_norm,
+               float arg_norm_value)
+    : m(arg_m),
+      global_norm_ptr(arg_global_norm_ptr),
+      global_sharded_norm_ptr(arg_global_sharded_norm_ptr),
+      any_weights_sharded(arg_any_weights_sharded),
+      compute_global_norm(arg_compute_global_norm),
+      norm_value(arg_norm_value)
+  {}
+
+  template <typename... Ts>
+  void DispatchError(Ts&&...)
+  {
+    LBANN_ERROR("Unable to dispatch functor.");
+  }
+
+  template <typename... Ts>
+  void DeductionError(Ts&&...)
+  {
+    LBANN_ERROR("Unable to deduce an argument type.");
+  }
+
+  template <typename TensorDataType>
+  void operator()(data_type_weights<TensorDataType>& dtw)
+  {
+    data_type_optimizer<TensorDataType>* opt = dtw.get_optimizer();
+    auto& grad = opt->get_gradient_sharded();
+    if (!compute_global_norm) {
+      TensorDataType norm;
+
+      // The following call may incur communication (e.g., with sharded weights)
+      norm = El::Nrm2(grad);
+      if (norm > norm_value) {
+        El::Scale(El::To<TensorDataType>(norm_value) / norm, grad);
+      }
+    }
+    else {
+      const auto& gradmat = grad.LockedMatrix();
+      TensorDataType local_norm = El::To<TensorDataType>(0);
+      if ((gradmat.GetDevice() == El::Device::CPU)) {
+        const auto& gradmatrix =
+          static_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(
+            gradmat);
+        local_norm = El::Nrm2(gradmatrix);
+#ifdef LBANN_HAS_GPU
+      }
+      else if ((gradmat.GetDevice() == El::Device::GPU)) {
+        const auto& gradmatrix =
+          static_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(
+            gradmat);
+        if (!gradmatrix.Contiguous()) {
+          LBANN_ERROR("Cannot compute l2 norm of noncontiguous gradient");
+        }
+
+        hydrogen::gpu_blas::Nrm2(
+          size_t(gradmatrix.Width() * gradmatrix.Height()),
+          gradmatrix.LockedBuffer(),
+          size_t(1),
+          &local_norm,
+          gpu::get_sync_info(gradmatrix));
+#endif // LBANN_HAS_GPU
+      }
+      if (dtw.is_sharded()) {
+        // Summarize sharded norms separately (as they will be allreduced)
+        *global_sharded_norm_ptr += local_norm * local_norm;
+        *any_weights_sharded = true;
+      }
+      else if (on_subgrid(grad)) {
+        // If gradients live on a subgrid, also reduce them based on their size
+        *global_sharded_norm_ptr +=
+          (local_norm * local_norm) /
+          El::To<TensorDataType>(grad.RedundantSize());
+        *any_weights_sharded = true;
+      }
+      else {
+        // As an optimization, weights that are shared across all ranks in a
+        // trainer (i.e., STAR_STAR) don't need to be reduced
+        *global_norm_ptr += local_norm * local_norm;
+      }
+    }
+  }
+};
+
+struct NormScaler
+{
+  DataType scale;
+
+  NormScaler(DataType arg_scale) : scale(arg_scale) {}
+
+  template <typename... Ts>
+  void DispatchError(Ts&&...)
+  {
+    LBANN_ERROR("Unable to dispatch functor.");
+  }
+
+  template <typename... Ts>
+  void DeductionError(Ts&&...)
+  {
+    LBANN_ERROR("Unable to deduce an argument type.");
+  }
+
+  template <typename TensorDataType>
+  void operator()(data_type_weights<TensorDataType>& dtw)
+  {
+    data_type_optimizer<TensorDataType>* opt = dtw.get_optimizer();
+    auto& grad = opt->get_gradient_sharded();
+    El::Scale(El::To<TensorDataType>(scale), grad.Matrix());
+  }
+};
+
 void clip_gradient_norm::on_backward_prop_end(model* m)
 {
-  DataType global_norm = 0;
+  using WeightsTypes =
+    h2::meta::tlist::ExpandTL<data_type_weights, supported_layer_data_type>;
+  using Dispatcher = h2::multimethods::
+    SwitchDispatcher<NormComputer, void, weights, WeightsTypes>;
+  using ScaleDispatcher =
+    h2::multimethods::SwitchDispatcher<NormScaler, void, weights, WeightsTypes>;
+  DataType global_norm = 0, global_sharded_norm = 0;
+  bool any_weights_sharded = false;
   for (weights* w : this->m_weights) {
-    optimizer* opt = w->get_optimizer();
-    if (opt != nullptr) {
-      DataType norm;
-      auto* dt_opt = dynamic_cast<data_type_optimizer<DataType>*>(opt);
-      auto& grad = dt_opt->get_gradient_sharded();
-      norm = El::Nrm2(grad);
-
-      if (!m_global_norm && norm > this->m_value) {
-        El::Scale(this->m_value / norm, grad);
-      }
-      else if (m_global_norm) {
-        global_norm += norm * norm;
-      }
+    if (w->get_optimizer() != nullptr) {
+      Dispatcher::Exec(NormComputer(*m,
+                                    &global_norm,
+                                    &global_sharded_norm,
+                                    &any_weights_sharded,
+                                    m_global_norm,
+                                    m_value),
+                       *w);
     }
   }
 
   if (m_global_norm) {
+    // Allreduce the global gradient norm for sharded weights
+    if (any_weights_sharded) {
+      global_norm += m->get_comm()->trainer_allreduce(global_sharded_norm);
+    }
+
     global_norm = std::sqrt(global_norm);
     if (global_norm > this->m_value) {
       DataType scale = this->m_value / global_norm;
       for (weights* w : this->m_weights) {
-        optimizer* opt = w->get_optimizer();
-        if (opt != nullptr) {
-          auto* dt_opt = dynamic_cast<data_type_optimizer<DataType>*>(opt);
-          auto& grad = dt_opt->get_gradient_sharded();
-          El::Scale(scale, grad);
+        if (w->get_optimizer() != nullptr) {
+          ScaleDispatcher::Exec(NormScaler(scale), *w);
         }
       }
     }
