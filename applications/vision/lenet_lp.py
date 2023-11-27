@@ -1,3 +1,7 @@
+"""
+Trains Lenet using 2 "grids" in a layer-parallel configuration.
+"""
+
 import argparse
 import lbann
 import data.mnist
