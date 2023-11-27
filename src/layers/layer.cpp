@@ -215,7 +215,7 @@ description Layer::get_description() const
 
   // Sub-grid
   desc.add("Process grid", get_grid_tag());
-  desc.add("LP grid", grid_tag());
+  desc.add("Layer-Parallel grid", grid_tag());
 
   // Freeze state
   if (is_frozen()) {

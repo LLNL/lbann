@@ -681,9 +681,10 @@ public:
   void grid_tag(int tag);
   ///@}
 
-  /** @brief Identifying tag for process grid */
+  /// @todo Unify Layer-Parallel and Subgraph-Parallel implementations
+  /** @brief Identifying tag for process grid (subgraph parallelism) */
   int get_grid_tag() const noexcept;
-  /** @brief Set process grid */
+  /** @brief Set process grid (subgraph parallelism) */
   void set_grid_tag(int tag);
 
   /** @name Hint layer access functions */
