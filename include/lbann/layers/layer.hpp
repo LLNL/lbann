@@ -911,7 +911,7 @@ protected:
    *  must be explicitly marked).
    *
    *  Temporary: While the legacy "subgraph parallelism"
-   *  infrastructure coexists, setup will also check that both this
+   *  infrastructure coexists, setup will also check that this
    *  and the subgraph-related "m_grid_tag" are not both set. If using
    *  "subgraph", every layer will leave this as "-1" and the grid
    *  setup will proceed according to the legacy subgraph setup.
