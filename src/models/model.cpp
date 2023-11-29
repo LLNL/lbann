@@ -1567,7 +1567,7 @@ void model::forward_prop(execution_mode mode)
     auto& l = get_layer(i);
 
     if (this->is_subgraph_parallelism_enabled()) {
-      if (l.get_run_layer_in_subgraph() || l.get_name() == "layer1") {
+      if (l.get_run_layer_in_subgraph()) {
         do_layer_forward_prop_begin_cbs(mode, &l);
         l.forward_prop();
         do_layer_forward_prop_end_cbs(mode, &l);
