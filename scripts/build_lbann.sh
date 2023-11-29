@@ -497,6 +497,11 @@ if [[ "${CENTER_COMPILER}" =~ .*"%clang".* ]]; then
     CENTER_LINKER_FLAGS="+lld"
 fi
 
+# if [[ "${CENTER_COMPILER}" =~ .*"%rocmcc".* ]]; then
+#     # If the compiler is clang use the LLD fast linker
+#     CENTER_LINKER_FLAGS="+lld"
+# fi
+
 if [[ "${CENTER_COMPILER}" =~ .*"%gcc".* ]]; then
     # If the compiler is gcc use the gold fast linker
     CENTER_LINKER_FLAGS="+gold"
@@ -637,19 +642,19 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
 
     ##########################################################################################
     # Set an upstream spack repository that is holding standard dependencies
-    if [[ -r "${CENTER_UPSTREAM_PATH:-}" ]]; then
-        EXISTING_UPSTREAM=`spack config get upstreams`
-        if [[ ${EXISTING_UPSTREAM} == "upstreams: {}" ]]; then
-            read -p "Do you want to add pointer for this spack repository to ${CENTER_UPSTREAM_PATH} (y/N): " response
-            if [[ ${response^^} == "Y" ]]; then
-                CMD="spack config --scope site add upstreams:spack-lbann-vast:install_tree:${CENTER_UPSTREAM_PATH}"
-                echo ${CMD} | tee -a ${LOG}
-                [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-            fi
-        else
-            printf "Spack is using\n${EXISTING_UPSTREAM}\n"
-        fi
-    fi
+    # if [[ -r "${CENTER_UPSTREAM_PATH:-}" ]]; then
+    #     EXISTING_UPSTREAM=`spack config get upstreams`
+    #     if [[ ${EXISTING_UPSTREAM} == "upstreams: {}" ]]; then
+    #         read -p "Do you want to add pointer for this spack repository to ${CENTER_UPSTREAM_PATH} (y/N): " response
+    #         if [[ ${response^^} == "Y" ]]; then
+    #             CMD="spack config --scope site add upstreams:spack-lbann-vast:install_tree:${CENTER_UPSTREAM_PATH}"
+    #             echo ${CMD} | tee -a ${LOG}
+    #             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    #         fi
+    #     else
+    #         printf "Spack is using\n${EXISTING_UPSTREAM}\n"
+    #     fi
+    # fi
 
     # If the dependencies are being installed then you should clean things up
     if [[ -n "${INSTALL_DEPS:-}" ]]; then
@@ -818,6 +823,34 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
+        # Find any packages in the stable dependencies (superbuild)
+        STABLE_DEPENDENCIES="/p/vast1/lbann/stable_dependencies"
+        # Findable packages
+        # openblas
+        # hdf5
+        # opencv
+        # nccl
+        
+        # Unfindable packages
+        # adiak
+        # caliper
+        # catch2
+        # libjpeg-turbo
+        # spdlog
+        # cereal
+        # clara
+        # cnpy
+        # conduit
+        # protobuf
+        # zstr
+        # cudnn
+        
+        if [[ -r ${STABLE_DEPENDENCIES} ]]; then
+            CMD="spack external find --not-buildable --scope env:${LBANN_ENV} --path ${STABLE_DEPENDENCIES} adiak caliper catch2 hdf5 jpeg-turbo spdlog cereal clara cnpy conduit opencv protobuf zstr nccl cudnn openblas"
+            echo ${CMD} | tee -a ${LOG}
+            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        fi
+        
         CMD="cleanup_clang_compilers ${CENTER} ${SPACK_ARCH_OS} ${SPACK_ENV_YAML_FILE}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
@@ -989,6 +1022,12 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
     fi
 
     ##########################################################################################
+    # Make sure that HIP_PATH isn't set as of ROCm 5.7.x
+    CMD="unset HIP_PATH"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    
+    ##########################################################################################
     # Configure but don't install LBANN using spack
     CMD="spack install --test root --reuse -u initconfig ${BUILD_JOBS} lbann"
     echo ${CMD} | tee -a ${LOG}
@@ -1027,6 +1066,7 @@ EOF
             cat >> ${LBANN_SETUP_FILE}<<EOF
 # Modules loaded during this installation
 ${MODULE_CMD}
+unset HIP_PATH
 EOF
         fi
 
