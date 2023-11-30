@@ -713,7 +713,8 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
     # Force a unified environment
     if [[ -n "${INSTALL_DEPS:-}" ]]; then
         # Force the environment to concretize together with any additional packages
-        CMD="spack config add concretizer:unify:true"
+        CMD="spack config add concretizer:unify:when_possible"
+#        CMD="spack config add concretizer:unify:true"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -830,7 +831,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         # hdf5
         # opencv
         # nccl
-        
+
         # Unfindable packages
         # adiak
         # caliper
@@ -844,13 +845,13 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         # protobuf
         # zstr
         # cudnn
-        
+
         if [[ -r ${STABLE_DEPENDENCIES} ]]; then
             CMD="spack external find --not-buildable --scope env:${LBANN_ENV} --path ${STABLE_DEPENDENCIES} adiak caliper catch2 hdf5 jpeg-turbo spdlog cereal clara cnpy conduit opencv protobuf zstr nccl cudnn openblas"
             echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
         fi
-        
+
         CMD="cleanup_clang_compilers ${CENTER} ${SPACK_ARCH_OS} ${SPACK_ENV_YAML_FILE}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
@@ -1026,7 +1027,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
     CMD="unset HIP_PATH"
     echo ${CMD} | tee -a ${LOG}
     [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-    
+
     ##########################################################################################
     # Configure but don't install LBANN using spack
     CMD="spack install --test root --reuse -u initconfig ${BUILD_JOBS} lbann"
