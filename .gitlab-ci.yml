@@ -40,6 +40,7 @@ corona testing:
   variables:
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
+    WITH_LBANN_DISABLE_DISTCONV: 1
   trigger:
     strategy: depend
     include: .gitlab/corona/pipeline.yml
@@ -62,6 +63,7 @@ lassen testing:
   variables:
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
+    WITH_LBANN_DISABLE_DISTCONV: 1
   trigger:
     strategy: depend
     include: .gitlab/lassen/pipeline.yml
@@ -85,6 +87,7 @@ pascal testing:
   variables:
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
+    WITH_LBANN_DISABLE_DISTCONV: 1
   trigger:
     strategy: depend
     include: .gitlab/pascal/pipeline.yml
@@ -95,6 +98,7 @@ pascal compiler testing:
     SPACK_SPECS: "%gcc@10.3.1 +cuda +half +fft"
     BUILD_SCRIPT_OPTIONS: "--no-default-mirrors"
     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
+    WITH_LBANN_DISABLE_DISTCONV: 1
   trigger:
     strategy: depend
     include: .gitlab/pascal/pipeline_compiler_tests.yml
@@ -118,6 +122,7 @@ tioga testing:
     # FF_USE_NEW_BASH_EVAL_STRATEGY: 1
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
+    WITH_LBANN_DISABLE_DISTCONV: 1
   trigger:
     strategy: depend
     include: .gitlab/tioga/pipeline.yml
