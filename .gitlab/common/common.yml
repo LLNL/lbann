@@ -103,6 +103,7 @@
     - echo "LBANN_BUILD_DIR=${LBANN_BUILD_DIR}"
     - echo "LBANN_INSTALL_DIR=${LBANN_INSTALL_DIR}"
     - echo "LBANN_MODFILES_DIR=${LBANN_MODFILES_DIR}"
+    - echo "LBANN_DISABLE_DISTCONV=${LBANN_DISABLE_DISTCONV}"
     - ml use ${LBANN_MODFILES_DIR}
     - ml load lbann
     - echo "Using LBANN binary $(which lbann)"
@@ -111,6 +112,7 @@
     - echo "export SPACK_ARCH_TARGET=${SPACK_ARCH_TARGET}" >> spack-ci-env-name.sh
     - echo "export LBANN_BUILD_PARENT_DIR=${LBANN_BUILD_PARENT_DIR}" >> spack-ci-env-name.sh
     - echo "export LBANN_MODFILES_DIR=${LBANN_MODFILES_DIR}" >> spack-ci-env-name.sh
+    - echo "export LBANN_DISABLE_DISTCONV=${LBANN_DISABLE_DISTCONV}" >> spack-ci-env-name.sh
 
 .cleanup old build objects:
   rules:
