@@ -112,7 +112,7 @@
     - echo "export SPACK_ARCH_TARGET=${SPACK_ARCH_TARGET}" >> spack-ci-env-name.sh
     - echo "export LBANN_BUILD_PARENT_DIR=${LBANN_BUILD_PARENT_DIR}" >> spack-ci-env-name.sh
     - echo "export LBANN_MODFILES_DIR=${LBANN_MODFILES_DIR}" >> spack-ci-env-name.sh
-    - echo "export LBANN_DISABLE_DISTCONV=${LBANN_DISABLE_DISTCONV}" >> spack-ci-env-name.sh
+#    - echo "export LBANN_DISABLE_DISTCONV=${LBANN_DISABLE_DISTCONV}" >> spack-ci-env-name.sh
 
 .cleanup old build objects:
   rules:
