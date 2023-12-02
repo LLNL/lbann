@@ -200,11 +200,13 @@ set_center_specific_spack_dependencies()
                 CENTER_COMPILER_PATHS="/usr/tce/packages/gcc/gcc-8.3.1 /usr/tce/packages/clang/clang-10.0.1-gcc-8.3.1/"
                 CENTER_COMPILER="%gcc@8.3.1"
                 DEPENDENTS_CENTER_COMPILER="%gcc@8.3.1"
-                CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.8.89 ^libtool@2.4.2 ^python@3.9.10: ^protobuf@3.21.5 ^py-protobuf@4.21.5 ^openblas@0.3.6 ^nccl@2.19.4"
+                CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.8.89 ^libtool@2.4.2 ^python@3.9.10: ^protobuf@3.21.5 ^py-protobuf@4.21.5 ^nccl@2.19.4 ^hwloc@1.11.8"
+#                CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.8.89 ^libtool@2.4.2 ^python@3.9.10: ^protobuf@3.21.5 ^py-protobuf@4.21.5 ^openblas@0.3.6 ^nccl@2.19.4"
 #                CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.8.89 ^libtool@2.4.2 ^python@3.9.10: ^protobuf@3.21.5 ^py-protobuf@4.21.5 ^openblas@0.3.23 ^nccl@2.19.4"
 #                CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.8.89 ^libtool@2.4.2 ^python@3.9.10: ^protobuf@3.20.3 ^py-protobuf@3.20.3 ^openblas ^nccl@2.19.4"
 #                CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.6.112 ^libtool@2.4.2 ^python@3.9.10: ^protobuf@3.20.3 ^py-protobuf@3.20.3 ^openblas ^nccl@2.16.2-1"
                 CENTER_BLAS_LIBRARY="blas=openblas"
+                CENTER_PYTHON_ROOT_PACKAGES="py-numpy@1.16.0:1.24.3^openblas@0.3.6 py-pip@22.2.2:"
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 # On LC the mvapich2 being used is built against HWLOC v1

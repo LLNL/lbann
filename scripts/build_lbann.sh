@@ -461,6 +461,7 @@ CENTER_DEPENDENCIES=
 CENTER_LINKER_FLAGS=
 CENTER_BLAS_LIBRARY=
 CENTER_PIP_PACKAGES=
+CENTER_PYTHON_ROOT_PACKAGES=
 CENTER_UPSTREAM_PATH=
 set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 
@@ -527,10 +528,10 @@ do
         if [[ "${GPU_VARIANTS}" == "+rocm" ]]; then
             # For now, don't forward the amdgpu_target field to downstream packages
             # Py-Torch does not support it
-            DEPENDENT_PACKAGES_GPU_VARIANTS="${GPU_VARIANTS}"
+            DEPENDENT_PACKAGES_GPU_VARIANTS="${GPU_VARIANTS} ~cuda"
             POSSIBLE_AWS_OFI_PLUGIN="aws-ofi-rccl"
         else
-            DEPENDENT_PACKAGES_GPU_VARIANTS="${GPU_VARIANTS} ${GPU_ARCH_VARIANTS}"
+            DEPENDENT_PACKAGES_GPU_VARIANTS="${GPU_VARIANTS} ${GPU_ARCH_VARIANTS} ~rocm"
             POSSIBLE_AWS_OFI_PLUGIN="aws-ofi-nccl"
             POSSIBLE_DNN_LIB="cudnn"
             POSSIBLE_NVSHMEM_LIB="nvshmem"
@@ -545,17 +546,21 @@ done
 # or if the center uses standard PIP installed packages then assume that they have
 # the right C++ std libraries
 if [[ ! "${LBANN_VARIANTS}" =~ .*"~python".* ]]; then
-    if [[ -z ${CENTER_PIP_PACKAGES:-} ]]; then
-        # If Python support is not disabled add NumPy as an external for sanity
-        # Specifically, for use within the data reader, NumPy has to have the same
-        # C++ std library
-        if [[ ! "${PKG_LIST}" =~ .*"py-numpy".* ]]; then
-            PKG_LIST="${PKG_LIST} py-numpy@1.16.0:1.24.3"
-        fi
-        if [[ ! "${PKG_LIST}" =~ .*"py-pip".* ]]; then
-            PKG_LIST="${PKG_LIST} py-pip@22.2.2:"
-        fi
+    if [[ -n "${CENTER_PYTHON_ROOT_PACKAGES:-}" ]]; then
+        PKG_LIST="${PKG_LIST} ${CENTER_PYTHON_ROOT_PACKAGES}"
     fi
+
+    # if [[ -z ${CENTER_PIP_PACKAGES:-} ]]; then
+    #     # If Python support is not disabled add NumPy as an external for sanity
+    #     # Specifically, for use within the data reader, NumPy has to have the same
+    #     # C++ std library
+    #     if [[ ! "${PKG_LIST}" =~ .*"py-numpy".* ]]; then
+    #         PKG_LIST="${PKG_LIST} py-numpy@1.16.0:1.24.3^openblas@0.3.6"
+    #     fi
+    #     if [[ ! "${PKG_LIST}" =~ .*"py-pip".* ]]; then
+    #         PKG_LIST="${PKG_LIST} py-pip@22.2.2:"
+    #     fi
+    # fi
 fi
 
 # Record the original command in the log file
@@ -713,8 +718,8 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
     # Force a unified environment
     if [[ -n "${INSTALL_DEPS:-}" ]]; then
         # Force the environment to concretize together with any additional packages
-        CMD="spack config add concretizer:unify:when_possible"
-#        CMD="spack config add concretizer:unify:true"
+#        CMD="spack config add concretizer:unify:when_possible"
+        CMD="spack config add concretizer:unify:true"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -943,7 +948,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         # Try to concretize the environment and catch the return code
         # Set the -f flag to force spack to re-evaluate all packages
         # During concretation to ensure that proper reuse actually occurs
-        CMD="spack concretize --test root --reuse -f ${BUILD_JOBS}"
+        CMD="spack concretize --test root --reuse -f" # ${BUILD_JOBS}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
