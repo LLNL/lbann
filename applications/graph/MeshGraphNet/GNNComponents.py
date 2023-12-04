@@ -172,17 +172,17 @@ class NodeProcessor(Module):
         """
         Args:
           node_features (Layer) : Expected shape (Batch, num_nodes, self.in_dim_node)
-          edge_features (Layer) : Expected shape (Batch, Num_edges, self.in_dim_edge)
-          edge_indices (Layer): Expected shape (Batch, Num_edges)
+          edge_features (Layer) : Expected shape (Batch, num_edges, self.in_dim_edge)
+          edge_indices (Layer): Expected shape (Batch, num_edges)
         Returns:
           (Layer): Expected shape (Batch, Num_nodes, self.in_dim_node)
         """
         self.instance += 1
-
+        name = f"{self.name}_{self.instance}"
         edge_feature_sum = lbann.Scatter(
             edge_features,
             target_edge_indices,
-            name=f"{self.name}_{self.instance}_scatter",
+            name=f"{name}_scatter",
             dims=[self.num_nodes, self.in_dim_edge],
             axis=0,
         )
@@ -190,12 +190,12 @@ class NodeProcessor(Module):
         x = lbann.Concatenation(
             [node_features, edge_feature_sum],
             axis=1,
-            name=f"{self.name}_{self.instance}_concat_features",
+            name=f"{name}_concat_features",
         )
         x = self.node_mlp(x)
 
         return lbann.Sum(
-            node_features, x, name=f"{self.name}_{self.instance}_residual_sum"
+            node_features, x, name=f"{name}_residual_sum"
         )
 
 
