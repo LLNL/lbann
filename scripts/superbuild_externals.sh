@@ -184,7 +184,6 @@ set_superbuild_power_externals()
 cat <<EOF  >> ${yaml}
     openblas:
       buildable: false
-      requires: '@0.3.6'
       version:
       - '0.3.6'
       externals:
