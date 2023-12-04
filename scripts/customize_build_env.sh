@@ -108,13 +108,11 @@ set_center_specific_modules()
         case ${spack_arch_target} in
             "power9le") # Lassen
                 MODULE_CMD_GCC="module load StdEnv gcc/8.3.1 cuda/11.8.0 spectrum-mpi/rolling-release cmake/3.23.1 essl/6.3.0.2 python/3.8.2"
-#                MODULE_CMD_GCC="module load gcc/8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2"
                 MODULE_CMD_CLANG="module load clang/10.0.1-gcc-8.3.1 cuda/11.6.1 spectrum-mpi/rolling-release python/3.7.2"
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
 
                 MODULE_CMD_GCC="module load jobutils/1.0 StdEnv gcc/10.3.1-magic ninja/1.11.1 openmpi/4.1.2 cuda/11.8.0 python/3.9.12"
-#                MODULE_CMD_GCC="module load gcc/10.3.1 cuda/11.8.0 mvapich2/2.3.7 python/3.9.12"
                 # Note that clang is installed in /usr/workspace/brain/tom/pascal/llvm/latest/ and it is version 17.0.0
                 MODULE_CMD_CLANG="module load gcc/10.3.1 cuda/11.8.0 mvapich2/2.3.7 python/3.9.12"
                 ;;
@@ -123,16 +121,10 @@ set_center_specific_modules()
                 ;;
             "zen" | "zen2") # Corona
                 MODULE_CMD="module load StdEnv gcc/10.3.1-magic openmpi/4.1.2 git/2.36.1 cmake/3.26.3 emacs/28.2 rocm/5.7.0"
-#                MODULE_CMD="module load StdEnv gcc/10.3.1 cmake/3.23.1 mvapich2/2.3.7 rocm/5.7.0"
-#                MODULE_CMD="module load StdEnv gcc/10.3.1 cmake/3.23.1 mvapich2/2.3.7 rocm/5.6.0"
-#                MODULE_CMD="module load StdEnv gcc/10.3.1-magic cmake/3.23.1 openmpi/4.1.2 rocm/5.6.0"
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
             "zen3") # Tioga, RZVernal
-#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/22.09.0 amd/5.6.0 craype/2.7.17 cray-mpich/8.1.19 cray-libsci/22.08.1.1 PrgEnv-amd/8.4.0 StdEnv cmake/3.23.1"
                 MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.09.0 cce/16.0.1 craype/2.7.23 cray-mpich/8.1.27 cray-libsci/23.09.1.1 PrgEnv-cray/8.4.0 StdEnv rocm/5.7.1 cmake/3.24.2"
-#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.05.0 amd/5.6.0 craype/2.7.21 cray-libsci/23.05.1.4 PrgEnv-amd/8.4.0 cray-mpich/8.1.27 StdEnv cmake/3.24.2"
-#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.7.2-llnl perftools-base/23.02.0 amd/5.6.0 craype/2.7.19 cray-libsci/23.02.1.1 PrgEnv-amd/8.4.0 cray-mpich/8.1.26 StdEnv cmake/3.24.2"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -145,7 +137,6 @@ set_center_specific_modules()
                 ;;
             "zen3") # Frontier, Crusher
                 MODULE_CMD="module load ums/default ums002/default; module unload rocm; module load craype-x86-trento craype-network-ofi libfabric/1.15.2.0 perftools-base/22.12.0 amd/5.5.1 craype/2.7.21 cray-mpich/8.1.26 openblas/0.3.17-omp PrgEnv-amd/8.4.0 cmake/3.23.2 cray-python/3.9.13.1 hdf5/1.14.0"
-#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/1.15.2.0 perftools-base/22.12.0 amd/5.5.1 craype/2.7.21 cray-mpich/8.1.26 cray-libsci/23.05.1.4 PrgEnv-amd/8.4.0 cmake/3.23.2 cray-python/3.9.13.1 hdf5/1.14.0"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -196,15 +187,10 @@ set_center_specific_spack_dependencies()
         # MIRRORS="/p/vast1/lbann/spack/mirror /p/vast1/atom/spack/mirror"
         case ${spack_arch_target} in
             "power9le") # Lassen
-                # CENTER_UPSTREAM_PATH="/p/gpfs1/lbann/spack_installed_packages/opt/spack"
                 CENTER_COMPILER_PATHS="/usr/tce/packages/gcc/gcc-8.3.1 /usr/tce/packages/clang/clang-10.0.1-gcc-8.3.1/"
                 CENTER_COMPILER="%gcc@8.3.1"
                 DEPENDENTS_CENTER_COMPILER="%gcc@8.3.1"
                 CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.8.89 ^libtool@2.4.2 ^python@3.9.10: ^protobuf@3.21.5 ^py-protobuf@4.21.5 ^nccl@2.19.4 ^hwloc@1.11.8"
-#                CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.8.89 ^libtool@2.4.2 ^python@3.9.10: ^protobuf@3.21.5 ^py-protobuf@4.21.5 ^openblas@0.3.6 ^nccl@2.19.4"
-#                CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.8.89 ^libtool@2.4.2 ^python@3.9.10: ^protobuf@3.21.5 ^py-protobuf@4.21.5 ^openblas@0.3.23 ^nccl@2.19.4"
-#                CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.8.89 ^libtool@2.4.2 ^python@3.9.10: ^protobuf@3.20.3 ^py-protobuf@3.20.3 ^openblas ^nccl@2.19.4"
-#                CENTER_DEPENDENCIES="^spectrum-mpi ^cuda@11.6.112 ^libtool@2.4.2 ^python@3.9.10: ^protobuf@3.20.3 ^py-protobuf@3.20.3 ^openblas ^nccl@2.16.2-1"
                 CENTER_BLAS_LIBRARY="blas=openblas"
                 CENTER_PYTHON_ROOT_PACKAGES="py-numpy@1.16.0:1.24.3^openblas@0.3.6 py-pip@22.2.2:"
                 ;;
@@ -217,8 +203,6 @@ set_center_specific_spack_dependencies()
 #                DEPENDENTS_CENTER_COMPILER="%gcc@10.3.1"
                 # There is something weird about the python@3.9.13 on Pascal right now 5/31/2023
                 CENTER_DEPENDENCIES="^openmpi@4.1.2"
-#                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^python@3.9.12"
-#                CENTER_DEPENDENCIES="^mvapich2 ^hwloc@1.11.13 ^libtool@2.4.2 ^python@3.9.10 ^protobuf@3.10.0 ^py-protobuf@3.10.0"
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
@@ -231,20 +215,12 @@ set_center_specific_spack_dependencies()
                 # On LC the mvapich2 being used is built against HWLOC v1
                 # CENTER_UPSTREAM_PATH="/p/lustre2/lbann/spack_installed_packages/opt/spack"
                 CENTER_COMPILER="%rocmcc@5.7.0"
-#                CENTER_COMPILER="%rocmcc@5.6.0"
-                # Pin the hwloc encapsulated in mvapich2 with the external version}
-#                CENTER_DEPENDENCIES="^mvapich2@2.3.7+hwlocv2 threads=multiple ch3_rank_bits=32 +wrapperrpath ~alloca ~cuda +regcache process_managers=hydra fabrics=mrail file_systems=lustre,nfs,ufs ^hwloc@2.4.1 ^hip@5.6.0 ^python@3.9.12 ^protobuf@3.21.12"
                 CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.7.0 ^python@3.9.12 ^py-protobuf@4.21.5"
-#                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.7.0 ^python@3.9.12 ^protobuf@3.21.12"
-#                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.6.0 ^python@3.9.12 ^protobuf@3.21.12"
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
             "zen3") # Tioga, RZVernal
-                # CENTER_UPSTREAM_PATH="/p/lustre2/lbann/spack_installed_packages/opt/spack"
-#                CENTER_COMPILER="%cce@16.0.1"
                 CENTER_COMPILER="%rocmcc@5.7.1"
                 CENTER_DEPENDENCIES="^cray-mpich@8.1.27 ^hip@5.7.1 ^python@3.9.12"
-#                CENTER_DEPENDENCIES="^cray-mpich@8.1.27 ^hip@5.7.1 ^python@3.9.12 ^protobuf@3.21.12"
                 CENTER_BLAS_LIBRARY="blas=libsci"
                 # Override the conduit variants for the cray compilers
                 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis"
@@ -262,9 +238,7 @@ set_center_specific_spack_dependencies()
             "zen3") # Frontier, Crusher
                 CENTER_COMPILER="%rocmcc@5.5.1"
                 CENTER_DEPENDENCIES="^cray-mpich@8.1.26 ^hip@5.5.1 ^python@3.9.13 ^protobuf@3.21.12"
-#                CENTER_DEPENDENCIES="^cray-mpich@8.1.26 ^hip@5.5.1 ^python@3.9.12 ^aluminum@1.4.0: +ofi_libfabric_plugin"
                 CENTER_BLAS_LIBRARY="blas=openblas"
-#                CENTER_BLAS_LIBRARY="blas=libsci"
                 # Override the conduit variants for the cray compilers
                 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis+blt_find_mpi~test"
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
@@ -369,28 +343,6 @@ EOF
             "zen" | "zen2")
 cat <<EOF  >> ${yaml}
   packages:
-    # hipcub:
-    #   buildable: false
-    #   version:
-    #   - '5.6.0'
-    #   externals:
-    #   - spec: hipcub@5.6.0 arch=${spack_arch}
-    #     prefix: /opt/rocm-5.6.0/hipcub
-    #     extra_attributes:
-    #       compilers:
-    #         c: /opt/rocm-5.6.0/llvm/bin/clang
-    #         c++: /opt/rocm-5.6.0/llvm/bin/clang++
-    # llvm-amdgpu:
-    #   buildable: false
-    #   version:
-    #   - '5.6.0'
-    #   externals:
-    #   - spec: llvm-amdgpu@5.6.0 arch=${spack_arch}
-    #     prefix: /opt/rocm-5.6.0/llvm
-    #     extra_attributes:
-    #       compilers:
-    #         c: /opt/rocm-5.6.0/llvm/bin/clang
-    #         c++: /opt/rocm-5.6.0/llvm/bin/clang++
     hipcub:
       buildable: false
       version:
@@ -511,10 +463,6 @@ cat <<EOF  >> ${yaml}
       - spec: cray-mpich@8.1.27 %rocmcc arch=${spack_arch}
         modules:
         - cce/16.0.1 PrgEnv-cray/8.4.0 cray-mpich/8.1.27
-      # - spec: cray-mpich@8.1.24 +wrappers %cc arch=${spack_arch}
-      #   prefix: /opt/cray/pe/mpich/8.1.24/ofi/crayclang/10.0/
-      # - spec: cray-mpich@8.1.24 +wrappers %rocmcc arch=${spack_arch}
-      #   prefix: /opt/cray/pe/mpich/8.1.24/ofi/amd/5.0/
 EOF
         set_superbuild_externals "tioga" "rocm-5.7.1" "cray-mpich-8.1.27" "$yaml" "${LOG}"
         set_superbuild_DHA_externals "tioga" "rocm-5.7.1" "cray-mpich-8.1.27" "$yaml" "${LOG}"

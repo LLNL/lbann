@@ -948,7 +948,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         # Try to concretize the environment and catch the return code
         # Set the -f flag to force spack to re-evaluate all packages
         # During concretation to ensure that proper reuse actually occurs
-        CMD="spack concretize --test root --reuse -f" # ${BUILD_JOBS}"
+        CMD="spack concretize --test root --reuse -f"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
