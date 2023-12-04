@@ -17,7 +17,7 @@ job_name = args.job_name
 
 model = make_model()
 data_reader = make_data_reader()
-optimizer = lbann.SGD(learn_rate=HYPERPARAMETERS_CONFIG["LR"])
+optimizer = lbann.Adam(learn_rate=HYPERPARAMETERS_CONFIG["LR"], beta1=0.9, beta2=0.99, eps=1e-8, adamw_weight_decay=0)
 trainer = lbann.Trainer(mini_batch_size=HYPERPARAMETERS_CONFIG["BATCH_SIZE"])
 
 lbann.contrib.launcher.run(

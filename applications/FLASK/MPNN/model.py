@@ -5,7 +5,18 @@ import os.path as osp
 
 
 def graph_splitter(_input):
-    """ """
+    """
+    Args:
+        _input: (lbann.InputLayer) The padded, flattened graph data
+    return:
+        (lbann.Layer, lbann.Layer, lbann.Layer, lbann.Layer, lbann.Layer,
+        lbann.Layer, lbann.Layer, lbann.Layer, lbann.Layer)
+
+        A 9-tuple with the input features, bond features, source atom to bond
+        graph mapping, target atom to bond graph mapping, bong to atom mapping,
+        bond to bond mapping, graph mask, number of atoms in the molecule, and
+        the target
+    """
     split_indices = [0]
 
     max_atoms = DATASET_CONFIG["MAX_ATOMS"]
@@ -70,6 +81,10 @@ def graph_splitter(_input):
 
 
 def make_model():
+    """
+    Returns:
+        (lbann.Model) LBANN model for a regression target on the CSD10K dataset
+    """
     _input = lbann.Input(data_field="samples")
 
     (
@@ -121,11 +136,18 @@ def make_model():
     training_output = lbann.CallbackPrint(interval=1, print_global_stat_only=False)
     gpu_usage = lbann.CallbackGPUMemoryUsage()
     timer = lbann.CallbackTimer()
-    predictions = lbann.CallbackDumpOutputs(
-        layers="PREDICTION", execution_modes="test"
-    )
+    predictions = lbann.CallbackDumpOutputs(layers="PREDICTION", execution_modes="test")
 
-    callbacks = [training_output, gpu_usage, timer, predictions]
+    targets = lbann.CallbackDumpOutputs(layers="TARGET", execution_modes="test")
+    step_learning_rate = lbann.CallbackStepLearningRate(step=10, amt=0.9)
+    callbacks = [
+        training_output,
+        gpu_usage,
+        timer,
+        predictions,
+        targets,
+        step_learning_rate,
+    ]
     model = lbann.Model(
         HYPERPARAMETERS_CONFIG["EPOCH"],
         layers=layers,
@@ -135,12 +157,7 @@ def make_model():
     return model
 
 
-def make_data_reader(
-    classname="dataset",
-    sample="sample",
-    num_samples="num_samples",
-    sample_dims="sample_dims",
-):
+def make_data_reader(classname="dataset", sample="sample", num_samples="num_samples"):
     data_dir = osp.dirname(osp.realpath(__file__))
     reader = lbann.reader_pb2.DataReader()
 

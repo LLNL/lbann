@@ -15,7 +15,7 @@ DATASET_CONFIG: dict = {
 HYPERPARAMETERS_CONFIG: dict = {
     "HIDDEN_SIZE": 300,
     "LR": 0.001,
-    "BATCH_SIZE": 128,
-    "EPOCH": 50,
+    "BATCH_SIZE": 64,
+    "EPOCH": 100,
     "MPN_DEPTH": 3
 }

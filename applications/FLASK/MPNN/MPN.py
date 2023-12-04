@@ -108,15 +108,20 @@ class MPNEncoder(Module):
     def readout(self, atom_encoded_features, graph_mask, num_atoms):
         """ """
         mol_encoding = lbann.Scatter(
-            atom_encoded_features, graph_mask, name=self.name + "graph_scatter", axis=0,
-            dims=[1, self.hidden_size]
+            atom_encoded_features,
+            graph_mask,
+            name=self.name + "graph_scatter",
+            axis=0,
+            dims=[1, self.hidden_size],
         )
         num_atoms = lbann.Reshape(num_atoms, dims=[1, 1])
 
         mol_encoding = lbann.Divide(
             mol_encoding,
             lbann.Tessellate(
-                num_atoms, dims=[1, self.hidden_size], name=self.name + "expand_num_nodes"
+                num_atoms,
+                dims=[1, self.hidden_size],
+                name=self.name + "expand_num_nodes",
             ),
             name=self.name + "_reduce",
         )

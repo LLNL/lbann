@@ -31,6 +31,15 @@ def padded_index_array(size, special_ignore_index=-1):
 
 
 def pad_data_sample(data):
+    """
+    Args:
+        data(dict): Dictionary of data samples with fields 'num_atoms', 'num_bonds',
+            'dual_graph_atom2bond_source', 'dual_graph_atom2bond_target',
+            'bond_graph_source', 'bond_grap_target', and 'target'
+
+    Returns:
+        (np.array) 
+    """
     num_atoms = data["num_atoms"]
     num_bonds = data["num_bonds"]
     f_atoms = np.zeros((MAX_ATOMS, ATOM_FEATURES), dtype=np.float32)
@@ -55,7 +64,9 @@ def pad_data_sample(data):
     atom_mask[:num_atoms] = np.zeros(num_atoms)
 
     num_atoms = np.array([num_atoms]).astype(np.float32)
-    target = np.array([data["target"]]).astype(np.float32)
+    target = (np.array([data["target"]]).astype(np.float32) + 67.14776709141553) / (
+        108.13423283538837
+    )
 
     _data_array = [
         f_atoms.flatten(),
