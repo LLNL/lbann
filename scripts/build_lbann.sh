@@ -719,8 +719,13 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
 
         # Allow minimal duplicates otherwise NumPy and SciPy cannot co-concretize
         CMD="spack config add concretizer:duplicates:strategy:minimal"
-        # echo ${CMD} | tee -a ${LOG}
-        # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+        # Force the environment to use RPATHs
+        CMD="spack config add config:shared_linking:type:rpath"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
     fi
 
     ##########################################################################################
