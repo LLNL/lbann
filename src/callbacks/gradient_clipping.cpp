@@ -148,7 +148,17 @@ struct NormComputer
         const auto& gradmatrix =
           static_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(
             gradmat);
+        // Nrm2 is not supported on CPU matrices with __half.
+#ifdef LBANN_HAS_HALF
+        if constexpr (!std::is_same_v<TensorDataType, __half>) {
+          local_norm = El::Nrm2(gradmatrix);
+        }
+        else {
+          LBANN_ERROR("Cannot clip a CPU matrix using the GPU half type");
+        }
+#else
         local_norm = El::Nrm2(gradmatrix);
+#endif
 #ifdef LBANN_HAS_GPU
       }
       else if ((gradmat.GetDevice() == El::Device::GPU)) {
