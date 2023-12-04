@@ -316,26 +316,13 @@ void fp_impl(lbann_comm& comm,
     El::Int block_size = min(El::Int(256), normalization_size);
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
-    grid_dims.x = (normalization_size + block_size - 1) / block_size;
-    grid_dims.y = num_normalized;
-    grid_dims.z = local_num_samples;
-    auto kernel =
-      ((!local_scale && !local_bias)
-         ? fp_output_kernel<TensorDataType, false, false>
-         : ((local_scale && !local_bias)
-              ? fp_output_kernel<TensorDataType, true, false>
-              : ((!local_scale && local_bias)
-                   ? fp_output_kernel<TensorDataType, false, true>
-                   : fp_output_kernel<TensorDataType, true, true>)));
-    hydrogen::gpu::LaunchKernel(kernel,
+    hydrogen::gpu::LaunchKernel(layer_norm_fp_output_kernel<TensorDataType>,
                                 grid_dims,
                                 block_dims,
                                 0,
                                 multisync,
                                 local_num_samples,
-                                normalization_size,
-                                num_normalized,
-                                normalization_stride,
+                                local_sample_size,
                                 epsilon,
                                 local_input.LockedBuffer(),
                                 local_input.LDim(),
@@ -344,170 +331,10 @@ void fp_impl(lbann_comm& comm,
                                 local_means.LockedBuffer(),
                                 local_means.LDim(),
                                 local_vars.LockedBuffer(),
-                                local_vars.LDim(),
-                                local_scale,
-                                local_bias);
+                                local_vars.LDim());
   }
 }
 
-/** Compute gradients w.r.t. per-sample statistics.
- *
- *  dL/dmean = - sum(dL/dy_i) / sqrt(var+epsilon)
- *
- *  dL/dvar = - sum(dL/dy_i * (x_i-mean)) * (var+epsilon)^(-3/2) / 2
- *
- *  On input, means_grad and vars_grad are filled with zeros.
- *
- *  Block dimensions: bsize x 1 x 1
- *
- *  Grid dimensions: (normalization_size / bsize) x num_normalized x
- * local_num_samples
- */
-template <size_t bdimx, typename TensorDataType, bool HAS_SCALE, bool HAS_BIAS>
-__global__ void
-bp_statistics_grad_kernel(size_t local_num_samples,
-                          size_t normalization_size,
-                          size_t num_normalized,
-                          size_t normalization_stride,
-                          TensorDataType epsilon,
-                          const TensorDataType* __restrict__ input,
-                          size_t input_ldim,
-                          const TensorDataType* __restrict__ output_grad,
-                          size_t output_grad_ldim,
-                          const TensorDataType* __restrict__ means,
-                          size_t means_stride,
-                          const TensorDataType* __restrict__ vars,
-                          size_t vars_stride,
-                          TensorDataType* __restrict__ means_grad,
-                          size_t means_grad_stride,
-                          TensorDataType* __restrict__ vars_grad,
-                          size_t vars_grad_stride,
-                          const TensorDataType* __restrict__ scale,
-                          TensorDataType* __restrict__ scale_grad,
-                          TensorDataType* __restrict__ bias_grad)
-{
-
-  // Indices and dimensions
-  constexpr size_t bdimy = 1;
-  constexpr size_t bdimz = 1;
-  const size_t tid = threadIdx.x;
-  const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
-  const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
-  const size_t gidz = threadIdx.z + blockIdx.z * blockDim.z;
-  const size_t nthreadsx = blockDim.x * gridDim.x;
-  const size_t nthreadsy = blockDim.y * gridDim.y;
-  const size_t nthreadsz = blockDim.z * gridDim.z;
-
-  for (size_t i = gidz; i < local_num_samples; i += nthreadsz) {
-    for (size_t j = gidy; j < num_normalized; j += nthreadsy) {
-
-      const auto& var = vars[i * vars_stride + j];
-      const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
-
-      // Accumulate sums and perform block-wide reduction
-      using pair_t = thrust::pair<TensorDataType, TensorDataType>;
-      using pair_sum_t = pair_sum<pair_t>;
-      pair_t sums(0, 0);
-      const auto& mean = means[i * means_stride + j];
-      for (size_t k = gidx; k < normalization_size; k += nthreadsx) {
-        const auto& x = input[i * input_ldim + j * normalization_stride + k];
-        auto dy =
-          output_grad[i * output_grad_ldim + j * normalization_stride + k];
-        if constexpr (HAS_BIAS)
-          gpu_lib::atomic_add(bias_grad + k, dy);
-
-        if constexpr (HAS_SCALE) {
-          gpu_lib::atomic_add(scale_grad + k, dy * (x - mean) * inv_stdev);
-          dy *= scale[k];
-        }
-
-        sums.first += dy;
-        sums.second += dy * (x - mean);
-      }
-      sums =
-        gpu_lib::block_reduce<bdimx, bdimy, bdimz, pair_t, pair_sum_t>(sums);
-
-      // Output result to global memory
-      if (tid == 0) {
-        const TensorDataType dmean = -sums.first * inv_stdev;
-        const TensorDataType dvar =
-          -sums.second * inv_stdev * inv_stdev * inv_stdev / TensorDataType(2);
-        gpu_lib::atomic_add(&means_grad[i * means_grad_stride + j], dmean);
-        gpu_lib::atomic_add(&vars_grad[i * vars_grad_stride + j], dvar);
-      }
-    }
-  }
-}
-
-/** Compute gradients w.r.t. input.
- *
- *  dL/dx_i = ( dL/dy_i / sqrt(var+epsilon)
- *              + dL/dmean / n
- *              + dL/dvar * (x_i - mean) * 2/(n-1) )
- *
- *  Block dimensions: bdimx x bdimy x 1
- *
- *  Grid dimensions: (local_sample_size / bdimx) x (local_num_samples / bdimy) x
- * 1
- */
-template <typename TensorDataType, bool HAS_SCALE>
-__global__ void
-bp_input_grad_kernel(size_t local_num_samples,
-                     size_t global_normalization_size,
-                     size_t normalization_size,
-                     size_t num_normalized,
-                     size_t normalization_stride,
-                     TensorDataType epsilon,
-                     const TensorDataType* __restrict__ input,
-                     size_t input_ldim,
-                     const TensorDataType* __restrict__ output_grad,
-                     size_t output_grad_ldim,
-                     TensorDataType* __restrict__ input_grad,
-                     size_t input_grad_ldim,
-                     const TensorDataType* __restrict__ means,
-                     size_t means_stride,
-                     const TensorDataType* __restrict__ vars,
-                     size_t vars_stride,
-                     const TensorDataType* __restrict__ means_grad,
-                     size_t means_grad_stride,
-                     const TensorDataType* __restrict__ vars_grad,
-                     size_t vars_grad_stride,
-                     const TensorDataType* __restrict__ scale)
-{
-
-  const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
-  const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
-  const size_t gidz = threadIdx.z + blockIdx.z * blockDim.z;
-  const size_t nthreadsx = blockDim.x * gridDim.x;
-  const size_t nthreadsy = blockDim.y * gridDim.y;
-  const size_t nthreadsz = blockDim.z * gridDim.z;
-  for (size_t i = gidz; i < local_num_samples; i += nthreadsz) {
-    for (size_t j = gidy; j < num_normalized; j += nthreadsy) {
-      const auto& mean = means[i * means_stride + j];
-      const auto& var = vars[i * vars_stride + j];
-      const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
-      const auto& dmean = means_grad[i * means_grad_stride + j];
-      const auto& dvar = vars_grad[i * vars_grad_stride + j];
-      for (size_t k = gidx; k < normalization_size; k += nthreadsx) {
-        const auto& x = input[i * input_ldim + j * normalization_stride + k];
-        auto dy =
-          output_grad[i * output_grad_ldim + j * normalization_stride + k];
-
-        if constexpr (HAS_SCALE) {
-          const auto& lscale = scale[k];
-          dy *= lscale;
-        }
-
-        auto& dx =
-          input_grad[i * input_grad_ldim + j * normalization_stride + k];
-        dx =
-          (dy * inv_stdev + dmean / TensorDataType(global_normalization_size) +
-           dvar * (x - mean) * TensorDataType(2) /
-             TensorDataType(global_normalization_size));
-      }
-    }
-  }
-}
 
 /** @brief Backprop */
 template <typename TensorDataType>
@@ -576,9 +403,9 @@ void bp_impl(lbann_comm& comm,
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
-    grid_dims.x = (normalization_size + block_size - 1) / block_size;
-    grid_dims.y = num_normalized;
-    grid_dims.z = local_num_samples;
+    grid_dims.x = (local_sample_size + block_size - 1) / block_size;
+    grid_dims.y = local_num_samples;
+
     auto kernel =
       ((!scale_grad && !bias_grad)
          ? bp_statistics_grad_kernel<block_size, TensorDataType, false, false>
@@ -621,6 +448,28 @@ void bp_impl(lbann_comm& comm,
                                 local_scale,
                                 scale_grad,
                                 bias_grad);
+
+    hydrogen::gpu::LaunchKernel(
+      layer_norm_bp_statistics_grad_kernel<block_size, TensorDataType>,
+      grid_dims,
+      block_dims,
+      0,
+      multisync,
+      local_num_samples,
+      local_sample_size,
+      epsilon,
+      local_input.LockedBuffer(),
+      local_input.LDim(),
+      local_output_grad.LockedBuffer(),
+      local_output_grad.LDim(),
+      local_means.LockedBuffer(),
+      local_means.LDim(),
+      local_vars.LockedBuffer(),
+      local_vars.LDim(),
+      local_means_grad.Buffer(),
+      local_means_grad.LDim(),
+      local_vars_grad.Buffer(),
+      local_vars_grad.LDim());
   }
   comm.allreduce(statistics_grad,
                  statistics_grad.RedundantComm(),
@@ -636,9 +485,9 @@ void bp_impl(lbann_comm& comm,
     El::Int block_size = min(El::Int(256), normalization_size);
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
-    grid_dims.x = (normalization_size + block_size - 1) / block_size;
-    grid_dims.y = num_normalized;
-    grid_dims.z = local_num_samples;
+    grid_dims.x = (local_sample_size + block_size - 1) / block_size;
+    grid_dims.y = local_num_samples;
+
     auto kernel = (local_scale ? bp_input_grad_kernel<TensorDataType, true>
                                : bp_input_grad_kernel<TensorDataType, false>);
     hydrogen::gpu::LaunchKernel(kernel,
@@ -672,6 +521,20 @@ void bp_impl(lbann_comm& comm,
 
 } // namespace
 
+// =========================================================
+// DistConv-Adapter member implementation
+// =========================================================
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void layer_norm_distconv_adapter<TensorDataType, Layout, Device> fp_compute()
+{}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void layer_norm_distconv_adapter<TensorDataType, Layout, Device> bp_compute()
+{}
+#endif // LBANN_HAS_DISTCONV
+
 // Template instantiation
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void layer_norm_layer<TensorDataType, Layout, Device>::fp_compute()
@@ -685,10 +548,15 @@ void layer_norm_layer<TensorDataType, Layout, Device>::fp_compute()
   if (m_bias)
     bias_weights =
       this->weights_values(weight_idx).LockedMatrix().LockedBuffer();
-
   El::Int norm_size, global_norm_size, num_norm, norm_stride;
   this->get_normdims(norm_size, global_norm_size, num_norm, norm_stride);
 
+#ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()) {
+    this->get_distconv_adapter().fp_compute();
+    return;
+  }
+#endif // LBANN_HAS_DISTCONV 
   fp_impl(*this->get_comm(),
           this->m_epsilon,
           norm_size,
@@ -725,6 +593,16 @@ void layer_norm_layer<TensorDataType, Layout, Device>::bp_compute()
   this->get_normdims(norm_size, global_norm_size, num_norm, norm_stride);
 
   // Compute backpropagation
+
+void layer_norm_layer<TensorDataType, Layout, Device>::bp_compute()
+{
+#ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()) {
+    this->get_distconv_adapter().bp_compute();
+    return;
+  }
+#endif // LBANN_HAS_DISTCONV
+
   bp_impl(*this->get_comm(),
           this->m_epsilon,
           norm_size,

@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,37 +23,9 @@
 ## implied. See the License for the specific language governing
 ## permissions and limitations under the license.
 ################################################################################
-# Add the source files for this directory
-set_full_path(THIS_DIR_SOURCES
-  batch_normalization.cpp
-  dropout.cpp
-  entrywise_batch_normalization.cpp
-  instance_norm.cpp
-  layer_norm.cpp
-  local_response_normalization.cpp
-  selu_dropout.cpp
-
-  batch_normalization_builder.cpp
-  entrywise_batch_normalization_builder.cpp
-  layer_norm_builder.cpp
-)
-
-if (LBANN_HAS_GPU)
-  # Add the CUDA source files for this directory
-  set_full_path(THIS_DIR_CU_SOURCES
-    batch_normalization.cu
-    entrywise_batch_normalization.cu
-    instance_norm.cu
-    layer_norm.cu
+set_full_path(THIS_DIR_CU_SOURCES
+    distconv_layer_norm.cu
     )
-endif ()
-
-if (LBANN_HAS_DISTCONV)
-    add_subdirectory(distconv)
-endif()
-
-add_subdirectory(cereal_registration)
 
 # Propagate the files up the tree
-set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)
 set(GPU_SOURCES "${GPU_SOURCES}" "${THIS_DIR_CU_SOURCES}" PARENT_SCOPE)
