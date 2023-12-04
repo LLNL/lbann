@@ -549,18 +549,6 @@ if [[ ! "${LBANN_VARIANTS}" =~ .*"~python".* ]]; then
     if [[ -n "${CENTER_PYTHON_ROOT_PACKAGES:-}" ]]; then
         PKG_LIST="${PKG_LIST} ${CENTER_PYTHON_ROOT_PACKAGES}"
     fi
-
-    # if [[ -z ${CENTER_PIP_PACKAGES:-} ]]; then
-    #     # If Python support is not disabled add NumPy as an external for sanity
-    #     # Specifically, for use within the data reader, NumPy has to have the same
-    #     # C++ std library
-    #     if [[ ! "${PKG_LIST}" =~ .*"py-numpy".* ]]; then
-    #         PKG_LIST="${PKG_LIST} py-numpy@1.16.0:1.24.3^openblas@0.3.6"
-    #     fi
-    #     if [[ ! "${PKG_LIST}" =~ .*"py-pip".* ]]; then
-    #         PKG_LIST="${PKG_LIST} py-pip@22.2.2:"
-    #     fi
-    # fi
 fi
 
 # Record the original command in the log file
