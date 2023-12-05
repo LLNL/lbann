@@ -28,6 +28,11 @@
 # clusters. To run testing locally, consult the README in the ci_test
 # directory.
 
+variables:
+  FF_USE_NEW_BASH_EVAL_STRATEGY: 'true'
+  FF_ENABLE_BASH_EXIT_CODE_CHECK: 1
+  LBANN_CI_CLEAN_BUILD: 'true'
+
 stages:
   - run-all-clusters
 
@@ -111,6 +116,7 @@ pascal distconv testing:
 tioga testing:
   stage: run-all-clusters
   variables:
+    # FF_USE_NEW_BASH_EVAL_STRATEGY: 1
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
   trigger:

@@ -316,6 +316,7 @@ function uninstall_specific_versions()
 # This should be a commit hash (NOT a tag) that needs to exist in the
 # spack repository that is checked out. It's a minimum version, so
 # more commits is fine.
+#MIN_SPACK_COMMIT=7a4df732e1a6b6eaf6d6a9675c5857e7e53d5445
 MIN_SPACK_COMMIT=8cd9497522939222dc304ee3708fd3154154f67b
 
 # "spack" is just a shell function; it may not be exported to this
@@ -460,24 +461,24 @@ CENTER_DEPENDENCIES=
 CENTER_LINKER_FLAGS=
 CENTER_BLAS_LIBRARY=
 CENTER_PIP_PACKAGES=
+CENTER_PYTHON_ROOT_PACKAGES=
 CENTER_UPSTREAM_PATH=
 set_center_specific_spack_dependencies ${CENTER} ${SPACK_ARCH_TARGET}
 
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^hydrogen".* ]]; then
     # If the user didn't supply a specific version of Hydrogen on the command line add one
-    HYDROGEN="^hydrogen${HYDROGEN_VER} ${CENTER_BLAS_LIBRARY}"
+    HYDROGEN="^hydrogen${HYDROGEN_VER} ${CENTER_BLAS_LIBRARY} generator=ninja"
 fi
 
 if [[ (! "${LBANN_VARIANTS}" =~ .*"^aluminum".*) && (! "${LBANN_VARIANTS}" =~ .*"~al".*) && (! "${CENTER_DEPENDENCIES}" =~ .*"^aluminum".*) ]]; then
     # If the user didn't supply a specific version of Aluminum on the command line add one
-    ALUMINUM="^aluminum${ALUMINUM_VER}"
+    ALUMINUM="^aluminum${ALUMINUM_VER} generator=ninja"
 fi
 
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^dihydrogen".* ]]; then
     # If the user didn't supply a specific version of DiHydrogen on the command line add one
     # Due to concretizer errors force the openmp variant for DiHydrogen
-#    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER}"
-    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER} ${CENTER_BLAS_LIBRARY}"
+    DIHYDROGEN="^dihydrogen${DIHYDROGEN_VER} generator=ninja"
 fi
 
 if [[ ! "${LBANN_VARIANTS}" =~ .*"^conduit".* ]]; then
@@ -496,6 +497,11 @@ if [[ "${CENTER_COMPILER}" =~ .*"%clang".* ]]; then
     # If the compiler is clang use the LLD fast linker
     CENTER_LINKER_FLAGS="+lld"
 fi
+
+# if [[ "${CENTER_COMPILER}" =~ .*"%rocmcc".* ]]; then
+#     # If the compiler is clang use the LLD fast linker
+#     CENTER_LINKER_FLAGS="+lld"
+# fi
 
 if [[ "${CENTER_COMPILER}" =~ .*"%gcc".* ]]; then
     # If the compiler is gcc use the gold fast linker
@@ -522,10 +528,10 @@ do
         if [[ "${GPU_VARIANTS}" == "+rocm" ]]; then
             # For now, don't forward the amdgpu_target field to downstream packages
             # Py-Torch does not support it
-            DEPENDENT_PACKAGES_GPU_VARIANTS="${GPU_VARIANTS}"
+            DEPENDENT_PACKAGES_GPU_VARIANTS="${GPU_VARIANTS} ~cuda"
             POSSIBLE_AWS_OFI_PLUGIN="aws-ofi-rccl"
         else
-            DEPENDENT_PACKAGES_GPU_VARIANTS="${GPU_VARIANTS} ${GPU_ARCH_VARIANTS}"
+            DEPENDENT_PACKAGES_GPU_VARIANTS="${GPU_VARIANTS} ${GPU_ARCH_VARIANTS} ~rocm"
             POSSIBLE_AWS_OFI_PLUGIN="aws-ofi-nccl"
             POSSIBLE_DNN_LIB="cudnn"
             POSSIBLE_NVSHMEM_LIB="nvshmem"
@@ -540,16 +546,8 @@ done
 # or if the center uses standard PIP installed packages then assume that they have
 # the right C++ std libraries
 if [[ ! "${LBANN_VARIANTS}" =~ .*"~python".* ]]; then
-    if [[ -z ${CENTER_PIP_PACKAGES:-} ]]; then
-        # If Python support is not disabled add NumPy as an external for sanity
-        # Specifically, for use within the data reader, NumPy has to have the same
-        # C++ std library
-        if [[ ! "${PKG_LIST}" =~ .*"py-numpy".* ]]; then
-            PKG_LIST="${PKG_LIST} py-numpy@1.16.0:1.24.3"
-        fi
-        if [[ ! "${PKG_LIST}" =~ .*"py-pip".* ]]; then
-            PKG_LIST="${PKG_LIST} py-pip@22.2.2:"
-        fi
+    if [[ -n "${CENTER_PYTHON_ROOT_PACKAGES:-}" ]]; then
+        PKG_LIST="${PKG_LIST} ${CENTER_PYTHON_ROOT_PACKAGES}"
     fi
 fi
 
@@ -637,19 +635,19 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
 
     ##########################################################################################
     # Set an upstream spack repository that is holding standard dependencies
-    if [[ -r "${CENTER_UPSTREAM_PATH:-}" ]]; then
-        EXISTING_UPSTREAM=`spack config get upstreams`
-        if [[ ${EXISTING_UPSTREAM} == "upstreams: {}" ]]; then
-            read -p "Do you want to add pointer for this spack repository to ${CENTER_UPSTREAM_PATH} (y/N): " response
-            if [[ ${response^^} == "Y" ]]; then
-                CMD="spack config --scope site add upstreams:spack-lbann-vast:install_tree:${CENTER_UPSTREAM_PATH}"
-                echo ${CMD} | tee -a ${LOG}
-                [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-            fi
-        else
-            printf "Spack is using\n${EXISTING_UPSTREAM}\n"
-        fi
-    fi
+    # if [[ -r "${CENTER_UPSTREAM_PATH:-}" ]]; then
+    #     EXISTING_UPSTREAM=`spack config get upstreams`
+    #     if [[ ${EXISTING_UPSTREAM} == "upstreams: {}" ]]; then
+    #         read -p "Do you want to add pointer for this spack repository to ${CENTER_UPSTREAM_PATH} (y/N): " response
+    #         if [[ ${response^^} == "Y" ]]; then
+    #             CMD="spack config --scope site add upstreams:spack-lbann-vast:install_tree:${CENTER_UPSTREAM_PATH}"
+    #             echo ${CMD} | tee -a ${LOG}
+    #             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+    #         fi
+    #     else
+    #         printf "Spack is using\n${EXISTING_UPSTREAM}\n"
+    #     fi
+    # fi
 
     # If the dependencies are being installed then you should clean things up
     if [[ -n "${INSTALL_DEPS:-}" ]]; then
@@ -708,6 +706,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
     # Force a unified environment
     if [[ -n "${INSTALL_DEPS:-}" ]]; then
         # Force the environment to concretize together with any additional packages
+#        CMD="spack config add concretizer:unify:when_possible"
         CMD="spack config add concretizer:unify:true"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
@@ -719,10 +718,18 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
         # Allow minimal duplicates otherwise NumPy and SciPy cannot co-concretize
-        # CMD="spack config add concretizer:duplicates:strategy:minimal"
-        # echo ${CMD} | tee -a ${LOG}
-        # [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-    fi
+        CMD="spack config add concretizer:duplicates:strategy:minimal"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+        # Force the environment to use RPATHs
+        CMD="spack config add config:shared_linking:type:rpath"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        CMD="spack config add config:shared_linking:bind:true"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+     fi
 
     ##########################################################################################
     # See if the is a local spack mirror or buildcache
@@ -794,17 +801,22 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         # fi
 
         # Use standard tags for common packages
-        CMD="spack external find --not-buildable --scope env:${LBANN_ENV} --tag core-packages --tag build-tools --tag rocm"
+        CMD="spack external find --not-buildable --scope env:${LBANN_ENV} --tag core-packages --tag rocm"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+        # Permit new build tools to be compiled
+        CMD="spack external find --scope env:${LBANN_ENV} --tag build-tools"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
         # Find key externals that you don't want to ever rebuild
-        CMD="spack external find --not-buildable --scope env:${LBANN_ENV} bzip2 cuda cudnn git hwloc libfabric nccl ncurses openblas openssl perl rdma-core sqlite spectrum-mpi mvapich2 openmpi netlib-lapack"
+        CMD="spack external find --not-buildable --scope env:${LBANN_ENV} bzip2 cuda cudnn git libfabric nccl ncurses openblas openssl perl rdma-core sqlite spectrum-mpi mvapich2 openmpi netlib-lapack"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
         # Find externals that you are allowed to rebuild
-        CMD="spack external find --scope env:${LBANN_ENV} hdf5"
+        CMD="spack external find --scope env:${LBANN_ENV} hdf5 hwloc"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -812,6 +824,34 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         CMD="spack external find --scope env:${LBANN_ENV} python rccl"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+        # Find any packages in the stable dependencies (superbuild)
+        STABLE_DEPENDENCIES="/p/vast1/lbann/stable_dependencies"
+        # Findable packages
+        # openblas
+        # hdf5
+        # opencv
+        # nccl
+
+        # Unfindable packages
+        # adiak
+        # caliper
+        # catch2
+        # libjpeg-turbo
+        # spdlog
+        # cereal
+        # clara
+        # cnpy
+        # conduit
+        # protobuf
+        # zstr
+        # cudnn
+
+        if [[ -r ${STABLE_DEPENDENCIES} ]]; then
+            CMD="spack external find --not-buildable --scope env:${LBANN_ENV} --path ${STABLE_DEPENDENCIES} adiak caliper catch2 hdf5 jpeg-turbo spdlog cereal clara cnpy conduit opencv protobuf zstr nccl cudnn openblas"
+            echo ${CMD} | tee -a ${LOG}
+            [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+        fi
 
         CMD="cleanup_clang_compilers ${CENTER} ${SPACK_ARCH_OS} ${SPACK_ENV_YAML_FILE}"
         echo ${CMD} | tee -a ${LOG}
@@ -904,7 +944,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         # Try to concretize the environment and catch the return code
         # Set the -f flag to force spack to re-evaluate all packages
         # During concretation to ensure that proper reuse actually occurs
-        CMD="spack concretize --test root --reuse -f ${BUILD_JOBS}"
+        CMD="spack concretize --test root --reuse -f"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 
@@ -984,6 +1024,12 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
     fi
 
     ##########################################################################################
+    # Make sure that HIP_PATH isn't set as of ROCm 5.7.x
+    CMD="unset HIP_PATH"
+    echo ${CMD} | tee -a ${LOG}
+    [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+
+    ##########################################################################################
     # Configure but don't install LBANN using spack
     CMD="spack install --test root --reuse -u initconfig ${BUILD_JOBS} lbann"
     echo ${CMD} | tee -a ${LOG}
@@ -1022,6 +1068,7 @@ EOF
             cat >> ${LBANN_SETUP_FILE}<<EOF
 # Modules loaded during this installation
 ${MODULE_CMD}
+unset HIP_PATH
 EOF
         fi
 

@@ -61,8 +61,11 @@ def make_batch_script(
     if scheduler == 'slurm' and has_gpu(system):
         launcher_args.extend(['--mpibind=off'])
 
-    if scheduler == 'flux' and system == 'corona':
-        launcher_args.extend(['-o pmi=pmix'])
+    # if scheduler == 'flux' and system == 'corona':
+        # If using mvapich2 use PMI2
+        # launcher_args.extend(['-o pmi=pmi2'])
+        # if usuing OpenMPI use PMIx
+        # launcher_args.extend(['-o pmi=pmix'])
 
     # Optimized thread affinity for Pascal
     # Note: Both GPUs are on socket 0, so we only use cores on that

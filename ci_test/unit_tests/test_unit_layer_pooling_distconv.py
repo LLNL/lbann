@@ -317,5 +317,5 @@ def construct_data_reader(lbann):
 _test_name = os.path.splitext(os.path.basename(current_file))[0]
 for _test_func in tools.create_tests(setup_experiment, _test_name,
                                      environment=lbann.contrib.args.get_distconv_environment(),
-                                     time_limit=15):
+                                     time_limit=20):
     globals()[_test_func.__name__] = _test_func

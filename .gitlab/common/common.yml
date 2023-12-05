@@ -63,7 +63,8 @@
     LBANN_CI_RUN_WEEKLY: ${LBANN_CI_RUN_WEEKLY}
 
     # Preserve any spack-build-* directories to allow for faster testing
-    GIT_CLEAN_FLAGS: -ffdx -e spack-build-* -e builds/* -e LBANN_*.cmake -e LBANN_*_setup_build_tools.sh
+    GIT_CLEAN_FLAGS: -ffdx
+#    GIT_CLEAN_FLAGS: -ffdx -e spack-build-* -e builds/* -e LBANN_*.cmake -e LBANN_*_setup_build_tools.sh
   before_script:
     - export SPACK_USER_CACHE_PATH=${SPACK_USER_CACHE_PATH}
     - echo "SPACK_USER_CACHE_PATH=${SPACK_USER_CACHE_PATH}"
@@ -111,15 +112,23 @@
     - echo "export LBANN_BUILD_PARENT_DIR=${LBANN_BUILD_PARENT_DIR}" >> spack-ci-env-name.sh
     - echo "export LBANN_MODFILES_DIR=${LBANN_MODFILES_DIR}" >> spack-ci-env-name.sh
 
-# Cleanup the pipeline's Spack environment.
-# Switching over to reusing Spack environments for each feature branch so don't remove them immediately
-# Cleanup any build directories and spack environments older than 5 days since last use
-.cleanup old spack environment:
+.cleanup old build objects:
+  rules:
+    - exists:
+      - spack-ci-env-name.sh
   script:
     - echo "== CLEAN BUILD DIRECTORY =="
     - source spack-ci-env-name.sh
     - echo "== CLEANING ${LBANN_BUILD_PARENT_DIR}/build =="
     - cmake --build ${LBANN_BUILD_PARENT_DIR}/build --target clean
+
+# Cleanup the pipeline's Spack environment.
+# Switching over to reusing Spack environments for each feature branch so don't remove them immediately
+# Cleanup any build directories and spack environments older than 5 days since last use
+.cleanup old spack environment:
+  script:
+    - echo "== CLEAN CI =="
+    - !reference [.cleanup old build objects, script]
     - echo "== REMOVING BUILD RESOURCES =="
     - find ${CI_PROJECT_DIR}/builds -maxdepth 1 -mtime +2 -name "lbann_*" -type d -print -exec rm -r {} \;
     - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +2 -name "LBANN_*_setup_build_tools.sh" -type f -print -exec rm {} \;
@@ -129,6 +138,7 @@
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
     - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
     - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +5 -type d -exec basename {} \; | xargs -r spack env rm --yes-to-all
+  allow_failure: true
 
 .lbann-artifacts:
   artifacts:
@@ -142,6 +152,7 @@
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/*.cmake
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/CMakeCache.txt
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/build.ninja
+      - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/CMakeFiles/rules.ninja
       - ${RESULTS_DIR}/*
     exclude:
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/**/*.o
@@ -152,3 +163,25 @@
     - if: $JOB_NAME_SUFFIX == "_distconv"
       when: never
     - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+
+# .check_allocation:
+#   script:
+#     - |
+#       if [ $FF_USE_NEW_BASH_EVAL_STRATEGY ]; then
+#         echo "== Using the new eval strategy =="
+#       else
+#         echo "== Using the old eval strategy =="
+#       fi
+#     - |
+#       if [ $FF_ENABLE_BASH_EXIT_CODE_CHECK ]; then
+#         echo "== Enable BASH exit code check =="
+#       else
+#         echo "== Not checking the exit code =="
+#       fi
+#     - |
+#       if [ -z "${JOB_ID}" ]; then
+#         echo "== GITLAB FAILED TO GET ALLOCATION - BAIL =="
+#         exit 42
+#       else
+#         echo "== CI JOB RUNNING WITH JOB_ID = $JOB_ID =="
+#       fi
