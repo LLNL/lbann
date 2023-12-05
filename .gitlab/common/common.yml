@@ -63,7 +63,8 @@
     LBANN_CI_RUN_WEEKLY: ${LBANN_CI_RUN_WEEKLY}
 
     # Preserve any spack-build-* directories to allow for faster testing
-    GIT_CLEAN_FLAGS: -ffdx -e spack-build-* -e builds/* -e LBANN_*.cmake -e LBANN_*_setup_build_tools.sh
+    GIT_CLEAN_FLAGS: -ffdx
+#    GIT_CLEAN_FLAGS: -ffdx -e spack-build-* -e builds/* -e LBANN_*.cmake -e LBANN_*_setup_build_tools.sh
   before_script:
     - export SPACK_USER_CACHE_PATH=${SPACK_USER_CACHE_PATH}
     - echo "SPACK_USER_CACHE_PATH=${SPACK_USER_CACHE_PATH}"

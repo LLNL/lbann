@@ -726,7 +726,10 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         CMD="spack config add config:shared_linking:type:rpath"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
-    fi
+        CMD="spack config add config:shared_linking:bind:true"
+        echo ${CMD} | tee -a ${LOG}
+        [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
+     fi
 
     ##########################################################################################
     # See if the is a local spack mirror or buildcache
