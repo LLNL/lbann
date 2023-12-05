@@ -57,7 +57,8 @@ void optimizer::finish_gradient_sync()
 }
 
 std::vector<std::reference_wrapper<El::BaseDistMatrix>>
-optimizer::get_raw_gradients() {
+optimizer::get_raw_gradients()
+{
   this->start_gradient_sync();
   this->finish_gradient_sync();
 
@@ -167,6 +168,7 @@ void optimizer::remove_gradient_source(const void* source)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
+#define LBANN_INSTANTIATE_DOUBLE
 #include "lbann/macros/instantiate.hpp"
 
 #define LBANN_CLASS_NAME optimizer

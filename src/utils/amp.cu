@@ -25,8 +25,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/amp.hpp"
-#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
+#include "lbann/utils/profiling.hpp"
 
 namespace lbann {
 namespace amp {
@@ -34,11 +34,12 @@ namespace amp {
 namespace {
 
 template <typename TensorDataType>
-__global__ void is_finite_and_unscale_contiguous_kernel(
-  size_t size,
-  TensorDataType* __restrict__ grads,
-  const TensorDataType inv_scale,
-  float* is_finite) {
+__global__ void
+is_finite_and_unscale_contiguous_kernel(size_t size,
+                                        TensorDataType* __restrict__ grads,
+                                        const TensorDataType inv_scale,
+                                        float* is_finite)
+{
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if (gid < size) {
     TensorDataType& val = grads[gid];
@@ -50,18 +51,19 @@ __global__ void is_finite_and_unscale_contiguous_kernel(
 }
 
 template <typename TensorDataType>
-__global__ void is_finite_and_unscale_noncontiguous_kernel(
-  size_t height,
-  size_t width,
-  size_t ldim,
-  TensorDataType* __restrict__ grads,
-  const TensorDataType inv_scale,
-  float* is_finite) {
+__global__ void
+is_finite_and_unscale_noncontiguous_kernel(size_t height,
+                                           size_t width,
+                                           size_t ldim,
+                                           TensorDataType* __restrict__ grads,
+                                           const TensorDataType inv_scale,
+                                           float* is_finite)
+{
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if (gid < height * width) {
     const auto row = gid % height;
     const auto col = gid / height;
-    TensorDataType& val = grads[row + col*ldim];
+    TensorDataType& val = grads[row + col * ldim];
     if (!gpu_lib::isfinite<TensorDataType>(val)) {
       *is_finite = 0.0f;
     }
@@ -69,13 +71,13 @@ __global__ void is_finite_and_unscale_noncontiguous_kernel(
   }
 }
 
-}  // anonymous namespace
+} // anonymous namespace
 
 template <typename TensorDataType>
-void is_finite_and_unscale_gpu(
-  El::AbstractDistMatrix<TensorDataType>& grads,
-  EvalType scale,
-  float* is_finite) {
+void is_finite_and_unscale_gpu(El::AbstractDistMatrix<TensorDataType>& grads,
+                               EvalType scale,
+                               float* is_finite)
+{
   LBANN_CALIPER_MARK_SCOPE("amp::is_finite_and_unscale");
 
   const size_t height = grads.LocalHeight();
@@ -100,7 +102,8 @@ void is_finite_and_unscale_gpu(
       grads.Buffer(),
       inv_scale,
       is_finite);
-  } else {
+  }
+  else {
     hydrogen::gpu::LaunchKernel(
       is_finite_and_unscale_noncontiguous_kernel<TensorDataType>,
       grid_size,
@@ -118,19 +121,23 @@ void is_finite_and_unscale_gpu(
 
 #ifdef LBANN_HAS_HALF
 template <>
-void is_finite_and_unscale_gpu<cpu_fp16>(El::AbstractDistMatrix<cpu_fp16>&, EvalType, float*) {
+void is_finite_and_unscale_gpu<cpu_fp16>(El::AbstractDistMatrix<cpu_fp16>&,
+                                         EvalType,
+                                         float*)
+{
   LBANN_ERROR("Do not call the GPU kernels with cpu_fp16!");
 }
 #endif
 
-#define PROTO(T)                                        \
-  template void is_finite_and_unscale_gpu<T>(           \
-    El::AbstractDistMatrix<T>& grads,                   \
-    EvalType scale,                                     \
-    float* is_finite);
+#define PROTO(T)                                                               \
+  template void is_finite_and_unscale_gpu<T>(El::AbstractDistMatrix<T> &       \
+                                               grads,                          \
+                                             EvalType scale,                   \
+                                             float* is_finite);
 
 #define LBANN_INSTANTIATE_GPU_HALF
+#define LBANN_INSTANTIATE_DOUBLE
 #include "lbann/macros/instantiate.hpp"
 
-}  // namespace amp
-}  // namespace lbann
+} // namespace amp
+} // namespace lbann
