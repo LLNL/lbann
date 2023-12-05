@@ -18,7 +18,7 @@ class LSFBatchScript(BatchScript):
                  partition=None,
                  account=None,
                  reservation=None,
-                 launcher='jsrun',
+                 launcher=None,
                  launcher_args=[],
                  interpreter='/bin/bash'):
         """Construct LSF batch script manager.
@@ -54,7 +54,7 @@ class LSFBatchScript(BatchScript):
         self.nodes = nodes
         self.procs_per_node = procs_per_node
         self.reservation = reservation
-        self.launcher = launcher
+        self.launcher = launcher if launcher is not None else 'jsrun'
         self.launcher_args = launcher_args
 
         # Configure header with LSF job options

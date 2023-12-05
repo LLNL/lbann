@@ -25,7 +25,7 @@ class SlurmBatchScript(BatchScript):
                  job_name=None,
                  partition=None,
                  account=None,
-                 launcher='srun',
+                 launcher=None,
                  launcher_args=[],
                  interpreter='/bin/bash'):
         """Construct Slurm batch script manager.
@@ -62,7 +62,7 @@ class SlurmBatchScript(BatchScript):
         self.job_name = job_name
         self.partition = partition
         self.account = account
-        self.launcher = launcher
+        self.launcher = launcher if launcher is not None else 'srun'
         self.launcher_args = launcher_args
 
         # Configure header with Slurm job options

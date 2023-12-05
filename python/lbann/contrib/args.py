@@ -3,6 +3,7 @@
 from typing import Any
 
 import argparse
+import shlex
 
 import lbann
 import lbann.core.optimizer
@@ -12,7 +13,8 @@ def add_scheduler_arguments(parser, default_job_name):
     """Add command-line arguments for common scheduler settings.
 
     Adds the following options: `--nodes`, `--procs-per-node`,
-    `--partition`, `--account`, `--time-limit`, `--reservation`.
+    `--partition`, `--account`, `--time-limit`, `--reservation`,
+    `--launcher`, `--launcher-args`.
     The caller is responsible for using them.
     `get_scheduler_kwargs` can assist with extracting them.
 
@@ -62,6 +64,18 @@ def add_scheduler_arguments(parser, default_job_name):
                         type=str,
                         help=f'job name (default: {default_job_name})',
                         metavar='NAME')
+    parser.add_argument('--launcher',
+                        action='store',
+                        default=None,
+                        type=str,
+                        help='parallel command launcher',
+                        metavar='NAME')
+    parser.add_argument('--launcher-args',
+                        action='store',
+                        default=None,
+                        type=str,
+                        help='extra launcher arguments',
+                        metavar='ARGS')
 
 
 def get_scheduler_kwargs(args):
@@ -88,6 +102,9 @@ def get_scheduler_kwargs(args):
     if args.reservation: kwargs['reservation'] = args.reservation
     if args.time_limit: kwargs['time_limit'] = args.time_limit
     if args.setup_only: kwargs['setup_only'] = True
+    if args.launcher: kwargs['launcher'] = args.launcher
+    if args.launcher_args:
+        kwargs['launcher_args'] = shlex.split(args.launcher_args)
     return kwargs
 
 
