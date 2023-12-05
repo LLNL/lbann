@@ -78,7 +78,7 @@ unit tests:
     - export LBANN_NNODES=1
     - export TEST_TASKS_PER_NODE=4
     - echo "Skipping unit tests due to PMI issue on lassen."
-#    - lalloc ${LBANN_NNODES} -W 30 -G guests -q pdebug .gitlab/lassen/run_unit_tests.sh
+    - lalloc ${LBANN_NNODES} -W 30 -G guests -q pdebug .gitlab/lassen/run_unit_tests.sh
   artifacts:
     when: always
     paths:
