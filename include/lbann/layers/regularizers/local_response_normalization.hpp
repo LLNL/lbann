@@ -299,7 +299,7 @@ private:
 
     // Check if LRN is using default beta parameter
     // std::fabs is not defined for GPU half.
-#ifdef LBANN_HAS_HALF
+#ifdef LBANN_HAS_GPU_FP16
     const bool default_beta = [&] {
       if constexpr (!std::is_same_v<TensorDataType, __half>) {
         return (std::fabs((m_beta - El::To<TensorDataType>(0.75)) /
@@ -316,7 +316,7 @@ private:
       (std::fabs((m_beta - El::To<TensorDataType>(0.75)) /
                  El::To<TensorDataType>(0.75)) <
        2 * std::numeric_limits<DataType>::epsilon());
-#endif // LBANN_HAS_HALF
+#endif // LBANN_HAS_GPU_FP16
 
     ////////////////////////////////////////////////////////////////
     // activations(i) = prev_activations(i) / scale_factor(i) ^ beta
