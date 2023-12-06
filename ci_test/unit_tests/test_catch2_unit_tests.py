@@ -93,7 +93,7 @@ def test_run_parallel_filesystem_catch_tests(cluster, dirname):
     mpi_launch = get_system_mpi_launch(cluster)
     mpi_output_file_name = 'mpi_filesystem_catch_tests_output-%s-rank=%%r-size=%%s.xml' % (cluster)
     mpi_output_file = os.path.join(output_dir, mpi_output_file_name)
-    mpi_catch_args = [mpi_catch_exe, '"[filesystem]"', '-r', 'junit', '-o', mpi_output_file]
+    mpi_catch_args = [mpi_catch_exe, '[filesystem]', '-r', 'junit', '-o', mpi_output_file]
     output = sp.run(mpi_launch + mpi_catch_args, cwd=build_dir)
     if output.returncode != 0:
         raise AssertionError('return_code={%d}' % output.returncode)
