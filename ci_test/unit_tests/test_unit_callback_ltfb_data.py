@@ -175,5 +175,6 @@ def construct_data_reader(lbann):
 for _test_func in tools.create_tests(setup_experiment,
                                __file__,
                                nodes=2,
+                               time_limit=3,
                                lbann_args='--procs_per_trainer=2'):
     globals()[_test_func.__name__] = _test_func

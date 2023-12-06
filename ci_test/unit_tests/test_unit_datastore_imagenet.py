@@ -267,6 +267,7 @@ def make_test(name, test_by_platform_list=[], args=[]) :
             __file__,
             nodes=num_nodes,
             test_name_base=name,
+            time_limit=3,
             lbann_args=args)
 
     if test_by_platform_list != [] :
