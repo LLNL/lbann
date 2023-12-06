@@ -510,6 +510,7 @@ int get_num_spatial_dims(const Layer& layer) { return get_num_dims(layer) - 2; }
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
+#define LBANN_INSTANTIATE_DOUBLE
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace dc

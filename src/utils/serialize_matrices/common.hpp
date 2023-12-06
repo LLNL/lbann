@@ -27,6 +27,8 @@
 #include <cereal/types/polymorphic.hpp>
 #include <lbann/utils/serialization/serialize_matrices.hpp>
 
+#define LBANN_INSTANTIATE_DOUBLE
+
 // Register types outside Cereal's namespace.
 #define LBANN_COMMA ,
 

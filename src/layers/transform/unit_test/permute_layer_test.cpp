@@ -44,8 +44,10 @@ using TheTestTypes = h2::meta::TL<
 #ifdef LBANN_HAS_GPU_FP16
   ::lbann::fp16,
 #endif
-  float,
-  double>;
+#ifdef LBANN_HAS_DOUBLE
+  double,
+#endif // LBANN_HAS_DOUBLE
+  float>;
 
 static std::string to_str(::lbann::description const& d)
 {

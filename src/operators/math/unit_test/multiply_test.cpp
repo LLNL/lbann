@@ -59,9 +59,11 @@ using MultiplyOperatorAllDevices = h2::meta::TL<
 #endif // LBANN_HAS_GPU
   MultiplyOperator<T, El::Device::CPU>>;
 
-using AllMultiplyOpTypes =
-  h2::meta::tlist::Append<MultiplyOperatorAllDevices<float>,
-                          MultiplyOperatorAllDevices<double>>;
+using AllMultiplyOpTypes = h2::meta::tlist::Append<
+#ifdef LBANN_HAS_DOUBLE
+  MultiplyOperatorAllDevices<double>,
+#endif // LBANN_HAS_DOUBLE
+  MultiplyOperatorAllDevices<float>>;
 
 namespace lbann {
 template <typename T, El::Device D>

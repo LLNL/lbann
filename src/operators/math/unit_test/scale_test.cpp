@@ -59,9 +59,11 @@ using ScaleOperatorAllDevices = h2::meta::TL<
 #endif // LBANN_HAS_GPU
   ScaleOperator<T, El::Device::CPU>>;
 
-using AllScaleOpTypes =
-  h2::meta::tlist::Append<ScaleOperatorAllDevices<float>,
-                          ScaleOperatorAllDevices<double>>;
+using AllScaleOpTypes = h2::meta::tlist::Append<
+#ifdef LBANN_HAS_DOUBLE
+  ScaleOperatorAllDevices<double>,
+#endif // LBANN_HAS_DOUBLE
+  ScaleOperatorAllDevices<float>>;
 
 namespace lbann {
 template <typename T, El::Device D>

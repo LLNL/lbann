@@ -169,8 +169,12 @@ TEST_CASE("Empty WeightsProxy tests.", "[mpi][weights][proxy]")
 
 TEMPLATE_TEST_CASE("Weights proxy tests.",
                    "[mpi][weights][proxy]",
-                   (MasterProxyPair<float, float>),
-                   (MasterProxyPair<double, float>))
+                   (MasterProxyPair<float, float>)
+#ifdef LBANN_HAS_DOUBLE
+                     ,
+                   (MasterProxyPair<double, float>)
+#endif // LBANN_HAS_DOUBLE
+)
 {
   using MasterDataType = MasterType<TestType>;
   using DataType = ProxyType<TestType>;

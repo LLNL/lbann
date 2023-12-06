@@ -178,6 +178,12 @@ option(LBANN_DEBUG_PRINT_SUBTARGETS
   "Turn on debugging output of internal target properties." OFF)
 mark_as_advanced(LBANN_DEBUG_PRINT_SUBTARGETS)
 
+option(LBANN_WITH_DOUBLE
+  "Build with support for double precision layers, optimizers, and weights." OFF)
+if (LBANN_WITH_DOUBLE)
+  set(LBANN_HAS_DOUBLE TRUE)
+endif (LBANN_WITH_DOUBLE)
+
 option(LBANN_EXPLICIT_LIBDL
   "Explicitly find and link to libdl" OFF)
 mark_as_advanced(LBANN_EXPLICIT_LIBDL)
@@ -264,6 +270,10 @@ endif ()
 include(SetupOpenMP)
 include(SetupMPI)
 include(SetupProtobuf)
+
+if (LBANN_DATATYPE STREQUAL "double")
+  set(LBANN_HAS_DOUBLE TRUE)
+endif ()
 
 # Setup FFTW
 if (LBANN_WITH_FFT)
@@ -1066,6 +1076,7 @@ append_str_tf(_str
   LBANN_HAS_DETERMINISTIC
   LBANN_HAS_DIHYDROGEN
   LBANN_HAS_DISTCONV
+  LBANN_HAS_DOUBLE
   LBANN_HAS_DOXYGEN
   LBANN_HAS_FFTW
   LBANN_HAS_HIPTT

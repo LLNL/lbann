@@ -84,8 +84,10 @@ using AllLayerTypes = h2::meta::tlist::Append<
 #ifdef LBANN_HAS_HALF
   LayerTypeAllLayoutsAndDevice<FP16Type>,
 #endif // LBANN_HAS_HALF
-  LayerTypeAllLayoutsAndDevice<float>,
-  LayerTypeAllLayoutsAndDevice<double>>;
+#ifdef LBANN_HAS_DOUBLE
+  LayerTypeAllLayoutsAndDevice<double>,
+#endif // LBANN_HAS_DOUBLE
+  LayerTypeAllLayoutsAndDevice<float>>;
 
 template <typename LayerT>
 struct LayerTraits;

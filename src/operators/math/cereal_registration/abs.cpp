@@ -51,9 +51,13 @@
 #define PROTO_DEVICE(T, D) LBANN_REGISTER_OPERATOR_WITH_CEREAL(T, D)
 
 PROTO_DEVICE(El::Complex<float>, El::Device::CPU);
+#ifdef LBANN_HAS_DOUBLE
 PROTO_DEVICE(El::Complex<double>, El::Device::CPU);
+#endif // LBANN_HAS_DOUBLE
 
 #ifdef LBANN_HAS_GPU
 PROTO_DEVICE(El::Complex<float>, El::Device::GPU);
+#ifdef LBANN_HAS_DOUBLE
 PROTO_DEVICE(El::Complex<double>, El::Device::GPU);
+#endif // LBANN_HAS_DOUBLE
 #endif // LBANN_HAS_GPU

@@ -59,8 +59,11 @@ using AddOperatorAllDevices = h2::meta::TL<
 #endif // LBANN_HAS_GPU
   AddOperator<T, El::Device::CPU>>;
 
-using AllAddOpTypes = h2::meta::tlist::Append<AddOperatorAllDevices<float>,
-                                              AddOperatorAllDevices<double>>;
+using AllAddOpTypes = h2::meta::tlist::Append<
+#ifdef LBANN_HAS_DOUBLE
+  AddOperatorAllDevices<double>,
+#endif // LBANN_HAS_DOUBLE
+  AddOperatorAllDevices<float>>;
 
 namespace lbann {
 template <typename T, El::Device D>

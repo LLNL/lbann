@@ -54,15 +54,18 @@ template <typename U>
 class entrywise_layer_tensor_manager;
 } // namespace dnn_lib
 
-using supported_layer_data_type = h2::meta::TL<
+using supported_layer_data_type = h2::meta::tlist::Unique<h2::meta::TL<
 #ifdef LBANN_HAS_GPU_FP16
   fp16,
 #endif
 #ifdef LBANN_HAS_HALF
   cpu_fp16,
 #endif
-  float,
-  double>;
+#ifdef LBANN_HAS_DOUBLE
+  double,
+#endif // LBANN_HAS_DOUBLE
+  EvalType,
+  float>>;
 
 template <typename InputTensorDataType,
           typename OutputTensorDataType = InputTensorDataType>
@@ -464,10 +467,12 @@ protected:
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
+#define LBANN_INSTANTIATE_DOUBLE
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 #undef LBANN_INSTANTIATE_CPU_HALF
 #undef LBANN_INSTANTIATE_GPU_HALF
+#undef LBANN_INSTANTIATE_DOUBLE
 
 #endif // LBANN_DATA_TYPE_LAYER_INSTANTIATE
 

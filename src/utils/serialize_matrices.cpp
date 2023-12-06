@@ -78,6 +78,7 @@
 
 // Enumerate all the valid data types.
 #define PROTO(T) REGISTER_ALL_DISTMATRIX_DEVICES(T)
+#define LBANN_INSTANTIATE_DOUBLE
 #include <lbann/macros/instantiate.hpp>
 
 CEREAL_REGISTER_DYNAMIC_INIT(DistMatrixTypes);

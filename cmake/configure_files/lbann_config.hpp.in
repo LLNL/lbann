@@ -70,6 +70,8 @@
 
 #cmakedefine LBANN_DETERMINISTIC
 
+#cmakedefine LBANN_HAS_DOUBLE
+
 #cmakedefine LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_CUDNN
 #cmakedefine LBANN_HAS_CUTENSOR

@@ -26,16 +26,18 @@
 
 #include <lbann/operators/math/math_builders_impl.hpp>
 
-#define LBANN_ABS_OP_COMPLEX_ETI(D)                                            \
-  template std::unique_ptr<lbann::Operator<El::Complex<float>, float, D>>      \
-  lbann::build_abs_operator<El::Complex<float>, D>(                            \
-    lbann_data::Operator const&);                                              \
-  template std::unique_ptr<lbann::Operator<El::Complex<double>, double, D>>    \
-  lbann::build_abs_operator<El::Complex<double>, D>(                           \
-    lbann_data::Operator const&)
-LBANN_ABS_OP_COMPLEX_ETI(El::Device::CPU);
+#define LBANN_ABS_OP_COMPLEX_ETI(T, D)                                         \
+  template std::unique_ptr<lbann::Operator<El::Complex<T>, T, D>>              \
+  lbann::build_abs_operator<El::Complex<T>, D>(lbann_data::Operator const&);
+LBANN_ABS_OP_COMPLEX_ETI(float, El::Device::CPU);
+#ifdef LBANN_HAS_DOUBLE
+LBANN_ABS_OP_COMPLEX_ETI(double, El::Device::CPU);
+#endif // LBANN_HAS_DOUBLE
 #ifdef LBANN_HAS_GPU
-LBANN_ABS_OP_COMPLEX_ETI(El::Device::GPU);
+LBANN_ABS_OP_COMPLEX_ETI(float, El::Device::GPU);
+#ifdef LBANN_HAS_DOUBLE
+LBANN_ABS_OP_COMPLEX_ETI(double, El::Device::GPU);
+#endif // LBANN_HAS_DOUBLE
 #endif
 #undef LBANN_ABS_OP_COMPLEX_ETI
 

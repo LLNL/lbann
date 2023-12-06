@@ -68,8 +68,11 @@ using SinOperatorAllDevices = h2::meta::TL<
 #endif // LBANN_HAS_GPU
   SinOperator<T, El::Device::CPU>>;
 
-using AllSinOpTypes = h2::meta::tlist::Append<SinOperatorAllDevices<float>,
-                                              SinOperatorAllDevices<double>>;
+using AllSinOpTypes = h2::meta::tlist::Append<
+#ifdef LBANN_HAS_DOUBLE
+  SinOperatorAllDevices<double>,
+#endif // LBANN_HAS_DOUBLE
+  SinOperatorAllDevices<float>>;
 
 namespace lbann {
 template <typename T, El::Device D>
