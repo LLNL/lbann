@@ -152,6 +152,8 @@ def main():
     # Run trainer
     if not args.setup_only:
         train_script.run(overwrite=True)
+    else:
+        train_script.write(overwrite=True)
 
 
 if __name__ == '__main__':

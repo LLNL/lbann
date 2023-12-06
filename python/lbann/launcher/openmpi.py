@@ -13,7 +13,7 @@ class OpenMPIBatchScript(BatchScript):
                  work_dir=os.getcwd(),
                  nodes=1,
                  procs_per_node=1,
-                 launcher='mpiexec',
+                 launcher=None,
                  launcher_args=[],
                  interpreter='/bin/bash'):
         """Construct OpenMPI script manager.
@@ -39,7 +39,7 @@ class OpenMPIBatchScript(BatchScript):
                          interpreter=interpreter)
         self.nodes = nodes
         self.procs_per_node = procs_per_node
-        self.launcher = launcher
+        self.launcher = launcher if launcher is not None else 'mpiexec'
         self.launcher_args = launcher_args
 
     def add_parallel_command(self,

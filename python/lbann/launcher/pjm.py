@@ -24,7 +24,7 @@ class PJMBatchScript(BatchScript):
                  time_limit=None,
                  job_name=None,
                  partition=None,
-                 launcher='mpiexec',
+                 launcher=None,
                  launcher_args=[],
                  interpreter='/bin/bash'):
         """Construct PJM script manager.
@@ -58,7 +58,7 @@ class PJMBatchScript(BatchScript):
         self.time_limit = time_limit
         self.job_name = job_name
         self.partition = partition
-        self.launcher = launcher
+        self.launcher = launcher if launcher is not None else 'mpiexec'
         self.launcher_args = launcher_args
 
         # Configure header with PJM job options

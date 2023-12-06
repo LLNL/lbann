@@ -18,7 +18,7 @@ class FluxBatchScript(BatchScript):
                  job_name=None,
                  partition=None,
                  account=None,
-                 launcher='flux run',
+                 launcher=None,
                  launcher_args=[],
                  interpreter='/bin/bash'):
         """Construct Flux batch script manager.
@@ -55,7 +55,7 @@ class FluxBatchScript(BatchScript):
         self.job_name = job_name
         self.partition = partition
         self.account = account
-        self.launcher = launcher
+        self.launcher = launcher if launcher is not None else 'flux run'
         self.launcher_args = launcher_args
 
         # Slurm defines these in the ctor, so let's do that too.

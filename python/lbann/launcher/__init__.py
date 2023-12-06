@@ -64,6 +64,7 @@ def run(
     partition=None,
     account=None,
     reservation=None,
+    launcher=None,
     launcher_args=[],
     lbann_exe=lbann.lbann_exe(),
     lbann_args=[],
@@ -105,6 +106,7 @@ def run(
         partition (str, optional): Scheduler partition.
         account (str, optional): Scheduler account.
         reservation (str, optional): Scheduler reservation name.
+        launcher (str, optional): Parallel command launcher.
         launcher_args (str, optional): Command-line arguments to
             launcher.
         lbann_exe (str, optional): LBANN executable.
@@ -146,6 +148,7 @@ def run(
                                partition=partition,
                                account=account,
                                reservation=reservation,
+                               launcher=launcher,
                                launcher_args=launcher_args,
                                environment=environment)
 
@@ -203,6 +206,7 @@ def make_batch_script(script_file=None,
                       partition=None,
                       account=None,
                       reservation=None,
+                      launcher=None,
                       launcher_args=[],
                       environment={},
                       preamble_cmds=[],
@@ -232,6 +236,7 @@ def make_batch_script(script_file=None,
         partition (str, optional): Scheduler partition.
         account (str, optional): Scheduler account.
         reservation (str, optional): Scheduler advance reservation.
+        launcher (str, optional): Parallel command launcher.
         launcher_args (`Iterable` of `str`, optional):
             Command-line arguments to parallel command launcher.
         environment (`dict` of `{str: str}`, optional): Environment
@@ -290,6 +295,7 @@ def make_batch_script(script_file=None,
             work_dir=work_dir,
             nodes=nodes,
             procs_per_node=procs_per_node,
+            launcher=launcher,
             launcher_args=launcher_args)
     elif scheduler.lower() in ('slurm', 'srun', 'sbatch'):
         script = lbann.launcher.slurm.SlurmBatchScript(
@@ -301,6 +307,7 @@ def make_batch_script(script_file=None,
             job_name=job_name,
             partition=partition,
             account=account,
+            launcher=launcher,
             launcher_args=launcher_args)
     elif scheduler.lower() in ('flux'):
         script = lbann.launcher.flux.FluxBatchScript(
@@ -312,6 +319,7 @@ def make_batch_script(script_file=None,
             job_name=job_name,
             partition=partition,
             account=account,
+            launcher=launcher,
             launcher_args=launcher_args)
     elif scheduler.lower() in ('lsf', 'jsrun', 'bsub'):
         script = lbann.launcher.lsf.LSFBatchScript(
@@ -324,6 +332,7 @@ def make_batch_script(script_file=None,
             partition=partition,
             account=account,
             reservation=reservation,
+            launcher=launcher,
             launcher_args=launcher_args)
     elif scheduler.lower() in ('pjm', 'pjsub'):
         script = lbann.launcher.pjm.PJMBatchScript(
@@ -334,6 +343,7 @@ def make_batch_script(script_file=None,
             time_limit=time_limit,
             job_name=job_name,
             partition=partition,
+            launcher=launcher,
             launcher_args=launcher_args)
     else:
         raise RuntimeError('unsupported job scheduler ({})'.format(scheduler))
