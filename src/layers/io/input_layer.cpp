@@ -29,7 +29,7 @@
 #define LBANN_INPUT_LAYER_INSTANTIATE
 #include "lbann/layers/io/input_layer.hpp"
 
-#include "lbann/data_coordinator/buffered_data_coordinator.hpp"
+#include "lbann/data_ingestion/coordinator/buffered_data_coordinator.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/models/model.hpp"

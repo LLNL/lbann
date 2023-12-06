@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_SLICE_IMPL_HPP_INCLUDED
 #define LBANN_LAYER_SLICE_IMPL_HPP_INCLUDED
 
-#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/data_ingestion/data_coordinator.hpp"
 #include "lbann/layers/transform/slice.hpp"
 
 namespace lbann {

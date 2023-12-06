@@ -211,7 +211,7 @@ public:
 
   /** @details Must be called after model specification and before
    *  execution. */
-  void setup(size_t max_mini_batch_size,
+  void setup(uint64_t max_mini_batch_size,
              const std::vector<El::Grid*>& grids,
              bool force = false);
 
@@ -332,7 +332,7 @@ private:
    *
    *  Called in setup function.
    */
-  void setup_layers(size_t max_mini_batch_size,
+  void setup_layers(uint64_t max_mini_batch_size,
                     const std::vector<El::Grid*>& grids);
 
   /** @brief Set up weights.
@@ -403,7 +403,7 @@ public:
   /** @brief Backward propagation step. */
   void backward_prop(bool compute_weight_grads_only = true);
   /** Evaluate any metrics in the model */
-  void evaluate_metrics(execution_mode mode, size_t current_mini_batch_size);
+  void evaluate_metrics(execution_mode mode, uint64_t current_mini_batch_size);
   /** @brief Clear each optimizer's gradient.
    *
    *  This must be called before training forward prop since layers
@@ -471,11 +471,11 @@ public:
   /** @brief Execute callbacks at the end of weight optimization. */
   void do_weight_optimize_end_cbs(weights* w);
   /** @brief Return the maximum mini-batch size. */
-  El::Int get_max_mini_batch_size() const noexcept;
+  uint64_t get_max_mini_batch_size() const noexcept;
   /** @brief Return the current mini-batch size. */
-  El::Int get_current_mini_batch_size() const noexcept;
+  uint64_t get_current_mini_batch_size() const noexcept;
   /** @brief Set the current mini-batch size. */
-  void set_current_mini_batch_size(El::Int) noexcept;
+  void set_current_mini_batch_size(uint64_t) noexcept;
 
 private:
   friend cereal::access;
@@ -623,7 +623,7 @@ private:
   /** @brief The maximum mini-batch size.
    *  @details This should be set before setup_distconv() is called.
    */
-  El::Int m_max_mini_batch_size;
+  uint64_t m_max_mini_batch_size;
 
   /** @brief The current mini-batch size.
    *  @details This should be set on each step by the execution
@@ -634,7 +634,7 @@ private:
    *  used for correctly averaging gradients.
 
    */
-  El::Int m_current_mini_batch_size;
+  uint64_t m_current_mini_batch_size;
 
   /** @brief Reference counter for activations. */
   PointerRangeReferenceCounter m_activation_refcnt;
@@ -765,17 +765,18 @@ inline void model::set_num_resources_branch_layers(int num) noexcept
   num_resources_branch_layers = num;
 }
 
-inline El::Int model::get_max_mini_batch_size() const noexcept
+inline uint64_t model::get_max_mini_batch_size() const noexcept
 {
   return m_max_mini_batch_size;
 }
 
-inline El::Int model::get_current_mini_batch_size() const noexcept
+inline uint64_t model::get_current_mini_batch_size() const noexcept
 {
   return m_current_mini_batch_size;
 }
 
-inline void model::set_current_mini_batch_size(El::Int mini_batch_size) noexcept
+inline void
+model::set_current_mini_batch_size(uint64_t mini_batch_size) noexcept
 {
   if (mini_batch_size > m_max_mini_batch_size) {
     LBANN_WARNING(

@@ -28,7 +28,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/summarize_images.hpp"
-#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/data_ingestion/data_coordinator.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/layers/io/input_layer.hpp"
 #include "lbann/models/model.hpp"

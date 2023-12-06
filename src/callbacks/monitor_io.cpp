@@ -29,7 +29,7 @@
 #include <utility>
 
 #include "lbann/callbacks/monitor_io.hpp"
-#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/data_ingestion/data_coordinator.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"

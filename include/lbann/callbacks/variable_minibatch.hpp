@@ -64,24 +64,26 @@ protected:
    * behavior; also be aware of interactions with other learning rate
    * schedules.
    */
-  virtual bool
-  schedule(model* m, size_t& new_mbsize, float& new_lr, size_t& ramp_time) = 0;
+  virtual bool schedule(model* m,
+                        uint64_t& new_mbsize,
+                        float& new_lr,
+                        uint64_t& ramp_time) = 0;
   /// Change the learning rate of every layer in m to new_lr.
   void change_learning_rate(model* m, float new_lr) const;
   /// Get the current learning rate (assumes every layer has the same one).
   float get_current_learning_rate(model* m) const;
 
   /// Initial mini-batch size.
-  size_t m_starting_mbsize;
+  uint64_t m_starting_mbsize;
   /**
    * The current mini-batch size for this epoch.
    * This is kept separately from the model's get_current_mini_batch_size()
    * method, as calling that in on_epoch_end returns the size of the last mini-
    * batch, not the "base" mini-batch.
    */
-  size_t m_current_mini_batch_size;
+  uint64_t m_current_mini_batch_size;
   /// Current number of epochs left to ramp the learning rate.
-  size_t m_ramp_count = 0;
+  uint64_t m_ramp_count = 0;
   /// Amount to increment the learning rate by when ramping.
   float m_lr_incr = 0.0f;
 };
@@ -93,7 +95,9 @@ protected:
 class step_minibatch : public variable_minibatch
 {
 public:
-  step_minibatch(size_t starting_mbsize, size_t step, size_t ramp_time = 0);
+  step_minibatch(uint64_t starting_mbsize,
+                 uint64_t step,
+                 uint64_t ramp_time = 0);
   step_minibatch(const step_minibatch&) = default;
   step_minibatch& operator=(const step_minibatch&) = delete;
   step_minibatch* copy() const override { return new step_minibatch(*this); }
@@ -101,18 +105,18 @@ public:
 
 protected:
   bool schedule(model* m,
-                size_t& new_mbsize,
+                uint64_t& new_mbsize,
                 float& new_lr,
-                size_t& ramp_time) override;
+                uint64_t& ramp_time) override;
 
 private:
   /** Add callback specific data to prototext */
   void write_specific_proto(lbann_data::Callback& proto) const final;
 
   /// Number of epochs between mini-batch size increases.
-  size_t m_step;
+  uint64_t m_step;
   /// Number of steps to ramp the learning rate over.
-  size_t m_ramp_time;
+  uint64_t m_ramp_time;
 };
 
 // Builder function
@@ -127,19 +131,23 @@ public:
   struct minibatch_step
   {
     /// Epoch for this schedule to start.
-    size_t epoch;
+    uint64_t epoch;
     /// Mini-batch size to use.
-    size_t mbsize;
+    uint64_t mbsize;
     /// Learning rate to use.
     float lr;
     /// Number of epochs to ramp the learning rate over.
-    size_t ramp_time;
-    minibatch_step(size_t _epoch, size_t _mbsize, float _lr, size_t _ramp_time)
+    uint64_t ramp_time;
+    minibatch_step(uint64_t _epoch,
+                   uint64_t _mbsize,
+                   float _lr,
+                   uint64_t _ramp_time)
       : epoch(_epoch), mbsize(_mbsize), lr(_lr), ramp_time(_ramp_time)
     {}
   };
 
-  minibatch_schedule(size_t starting_mbsize, std::vector<minibatch_step> steps);
+  minibatch_schedule(uint64_t starting_mbsize,
+                     std::vector<minibatch_step> steps);
   minibatch_schedule(const minibatch_schedule&) = default;
   minibatch_schedule& operator=(const minibatch_schedule&) = delete;
   minibatch_schedule* copy() const override
@@ -150,9 +158,9 @@ public:
 
 protected:
   bool schedule(model* m,
-                size_t& new_mbsize,
+                uint64_t& new_mbsize,
                 float& new_lr,
-                size_t& ramp_time) override;
+                uint64_t& ramp_time) override;
 
 private:
   /** Add callback specific data to prototext */

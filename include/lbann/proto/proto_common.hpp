@@ -27,7 +27,7 @@
 #ifndef LBANN_PROTO_PROTO_COMMON_HPP_INCLUDED
 #define LBANN_PROTO_PROTO_COMMON_HPP_INCLUDED
 
-#include "lbann/data_readers/data_reader.hpp"
+#include "lbann/data_ingestion/data_reader.hpp"
 
 #define LBANN_ASSERT_MSG_HAS_FIELD(MSG, FIELD)                                 \
   do {                                                                         \

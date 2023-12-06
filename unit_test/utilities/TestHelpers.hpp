@@ -26,7 +26,7 @@
 #ifndef LBANN_UNIT_TEST_UTILITIES_TEST_HELPERS_HPP_INCLUDED
 #define LBANN_UNIT_TEST_UTILITIES_TEST_HELPERS_HPP_INCLUDED
 
-#include <lbann/data_coordinator/data_coordinator.hpp>
+#include <lbann/data_ingestion/data_coordinator.hpp>
 #include <lbann/trainers/trainer.hpp>
 #include <lbann/utils/argument_parser.hpp>
 #include <lbann/utils/options.hpp>

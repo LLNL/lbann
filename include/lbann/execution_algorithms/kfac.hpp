@@ -26,7 +26,7 @@
 #ifndef LBANN_EXECUTION_ALGORITHMS_KFAC_HPP_INCLUDED
 #define LBANN_EXECUTION_ALGORITHMS_KFAC_HPP_INCLUDED
 
-#include "lbann/data_coordinator/data_coordinator.hpp"
+#include "lbann/data_ingestion/data_coordinator.hpp"
 #include "lbann/execution_algorithms/factory.hpp"
 #include "lbann/execution_algorithms/kfac/execution_context.hpp"
 #include "lbann/execution_algorithms/sgd_execution_context.hpp"

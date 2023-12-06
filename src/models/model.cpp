@@ -31,8 +31,8 @@
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/comm_impl.hpp"
-#include "lbann/data_coordinator/data_coordinator.hpp"
-#include "lbann/data_store/data_store_conduit.hpp"
+#include "lbann/data_ingestion/data_coordinator.hpp"
+#include "lbann/data_ingestion/data_store_conduit.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/layers/io/input_layer.hpp"
@@ -715,7 +715,7 @@ void model::remap_pointers(
 // Setup
 // =============================================
 
-void model::setup(size_t max_mini_batch_size,
+void model::setup(uint64_t max_mini_batch_size,
                   const std::vector<El::Grid*>& grids_,
                   bool force)
 {
@@ -1066,7 +1066,7 @@ void model::ensure_input_layers_first()
   reorder_layers(gather_indices);
 }
 
-void model::setup_layers(size_t max_mini_batch_size,
+void model::setup_layers(uint64_t max_mini_batch_size,
                          const std::vector<El::Grid*>& grids_)
 {
 
@@ -1538,7 +1538,7 @@ void model::reset_epoch_statistics(execution_mode mode)
 }
 
 void model::evaluate_metrics(execution_mode mode,
-                             size_t current_mini_batch_size)
+                             uint64_t current_mini_batch_size)
 {
   for (const auto& m : m_metrics) {
     m->evaluate(mode, current_mini_batch_size);
