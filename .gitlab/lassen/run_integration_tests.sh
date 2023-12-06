@@ -29,7 +29,8 @@ echo "Task: Intergation Tests"
 cd ci_test/integration_tests
 echo "Running integration tests with file pattern: ${TEST_FLAG}"
 export OMP_NUM_THREADS=10
-lrun -N ${LBANN_NNODES} -T $TEST_TASKS_PER_NODE lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}
+lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}
+#lrun -N ${LBANN_NNODES} -T $TEST_TASKS_PER_NODE lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}
 #lrun -N ${LBANN_NNODES} -T $TEST_TASKS_PER_NODE python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}
 status=$(($status + $?))
 

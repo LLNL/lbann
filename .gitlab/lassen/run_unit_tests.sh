@@ -28,7 +28,10 @@ echo "Task: Unit Tests"
 cd ci_test/unit_tests
 echo "Running unit tests with file pattern: ${TEST_FLAG}"
 export OMP_NUM_THREADS=10
-lrun -N ${LBANN_NNODES} -T $TEST_TASKS_PER_NODE lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml ${TEST_FLAG}
+lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml ${TEST_FLAG}
+#lrun -n 4 -T 4 lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml test_*_distconv.py
+#lrun -n ${LBANN_NNODES} -T $TEST_TASKS_PER_NODE lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml ${TEST_FLAG}
+#lrun -N ${LBANN_NNODES} -T $TEST_TASKS_PER_NODE lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml ${TEST_FLAG}
 #lrun -N ${LBANN_NNODES} -T $TEST_TASKS_PER_NODE python3 -m pytest -s -vv --durations=0 --junitxml=results.xml ${TEST_FLAG}
 status=$(($status + $?))
 
