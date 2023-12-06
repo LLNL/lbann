@@ -298,10 +298,25 @@ private:
     const int num_per_channel = this->get_output_size() / num_channels;
 
     // Check if LRN is using default beta parameter
+    // std::fabs is not defined for GPU half.
+#ifdef LBANN_HAS_GPU_FP16
+    const bool default_beta = [&] {
+      if constexpr (!std::is_same_v<TensorDataType, __half>) {
+        return (std::fabs((m_beta - El::To<TensorDataType>(0.75)) /
+                          El::To<TensorDataType>(0.75)) <
+                2 * std::numeric_limits<DataType>::epsilon());
+      }
+      else {
+        LBANN_ERROR("Cannot use GPU half on CPU for LRN");
+        return false;
+      }
+    }();
+#else
     const bool default_beta =
       (std::fabs((m_beta - El::To<TensorDataType>(0.75)) /
                  El::To<TensorDataType>(0.75)) <
        2 * std::numeric_limits<DataType>::epsilon());
+#endif // LBANN_HAS_GPU_FP16
 
     ////////////////////////////////////////////////////////////////
     // activations(i) = prev_activations(i) / scale_factor(i) ^ beta

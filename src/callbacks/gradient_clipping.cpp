@@ -137,7 +137,7 @@ struct NormComputer
 
       // The following call may incur communication (e.g., with sharded weights)
       norm = El::Nrm2(grad);
-      if (norm > norm_value) {
+      if (norm > El::To<TensorDataType>(norm_value)) {
         El::Scale(El::To<TensorDataType>(norm_value) / norm, grad);
       }
     }
@@ -149,7 +149,7 @@ struct NormComputer
           static_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(
             gradmat);
         // Nrm2 is not supported on CPU matrices with __half.
-#ifdef LBANN_HAS_HALF
+#ifdef LBANN_HAS_GPU_FP16
         if constexpr (!std::is_same_v<TensorDataType, __half>) {
           local_norm = El::Nrm2(gradmatrix);
         }
@@ -158,7 +158,7 @@ struct NormComputer
         }
 #else
         local_norm = El::Nrm2(gradmatrix);
-#endif
+#endif // LBANN_HAS_GPU_FP16
 #ifdef LBANN_HAS_GPU
       }
       else if ((gradmat.GetDevice() == El::Device::GPU)) {
@@ -179,20 +179,20 @@ struct NormComputer
       }
       if (dtw.is_sharded()) {
         // Summarize sharded norms separately (as they will be allreduced)
-        *global_sharded_norm_ptr += local_norm * local_norm;
+        *global_sharded_norm_ptr += El::To<DataType>(local_norm * local_norm);
         *any_weights_sharded = true;
       }
       else if (on_subgrid(grad)) {
         // If gradients live on a subgrid, also reduce them based on their size
-        *global_sharded_norm_ptr +=
+        *global_sharded_norm_ptr += El::To<DataType>(
           (local_norm * local_norm) /
-          El::To<TensorDataType>(grad.RedundantSize());
+          El::To<TensorDataType>(grad.RedundantSize()));
         *any_weights_sharded = true;
       }
       else {
         // As an optimization, weights that are shared across all ranks in a
         // trainer (i.e., STAR_STAR) don't need to be reduced
-        *global_norm_ptr += local_norm * local_norm;
+        *global_norm_ptr += El::To<DataType>(local_norm * local_norm);
       }
     }
   }

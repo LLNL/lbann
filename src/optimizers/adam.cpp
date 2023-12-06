@@ -34,7 +34,7 @@
 
 namespace lbann {
 
-#if defined(LBANN_HAS_ROCM) && defined(LBANN_HAS_GPU_FP16)
+#if defined(LBANN_HAS_GPU_FP16)
 namespace {
 bool isfinite(fp16 const& x) { return std::isfinite(float(x)); }
 } // namespace
