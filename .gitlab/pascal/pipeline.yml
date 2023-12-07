@@ -112,8 +112,8 @@ integration tests:
   stage: test
   dependencies:
     - build and install
-  rules:
-    - !reference [.lbann-test-rules, rules]
+  # rules:
+  #   - !reference [.lbann-test-rules, rules]
   script:
     - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
     - echo "Testing $(which lbann)"

@@ -129,7 +129,7 @@
 .cleanup old spack environment:
   script:
     - echo "== CLEAN CI =="
-    - !reference [.cleanup old build objects, script]
+#    - !reference [.cleanup old build objects, script]
     - echo "== REMOVING BUILD RESOURCES =="
     - find ${CI_PROJECT_DIR}/builds -maxdepth 1 -mtime +2 -name "lbann_*" -type d -print -exec rm -r {} \;
     - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +2 -name "LBANN_*_setup_build_tools.sh" -type f -print -exec rm {} \;
@@ -159,11 +159,11 @@
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/**/*.o
       - builds/lbann_${SYSTEM_NAME}_${SPACK_ENV_BASE_NAME}-*${CI_CONCURRENT_ID}-*/build/unit_test/*
 
-.lbann-test-rules:
-  rules:
-    - if: $JOB_NAME_SUFFIX == "_distconv"
-      when: never
-    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+# .lbann-test-rules:
+#   rules:
+#     - if: $JOB_NAME_SUFFIX == "_distconv"
+#       when: never
+#     - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME == $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
 
 # .check_allocation:
 #   script:
