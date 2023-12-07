@@ -562,8 +562,16 @@ void ConvolutionDescriptor::reset(DescriptorHandle_t desc)
 
 void ConvolutionDescriptor::create()
 {
-  if (!desc_)
+  if (!desc_) {
     CHECK_MIOPEN(miopenCreateConvolutionDescriptor(&desc_));
+#ifdef LBANN_DETERMINISTIC
+    CHECK_MIOPEN(
+      miopenSetConvolutionAttribute(
+        desc_,
+        MIOPEN_CONVOLUTION_ATTRIB_DETERMINISTIC,
+        1));
+#endif // LBANN_DETERMINISTIC
+  }
 }
 
 void ConvolutionDescriptor::set(std::vector<int> const& pad,
