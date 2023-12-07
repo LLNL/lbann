@@ -132,6 +132,8 @@ def make_batch_script(
         set_environment('MIOPEN_CUSTOM_CACHE_DIR', f'{tmpdir}/MIOpen_custom_cache')
         if os.getenv('ROCM_PATH') is not None:
             prepend_environment_path('LD_LIBRARY_PATH', os.path.join(os.getenv('ROCM_PATH'), 'llvm', 'lib'))
+        # Ensure that the correct PMI is set to avoid hangs, etc.
+        launcher_args.append('-o pmi=pmix')
 
     # Optimizations for Sierra-like systems
     if system in ('sierra', 'lassen', 'rzansel'):

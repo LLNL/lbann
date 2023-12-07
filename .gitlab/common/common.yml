@@ -116,6 +116,7 @@
   rules:
     - exists:
       - spack-ci-env-name.sh
+      - ${LBANN_BUILD_PARENT_DIR}/build
   script:
     - echo "== CLEAN BUILD DIRECTORY =="
     - source spack-ci-env-name.sh
