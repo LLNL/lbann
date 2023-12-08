@@ -1,9 +1,6 @@
 import numpy as np
 from SMILES_tokenizer import MolTokenizer
-
-
-def random_zero_array(arr, probability, mask):
-    return np.where(np.random.random(arr.shape) < probability, mask, arr)
+from data_utils import random_zero_array
 
 
 def main():
@@ -27,4 +24,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

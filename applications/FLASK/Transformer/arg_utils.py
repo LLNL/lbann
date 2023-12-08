@@ -50,3 +50,28 @@ def add_dataset_arguments(args: argparse.Namespace, default: str):
                       type=float,
                       help='Fraction of dataset to use (default: 1.0)',
                       metavar='NUM')
+
+
+def add_training_arguments(parser: argparse.ArgumentParser):
+    parser.add_argument("--skip-validation",
+                        action="store_true",
+                        default=False,
+                        help="Do not run validation (default: false)")
+    parser.add_argument(
+        "--always-shuffle",
+        action="store_true",
+        default=False,
+        help=
+        "Always shuffle training dataset, even if pretokenized (default: false)"
+    )
+    parser.add_argument(
+        "--validation-set-fraction",
+        type=float,
+        default=0.01,
+        help="Fraction of the validation dataset to use (default: 0.001)")
+    parser.add_argument(
+        "--save-prototext",
+        action="store_true",
+        default=False,
+        help="Save prototext experiment file instead of protobin (slower but "
+        "debuggable) (default: false)")
