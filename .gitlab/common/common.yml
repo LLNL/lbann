@@ -130,14 +130,14 @@
   script:
     - echo "== CLEAN CI =="
 #    - !reference [.cleanup old build objects, script]
-    - echo "== REMOVING BUILD RESOURCES =="
-    - find ${CI_PROJECT_DIR}/builds -maxdepth 1 -mtime +2 -name "lbann_*" -type d -print -exec rm -r {} \;
-    - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +2 -name "LBANN_*_setup_build_tools.sh" -type f -print -exec rm {} \;
-    - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +2 -name "LBANN_*.cmake" -type f -print -exec rm {} \;
-    - find ${CI_PROJECT_DIR} -maxdepth 2 -mtime +2 -type d -path "*/builds/lbann_*" -print -exec rm -r {} \;
-    - echo "== REMOVING OLD BUILD RESOURCES =="
+    # - echo "== REMOVING BUILD RESOURCES =="
+    # - find ${CI_PROJECT_DIR}/builds -maxdepth 1 -mtime +2 -name "lbann_*" -type d -print -exec rm -r {} \;
+    # - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +2 -name "LBANN_*_setup_build_tools.sh" -type f -print -exec rm {} \;
+    # - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +2 -name "LBANN_*.cmake" -type f -print -exec rm {} \;
+    # - find ${CI_PROJECT_DIR} -maxdepth 2 -mtime +2 -type d -path "*/builds/lbann_*" -print -exec rm -r {} \;
+    - echo "== REMOVING OLD SPACK ENVIRONMENTS =="
     - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
-    - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
+    # - find ${CI_PROJECT_DIR} -maxdepth 1 -mtime +5 -name "spack-build-*" -type d -exec rm -r {} \;
     - find ${HOME}/${SPACK_REPO}/var/spack/environments/ -maxdepth 1 -mtime +5 -type d -exec basename {} \; | xargs -r spack env rm --yes-to-all
   allow_failure: true
 
