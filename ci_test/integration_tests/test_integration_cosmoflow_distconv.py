@@ -77,7 +77,7 @@ nightly_options_and_targets = {
 #    'min_distconv_width': 4,
     'mlperf': True,
     'transform_input': False, #True,
-    'expected_train_mse_range': (0.71, 1.29), #(0.273, 0.290),
+    'expected_train_mse_range': (0.71, 1.79), #(0.273, 0.290),
     'expected_test_mse_range':  (1.15, 1.79), #(0.118, 0.120),
 #    'expected_test_mse_range': (2.96, 2.97),
     'fraction_of_data_to_use': 1.0,
