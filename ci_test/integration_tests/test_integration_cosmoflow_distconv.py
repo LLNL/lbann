@@ -84,7 +84,7 @@ nightly_options_and_targets = {
     'expected_mini_batch_times': {
         'lassen':   0.035, #0.0229,
         'pascal':   0.044,
-        'tioga':   0.069, #0.044,
+        'tioga':   0.044, #0.044,
         'corona':   0.14,
     }
 }
