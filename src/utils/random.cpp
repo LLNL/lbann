@@ -101,36 +101,17 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed)
     save_rng_state(rng_name, get_data_seq_generator());
 
     rng_name = dirname + "/EL_generator";
-    std::ofstream rng_EL(rng_name);
-    if (!rng_EL) {
-      LBANN_ERROR("Failed to open ", rng_name);
-    }
-    rng_EL << El::Generator();
-    rng_EL.close();
+    save_rng_state(rng_name, El::Generator());
   }
 
   for (int i = 0; i < get_num_io_generators(); i++) {
-    rng_name = dirname + "/rng_io_generator_" + rank_in_trainer + "_t" +
-               std::to_string(i);
-    std::ofstream rng_io(rng_name);
-    if (!rng_io) {
-      LBANN_ERROR("Failed to open ", rng_name);
-    }
-    rng_name = dirname + "/rng_fast_io_generator_" + rank_in_trainer + "_t" +
-               std::to_string(i);
-    std::ofstream rng_fast_io(rng_name);
-    if (!rng_fast_io) {
-      LBANN_ERROR("Failed to open ", rng_name);
-    }
-
     locked_io_rng_ref io_rng = set_io_generators_local_index(i);
-    // save_rng_state(rng_name);
-    // save_rng_state(rng_name);
-    rng_io << get_io_generator();
-    rng_fast_io << get_fast_io_generator();
-
-    rng_io.close();
-    rng_fast_io.close();
+    save_rng_state(dirname + "/rng_io_generator_" + rank_in_trainer + "_t" +
+                     std::to_string(i),
+                   get_io_generator());
+    save_rng_state(dirname + "/rng_fast_io_generator_" + rank_in_trainer +
+                     "_t" + std::to_string(i),
+                   get_fast_io_generator());
   }
 
   rng_name = dirname + "/rng_generator_" + rank_in_trainer;
@@ -143,7 +124,6 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed)
   save_rng_state(rng_name, get_ltfb_generator());
 
 #if not defined(LBANN_DETERMINISTIC) && defined(_OPENMP)
-  // #ifdef _OPENMP
 #pragma omp parallel private(rng_name)
   {
     rng_name = dirname + "/rng_OMP_generator_" + rank_in_trainer + "_" +
@@ -186,11 +166,7 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm)
   load_rng_state(rng_name, get_data_seq_generator());
 
   rng_name = dirname + "/EL_generator";
-  std::ifstream rng_EL(rng_name);
-  if (!rng_EL) {
-    LBANN_ERROR("Failed to open ", rng_name);
-  }
-  rng_EL >> El::Generator();
+  load_rng_state(rng_name, El::Generator());
 
   std::string rank_in_trainer;
   if (comm == nullptr) {
@@ -201,22 +177,13 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm)
   }
 
   for (int i = 0; i < get_num_io_generators(); i++) {
-    rng_name = dirname + "/rng_io_generator_" + rank_in_trainer + "_t" +
-               std::to_string(i);
-    std::ifstream rng_io(rng_name);
-    if (!rng_io) {
-      LBANN_ERROR("Failed to open ", rng_name);
-    }
-    rng_name = dirname + "/rng_fast_io_generator_" + rank_in_trainer + "_t" +
-               std::to_string(i);
-    std::ifstream rng_fast_io(rng_name);
-    if (!rng_fast_io) {
-      LBANN_ERROR("Failed to open ", rng_name);
-    }
-
     locked_io_rng_ref io_rng = set_io_generators_local_index(i);
-    rng_io >> get_io_generator();
-    rng_fast_io >> get_fast_io_generator();
+    load_rng_state(dirname + "/rng_io_generator_" + rank_in_trainer + "_t" +
+                     std::to_string(i),
+                   get_io_generator());
+    load_rng_state(dirname + "/rng_fast_io_generator_" + rank_in_trainer +
+                     "_t" + std::to_string(i),
+                   get_fast_io_generator());
   }
 
   rng_name = dirname + "/rng_generator_" + rank_in_trainer;
