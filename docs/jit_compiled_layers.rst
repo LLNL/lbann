@@ -71,4 +71,6 @@ underscores):
   * ``{fwd,bwdfilt,bwddata}`` specifies the kind of the operation performed: Forward, Backpropagation (filter), or Backpropagation (data).
 
 
-As an example, ``libconv3d_B_1_16_16_16_.so`` computes a 3-dimensional convolution on a 16x16x16 input with one channel, laid out as NCDHW, with a 3x3x3 kernel and 6 output channels.
+As an example, ``libconv3d_B_1_16_16_16_4096_4096_256_16_1_6_1_3_3_3_[...]_0_0_0_1_1_1_1_1_1_1_fwd.so`` computes a 3-dimensional 
+convolution on a 16x16x16 input with one channel, laid out as NCDHW, with a 3x3x3 kernel, 6 output channels, no padding nor dilation,
+and a stride of 1 (output tensor dimensions and strides were skipped for brevity).

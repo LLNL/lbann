@@ -47,6 +47,7 @@ Users are advised to view `the Doxygen API Documentation
    :caption: LBANN Layers
 
    layers
+   jit_compiled_layers
 
 .. toctree::
    :maxdepth: 2
