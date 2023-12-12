@@ -114,15 +114,16 @@ void pooling_layer<TensorDataType, Layout, Device>::fp_compute_dnn()
   LBANN_ERROR("DNN library not detected");
 #else
   using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
+  using MatrixType = El::Matrix<TensorDataType, El::Device::GPU>;
   const auto& local_input = this->get_local_prev_activations();
   auto& local_output = this->get_local_activations();
   if (local_input.Height() > 0 && local_input.Width() > 0) {
     // Initialize GPU workspace
-    El::Matrix<TensorDataType, El::Device::GPU> workspace;
     size_t workspace_size =
       dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
-                                  m_tensors_dnn_desc.get_activations());
-    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+                                   m_tensors_dnn_desc.get_activations());
+    m_workspace.reset(new MatrixType());
+    m_workspace->Resize(workspace_size / sizeof(TensorDataType), 1);
 
     const auto zero = El::TypeTraits<ScalingType>::Zero();
     const auto one = El::TypeTraits<ScalingType>::One();
@@ -133,7 +134,7 @@ void pooling_layer<TensorDataType, Layout, Device>::fp_compute_dnn()
                              zero,
                              m_tensors_dnn_desc.get_activations(),
                              local_output,
-                             workspace);
+                             dynamic_cast<MatrixType&>(*m_workspace));
   }
 #endif // #ifndef LBANN_HAS_DNN_LIB
 }
@@ -146,18 +147,12 @@ void pooling_layer<TensorDataType, Layout, Device>::bp_compute_dnn()
   LBANN_ERROR("DNN library not detected");
 #else
   using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
+  using MatrixType = El::Matrix<TensorDataType, El::Device::GPU>;
   const auto& local_input = this->get_local_prev_activations();
   const auto& local_output = this->get_local_activations();
   const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
   auto& local_gradient_wrt_input = this->get_local_error_signals();
   if (local_input.Height() > 0 && local_input.Width() > 0) {
-    // Initialize GPU workspace
-    El::Matrix<TensorDataType, El::Device::GPU> workspace;
-    size_t workspace_size =
-      dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
-                                  m_tensors_dnn_desc.get_activations());
-    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
-
     // Useful constants
     const auto one = El::TypeTraits<ScalingType>::One();
     const auto zero = El::TypeTraits<ScalingType>::Zero();
@@ -174,7 +169,7 @@ void pooling_layer<TensorDataType, Layout, Device>::bp_compute_dnn()
                               zero,
                               m_tensors_dnn_desc.get_error_signals(),
                               local_gradient_wrt_input,
-                              workspace);
+                              dynamic_cast<MatrixType&>(*m_workspace));
   }
 #endif // #ifndef LBANN_HAS_DNN_LIB
 }

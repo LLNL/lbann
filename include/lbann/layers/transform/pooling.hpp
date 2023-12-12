@@ -102,13 +102,12 @@ public:
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class unpooling_layer;
 
-template <typename TensorDataType,
-          data_layout T_layout = data_layout::DATA_PARALLEL,
-          El::Device Dev = El::Device::CPU>
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class pooling_layer : public data_type_layer<TensorDataType>
 {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "pooling only supports DATA_PARALLEL");
+  using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
 
 private:
   /** Pooling mode. */
@@ -136,6 +135,8 @@ private:
   /** Tensor DNN library descriptors. */
   dnn_lib::data_parallel_layer_tensor_manager<TensorDataType>
     m_tensors_dnn_desc;
+  /** Workspace (shared between forward and backprop by MIOpen). */
+  std::unique_ptr<AbsMatrixType> m_workspace;
 #endif // LBANN_HAS_DNN_LIB
 
   friend class unpooling_layer<TensorDataType, T_layout, Dev>;
@@ -186,7 +187,8 @@ public:
 #ifdef LBANN_HAS_DNN_LIB
       ,
       m_pooling_dnn_desc(other.m_pooling_dnn_desc),
-      m_tensors_dnn_desc(other.m_tensors_dnn_desc)
+      m_tensors_dnn_desc(other.m_tensors_dnn_desc),
+      m_workspace(other.m_workspace ? other.m_workspace->Copy() : nullptr)
 #endif // LBANN_HAS_DNN_LIB
   {
 #ifdef LBANN_HAS_DNN_LIB
@@ -207,6 +209,8 @@ public:
     m_pooling_dnn_desc = other.m_pooling_dnn_desc;
     m_tensors_dnn_desc = other.m_tensors_dnn_desc;
     m_tensors_dnn_desc.set_layer(this);
+    if (other.m_workspace)
+      m_workspace = other.m_workspace->Copy();
 #endif // LBANN_HAS_DNN_LIB
     return *this;
   }
