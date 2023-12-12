@@ -32,6 +32,7 @@
 #include <thread>
 
 namespace {
+#if not defined(LBANN_DETERMINISTIC) && defined(_OPENMP)
 #ifdef __ICC
 lbann::rng_gen generator;
 #pragma omp threadprivate(generator)
@@ -39,24 +40,41 @@ lbann::rng_gen generator;
 lbann::fast_rng_gen fast_generator;
 #pragma omp threadprivate(fast_generator)
 
-lbann::fast_rng_gen ltfb_generator;
-#pragma omp threadprivate(ltfb_generator)
+bool OMP_generator_inited = false;
+#pragma omp threadprivate(OMP_generator_inited)
+
+bool OMP_fast_generator_inited = false;
+#pragma omp threadprivate(OMP_fast_generator_inited)
 #else
 // Random number generator, file-visible only.
 // Defined like this to work around a GCC problem with threadprivate objects:
 // https://stackoverflow.com/questions/23552077/how-to-define-a-object-or-struct-as-threadprivate-in-openmp/
-extern lbann::rng_gen generator;
-#pragma omp threadprivate(generator)
-lbann::rng_gen generator;
+extern lbann::rng_gen OMP_generator;
+#pragma omp threadprivate(OMP_generator)
+lbann::rng_gen OMP_generator;
 
-extern lbann::fast_rng_gen fast_generator;
-#pragma omp threadprivate(fast_generator)
-lbann::fast_rng_gen fast_generator;
+extern lbann::fast_rng_gen OMP_fast_generator;
+#pragma omp threadprivate(OMP_fast_generator)
+lbann::fast_rng_gen OMP_fast_generator;
 
-extern lbann::fast_rng_gen ltfb_generator;
-#pragma omp threadprivate(ltfb_generator)
-lbann::fast_rng_gen ltfb_generator;
+extern bool OMP_generator_inited;
+#pragma omp threadprivate(OMP_generator_inited)
+bool OMP_generator_inited = false;
+
+extern bool OMP_fast_generator_inited;
+#pragma omp threadprivate(OMP_fast_generator_inited)
+bool OMP_fast_generator_inited = false;
 #endif
+#else // not defined(LBANN_DETERMINISTIC) && defined(_OPENMP)
+lbann::rng_gen OMP_generator;
+lbann::fast_rng_gen OMP_fast_generator;
+bool OMP_generator_inited = false;
+bool OMP_fast_generator_inited = false;
+#endif
+
+lbann::rng_gen generator;
+lbann::fast_rng_gen fast_generator;
+lbann::fast_rng_gen ltfb_generator;
 
 bool generator_inited = false;
 bool fast_generator_inited = false;
@@ -97,6 +115,22 @@ fast_rng_gen& get_ltfb_generator()
     LBANN_ERROR("LTFB RNG seed not set");
   }
   return ::ltfb_generator;
+}
+
+rng_gen& get_OMP_generator()
+{
+  if (!::OMP_generator_inited) {
+    LBANN_ERROR("OMP RNG seed not set");
+  }
+  return ::OMP_generator;
+}
+
+fast_rng_gen& get_OMP_fast_generator()
+{
+  if (!::OMP_fast_generator_inited) {
+    LBANN_ERROR("OMP Fast RNG seed not set");
+  }
+  return ::OMP_fast_generator;
 }
 
 rng_gen& get_data_seq_generator()
@@ -165,6 +199,8 @@ void init_random(int seed, int num_io_RNGs, lbann_comm* comm)
 {
   generator_inited = true;
   fast_generator_inited = true;
+  OMP_generator_inited = true;
+  OMP_fast_generator_inited = true;
 
   // Use different seed on each rank in trainer
   if (seed == -1) {
@@ -178,20 +214,25 @@ void init_random(int seed, int num_io_RNGs, lbann_comm* comm)
     seed = hash_combine(seed, El::mpi::Rank(El::mpi::COMM_WORLD));
   }
 
+  get_generator().seed(seed);
+  get_fast_generator().seed(hash_combine(seed, 41263)); // 4321th prime
+
   // Seed every OpenMP thread, if present.
   // Note: Threadprivate OMP variables don't work with dynamic threads.
-#ifdef _OPENMP
+#if not defined(LBANN_DETERMINISTIC) && defined(_OPENMP)
 #pragma omp parallel
   {
     const int thread = omp_get_thread_num();
     const int thread_seed = hash_combine(seed, thread);
-    get_generator().seed(thread_seed);
-    get_fast_generator().seed(
+    OMP_generator_inited = true;
+    OMP_fast_generator_inited = true;
+    get_OMP_generator().seed(thread_seed);
+    get_OMP_fast_generator().seed(
       hash_combine(thread_seed, 132241)); // 12345th prime
   }
-#else
-  get_generator().seed(seed);
-  get_fast_generator().seed(hash_combine(seed, 41263)); // 4321th prime
+#else // not defined(LBANN_DETERMINISTIC) && defined(_OPENMP)
+  get_OMP_generator().seed(seed);
+  get_OMP_fast_generator().seed(hash_combine(seed, 41263)); // 4321th prime
 #endif
 
   // Set Elemental's RNG seed

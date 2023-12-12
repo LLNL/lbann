@@ -38,6 +38,45 @@
 
 namespace lbann {
 
+namespace {
+void save_rng_state(std::string rng_name, rng_gen& gen)
+{
+  std::ofstream rng(rng_name);
+  if (!rng) {
+    LBANN_ERROR("Failed to open ", rng_name);
+  }
+  rng << gen;
+  rng.close();
+}
+void save_rng_state(std::string rng_name, fast_rng_gen& gen)
+{
+  std::ofstream rng(rng_name);
+  if (!rng) {
+    LBANN_ERROR("Failed to open ", rng_name);
+  }
+  rng << gen;
+  rng.close();
+}
+
+void load_rng_state(std::string rng_name, rng_gen& gen)
+{
+  std::ifstream rng_seq(rng_name);
+  if (!rng_seq) {
+    LBANN_ERROR("Failed to open ", rng_name);
+  }
+  rng_seq >> gen;
+}
+
+void load_rng_state(std::string rng_name, fast_rng_gen& gen)
+{
+  std::ifstream rng_seq(rng_name);
+  if (!rng_seq) {
+    LBANN_ERROR("Failed to open ", rng_name);
+  }
+  rng_seq >> gen;
+}
+} // namespace
+
 bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed)
 {
   std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
@@ -59,12 +98,7 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed)
   if (comm == nullptr || comm->am_trainer_master() || is_distributed) {
     /// @todo - Note that the RNG with thread local data is not correct
     rng_name = dirname + "/rng_seq_generator";
-    std::ofstream rng_seq(rng_name);
-    if (!rng_seq) {
-      LBANN_ERROR("Failed to open ", rng_name);
-    }
-    rng_seq << get_data_seq_generator();
-    rng_seq.close();
+    save_rng_state(rng_name, get_data_seq_generator());
 
     rng_name = dirname + "/EL_generator";
     std::ofstream rng_EL(rng_name);
@@ -90,6 +124,8 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed)
     }
 
     locked_io_rng_ref io_rng = set_io_generators_local_index(i);
+    // save_rng_state(rng_name);
+    // save_rng_state(rng_name);
     rng_io << get_io_generator();
     rng_fast_io << get_fast_io_generator();
 
@@ -97,60 +133,33 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed)
     rng_fast_io.close();
   }
 
-#ifdef _OPENMP
-#pragma omp parallel private(rng_name)
-  {
-    rng_name = dirname + "/rng_generator_" + rank_in_trainer + "_" +
-               std::to_string(omp_get_thread_num());
-    std::ofstream rng(rng_name);
-    if (!rng) {
-      LBANN_ERROR("Failed to open ", rng_name);
-    }
-    rng << get_generator();
-    rng.close();
-
-    rng_name = dirname + "/rng_fast_generator_" + rank_in_trainer + "_" +
-               std::to_string(omp_get_thread_num());
-    std::ofstream rng_fast(rng_name);
-    if (!rng_fast) {
-      LBANN_ERROR("Failed to open ", rng_name);
-    }
-    rng_fast << get_fast_generator();
-    rng_fast.close();
-
-    rng_name = dirname + "/rng_ltfb_generator_" + rank_in_trainer + "_" +
-               std::to_string(omp_get_thread_num());
-    std::ofstream rng_ltfb(rng_name);
-    if (!rng_ltfb) {
-      LBANN_ERROR("Failed to open ", rng_name);
-    }
-    rng_ltfb << get_ltfb_generator();
-    rng_ltfb.close();
-  }
-#else
   rng_name = dirname + "/rng_generator_" + rank_in_trainer;
-  std::ofstream rng(rng_name);
-  if (!rng) {
-    LBANN_ERROR("Failed to open ", rng_name);
-  }
-  rng << get_generator();
-  rng.close();
+  save_rng_state(rng_name, get_generator());
 
   rng_name = dirname + "/rng_fast_generator_" + rank_in_trainer;
-  std::ofstream rng_fast(rng_name);
-  if (!rng_fast) {
-    LBANN_ERROR("Failed to open ", rng_name);
-  }
-  rng_fast << get_fast_generator();
-  rng_fast.close();
+  save_rng_state(rng_name, get_fast_generator());
 
   rng_name = dirname + "/rng_ltfb_generator_" + rank_in_trainer;
-  std::ofstream rng_ltfb(rng_name);
-  if (!rng_ltfb) {
-    LBANN_ERROR("Failed to open ", rng_name);
+  save_rng_state(rng_name, get_ltfb_generator());
+
+#if not defined(LBANN_DETERMINISTIC) && defined(_OPENMP)
+  // #ifdef _OPENMP
+#pragma omp parallel private(rng_name)
+  {
+    rng_name = dirname + "/rng_OMP_generator_" + rank_in_trainer + "_" +
+               std::to_string(omp_get_thread_num());
+    save_rng_state(rng_name, get_OMP_generator());
+
+    rng_name = dirname + "/rng_OMP_fast_generator_" + rank_in_trainer + "_" +
+               std::to_string(omp_get_thread_num());
+    save_rng_state(rng_name, get_OMP_fast_generator());
   }
-  rng_ltfb << get_ltfb_generator();
-  rng_ltfb.close();
+#else // not defined(LBANN_DETERMINISTIC) && defined(_OPENMP)
+  rng_name = dirname + "/rng_OMP_generator_" + rank_in_trainer;
+  save_rng_state(rng_name, get_OMP_generator());
+
+  rng_name = dirname + "/rng_OMP_fast_generator_" + rank_in_trainer;
+  save_rng_state(rng_name, get_OMP_fast_generator());
 #endif
 
   return true;
@@ -174,11 +183,7 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm)
 
   /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_seq_generator";
-  std::ifstream rng_seq(rng_name);
-  if (!rng_seq) {
-    LBANN_ERROR("Failed to open ", rng_name);
-  }
-  rng_seq >> get_data_seq_generator();
+  load_rng_state(rng_name, get_data_seq_generator());
 
   rng_name = dirname + "/EL_generator";
   std::ifstream rng_EL(rng_name);
@@ -214,54 +219,32 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm)
     rng_fast_io >> get_fast_io_generator();
   }
 
-#ifdef _OPENMP
-#pragma omp parallel private(rng_name)
-  {
-    rng_name = dirname + "/rng_generator_" + rank_in_trainer + "_" +
-               std::to_string(omp_get_thread_num());
-    std::ifstream rng(rng_name);
-    if (!rng) {
-      LBANN_ERROR("Failed to open ", rng_name);
-    }
-    rng >> get_generator();
-
-    rng_name = dirname + "/rng_fast_generator_" + rank_in_trainer + "_" +
-               std::to_string(omp_get_thread_num());
-    std::ifstream rng_fast(rng_name);
-    if (!rng_fast) {
-      LBANN_ERROR("Failed to open ", rng_name);
-    }
-    rng_fast >> get_fast_generator();
-
-    rng_name = dirname + "/rng_ltfb_generator_" + rank_in_trainer + "_" +
-               std::to_string(omp_get_thread_num());
-    std::ifstream rng_ltfb(rng_name);
-    if (!rng_ltfb) {
-      LBANN_ERROR("Failed to open ", rng_name);
-    }
-    rng_ltfb >> get_ltfb_generator();
-  }
-#else
   rng_name = dirname + "/rng_generator_" + rank_in_trainer;
-  std::ifstream rng(rng_name);
-  if (!rng) {
-    LBANN_ERROR("Failed to open ", rng_name);
-  }
-  rng >> get_generator();
+  load_rng_state(rng_name, get_generator());
 
   rng_name = dirname + "/rng_fast_generator_" + rank_in_trainer;
-  std::ifstream rng_fast(rng_name);
-  if (!rng_fast) {
-    LBANN_ERROR("Failed to open ", rng_name);
-  }
-  rng_fast >> get_fast_generator();
+  load_rng_state(rng_name, get_fast_generator());
 
   rng_name = dirname + "/rng_ltfb_generator_" + rank_in_trainer;
-  std::ifstream rng_ltfb(rng_name);
-  if (!rng_ltfb) {
-    LBANN_ERROR("Failed to open ", rng_name);
+  load_rng_state(rng_name, get_ltfb_generator());
+
+#if not defined(LBANN_DETERMINISTIC) && defined(_OPENMP)
+#pragma omp parallel private(rng_name)
+  {
+    rng_name = dirname + "/rng_OMP_generator_" + rank_in_trainer + "_" +
+               std::to_string(omp_get_thread_num());
+    load_rng_state(rng_name, get_OMP_generator());
+
+    rng_name = dirname + "/rng_OMP_fast_generator_" + rank_in_trainer + "_" +
+               std::to_string(omp_get_thread_num());
+    load_rng_state(rng_name, get_OMP_fast_generator());
   }
-  rng_ltfb >> get_ltfb_generator();
+#else // not defined(LBANN_DETERMINISTIC) && defined(_OPENMP)
+  rng_name = dirname + "/rng_OMP_generator_" + rank_in_trainer;
+  load_rng_state(rng_name, get_OMP_generator());
+
+  rng_name = dirname + "/rng_OMP_fast_generator_" + rank_in_trainer;
+  load_rng_state(rng_name, get_OMP_fast_generator());
 #endif
   return true;
 }
@@ -476,7 +459,7 @@ void gaussian_fill_parallel(El::AbstractDistMatrix<TensorDataType>& mat,
       const size_t size = local_vals.Height() * local_vals.Width();
       LBANN_OMP_PARALLEL_FOR_ARGS(firstprivate(dist))
       for (size_t i = 0; i < size; ++i) {
-        buffer[i] = dist(get_generator());
+        buffer[i] = dist(get_OMP_generator());
       }
     }
     else {
@@ -487,7 +470,7 @@ void gaussian_fill_parallel(El::AbstractDistMatrix<TensorDataType>& mat,
       LBANN_OMP_PARALLEL_FOR_ARGS(collapse(2) firstprivate(dist))
       for (size_t j = 0; j < width; ++j) {
         for (size_t i = 0; i < height; ++i) {
-          buffer[i + j * ldim] = dist(get_generator());
+          buffer[i + j * ldim] = dist(get_OMP_generator());
         }
       }
     }
