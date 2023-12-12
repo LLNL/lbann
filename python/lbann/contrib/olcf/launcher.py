@@ -115,6 +115,8 @@ def make_batch_script(
         different_ofi_plugin = os.getenv('LBANN_USE_THIS_OFI_PLUGIN')
         if different_ofi_plugin is not None:
             prepend_environment_path('LD_LIBRARY_PATH', different_ofi_plugin)
+        if scheduler == 'slurm':
+            launcher_args.append('--gpu-bind=closest')
 
     return lbann.launcher.make_batch_script(
         procs_per_node=procs_per_node,

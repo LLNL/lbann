@@ -4,6 +4,7 @@ import cosmoflow_model
 
 import argparse
 
+import os
 import numpy as np
 
 import lbann.contrib.args
@@ -102,6 +103,9 @@ if __name__ == "__main__":
     parser.add_argument(
         '--random-seed', action='store', default=None, type=int,
         help='the random seed (default: None)')
+    parser.add_argument(
+        '--dace', action='store_true',
+        help='Use the DaCe backend in distconv')
 
     # Model specific arguments
     parser.add_argument(
@@ -241,6 +245,13 @@ if __name__ == "__main__":
         environment['LBANN_KEEP_ERROR_SIGNALS'] = 0
     else:
         environment['LBANN_KEEP_ERROR_SIGNALS'] = 1
+
+    # Setup DaCe kernels if requested
+    if args.use_distconv and args.dace:
+        environment['DISTCONV_JIT_VERBOSE'] = 1
+        application_path=os.path.dirname(__file__)
+        environment['DISTCONV_JIT_CACHEPATH'] = f'{application_path}/DaCe_kernels/.dacecache'
+
     if args.synthetic or args.no_datastore:
         lbann_args = []
     else:

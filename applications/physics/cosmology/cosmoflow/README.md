@@ -19,3 +19,8 @@ Each HDF5 file represents a single data sample, and contains two different HDF5 
 ## How to Train
 Run `python3 ./train_cosmoflow.py`.
 See `python3 ./train_cosmoflow.py --help` for more options.
+
+## How to generate custom kernels for convolutions in DaCe
+
+`cd DaCe_kernels`
+`./generate.sh`
