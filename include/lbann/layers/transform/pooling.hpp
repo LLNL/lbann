@@ -107,6 +107,7 @@ class pooling_layer : public data_type_layer<TensorDataType>
 {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "pooling only supports DATA_PARALLEL");
+
 private:
   /** Pooling mode. */
   pooling_mode m_pool_mode;

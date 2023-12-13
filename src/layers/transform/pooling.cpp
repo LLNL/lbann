@@ -121,7 +121,8 @@ void pooling_layer<TensorDataType, Layout, Device>::fp_compute_dnn()
     size_t workspace_size =
       dnn_lib::get_pooling_ws_size(m_pooling_dnn_desc,
                                    m_tensors_dnn_desc.get_activations());
-    m_workspace = MatrixType{El::To<El::Int>(workspace_size / sizeof(TensorDataType)), 1};
+    m_workspace =
+      MatrixType{El::To<El::Int>(workspace_size / sizeof(TensorDataType)), 1};
 
     const auto zero = El::TypeTraits<ScalingType>::Zero();
     const auto one = El::TypeTraits<ScalingType>::One();
