@@ -94,32 +94,6 @@ auto data_type_optimizer<TensorDataType>::get_weights() const
 }
 
 template <typename TensorDataType>
-auto data_type_optimizer<TensorDataType>::get_gradient()
-  -> std::unique_ptr<AbsDistMatrixType>
-{
-  auto matrix_dist = std::get<2>(this->get_matrix_info());
-
-  // Create a new matrix with the correct value distribution (usually STAR_STAR)
-  // and copy the values from there.
-  std::unique_ptr<AbsDistMatrixType> result;
-  result.reset(AbsDistMatrixType::Instantiate(*matrix_dist.grid,
-                                              matrix_dist.root,
-                                              matrix_dist.colDist,
-                                              matrix_dist.rowDist,
-                                              El::ELEMENT,
-                                              matrix_dist.device));
-
-  // If the gradient is not sharded, return a view
-  if (!this->is_sharded()) {
-    El::LockedView(*result, *m_gradient);
-  }
-  else {
-    El::Copy(*m_gradient, *result);
-  }
-  return result;
-}
-
-template <typename TensorDataType>
 auto data_type_optimizer<TensorDataType>::get_gradient_sharded()
   -> AbsDistMatrixType&
 {

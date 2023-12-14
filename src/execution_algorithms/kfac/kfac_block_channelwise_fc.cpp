@@ -414,7 +414,7 @@ void kfac_block_channelwise_fc<Device>::compute_preconditioned_gradients(
       // BVE FIXME unused variable
       // auto* b_dto =
       // dynamic_cast<data_type_optimizer<DataType>*>(b_optimizer); const auto&
-      // b_grads_orig = b_dto->get_gradient().LockedMatrix();
+      // b_grads_orig = b_dto->get_gradient_sharded().LockedMatrix();
 
       auto& grad_buffer_biases =
         b_optimizer->get_gradient_buffer(dst_scale, gradient_scale, false);
