@@ -167,7 +167,7 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(
     // Compute the size of the current local mini-batch
     const uint64_t end_pos =
       std::min(relative_base_position + loaded_mini_batch_size,
-               dr->m_shuffled_indices.size());
+               (uint64_t)dr->m_shuffled_indices.size());
     const uint64_t local_mini_batch_size = std::min(
       ((end_pos - relative_base_position) + ds.get_sample_stride() - 1) /
         ds.get_sample_stride(),

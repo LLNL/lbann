@@ -1819,8 +1819,8 @@ void data_store_conduit::profile_timing()
   }
 }
 
-void data_store_conduit::start_exchange_mini_batch_data(size_t current_pos,
-                                                        size_t mb_size,
+void data_store_conduit::start_exchange_mini_batch_data(uint64_t current_pos,
+                                                        uint64_t mb_size,
                                                         bool at_new_epoch)
 {
   if (is_local_cache() && is_fully_loaded()) {
