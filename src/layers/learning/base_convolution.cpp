@@ -439,11 +439,12 @@ void base_convolution_layer<TensorDataType, Device>::setup_gpu()
                         kernel_dims);
 
   // Set convolution descriptor
-  m_convolution_dnn_desc.set(m_pads,
-                             m_strides,
-                             m_dilations,
-                             dnn_lib::get_convolution_data_type<TensorDataType>(),
-                             dnn_lib::DNN_CROSS_CORRELATION);
+  m_convolution_dnn_desc.set(
+    m_pads,
+    m_strides,
+    m_dilations,
+    dnn_lib::get_convolution_data_type<TensorDataType>(),
+    dnn_lib::DNN_CROSS_CORRELATION);
   m_convolution_dnn_desc.set_math_mode(m_convolution_math_type);
   m_convolution_dnn_desc.set_group_count(m_groups);
 
@@ -611,32 +612,34 @@ void base_convolution_layer<TensorDataType, Device>::
 
   // Perform transposed convolution on the GPU
   // Determine transposed convolution algorithm and math mode.
-  dnn_lib::bwd_data_conv_alg_config transposed_convolution_dnn_algorithm_config =
-    get_backward_data_algo_dnn(input.Width(),
-                               m_kernel_dnn_desc,
-                               kernel.LockedBuffer(),
-                               input_desc,
-                               input.LockedBuffer(),
-                               m_convolution_dnn_desc,
-                               output_desc,
-                               output.Buffer(),
-                               workspace_size,
-                               workspace.Buffer());
+  dnn_lib::bwd_data_conv_alg_config
+    transposed_convolution_dnn_algorithm_config =
+      get_backward_data_algo_dnn(input.Width(),
+                                 m_kernel_dnn_desc,
+                                 kernel.LockedBuffer(),
+                                 input_desc,
+                                 input.LockedBuffer(),
+                                 m_convolution_dnn_desc,
+                                 output_desc,
+                                 output.Buffer(),
+                                 workspace_size,
+                                 workspace.Buffer());
 
   // Perform transposed convolution
   m_convolution_dnn_desc.set_math_mode(
     transposed_convolution_dnn_algorithm_config.second);
-  dnn_lib::convolution_backward_data(one,
-                                     m_kernel_dnn_desc,
-                                     kernel.LockedMatrix(),
-                                     input_desc,
-                                     input,
-                                     m_convolution_dnn_desc,
-                                     transposed_convolution_dnn_algorithm_config.first,
-                                     workspace,
-                                     zero,
-                                     output_desc,
-                                     output);
+  dnn_lib::convolution_backward_data(
+    one,
+    m_kernel_dnn_desc,
+    kernel.LockedMatrix(),
+    input_desc,
+    input,
+    m_convolution_dnn_desc,
+    transposed_convolution_dnn_algorithm_config.first,
+    workspace,
+    zero,
+    output_desc,
+    output);
 
 #endif // LBANN_HAS_DNN_LIB
 }
@@ -743,29 +746,31 @@ void base_convolution_layer<TensorDataType, Device>::compute_gradients_dnn(
                                                        multisync);
         workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
         workspace_size = workspace.Height() * sizeof(TensorDataType);
-        dnn_lib::bwd_filter_conv_alg_config kernel_gradient_dnn_algorithm_config =
-          get_backward_filter_algo_dnn(local_input.Width(),
-                                       gradient_wrt_output_desc,
-                                       local_gradient_wrt_output.LockedBuffer(),
-                                       input_desc,
-                                       local_input.LockedBuffer(),
-                                       m_convolution_dnn_desc,
-                                       m_kernel_dnn_desc,
-                                       workspace_size,
-                                       workspace.Buffer());
+        dnn_lib::bwd_filter_conv_alg_config
+          kernel_gradient_dnn_algorithm_config = get_backward_filter_algo_dnn(
+            local_input.Width(),
+            gradient_wrt_output_desc,
+            local_gradient_wrt_output.LockedBuffer(),
+            input_desc,
+            local_input.LockedBuffer(),
+            m_convolution_dnn_desc,
+            m_kernel_dnn_desc,
+            workspace_size,
+            workspace.Buffer());
         m_convolution_dnn_desc.set_math_mode(
           kernel_gradient_dnn_algorithm_config.second);
-        dnn_lib::convolution_backward_filter(gradient_scale,
-                                             gradient_wrt_output_desc,
-                                             local_gradient_wrt_output,
-                                             input_desc,
-                                             local_input,
-                                             m_convolution_dnn_desc,
-                                             kernel_gradient_dnn_algorithm_config.first,
-                                             workspace,
-                                             dst_scale,
-                                             m_kernel_dnn_desc,
-                                             kernel_gradient.Matrix());
+        dnn_lib::convolution_backward_filter(
+          gradient_scale,
+          gradient_wrt_output_desc,
+          local_gradient_wrt_output,
+          input_desc,
+          local_input,
+          m_convolution_dnn_desc,
+          kernel_gradient_dnn_algorithm_config.first,
+          workspace,
+          dst_scale,
+          m_kernel_dnn_desc,
+          kernel_gradient.Matrix());
       }
       else {
         size_t workspace_size =
@@ -776,29 +781,31 @@ void base_convolution_layer<TensorDataType, Device>::compute_gradients_dnn(
                                                        multisync);
         workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
         workspace_size = workspace.Height() * sizeof(TensorDataType);
-        dnn_lib::bwd_filter_conv_alg_config kernel_gradient_dnn_algorithm_config =
-          get_backward_filter_algo_dnn(local_input.Width(),
-                                       input_desc,
-                                       local_input.LockedBuffer(),
-                                       gradient_wrt_output_desc,
-                                       local_gradient_wrt_output.LockedBuffer(),
-                                       m_convolution_dnn_desc,
-                                       m_kernel_dnn_desc,
-                                       workspace_size,
-                                       workspace.Buffer());
+        dnn_lib::bwd_filter_conv_alg_config
+          kernel_gradient_dnn_algorithm_config = get_backward_filter_algo_dnn(
+            local_input.Width(),
+            input_desc,
+            local_input.LockedBuffer(),
+            gradient_wrt_output_desc,
+            local_gradient_wrt_output.LockedBuffer(),
+            m_convolution_dnn_desc,
+            m_kernel_dnn_desc,
+            workspace_size,
+            workspace.Buffer());
         m_convolution_dnn_desc.set_math_mode(
           kernel_gradient_dnn_algorithm_config.second);
-        dnn_lib::convolution_backward_filter(gradient_scale,
-                                             input_desc,
-                                             local_input,
-                                             gradient_wrt_output_desc,
-                                             local_gradient_wrt_output,
-                                             m_convolution_dnn_desc,
-                                             kernel_gradient_dnn_algorithm_config.first,
-                                             workspace,
-                                             dst_scale,
-                                             m_kernel_dnn_desc,
-                                             kernel_gradient.Matrix());
+        dnn_lib::convolution_backward_filter(
+          gradient_scale,
+          input_desc,
+          local_input,
+          gradient_wrt_output_desc,
+          local_gradient_wrt_output,
+          m_convolution_dnn_desc,
+          kernel_gradient_dnn_algorithm_config.first,
+          workspace,
+          dst_scale,
+          m_kernel_dnn_desc,
+          kernel_gradient.Matrix());
       }
     }
     else {

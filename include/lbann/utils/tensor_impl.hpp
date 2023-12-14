@@ -153,9 +153,13 @@ void view_or_copy_tensor(const BaseDistMat& src,
 
   if (src.DistData() == tgt.DistData()) {
     if (locked_view) {
-      El::LockedView(tgt, dynamic_cast<const El::AbstractDistMatrix<TDT>&>(src));
-    } else {
-      El::View(tgt, dynamic_cast<El::AbstractDistMatrix<TDT>&>(const_cast<BaseDistMat&>(src)));
+      El::LockedView(tgt,
+                     dynamic_cast<const El::AbstractDistMatrix<TDT>&>(src));
+    }
+    else {
+      El::View(tgt,
+               dynamic_cast<El::AbstractDistMatrix<TDT>&>(
+                 const_cast<BaseDistMat&>(src)));
     }
   }
   else {
