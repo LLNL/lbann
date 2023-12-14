@@ -56,6 +56,8 @@ void dump_error_signals::on_backward_prop_end(model* m, Layer* l)
 
   // Write each activation matrix to file
   for (int i = 0; i < l->get_num_parents(); ++i) {
+    if (!l->is_participating())
+      continue;
 
     // File name
     std::stringstream file;

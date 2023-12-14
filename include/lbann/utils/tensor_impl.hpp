@@ -53,12 +53,7 @@ void do_tensor_copy(const BaseDistMat& src, El::AbstractDistMatrix<TDT>& tgt)
     El::CopyAsync(src, tgt);
   }
   else {
-    if (src.DistData().grid == tgt.DistData().grid) {
-      El::Copy(src, tgt);
-    }
-    else {
-      utils::details::do_tensor_copy_between_grids(src, tgt);
-    }
+    El::Copy(src, tgt);
   }
 }
 

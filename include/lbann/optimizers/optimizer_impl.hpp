@@ -100,6 +100,10 @@ public:
 
   void start_sync(lbann_comm& comm) override
   {
+    if (!global_gradient_->Participating()) {
+      return;
+    }
+
     // Complete outstanding synchronization of the same data type
     static GradientHelperImpl<TensorDataType>* lastsync = nullptr;
     if (lastsync != nullptr) {
@@ -148,6 +152,10 @@ public:
 
   void complete_sync(lbann_comm& comm) override
   {
+    if (!global_gradient_->Participating()) {
+      return;
+    }
+
     switch (this->get_status()) {
     case optimizer_gradient_status::sync_started:
       comm.wait(sync_req_);
@@ -286,6 +294,10 @@ void optimizer::accumulate_all_gradient_contributions(
 {
   using AbsDistMatType = El::AbstractDistMatrix<TensorDataType>;
   static const TensorDataType one = TensorDataType(1.f);
+
+  if (!gradient.Participating()) {
+    return;
+  }
 
   // There are a few cases to note here:
   //   1. One update of the same type.

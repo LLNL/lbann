@@ -678,6 +678,8 @@ void base_convolution_layer<TensorDataType, Device>::compute_gradients_dnn(
     (local_input.Height() > 0 && local_input.Width() > 0 &&
      local_gradient_wrt_output.Height() > 0 &&
      local_gradient_wrt_output.Width() > 0);
+  if (!has_local_data)
+    return;
 
   // Compute bias gradient
   if (m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero() &&
@@ -978,6 +980,8 @@ void base_convolution_layer<TensorDataType, Device>::compute_gradients_im2col(
     this->get_local_prev_error_signals();
   const bool has_local_data =
     (!local_input.IsEmpty() && !local_gradient_wrt_output.IsEmpty());
+  if (!has_local_data)
+    return;
 
   // Get convolution parameters
   const El::Int local_width = local_input.Width();

@@ -515,11 +515,16 @@ void fp_compute_impl(fully_connected_layer<TensorDataType,
 {
 
   // Matrices
+  const auto& linearity = l.weights_values(0);
   const auto& local_input = l.get_local_prev_activations();
   auto& local_output = l.get_local_activations();
 
+  if (!linearity.Participating()) {
+    return;
+  }
+
   // Apply linearity
-  const auto& local_linearity = l.weights_values(0).LockedMatrix();
+  const auto& local_linearity = linearity.LockedMatrix();
   El::Gemm(l.m_transpose ? El::TRANSPOSE : El::NORMAL,
            El::NORMAL,
            El::TypeTraits<TensorDataType>::One(),
@@ -555,10 +560,14 @@ void bp_compute_impl(fully_connected_layer<TensorDataType,
 {
 
   // Matrices
-  const auto& local_linearity = l.weights_values(0).LockedMatrix();
+  const auto& linearity = l.weights_values(0);
+  const auto& local_linearity = linearity.LockedMatrix();
   const auto& local_input = l.get_local_prev_activations();
   const auto& local_gradient_wrt_output = l.get_local_prev_error_signals();
   auto& local_gradient_wrt_input = l.get_local_error_signals();
+  if (!linearity.Participating()) {
+    return;
+  }
 
   // Compute gradient w.r.t. bias if needed
   if (l.m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
