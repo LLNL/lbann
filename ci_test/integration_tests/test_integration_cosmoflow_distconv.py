@@ -69,16 +69,16 @@ nightly_options_and_targets = {
     'mini_batch_size': 2,
     'input_width': 128,
     'num_secrets': 4,
-    'use_batchnorm': True,
-    'local_batchnorm': True,
+    'use_batchnorm': False,
+    'local_batchnorm': False,
     'depth_groups': 4, #2,
     'sample_groups': 1,
     'learning_rate': 0.001,
 #    'min_distconv_width': 4,
-    'mlperf': True,
+    'mlperf': False,
     'transform_input': False, #True,
-    'expected_train_mse_range': (0.56, 1.79), #(0.273, 0.290),
-    'expected_test_mse_range':  (1.15, 1.79), #(0.118, 0.120),
+    'expected_train_mse_range': (0.264, 0.265),
+    'expected_test_mse_range': (0.120, 0.121),
 #    'expected_test_mse_range': (2.96, 2.97),
     'fraction_of_data_to_use': 1.0,
     'expected_mini_batch_times': {
@@ -187,7 +187,7 @@ def setup_experiment(lbann, weekly):
 
     # model.callbacks.append(lbann.CallbackDebug())
     # Setup optimizer
-    opt = lbann.Adam(learn_rate=0.001,beta1=0.9,beta2=0.99,eps=1e-8)
+    opt = lbann.SGD(learn_rate=1e-4, momentum=0.9)
     # Load data reader from prototext
     data_reader = make_data_reader(lbann, options['fraction_of_data_to_use'])
 

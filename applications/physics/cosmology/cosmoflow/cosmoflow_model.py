@@ -46,6 +46,7 @@ def construct_cosmoflow_model(parallel_strategy,
                 break
 
             layer.parallel_strategy = parallel_strategy
+            layer.has_bias = False # Bias not supported in distconv.
 
     # Set up model
     metrics = [lbann.Metric(mse, name='MSE', unit=''),
