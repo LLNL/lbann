@@ -122,7 +122,7 @@ def make_batch_script(model: lbann.Model,
 
     # Create LBANN trainer and data reader
     trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size,
-                            training_algo=algo)
+                            training_algo=algo, random_seed=args.random_seed)
     reader = make_data_reader(dataset_name, args.dataset_fraction,
                               not args.skip_validation,
                               args.validation_set_fraction,
@@ -263,7 +263,12 @@ def add_training_arguments(parser: argparse.ArgumentParser):
                         type=int,
                         default=100,
                         help="Run validation every N steps (default: 100)")
-
+    parser.add_argument('--random-seed',
+                        action='store',
+                        default=None,
+                        type=int,
+                        help=f'Set random seed explicitly',
+                        metavar='NUM')
 
 # ----------------------------------------------
 # Second-order optimization functionality
