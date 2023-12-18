@@ -461,10 +461,14 @@ message Callback {
   }
 
   message CallbackProgressBar {
-    int64 interval = 1;          // Print every n iterations
-    int64 newline_interval = 2;  // Number of iterations between a newline print
-                                 // (0 disables)
-    bool print_mem_usage = 3;    // If true, also prints GPU memory usage
+    int64 interval = 1;               // Print every n iterations
+    int64 newline_interval = 2;       // Number of iterations between a newline
+                                      // print (0 disables)
+    bool print_mem_usage = 3;         // If true, also prints GPU memory usage
+    int64 moving_average_length = 4;  // The number of iterations to compute a
+                                      // average of iteration time on.
+    int64 bar_width = 5;  // The width (in characters) of the printed
+                          // progress bar.
   }
 
   message CallbackMemoryProfiler {

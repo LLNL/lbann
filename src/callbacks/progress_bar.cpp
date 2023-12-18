@@ -47,7 +47,8 @@ static inline void print_progress(int iteration,
                                   int total,
                                   double avg_time,
                                   std::string prefix,
-                                  bool mem_usage)
+                                  bool mem_usage,
+                                  int pbar_width)
 {
   // Preamble
   std::cout << "Step " << (iteration + 1) << "/" << total << "    " << prefix
@@ -57,12 +58,12 @@ static inline void print_progress(int iteration,
   iteration = (iteration < 0) ? 0 : iteration;
   iteration = (iteration > (total - 1)) ? (total - 1) : iteration;
   float percentage = static_cast<float>(iteration + 1) / total;
-  int bars = static_cast<int>(percentage * LBANN_PBAR_WIDTH);
+  int bars = static_cast<int>(percentage * pbar_width);
 
   // Bar
   for (int i = 0; i < bars; ++i)
     std::cout << "#";
-  for (int i = bars; i < LBANN_PBAR_WIDTH; ++i)
+  for (int i = bars; i < pbar_width; ++i)
     std::cout << " ";
 
   // Some stats
@@ -149,6 +150,7 @@ void progress_bar::write_specific_proto(lbann_data::Callback& proto) const
   msg->set_interval(this->m_batch_interval);
   msg->set_newline_interval(this->m_newline_interval);
   msg->set_print_mem_usage(this->m_print_mem_usage);
+  msg->set_moving_average_length(this->m_moving_average_length);
 }
 
 void progress_bar::on_epoch_begin(model* m)
@@ -160,7 +162,8 @@ void progress_bar::on_epoch_begin(model* m)
     dc.get_num_iterations_per_epoch(execution_mode::training);
   this->m_current_iteration = 0;
   this->m_last_time = 0.0;
-  this->m_moving_avg_time.fill(0.0);
+  this->m_moving_avg_time.resize(this->m_moving_average_length);
+  std::fill(m_moving_avg_time.begin(), m_moving_avg_time.end(), 0.0);
 }
 
 void progress_bar::on_forward_prop_begin(model* m)
@@ -172,17 +175,16 @@ void progress_bar::on_forward_prop_begin(model* m)
     // Gather first batch of statistics
     if (m_current_iteration == 0) {
       m_last_time = ::lbann::get_time();
-      m_moving_avg_time.fill(0.0);
+      std::fill(m_moving_avg_time.begin(), m_moving_avg_time.end(), 0.0);
       prefix = "";
     }
     else {
       double cur_time = ::lbann::get_time();
       double interval = cur_time - m_last_time;
       m_last_time = cur_time;
-      m_moving_avg_time[m_current_iteration %
-                        LBANN_PBAR_MOVING_AVERAGE_LENGTH] = interval;
-      int to_avg =
-        std::min(m_current_iteration, LBANN_PBAR_MOVING_AVERAGE_LENGTH);
+      m_moving_avg_time[m_current_iteration % this->m_moving_average_length] =
+        interval;
+      int to_avg = std::min(m_current_iteration, this->m_moving_average_length);
       for (int i = 0; i < to_avg; ++i)
         avg_time += m_moving_avg_time[i];
       avg_time /= to_avg;
@@ -192,7 +194,8 @@ void progress_bar::on_forward_prop_begin(model* m)
                    m_training_iterations,
                    avg_time,
                    prefix,
-                   m_print_mem_usage);
+                   m_print_mem_usage,
+                   m_bar_width);
 
     m_current_iteration += 1;
 
@@ -211,7 +214,9 @@ std::unique_ptr<callback_base> build_progress_bar_callback_from_pbuf(
     dynamic_cast<const lbann_data::Callback::CallbackProgressBar&>(proto_msg);
   return std::make_unique<progress_bar>(params.interval(),
                                         params.newline_interval(),
-                                        params.print_mem_usage());
+                                        params.print_mem_usage(),
+                                        params.moving_average_length(),
+                                        params.bar_width());
 }
 
 } // namespace callback

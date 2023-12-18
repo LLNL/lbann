@@ -197,8 +197,10 @@ def make_batch_script(model: lbann.Model,
     # Print a progress bar
     if args.progress:
         model.callbacks.append(
-            lbann.CallbackProgressBar(newline_interval=100,
-                                      print_mem_usage=True))
+            lbann.CallbackProgressBar(newline_interval=args.pbar_newline_interval,
+                                      print_mem_usage=True,
+                                      moving_average_length=args.pbar_moving_avg,
+                                      bar_width=args.pbar_width))
 
     model.callbacks.extend(lbann.contrib.args.create_profile_callbacks(args))
 
@@ -269,6 +271,21 @@ def add_training_arguments(parser: argparse.ArgumentParser):
                         type=int,
                         help=f'Set random seed explicitly',
                         metavar='NUM')
+    parser.add_argument('--pbar-newline-interval',
+                        type=int,
+                        default=100,
+                        help='Number of iterations in progress bar before '
+                        'printing a newline (default: 100)')
+    parser.add_argument('--pbar-width',
+                        type=int,
+                        default=30,
+                        help='Progress bar width, if enabled (default: 30)')
+    parser.add_argument('--pbar-moving-avg',
+                        type=int,
+                        default=10,
+                        help='Progress bar iteration time moving average '
+                        'length in iterations. Disable moving average with 1 '
+                        '(default: 10)')
 
 # ----------------------------------------------
 # Second-order optimization functionality
