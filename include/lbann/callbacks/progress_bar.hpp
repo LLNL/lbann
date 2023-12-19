@@ -32,9 +32,6 @@
 #include "lbann/callbacks/callback.hpp"
 #include <array>
 
-#define LBANN_PBAR_MOVING_AVERAGE_LENGTH 10
-#define LBANN_PBAR_WIDTH 20
-
 namespace lbann {
 namespace callback {
 
@@ -51,13 +48,21 @@ public:
    * @param batch_interval The frequency at which to print the progress bar.
    * @param newline_interval The frequency at which to print a new line.
    * @param print_mem_usage If true, prints current GPU memory usage.
+   * @param moving_average_length The number of iterations to compute a moving
+   *                              average of iteration time on.
+   * @param bar_width The width (in characters) of the printed progress bar.
    */
   progress_bar(int batch_interval = 1,
                int newline_interval = 0,
-               bool print_mem_usage = false)
+               bool print_mem_usage = false,
+               int moving_average_length = 10,
+               int bar_width = 30)
     : callback_base(batch_interval),
       m_newline_interval(newline_interval),
-      m_print_mem_usage(print_mem_usage)
+      m_print_mem_usage(print_mem_usage),
+      m_moving_average_length(moving_average_length ? moving_average_length
+                                                    : 10),
+      m_bar_width(bar_width ? bar_width : 30)
   {}
   progress_bar(const progress_bar&) = default;
   progress_bar& operator=(const progress_bar&) = default;
@@ -86,6 +91,8 @@ private:
   // Settings
   int m_newline_interval;
   bool m_print_mem_usage;
+  int m_moving_average_length;
+  int m_bar_width;
 
   // Cached values for epochs
   bool m_print;
@@ -93,7 +100,7 @@ private:
   int m_current_iteration;
 
   /** Set up a rolling buffer for a moving average */
-  std::array<double, LBANN_PBAR_MOVING_AVERAGE_LENGTH> m_moving_avg_time;
+  std::vector<double> m_moving_avg_time;
 
   /** Time measurement (last time forward prop was called). */
   double m_last_time;
