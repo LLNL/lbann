@@ -56,7 +56,7 @@ build and test everything:
     - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120" || echo "90")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
     - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
-    - lalloc ${LBANN_NNODES} -W ${TEST_TIME} -q pbatch ci_test/run.sh ${WEEKLY_FLAG}
+    - lalloc ${LBANN_NNODES} -W ${TEST_TIME} -q pci ci_test/run.sh ${WEEKLY_FLAG}
   artifacts:
     when: always
     paths:

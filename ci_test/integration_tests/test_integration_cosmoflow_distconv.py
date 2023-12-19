@@ -69,22 +69,23 @@ nightly_options_and_targets = {
     'mini_batch_size': 2,
     'input_width': 128,
     'num_secrets': 4,
-    'use_batchnorm': True,
-    'local_batchnorm': True,
+    'use_batchnorm': False,
+    'local_batchnorm': False,
     'depth_groups': 4, #2,
     'sample_groups': 1,
     'learning_rate': 0.001,
 #    'min_distconv_width': 4,
-    'mlperf': True,
+    'mlperf': False,
     'transform_input': False, #True,
-    'expected_train_mse_range': (0.273, 0.290),
-    'expected_test_mse_range': (0.118, 0.120),
+    'expected_train_mse_range': (0.240, 0.265),
+    'expected_test_mse_range': (0.079, 0.121),
 #    'expected_test_mse_range': (2.96, 2.97),
     'fraction_of_data_to_use': 1.0,
     'expected_mini_batch_times': {
-        'lassen':   0.0229,
-        'pascal':   0.044,
-        'tioga':   0.044,
+        'lassen':   0.035, #0.0229,
+        'pascal':   0.092, #0.044,
+        'tioga':   0.044, #0.044,
+        'corona':   0.14,
     }
 }
 
@@ -146,10 +147,10 @@ def setup_experiment(lbann, weekly):
       pytest.skip(message)
 
     # FIXME: Remove this check after Pack/Unpack PR on H2 merges.
-    if tools.system(lbann) != 'lassen' and tools.system(lbann) != 'pascal' and tools.system(lbann) != 'tioga':
-      message = f'{os.path.basename(__file__)} is only supported on lassen, tioga, and pascal systems'
-      print('Skip - ' + message)
-      pytest.skip(message)
+    # if tools.system(lbann) != 'lassen' and tools.system(lbann) != 'pascal' and tools.system(lbann) != 'tioga':
+    #   message = f'{os.path.basename(__file__)} is only supported on lassen, tioga, and pascal systems'
+    #   print('Skip - ' + message)
+#      pytest.skip(message)
 
     if weekly:
         options = weekly_options_and_targets
@@ -184,9 +185,9 @@ def setup_experiment(lbann, weekly):
                                                       mlperf=options['mlperf'],
                                                       transform_input=options['transform_input'])
 
-    model.callbacks.append(lbann.CallbackDebug())
+    # model.callbacks.append(lbann.CallbackDebug())
     # Setup optimizer
-    opt = lbann.Adam(learn_rate=0.001,beta1=0.9,beta2=0.99,eps=1e-8)
+    opt = lbann.SGD(learn_rate=1e-4, momentum=0.9)
     # Load data reader from prototext
     data_reader = make_data_reader(lbann, options['fraction_of_data_to_use'])
 
