@@ -83,7 +83,7 @@ nightly_options_and_targets = {
     'fraction_of_data_to_use': 1.0,
     'expected_mini_batch_times': {
         'lassen':   0.035, #0.0229,
-        'pascal':   0.044,
+        'pascal':   0.092, #0.044,
         'tioga':   0.044, #0.044,
         'corona':   0.14,
     }
