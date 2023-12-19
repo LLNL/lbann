@@ -151,6 +151,7 @@ void progress_bar::write_specific_proto(lbann_data::Callback& proto) const
   msg->set_newline_interval(this->m_newline_interval);
   msg->set_print_mem_usage(this->m_print_mem_usage);
   msg->set_moving_average_length(this->m_moving_average_length);
+  msg->set_bar_width(this->m_bar_width);
 }
 
 void progress_bar::on_epoch_begin(model* m)

@@ -60,8 +60,9 @@ public:
     : callback_base(batch_interval),
       m_newline_interval(newline_interval),
       m_print_mem_usage(print_mem_usage),
-      m_moving_average_length(moving_average_length),
-      m_bar_width(bar_width)
+      m_moving_average_length(moving_average_length ? moving_average_length
+                                                    : 10),
+      m_bar_width(bar_width ? bar_width : 30)
   {}
   progress_bar(const progress_bar&) = default;
   progress_bar& operator=(const progress_bar&) = default;
