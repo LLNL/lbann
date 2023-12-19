@@ -6,6 +6,7 @@ import os
 from lbann.core.util import get_parallel_strategy_args
 import lbann
 import lbann.modules as lm
+import numpy as np
 
 from lbann.contrib.modules.fftshift import FFTShift
 from lbann.contrib.modules.radial_profile import RadialProfile
@@ -20,7 +21,7 @@ def f_invtransform(y,scale=4.0): ### Transform to original space
                           lbann.SafeDivide(
                           lbann.Add(lbann.Constant(value=1.0, hint_layer=y),lbann.Identity(y)),
                           lbann.Subtract(lbann.Constant(value=1.0, hint_layer=y),lbann.Identity(y))),
-                          scaling_factors=str(scale))
+                          scaling_factors=scale)
 
     return inv_transform
 
@@ -78,6 +79,9 @@ def construct_lc_launcher_args():
     parser.add_argument(
         '--spectral-loss', action='store_true',
         help='Use spectral loss')
+    parser.add_argument(
+        '--spectral-loss-scale', action='store', type=float, default=1e-6,
+        help='Spectral loss scale (default: 1e-6)')
 
     parser.add_argument(
         '--use-bn', action='store_true',
@@ -156,19 +160,73 @@ def construct_model(args):
     mse = lbann.MeanSquaredError([gen_img, x2], name='MSE') if args.compute_mse else None
 
     if args.spectral_loss:
-      dft_gen_img = lbann.DFTAbs(f_invtransform(gen_img))
-      dft_img = lbann.StopGradient(lbann.DFTAbs(f_invtransform(x2)))
-         
-      ## Adding full spectral loss
-      print("SAMPLE DIMS ", _sample_dims)
-      gen_fft=FFTShift()(dft_gen_img,_sample_dims)
-      gen_spec_prof=RadialProfile()(gen_fft,_sample_dims,63)
+        # Determine k bins for each Fourier component.
+        k = np.fft.fftfreq(args.input_width)
+        k = np.sqrt(k[:,None,None]**2 + k[None,:,None]**2 + k[None,None,:]**2)
+        num_bins = args.input_width
+        bins = np.linspace(0, 1, num_bins+1)
+        counts = np.histogram(k.ravel(), bins)[0]
+        bin_inds = np.digitize(k.ravel(), bins, right=True)
         
-      img_fft=FFTShift()(dft_img,_sample_dims)
-      img_spec_prof=RadialProfile()(img_fft,_sample_dims,63)
-      spec_loss = lbann.Log(lbann.MeanSquaredError(gen_spec_prof, img_spec_prof))
-      obj.append(lbann.LayerTerm(spec_loss, scale=args.spectral_loss))
-      metrics.append(lbann.Metric(spec_loss,name='spec_loss'))
+        # Setup necessary weights layers for calculations.
+        inds = lbann.WeightsLayer(
+            weights=lbann.Weights(
+                lbann.ValueInitializer(values=bin_inds),
+                optimizer=lbann.NoOptimizer(),
+            ),
+            dims=[len(bin_inds)]
+        )
+        counts = lbann.WeightsLayer(
+            weights=lbann.Weights(
+                lbann.ValueInitializer(values=counts),
+                optimizer=lbann.NoOptimizer(),
+            ),
+            dims=[num_bins]
+        )
+        target_pk = lbann.WeightsLayer(
+            weights=lbann.Weights(
+                lbann.ValueInitializer(values=np.load(os.path.join(os.path.split(args.data_dir)[0], 'target_pk.npy'))),
+                optimizer=lbann.NoOptimizer(),
+            ),
+            dims=[num_bins]
+        )
+        k_weights = lbann.WeightsLayer(
+            weights=lbann.Weights(
+                lbann.ValueInitializer(values=np.load(os.path.join(os.path.split(args.data_dir)[0], 'k_weights.npy'))),
+                optimizer=lbann.NoOptimizer(),
+            ),
+            dims=[num_bins]
+        )
+
+        # Compute the overdensity and relative average power spectrum of the samples.
+        delta = lbann.SubtractConstant(f_invtransform(gen_img), constant=1)
+        delta_k_sq = lbann.Square(lbann.DFTAbs(delta))
+        pk = lbann.SafeDivide(
+            lbann.Scatter(lbann.Reshape(delta_k_sq, dims=[-1]), inds, dims=[num_bins]),
+            counts
+        )
+        mean_pk = lbann.Divide(
+            lbann.BatchwiseReduceSum(pk),
+            lbann.Constant(value=args.mini_batch_size, num_neurons=[num_bins])
+        )
+        rel_pk = lbann.SafeDivide(mean_pk, target_pk)
+
+        # Compute (inverse variance) weighted spectral loss.
+        spec_loss = lbann.Reduction(
+            lbann.Multiply(
+                k_weights,
+                lbann.Square(
+                    lbann.SubtractConstant(
+                        rel_pk,
+                        constant=1
+                    )
+                ),
+                name='spec_weighted'
+            )
+        )
+
+        obj.append(lbann.LayerTerm(spec_loss, scale=args.spectral_loss_scale))
+        metrics.append(lbann.Metric(spec_loss, name='spec_loss'))
 
 
     if (mse is not None):
@@ -183,6 +241,7 @@ def construct_model(args):
     callbacks.append(lbann.CallbackReplaceWeights(source_layers=list2str(src_layers),
                                  destination_layers=list2str(dst_layers),
                                  batch_interval=2))
+    callbacks.append(lbann.CallbackProgressBar())
     if args.dump_outputs:
       callbacks.append(lbann.CallbackDumpOutputs(batch_interval=600,
                        execution_modes='validation',
