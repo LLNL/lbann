@@ -148,7 +148,7 @@ set_center_specific_modules()
                 MODULE_CMD="module purge; module load cgpu modules/3.2.11.4 gcc/8.3.0 cuda/11.1.1 openmpi/4.0.3 cmake/3.18.2"
                 ;;
             "zen3") # Perlmutter
-		MODULE_CMD="module load craype-x86-milan libfabric/1.15.2.0 craype-network-ofi cmake/3.22.0 cce/16.0.1 craype/2.7.23 cray-mpich/8.1.27 PrgEnv-cray/8.4.0 cray-libsci/23.09.1.1 nccl/2.17.1-ofi cudnn/8.9.1_cuda11 cray-python/3.9.13.1 cudatoolkit/11.5 cray-hdf5/1.12.2.3"
+		MODULE_CMD="module load craype-x86-milan libfabric/1.15.2.0 craype-network-ofi cmake/3.22.0 cce/16.0.1 craype/2.7.20 cray-mpich/8.1.25 PrgEnv-cray/8.4.0 cray-libsci/23.09.1.1 nccl/2.17.1-ofi cudnn/8.9.1_cuda11 cray-python/3.9.13.1 cudatoolkit/11.5 cray-hdf5/1.12.2.3"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -251,7 +251,7 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen3") # Perlmutter
                 CENTER_COMPILER="%cce@16.0.1"
-                CENTER_DEPENDENCIES="^cray-mpich@8.1.15~wrappers ^python@3.9.7 ^cuda+allow-unsupported-compilers"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.25~wrappers ^python@3.9.7 ^cuda+allow-unsupported-compilers"
                 CENTER_BLAS_LIBRARY="blas=libsci"
                 # Override the conduit variants for the cray compilers
                 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis~blt_find_mpi"
@@ -596,11 +596,11 @@ cat <<EOF  >> ${yaml}
     cray-mpich:
       buildable: false
       version:
-      - '8.1.27'
+      - '8.1.25'
       externals:
-      - spec: "cray-mpich@8.1.27~wrappers arch=${spack_arch}"
+      - spec: "cray-mpich@8.1.25~wrappers arch=${spack_arch}"
         modules:
-        - cray-mpich/8.1.27
+        - cray-mpich/8.1.25
     nccl:
       buildable: false
       version:
