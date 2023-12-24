@@ -249,7 +249,7 @@ if __name__ == "__main__":
     # Setup DaCe kernels if requested
     if args.use_distconv and args.dace:
         environment['DISTCONV_JIT_VERBOSE'] = 1
-        application_path=os.path.dirname(__file__)
+        application_path=os.path.abspath(os.path.dirname(__file__))
         environment['DISTCONV_JIT_CACHEPATH'] = f'{application_path}/DaCe_kernels/.dacecache'
 
     if args.synthetic or args.no_datastore:

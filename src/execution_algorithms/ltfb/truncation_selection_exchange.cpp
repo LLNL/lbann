@@ -151,13 +151,11 @@ void TruncationSelectionExchange::select_next(model& m,
 {
   auto const& comm = *(m.get_comm());
   const unsigned int num_trainers = comm.get_num_trainers();
-  const int trainer_id = comm.get_trainer_rank();
+  const unsigned int trainer_id = comm.get_trainer_rank();
   auto const step = ctxt.get_step();
 
   auto score = evaluate_model(m, ctxt, dc);
 
-  // epsilon, avoid (close) duplicity in score
-  score += 0.00000001 * trainer_id;
   // trainer master computes trainer metric score rank/position
   std::vector<EvalType> score_list(num_trainers);
   comm.trainer_barrier();
@@ -168,34 +166,37 @@ void TruncationSelectionExchange::select_next(model& m,
   comm.trainer_broadcast(comm.get_trainer_master(),
                          score_list.data(),
                          num_trainers);
-  std::vector<EvalType> top_scores = score_list;
-  // top-k in an ascending order
-  // supports of singular metric value (for now)
+
+  // Compute top scores and which trainers they belonged to
+  std::vector<std::pair<EvalType, unsigned int>> top_scores(num_trainers);
+  for (unsigned int i = 0; i < num_trainers; ++i)
+    top_scores[i] = std::make_pair(score_list[i], i);
+
+  // Stable-sort the trainers by their metric
   auto met_strategy = m_metrics.begin()->second;
-  if (low_score_wins(met_strategy))
-    std::sort(top_scores.begin(), top_scores.end(), std::less<EvalType>());
-  // top-k in an descending order
-  else
-    std::sort(top_scores.begin(), top_scores.end(), std::greater<EvalType>());
-  auto itr1 = std::adjacent_find(top_scores.begin(), top_scores.end());
-  if (itr1 != top_scores.end()) {
-    LBANN_ERROR("truncation tournament exchange currently works if trainers "
-                "scores are unique");
+  if (low_score_wins(met_strategy)) {
+    std::sort(top_scores.begin(), top_scores.end(), std::less<>());
+  }
+  else {
+    // top-k in a descending order
+    std::sort(top_scores.begin(), top_scores.end(), std::greater<>());
   }
 
-  auto itr2 =
-    std::find(top_scores.begin(), top_scores.end(), score_list[trainer_id]);
-  auto trainer_score_pos = std::distance(top_scores.begin(), itr2);
+  auto itr =
+    std::find_if(top_scores.begin(),
+                 top_scores.end(),
+                 [&trainer_id](std::pair<EvalType, unsigned int> const& val) {
+                   return val.second == trainer_id;
+                 });
+  auto trainer_score_pos = std::distance(top_scores.begin(), itr);
 
   if (trainer_score_pos < m_truncation_k) {
     // Winner (in top-k)
-    // for each loosing trainer
+    // for each losing trainer
     for (unsigned int i = m_truncation_k; i < num_trainers; i++) {
       if (trainer_score_pos == i % m_truncation_k) {
         // One of partners is trainer that owns score at top_scores[i]
-        auto dest = std::distance(
-          score_list.begin(),
-          std::find(score_list.begin(), score_list.end(), top_scores[i]));
+        auto dest = top_scores[i].second;
 
         auto model_string = pack(m);
         if (comm.am_trainer_master()) {
@@ -209,11 +210,7 @@ void TruncationSelectionExchange::select_next(model& m,
     }
   }
   else { // not in top-k, receive
-    auto src =
-      std::distance(score_list.begin(),
-                    std::find(score_list.begin(),
-                              score_list.end(),
-                              top_scores[trainer_score_pos % m_truncation_k]));
+    auto src = top_scores[trainer_score_pos % m_truncation_k].second;
 
     std::string rcv_str;
     if (comm.am_trainer_master()) {
