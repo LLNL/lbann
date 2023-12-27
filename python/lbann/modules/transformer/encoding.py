@@ -32,9 +32,7 @@ class SequenceEncoding:
         """
         Applies sequence encoding within a transformer encoder/decoder layer.
         Encoding is performed on each transformer layer's multi-head attention
-        inputs.
-        Note that q, k, and v may point to the same tensors. Optimized sequence
-        encoders may test for, e.g., ``k is v`` for faster operation.
+        inputs, after obtaining their hidden representation (e.g., ``WQ @ q``).
 
         :param q: The input queries of the transformer layer.
         :param k: The input keys of the transformer layer.

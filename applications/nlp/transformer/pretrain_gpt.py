@@ -98,6 +98,13 @@ def main():
         default=False,
         help="Use dataset fraction to determine hyperparameter schedule"
         " (default: False)")
+    parser.add_argument(
+        '--positional-encoding',
+        type=str,
+        default='learned',
+        help='The type of positional encoding to use '
+        '(default: learned)',
+        choices=[s.name.lower() for s in modeling.InputEncoding])
 
     parser.set_defaults(progress=True, num_epochs=1)
     args = parser.parse_args()
