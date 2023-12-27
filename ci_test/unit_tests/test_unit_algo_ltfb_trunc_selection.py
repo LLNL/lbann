@@ -194,6 +194,9 @@ def augment_test_func(test_func):
                         num_trainers = int(match.group(1))
                     else:
                         continue
+                    if num_trainers <= _top_k:
+                        # There will be no truncation-selection exchanges
+                        return
                     sending_partner = [defaultdict(list) for _ in range(num_trainers)]
                     receiving_partner = [
                         defaultdict(list) for _ in range(num_trainers)
