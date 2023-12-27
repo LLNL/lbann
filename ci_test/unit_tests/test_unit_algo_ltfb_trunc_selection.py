@@ -7,6 +7,7 @@ The log files are post-processed to make sure that the correct weights
 are propagated by LTFB.
 
 """
+from collections import defaultdict
 import os
 import os.path
 import random
@@ -51,6 +52,10 @@ def num_samples():
 def sample_dims():
     return (1,)
 
+# Meta-learning parameters
+_top_k = 2
+_metalearning_steps = 4
+
 # ==============================================
 # Setup LBANN experiment
 # ==============================================
@@ -62,22 +67,17 @@ def setup_experiment(lbann, weekly):
         lbann (module): Module for LBANN Python frontend
 
     """
-
-    message = f'{os.path.basename(__file__)} is temporarily failing intermittently on all systems... disable'
-    print('Skip - ' + message)
-    pytest.skip(message)
-
     # Setup the training algorithm
     SGD = lbann.BatchedIterativeOptimizer
     TSE = lbann.TruncationSelectionExchange
     metalearning = TSE(
         metric_strategies={'random': TSE.MetricStrategy.HIGHER_IS_BETTER},
-        truncation_k=2)
+        truncation_k=_top_k)
     ltfb = lbann.LTFB("ltfb",
                       metalearning=metalearning,
                       local_algo=SGD("local sgd",
                                      num_iterations=1),
-                      metalearning_steps=4)
+                      metalearning_steps=_metalearning_steps)
 
     trainer = lbann.Trainer(_mini_batch_size,
                             training_algo=ltfb)
@@ -187,7 +187,6 @@ def augment_test_func(test_func):
         log_file = experiment_output['stdout_log_file']
         with open(log_file) as f:
             for line in f:
-
                 # Configure data once we figure out number of trainers
                 if num_trainers is None:
                     match = re.search('Trainers *: ([0-9]+)', line)
@@ -195,35 +194,41 @@ def augment_test_func(test_func):
                         num_trainers = int(match.group(1))
                     else:
                         continue
-                    sending_partner = [[] for _ in range(num_trainers)]
+                    if num_trainers <= _top_k:
+                        # There will be no truncation-selection exchanges
+                        return
+                    sending_partner = [defaultdict(list) for _ in range(num_trainers)]
+                    receiving_partner = [
+                        defaultdict(list) for _ in range(num_trainers)
+                    ]
                     tournament_metrics = [[] for _ in range(num_trainers)]
 
                 #sender
                 match = re.search(
-                    'In LTFB TSE .* '
+                    'In LTFB TSE step ([0-9]+), '
                     'trainer ([0-9]+) with score .* sends model to trainer  ([0-9]+) '
-                    'with score .*',
-                    line)
+                    'with score .*', line)
                 if match:
-                    trainer = int(match.group(1))
-                    sending_partner[trainer].append(trainer) #ltfb_sender
+                    step = int(match.group(1))
+                    sender = winner = trainer = int(match.group(2))
+                    receiver = loser = partner = int(match.group(3))
+                    sending_partner[trainer][step].append(partner)
 
                 #receiver
                 match = re.search(
-                    'In LTFB TSE .* '
+                    'In LTFB TSE step ([0-9]+), '
                     'trainer ([0-9]+) with score .* receives model from trainer ([0-9]+) '
-                    'with score .*',
-                    line)
+                    'with score .*', line)
                 if match:
-                    receiver = loser = trainer = int(match.group(1))
-                    sender = winner = partner = int(match.group(2))
-                    sending_partner[trainer].append(sender) #ltfb_sender
+                    step = int(match.group(1))
+                    receiver = loser = trainer = int(match.group(2))
+                    sender = winner = partner = int(match.group(3))
+                    receiving_partner[trainer][step].append(partner)
 
                 # Metric value on tournament set
                 match = re.search(
                     'model0 \\(instance ([0-9]+)\\) tournament random : '
-                    '([0-9.]+)',
-                    line)
+                    '([0-9.]+)', line)
                 if match:
                     trainer = int(match.group(1))
                     tournament_metrics[trainer].append(float(match.group(2)))
@@ -236,23 +241,66 @@ def augment_test_func(test_func):
                 f'Error parsing {log_file} ' \
                 f'(expected {_num_epochs} tournament metric values, ' \
                 f'but found {len(vals)} for trainer {trainer})'
-        #@todo, add more checks
+
+        # Make sure the steps executed match the metalearning steps
+        steps = 0
+        for trainer in range(num_trainers):
+            if sending_partner[trainer]:
+                steps = max(steps, *sending_partner[trainer].keys())
+            if receiving_partner[trainer]:
+                steps = max(steps, *receiving_partner[trainer].keys())
+
+        steps += 1  # Log is 0-based
+        assert steps == _metalearning_steps, (
+            f'Steps captured in log ({steps}) mismatch meta-learning steps '
+            f'({_metalearning_steps})')
+
+        # Make sure the sends were executed to the right receivers
+        for step in range(steps):
+            for trainer in range(num_trainers):
+                # Trainer does not participate
+                if len(sending_partner[trainer]) + len(
+                        receiving_partner[trainer]) == 0:
+                    continue
+
+                if step in sending_partner[trainer]:  # If trainer won during that step
+                    # Check partner match
+                    sending_partners_at_step = sending_partner[trainer][step]
+                    for partner in sending_partners_at_step:
+                        assert step in receiving_partner[partner], (
+                            f'Trainer {partner} did not receive a sent metric from '
+                            f'{trainer} during step {step}')
+                        assert receiving_partner[partner][step][0] == trainer, (
+                            f'Trainer {partner} receive partner mismatch (expected '
+                            f'{trainer}, got {receiving_partner[partner][step][0]}) '
+                            f'during step {step}')
+                else:
+                    # Check validity of losing receivers
+                    assert step in receiving_partner[trainer], (
+                        f'Trainer {trainer} did not send nor receive metric during '
+                        f'step {step}')
+                    assert len(receiving_partner[trainer][step]) == 1, (
+                        f'Trainer {trainer} received from more than one sender at '
+                        f'step {step}')
 
         # Make sure metric values match expected values
         # All trainers participate in tournament by evaluating their local
         # model on tournament dataset
         # Winning trainers (above threshold) retain their models
         # Losing trainers (below threshold) receive models from winning trainers
-        # Here we test that the model exchanges between winners and lossers are correct
-        for step in range(_num_epochs-1):
+        # Here we test that the model exchanges between winners and losers are correct
+        for step in range(_num_epochs - 1):
             for trainer in range(num_trainers):
-                if (len(sending_partner[trainer]) != 0):
-                  sender_at_step = sending_partner[trainer][step]
-                  trainer_score = tournament_metrics[trainer][step]
-                  winning_score = tournament_metrics[sender_at_step][step]
+                if step in receiving_partner[trainer]:
+                    sender_at_step = receiving_partner[trainer][step][0]
+                    trainer_score = tournament_metrics[trainer][step]
+                    winning_score = tournament_metrics[sender_at_step][step]
 
-                  assert trainer_score <= winning_score, \
-                      'Incorrect metric value for LTFB tournament'
+                    assert trainer_score <= winning_score, (
+                        f'Incorrect metric value for LTFB tournament: step {step}, '
+                        f'trainer {trainer} with score {trainer_score}, sender '
+                        f'{sender_at_step} with score {winning_score}')
+
 
     # Return test function from factory function
     func.__name__ = test_name
