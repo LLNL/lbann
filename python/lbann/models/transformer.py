@@ -90,6 +90,9 @@ class TransformerEncoderLayer(lbann.modules.Module):
             probability matrix before softmax. If None, does not apply.
         positional_encoding (SequenceEncoding): An optional positional encoding
             object that may apply on each input.
+        attention_module (Type[Module]): Sets the internal attention
+            (self-attention and cross attention) class. By default, uses
+            Multi-Head Attention.
         name (str): Default name is in the form
             'transformerencoderlayer<index>'.
 
@@ -109,6 +112,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
         parallel_attention_heads=0,
         attention_bias=None,
         positional_encoding: SequenceEncoding = None,
+        attention_module=lbann.modules.MultiheadAttention,
         name=None,
     ):
         TransformerEncoderLayer.global_count += 1
@@ -126,7 +130,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
             self.name = f'transformerencoderlayer{TransformerEncoderLayer.global_count}'
 
         # Layer modules
-        self.attention = lbann.modules.MultiheadAttention(
+        self.attention = attention_module(
             self.embed_dim,
             num_heads,
             dropout=attn_dropout,
@@ -250,6 +254,9 @@ class TransformerDecoderLayer(lbann.modules.Module):
             probability matrix before softmax. If None, does not apply.
         positional_encoding (SequenceEncoding): An optional positional encoding
             object that may apply on each input.
+        attention_module (Type[Module]): Sets the internal attention
+            (self-attention and cross attention) class. By default, uses
+            Multi-Head Attention.
         name (str): Default name is in the form
             'transformerdecoderlayer<index>'.
 
@@ -269,6 +276,7 @@ class TransformerDecoderLayer(lbann.modules.Module):
         parallel_attention_heads=0,
         attention_bias=None,
         positional_encoding: SequenceEncoding = None,
+        attention_module=lbann.modules.MultiheadAttention,
         name=None,
     ):
         TransformerDecoderLayer.global_count += 1
@@ -286,7 +294,7 @@ class TransformerDecoderLayer(lbann.modules.Module):
             self.name = f'transformerdecoderlayer{TransformerDecoderLayer.global_count}'
 
         # Layer modules
-        self.attention1 = lbann.modules.MultiheadAttention(
+        self.attention1 = attention_module(
             embed_dim,
             num_heads,
             self_attention=True,
@@ -295,7 +303,7 @@ class TransformerDecoderLayer(lbann.modules.Module):
             bias=attention_bias,
             positional_encoding=positional_encoding,
             name=f'{self.name}_attention1')
-        self.attention2 = lbann.modules.MultiheadAttention(
+        self.attention2 = attention_module(
             embed_dim,
             num_heads,
             dropout=attn_dropout,
@@ -455,6 +463,9 @@ class Transformer(lbann.modules.Module):
             probability matrix before softmax. If None, does not apply.
         positional_encoding (SequenceEncoding): An optional positional encoding
             object that may apply on each input, in each layer.
+        attention_module (Type[Module]): Sets the internal attention
+            (self-attention and cross attention) class. By default, uses
+            Multi-Head Attention.
         name (str): Default name is in the form
             'transformer<index>'.
 
@@ -476,6 +487,7 @@ class Transformer(lbann.modules.Module):
         parallel_attention_heads=0,
         attention_bias=None,
         positional_encoding=None,
+        attention_module=lbann.modules.MultiheadAttention,
         name=None,
     ):
         Transformer.global_count += 1
@@ -514,6 +526,7 @@ class Transformer(lbann.modules.Module):
                 parallel_attention_heads=parallel_attention_heads,
                 attention_bias=attention_bias,
                 positional_encoding=positional_encoding,
+                attention_module=attention_module,
                 name=f'{self.name}_encoder{i}',
             ) for i in range(num_encoder_layers)
         ]
@@ -529,6 +542,7 @@ class Transformer(lbann.modules.Module):
                 parallel_attention_heads=parallel_attention_heads,
                 attention_bias=attention_bias,
                 positional_encoding=positional_encoding,
+                attention_module=attention_module,
                 name=f'{self.name}_decoder{i}',
             ) for i in range(num_decoder_layers)
         ]
