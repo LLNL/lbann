@@ -14,6 +14,7 @@ from typing import Optional
 
 import lbann
 import lbann.modules
+from lbann.modules.transformer.encoding import SequenceEncoding
 from lbann.util import make_iterable
 
 
@@ -85,6 +86,10 @@ class TransformerEncoderLayer(lbann.modules.Module):
             feedforward network. Examples include ReLU or GELU.
         parallel_attention_heads (int): If positive, applies subgraph
             parallelism on attention heads.
+        attention_bias (Layer): Additive attention bias to apply on the attention
+            probability matrix before softmax. If None, does not apply.
+        positional_encoding (SequenceEncoding): An optional positional encoding
+            object that may apply on each input.
         name (str): Default name is in the form
             'transformerencoderlayer<index>'.
 
@@ -102,6 +107,8 @@ class TransformerEncoderLayer(lbann.modules.Module):
         pre_layernorm=False,
         activation=lbann.Relu,
         parallel_attention_heads=0,
+        attention_bias=None,
+        positional_encoding: SequenceEncoding = None,
         name=None,
     ):
         TransformerEncoderLayer.global_count += 1
@@ -119,12 +126,14 @@ class TransformerEncoderLayer(lbann.modules.Module):
             self.name = f'transformerencoderlayer{TransformerEncoderLayer.global_count}'
 
         # Layer modules
-        self.attention = lbann.modules.transformer.MultiheadAttention(
+        self.attention = lbann.modules.MultiheadAttention(
             self.embed_dim,
             num_heads,
             dropout=attn_dropout,
             self_attention=True,
             subgraph_branches=parallel_attention_heads,
+            bias=attention_bias,
+            positional_encoding=positional_encoding,
             name=f'{self.name}_attention')
         self.norm1 = LayerNorm(self.embed_dim, name=f'{self.name}_norm1')
         self.norm2 = LayerNorm(self.embed_dim, name=f'{self.name}_norm2')
@@ -237,6 +246,10 @@ class TransformerDecoderLayer(lbann.modules.Module):
             feedforward network. Examples include ReLU or GELU.
         parallel_attention_heads (int): If positive, applies subgraph
             parallelism on attention heads.
+        attention_bias (Layer): Additive attention bias to apply on the attention
+            probability matrix before softmax. If None, does not apply.
+        positional_encoding (SequenceEncoding): An optional positional encoding
+            object that may apply on each input.
         name (str): Default name is in the form
             'transformerdecoderlayer<index>'.
 
@@ -254,6 +267,8 @@ class TransformerDecoderLayer(lbann.modules.Module):
         pre_layernorm=False,
         activation=lbann.Relu,
         parallel_attention_heads=0,
+        attention_bias=None,
+        positional_encoding: SequenceEncoding = None,
         name=None,
     ):
         TransformerDecoderLayer.global_count += 1
@@ -271,18 +286,21 @@ class TransformerDecoderLayer(lbann.modules.Module):
             self.name = f'transformerdecoderlayer{TransformerDecoderLayer.global_count}'
 
         # Layer modules
-        self.attention1 = lbann.modules.transformer.MultiheadAttention(
+        self.attention1 = lbann.modules.MultiheadAttention(
             embed_dim,
             num_heads,
             self_attention=True,
             dropout=attn_dropout,
             subgraph_branches=parallel_attention_heads,
+            bias=attention_bias,
+            positional_encoding=positional_encoding,
             name=f'{self.name}_attention1')
-        self.attention2 = lbann.modules.transformer.MultiheadAttention(
+        self.attention2 = lbann.modules.MultiheadAttention(
             embed_dim,
             num_heads,
             dropout=attn_dropout,
             subgraph_branches=parallel_attention_heads,
+            bias=attention_bias,
             name=f'{self.name}_attention2')
         self.norm1 = LayerNorm(self.embed_dim, name=f'{self.name}_norm1')
         self.norm2 = LayerNorm(self.embed_dim, name=f'{self.name}_norm2')
@@ -433,6 +451,10 @@ class Transformer(lbann.modules.Module):
             feedforward network. Examples include ReLU or GELU.
         parallel_attention_heads (int): If positive, applies subgraph
             parallelism on attention heads. 
+        attention_bias (Layer): Additive attention bias to apply on the attention
+            probability matrix before softmax. If None, does not apply.
+        positional_encoding (SequenceEncoding): An optional positional encoding
+            object that may apply on each input, in each layer.
         name (str): Default name is in the form
             'transformer<index>'.
 
@@ -452,6 +474,8 @@ class Transformer(lbann.modules.Module):
         pre_layernorm=False,
         activation=lbann.Relu,
         parallel_attention_heads=0,
+        attention_bias=None,
+        positional_encoding=None,
         name=None,
     ):
         Transformer.global_count += 1
@@ -488,6 +512,8 @@ class Transformer(lbann.modules.Module):
                 pre_layernorm=pre_layernorm,
                 activation=activation,
                 parallel_attention_heads=parallel_attention_heads,
+                attention_bias=attention_bias,
+                positional_encoding=positional_encoding,
                 name=f'{self.name}_encoder{i}',
             ) for i in range(num_encoder_layers)
         ]
@@ -501,6 +527,8 @@ class Transformer(lbann.modules.Module):
                 pre_layernorm=pre_layernorm,
                 activation=activation,
                 parallel_attention_heads=parallel_attention_heads,
+                attention_bias=attention_bias,
+                positional_encoding=positional_encoding,
                 name=f'{self.name}_decoder{i}',
             ) for i in range(num_decoder_layers)
         ]

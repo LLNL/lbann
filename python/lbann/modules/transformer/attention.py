@@ -1,9 +1,9 @@
-"""Neural network modules for transformer models."""
+"""Neural network modules for multi-head attention."""
 import math
-import numpy as np
 from typing import Dict
 import lbann
-from .base import Module
+from ..base import Module
+from lbann.modules.transformer.encoding import SequenceEncoding
 
 
 class MultiheadAttention(Module):
@@ -27,6 +27,10 @@ class MultiheadAttention(Module):
         dropout (float): Dropout probability applied before attention output.
         subgraph_branches (int): How many subgraph-parallel branches to divide
             multi-head attention to.
+        bias (Layer): Additive attention bias to apply on the attention
+            probability matrix before softmax. If None, does not apply.
+        positional_encoding (SequenceEncoding): An optional positional encoding
+            object that may apply on each input.
         name (str): Default name is in the form
             'multiheadattention<index>'.
 
@@ -35,13 +39,15 @@ class MultiheadAttention(Module):
     global_count = 0  # Static counter, used for default names
 
     def __init__(self,
-                 embed_dim,
-                 num_heads,
-                 self_attention=False,
-                 batch_heads=True,
-                 dropout=0.0,
-                 subgraph_branches=0,
-                 name=None):
+                 embed_dim: int,
+                 num_heads: int,
+                 self_attention: bool = False,
+                 batch_heads: bool = True,
+                 dropout: float = 0.0,
+                 subgraph_branches: int = 0,
+                 bias: lbann.Layer = None,
+                 positional_encoding: SequenceEncoding = None,
+                 name: str = None):
         super().__init__()
         MultiheadAttention.global_count += 1
         self.instance = 0
@@ -50,6 +56,8 @@ class MultiheadAttention(Module):
         self.num_heads = num_heads
         self.head_dim = embed_dim // num_heads
         self.dropout = dropout
+        self.bias = bias
+        self.positional_encoding = positional_encoding
 
         # Self-attention is a special case in which we can stack
         # query/key/value weights
@@ -129,10 +137,8 @@ class MultiheadAttention(Module):
         self.instance += 1
         name = f'{self.name}_instance{self.instance}'
 
-        if self.self_attention:
+        if self.self_attention and queries is keys and keys is values:
             # If self-attention, multiply with stacked matrix
-            assert queries is keys and keys is values
-
             qkv_fc = lbann.ChannelwiseFullyConnected(
                 queries,
                 weights=self.qkv_weights,
@@ -171,6 +177,10 @@ class MultiheadAttention(Module):
                 output_channel_dims=[self.embed_dim],
                 name=f'{name}_values_fc',
             )
+
+        if self.positional_encoding is not None:
+            queries_fc, keys_fc, values_fc = self.positional_encoding.apply_layer(
+                queries_fc, keys_fc, values_fc)
 
         if self.separate_heads:
             attentions = self.dot_product_attn_separate_heads(
@@ -225,6 +235,9 @@ class MultiheadAttention(Module):
 
         if mask:
             y = lbann.Add(y, mask, name=f'{head_name}_mask')
+
+        if self.bias:
+            y = lbann.Add(y, self.bias, name=f'{head_name}_attnbias')
 
         y = lbann.ChannelwiseSoftmax(y,
                                      dim=-1,
@@ -329,6 +342,9 @@ class MultiheadAttention(Module):
                 else:
                     y = lbann.Add(y, mask, name=f'{head_name}_mask')
 
+            if self.bias:
+                y = lbann.Add(y, self.bias, name=f'{head_name}_attnbias')
+
             y = lbann.ChannelwiseSoftmax(y, name=f'{head_name}_softmax')
 
             if self.dropout > 0:
@@ -349,175 +365,3 @@ class MultiheadAttention(Module):
             name=f'{name}_heads_concat',
             parallel_strategy=self._get_subgraph())
         return attentions
-
-
-###########################################################
-# Input encoding modules
-
-
-def _make_constant_from_array(array, name=None) -> lbann.WeightsLayer:
-    """
-    Helper function that creates a constant tensor in LBANN from a given numpy
-    array.
-    """
-    if name is not None:
-        weights_name = name + '_weights'
-    else:
-        weights_name = None
-
-    w = lbann.Weights(
-        initializer=lbann.ValueInitializer(values=array.flat),
-        optimizer=lbann.NoOptimizer(),
-        name=weights_name,
-    )
-    return lbann.WeightsLayer(
-        dims=array.shape,
-        weights=w,
-        name=name,
-    )
-
-
-class PositionalEncoding(Module):
-    """
-    Implements positional encoding, as defined by Vaswani et al.,
-    "Attention Is All You Need" (2017).
-    """
-    global_count = 0  # Static instance counter
-
-    def __init__(
-        self,
-        embed_dim,
-        dropout=0.0,
-        name=None,
-    ):
-        # Module name
-        PositionalEncoding.global_count += 1
-        self.instance = 0
-        self.name = name
-        if not self.name:
-            self.name = f'posenc{PositionalEncoding.global_count}'
-
-        # Parameters
-        self._positional_encoding_cache = {}
-        self.embed_dim = embed_dim
-        self.dropout_prob = dropout
-
-    def _positional_encoding(self, sequence_length):
-        """Positional encodings corresponding to a sequence length.
-
-        PE(pos,2*i)   = sin( pos / 10000**(2*i/embed_dim) )
-
-        PE(pos,2*i+1) = cos( pos / 10000**(2*i/embed_dim) )
-
-        Encodings are memoized.
-
-        """
-
-        # Construct positional encoding if not in cache
-        if sequence_length not in self._positional_encoding_cache:
-            vals = []
-            for pos in range(sequence_length):
-                for i in range((self.embed_dim + 1) // 2):
-                    x = pos / 10000**(2 * i / self.embed_dim)
-                    vals.append(math.sin(x))
-                    vals.append(math.cos(x))
-                if self.embed_dim % 2 != 0:
-                    vals.pop()
-
-            self._positional_encoding_cache[
-                sequence_length] = _make_constant_from_array(
-                    np.array(vals).reshape([sequence_length, self.embed_dim]),
-                    name=f'{self.name}_positional{sequence_length}',
-                )
-
-        # Return cached positional encoding
-        return self._positional_encoding_cache[sequence_length]
-
-    def forward(self, inputs, input_length):
-        self.instance += 1
-
-        result = lbann.Add(
-            inputs,
-            self._positional_encoding(input_length),
-            name=f'{self.name}_instance{self.instance}_peadd',
-        )
-
-        # Input dropout
-        if self.dropout_prob > 0:
-            return lbann.Dropout(
-                result,
-                keep_prob=1 - self.dropout_prob,
-                name=f'{self.name}_pedrop',
-            )
-        return result
-
-
-class LearnedInputEncoding(Module):
-    """
-    Implements learned input encoding (via embeddings), as used in GPT-style
-    transformers.
-    """
-    global_count = 0  # Static instance counter
-
-    def __init__(
-        self,
-        embed_dim,
-        max_sequence_length,
-        dropout=0.0,
-        name=None,
-    ):
-        # Module name
-        LearnedInputEncoding.global_count += 1
-        self.instance = 0
-        self.name = name
-        if not self.name:
-            self.name = f'learnedenc{LearnedInputEncoding.global_count}'
-
-        # Parameters
-        self._positional_encoding_cache = {}
-        self.embed_dim = embed_dim
-        self.dropout_prob = dropout
-        self.max_sequence_length = max_sequence_length
-
-        self.encoding_weights = lbann.Weights(
-            name=self.name + '_weights',
-            initializer=lbann.NormalInitializer(standard_deviation=0.01),
-        )
-        self.position_ids = _make_constant_from_array(
-            np.arange(max_sequence_length))
-
-    def compute_embeddings(self):
-        return lbann.Embedding(
-            self.position_ids,
-            weights=self.encoding_weights,
-            num_embeddings=self.max_sequence_length,
-            embedding_dim=self.embed_dim,
-        )
-
-    def forward(self, inputs, input_length, learned_encoding=None):
-        self.instance += 1
-
-        if learned_encoding is None:
-            learned_encoding = self.compute_embeddings()
-
-        # Subsegment learned encodings if shorter than sequence length
-        if input_length < self.max_sequence_length:
-            learned_encoding = lbann.Identity(
-                lbann.Slice(learned_encoding,
-                            axis=0,
-                            slice_points=[0, input_length]))
-
-        result = lbann.Add(
-            inputs,
-            learned_encoding,
-            name=f'{self.name}_instance{self.instance}_peadd',
-        )
-
-        # Input dropout
-        if self.dropout_prob > 0:
-            return lbann.Dropout(
-                result,
-                keep_prob=1 - self.dropout_prob,
-                name=f'{self.name}_pedrop',
-            )
-        return result

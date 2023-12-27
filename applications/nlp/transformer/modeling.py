@@ -3,9 +3,8 @@ from enum import Enum, auto
 import lbann
 import math
 from typing import Tuple
-from lbann.models.transformer import LayerNorm
-from lbann.modules.transformer import PositionalEncoding, LearnedInputEncoding
-import numpy as np
+from lbann.models.transformer import LayerNorm, Transformer
+from lbann.modules.transformer.encoding import PositionalEncoding, LearnedInputEncoding, SequenceEncoding
 import parallelism
 
 
@@ -66,19 +65,19 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
     decoder_input = lbann.Identity(embeddings_slice)
 
     # Apply input encoding
-    encoder_input, decoder_input = _add_input_encoding(
+    encoder_input, decoder_input, posenc = _add_input_encoding(
         encoder_input, decoder_input, InputEncoding.POSITIONAL, args.embed_dim,
         args.input_dropout, sequence_length, sequence_length - 1)
 
     # Add encoder-decoder transformer model
-    transformer = lbann.models.Transformer(
-        hidden_size=args.embed_dim,
-        num_heads=args.num_attention_heads,
-        dropout=args.dropout,
-        feedforward_size=args.feedforward_dim,
-        name='transformer',
-        num_encoder_layers=num_encoders,
-        num_decoder_layers=num_decoders)
+    transformer = Transformer(hidden_size=args.embed_dim,
+                              num_heads=args.num_attention_heads,
+                              dropout=args.dropout,
+                              feedforward_size=args.feedforward_dim,
+                              name='transformer',
+                              num_encoder_layers=num_encoders,
+                              num_decoder_layers=num_decoders,
+                              positional_encoding=posenc)
 
     # Apply parallelism techniques
     transformer, extra_model_kwargs = parallelism.apply_subgraph_parallelism(
@@ -161,20 +160,22 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
     )
 
     # Apply input encoding
-    _, decoder_input = _add_input_encoding(None, decoder_input,
-                                           InputEncoding.LEARNED, embed_dim,
-                                           input_dropout, 0, sequence_length)
+    _, decoder_input, posenc = _add_input_encoding(None, decoder_input,
+                                                   InputEncoding.LEARNED,
+                                                   embed_dim, input_dropout, 0,
+                                                   sequence_length)
 
     # Add a GPT-style (decoder-only) transformer model
-    transformer = lbann.models.Transformer(hidden_size=embed_dim,
-                                           num_heads=num_heads,
-                                           dropout=dropout,
-                                           attn_dropout=attn_dropout,
-                                           num_encoder_layers=0,
-                                           num_decoder_layers=num_decoders,
-                                           pre_layernorm=True,
-                                           activation=lbann.Gelu,
-                                           name='transformer')
+    transformer = Transformer(hidden_size=embed_dim,
+                              num_heads=num_heads,
+                              dropout=dropout,
+                              attn_dropout=attn_dropout,
+                              num_encoder_layers=0,
+                              num_decoder_layers=num_decoders,
+                              pre_layernorm=True,
+                              activation=lbann.Gelu,
+                              positional_encoding=posenc,
+                              name='transformer')
 
     # Apply parallelism techniques
     transformer, extra_model_kwargs = parallelism.apply_subgraph_parallelism(
@@ -226,13 +227,13 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
 
 
 def _add_input_encoding(
-        encoder_input: lbann.Layer, decoder_input: lbann.Layer,
-        encoding_kind: InputEncoding, embed_dim: int, input_dropout: float,
-        encoder_sequence_length: int,
-        decoder_sequence_length: int) -> Tuple[lbann.Layer, lbann.Layer]:
+    encoder_input: lbann.Layer, decoder_input: lbann.Layer,
+    encoding_kind: InputEncoding, embed_dim: int, input_dropout: float,
+    encoder_sequence_length: int, decoder_sequence_length: int
+) -> Tuple[lbann.Layer, lbann.Layer, SequenceEncoding]:
     if encoding_kind == InputEncoding.NONE:
         # Do nothing
-        return encoder_input, decoder_input
+        return encoder_input, decoder_input, None
 
     elif encoding_kind == InputEncoding.POSITIONAL:
         # Trigonometric positional encoding
@@ -248,13 +249,13 @@ def _add_input_encoding(
 
     # Apply encoder
     if encoder_input is not None:
-        encoder_input = positional_encoder(encoder_input,
-                                           encoder_sequence_length, **kwargs)
+        encoder_input = positional_encoder.apply_input(
+            encoder_input, encoder_sequence_length, **kwargs)
     if decoder_input is not None:
-        decoder_input = positional_encoder(decoder_input,
-                                           decoder_sequence_length, **kwargs)
+        decoder_input = positional_encoder.apply_input(
+            decoder_input, decoder_sequence_length, **kwargs)
 
-    return encoder_input, decoder_input
+    return encoder_input, decoder_input, positional_encoder
 
 
 def _add_encoder_decoder_loss(preds, both_sequences, sequence_length,

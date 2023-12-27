@@ -16,6 +16,7 @@ from typing import Optional
 import lbann
 import lbann.modules
 from lbann.modules import attention_allsubgraph as attn
+from lbann.models.transformer import LayerNorm
 
 
 class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
@@ -77,9 +78,9 @@ class TransformerEncoderLayerAllSubgraph(lbann.modules.Module):
             d_kv=d_kv,
             name=f"{self.name}_attention",
         ))
-        self.norm1 = lbann.modules.transformer.LayerNorm(
+        self.norm1 = LayerNorm(
             self.embed_dim, name=f'{self.name}_norm1')
-        self.norm2 = lbann.modules.transformer.LayerNorm(
+        self.norm2 = LayerNorm(
             self.embed_dim, name=f'{self.name}_norm2')
 
         # Weights for fully-connected layers
@@ -302,9 +303,9 @@ class TransformerEncoderLayerAllSubgraphInputSubGrids(lbann.modules.Module):
             d_kv=d_kv,
             name=f"{self.name}_attention",
         )
-        self.norm1 = lbann.modules.transformer.LayerNorm(
+        self.norm1 = LayerNorm(
             self.embed_dim, name=f'{self.name}_norm1')
-        self.norm2 = lbann.modules.transformer.LayerNorm(
+        self.norm2 = LayerNorm(
             self.embed_dim, name=f'{self.name}_norm2')
 
         # Weights for fully-connected layers
@@ -522,11 +523,11 @@ class TransformerDecoderLayerAllSubGraph(lbann.modules.Module):
             d_kv=d_kv,
             name=f"{self.name}_attention2",
         )
-        self.norm1 = lbann.modules.transformer.LayerNorm(
+        self.norm1 = LayerNorm(
             self.embed_dim, name=f'{self.name}_norm1')
-        self.norm2 = lbann.modules.transformer.LayerNorm(
+        self.norm2 = LayerNorm(
             self.embed_dim, name=f'{self.name}_norm2')
-        self.norm3 = lbann.modules.transformer.LayerNorm(
+        self.norm3 = LayerNorm(
             self.embed_dim, name=f'{self.name}_norm3')
 
         # Weights for fully-connected layers
@@ -810,11 +811,11 @@ class TransformerDecoderLayerAllSubGraphInputSubGrids(lbann.modules.Module):
             d_kv=d_kv,
             name=f"{self.name}_attention2",
         )
-        self.norm1 = lbann.modules.transformer.LayerNorm(
+        self.norm1 = LayerNorm(
             self.embed_dim, name=f'{self.name}_norm1')
-        self.norm2 = lbann.modules.transformer.LayerNorm(
+        self.norm2 = LayerNorm(
             self.embed_dim, name=f'{self.name}_norm2')
-        self.norm3 = lbann.modules.transformer.LayerNorm(
+        self.norm3 = LayerNorm(
             self.embed_dim, name=f'{self.name}_norm3')
 
         # Weights for fully-connected layers
