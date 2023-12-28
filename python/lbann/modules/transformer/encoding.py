@@ -27,8 +27,8 @@ class SequenceEncoding:
         return x  # Do nothing
 
     def apply_layer(
-            self, q: lbann.Layer, k: lbann.Layer,
-            v: lbann.Layer) -> Tuple[lbann.Layer, lbann.Layer, lbann.Layer]:
+            self, q: lbann.Layer, k: lbann.Layer, v: lbann.Layer,
+            length: int) -> Tuple[lbann.Layer, lbann.Layer, lbann.Layer]:
         """
         Applies sequence encoding within a transformer encoder/decoder layer.
         Encoding is performed on each transformer layer's multi-head attention
@@ -37,6 +37,7 @@ class SequenceEncoding:
         :param q: The input queries of the transformer layer.
         :param k: The input keys of the transformer layer.
         :param v: The input values of the transformer layer.
+        :param length: Sequence length.
         :return: Encoded tuple of (q, k, v).
         """
         return q, k, v  # Do nothing
@@ -208,3 +209,123 @@ class LearnedInputEncoding(SequenceEncoding):
                 name=f'{self.name}_pedrop',
             )
         return result
+
+
+class RotaryPositionalEmbedding(SequenceEncoding):
+    """
+    Implements Rotary Positional Embedding (RoPE).
+
+    Based on Jianlin Su et al. "RoFormer: Enhanced Transformer with Rotary
+    Position Embedding" (2021). arXiv:2104.09864.
+    """
+    global_count = 0  # Static instance counter
+
+    def __init__(
+        self,
+        freq_dim: int,
+        max_sequence_length: int,
+        num_heads: int,
+        embed_values: bool = False,
+        theta: float = 10000.0,
+        name: str = None,
+    ):
+        """
+        Initializes rotary positional embeddings.
+
+        :param freq_dim: The dimensionality of the frequency vector. Must be
+                         even. By default, it is the dimensionality of the
+                         queries/keys (``embed_dim // num_heads``).
+        :param max_sequence_length: Largest sequence length used in training.
+                                    Used for caching precomputed values.
+        :param num_heads: Number of heads in the transformer.
+        :param embed_values: If True, embeds the values as well as the queries
+                             and keys.
+        :param theta: The base of the frequencies (default: 10000; from paper)
+        :param name: Optional name specification.
+        """
+        # Module name
+        RotaryPositionalEmbedding.global_count += 1
+        self.instance = 0
+        self.name = name
+        if not self.name:
+            self.name = f'rope{RotaryPositionalEmbedding.global_count}'
+        if freq_dim % 2 == 1:
+            raise ValueError('With rotary positional embedding, the number of '
+                             f'frequencies must be even. Got {freq_dim}')
+
+        # Parameters
+        self.embed_values = embed_values
+        self.dim = freq_dim
+        self.theta = theta
+        self.max_sequence_length = max_sequence_length
+        self.num_heads = num_heads
+
+        # Precompute tensors
+        freq = np.arange(0, self.dim, 2) / self.dim
+        self.inv_freq = 1 / (theta**freq)
+        self.cos, self.sin = self._precompute_frequencies(max_sequence_length)
+
+    def _precompute_frequencies(self, sequence_length: int):
+        t = np.arange(sequence_length)
+        freq = np.outer(t, self.inv_freq)
+        emb = np.concatenate([freq, freq], axis=-1)
+        # Add new axis for "broadcasting" (output shape should be SxE for
+        # S=sequence length and E=embedding dimension)
+        cos = np.tile(np.cos(emb), self.num_heads)
+        sin = np.tile(np.sin(emb), self.num_heads)
+        return (
+            _make_constant_from_array(cos, f'rope_cos_{sequence_length}'),
+            _make_constant_from_array(sin, f'rope_sin_{sequence_length}'),
+        )
+
+    def _rotate_half(self, x: lbann.Layer, length: int):
+        """
+        Helper method that rotates half of a tensor x.
+        """
+        # SxE -> SxHxP
+        r = lbann.Reshape(x, dims=(length, self.num_heads, self.dim))
+        s = lbann.Slice(r, slice_points=[0, self.dim // 2, self.dim], axis=2)
+        x1 = lbann.Identity(s)
+        x2 = lbann.Identity(s)
+        nx2 = lbann.Scale(x2, constant=-1)
+        cat = lbann.Concatenation([nx2, x1], axis=2)
+
+        # Reshape back to SxE
+        return lbann.Reshape(cat, dims=(length, self.num_heads * self.dim))
+
+    def _embed(self, x: lbann.Layer, length: int, sliced_cos: lbann.Layer,
+               sliced_sin: lbann.Layer):
+        """
+        Helper method that applies rotary embeddings on a tensor x.
+        """
+        rot = self._rotate_half(x, length)
+        return lbann.Add(
+            lbann.Multiply(x, sliced_cos),
+            lbann.Multiply(rot, sliced_sin),
+        )
+
+    def apply_layer(
+            self, q: lbann.Layer, k: lbann.Layer, v: lbann.Layer,
+            length: int) -> Tuple[lbann.Layer, lbann.Layer, lbann.Layer]:
+        # If length is not given, maximum sequence length is assumed
+        if length is None:
+            length = self.max_sequence_length
+
+        if length == self.max_sequence_length:
+            sliced_cos = self.cos
+            sliced_sin = self.sin
+        else:
+            sliced_cos = lbann.Identity(
+                lbann.Slice(self.cos, slice_points=[0, length], axis=0))
+            sliced_sin = lbann.Identity(
+                lbann.Slice(self.sin, slice_points=[0, length], axis=0))
+
+        eq = self._embed(q, length, sliced_cos, sliced_sin)
+        ek = self._embed(k, length, sliced_cos, sliced_sin)
+
+        if self.embed_values:
+            ev = self._embed(v, length, sliced_cos, sliced_sin)
+        else:
+            ev = v
+
+        return eq, ek, ev

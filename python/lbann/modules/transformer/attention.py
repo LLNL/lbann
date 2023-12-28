@@ -113,7 +113,7 @@ class MultiheadAttention(Module):
                           name=f'{self.name}_output_bias'),
         ]
 
-    def forward(self, queries, keys, values, mask=None):
+    def forward(self, queries, keys, values, mask=None, seqlen=None):
         """Apply multi-head attention.
 
         The input and output tensors are interpreted as sequences of
@@ -128,6 +128,8 @@ class MultiheadAttention(Module):
                 attention mask or masks, if attention-head parallelism is
                 enabled. If the (i,j) entry is very negative (e.g. -1e9), then
                 the ith query does not attend to the jth key/value pair.
+            seqlen (int): Optional sequence length of the current set of
+                sequences. If not given, max sequence length is assumed.
 
         Returns:
             lbann.Layer: Sequence of output vectors. The sequence
@@ -180,7 +182,7 @@ class MultiheadAttention(Module):
 
         if self.positional_encoding is not None:
             queries_fc, keys_fc, values_fc = self.positional_encoding.apply_layer(
-                queries_fc, keys_fc, values_fc)
+                queries_fc, keys_fc, values_fc, seqlen)
 
         if self.separate_heads:
             attentions = self.dot_product_attn_separate_heads(

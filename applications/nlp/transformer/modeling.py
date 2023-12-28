@@ -12,6 +12,7 @@ class InputEncoding(Enum):
     """ Different types of input encoding used by the transformer samples. """
     POSITIONAL = auto()  # Positional encoding
     LEARNED = auto()  # Learned embeddings
+    ROPE = auto()  # Rotary positional embedding
     NONE = auto()  # No encoding
 
 
@@ -68,7 +69,8 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
     # Apply input encoding
     encoder_input, decoder_input, posenc = _add_input_encoding(
         encoder_input, decoder_input, petype, args.embed_dim,
-        args.input_dropout, sequence_length, sequence_length - 1)
+        args.input_dropout, sequence_length, sequence_length - 1,
+        args.num_attention_heads)
 
     # Add encoder-decoder transformer model
     transformer = Transformer(hidden_size=args.embed_dim,
@@ -165,7 +167,7 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
     # Apply input encoding
     _, decoder_input, posenc = _add_input_encoding(None, decoder_input, petype,
                                                    embed_dim, input_dropout, 0,
-                                                   sequence_length)
+                                                   sequence_length, num_heads)
 
     # Add a GPT-style (decoder-only) transformer model
     transformer = Transformer(hidden_size=embed_dim,
@@ -231,7 +233,7 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
 def _add_input_encoding(
     encoder_input: lbann.Layer, decoder_input: lbann.Layer,
     encoding_kind: InputEncoding, embed_dim: int, input_dropout: float,
-    encoder_sequence_length: int, decoder_sequence_length: int
+    encoder_sequence_length: int, decoder_sequence_length: int, num_heads: int
 ) -> Tuple[lbann.Layer, lbann.Layer, encoding.SequenceEncoding]:
     if encoding_kind == InputEncoding.NONE:
         # Do nothing
@@ -249,6 +251,15 @@ def _add_input_encoding(
             embed_dim, max_seqlen, input_dropout)
         # Optimize by not computing embeddings twice
         kwargs = dict(learned_encoding=positional_encoder.compute_embeddings())
+    elif encoding_kind == InputEncoding.ROPE:
+        freq_dim = embed_dim // num_heads
+        max_seqlen = max(encoder_sequence_length, decoder_sequence_length)
+        positional_encoder = encoding.RotaryPositionalEmbedding(
+            freq_dim, max_seqlen, num_heads)
+        kwargs = {}
+    else:
+        raise TypeError(
+            f'Unsupported positional encoder type: {encoding_kind}')
 
     # Apply encoder
     if encoder_input is not None:
