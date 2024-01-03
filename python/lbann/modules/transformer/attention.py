@@ -1,6 +1,6 @@
 """Neural network modules for multi-head attention."""
 import math
-from typing import Dict
+from typing import Dict, Optional
 import lbann
 from ..base import Module
 from lbann.modules.transformer.encoding import SequenceEncoding
@@ -45,8 +45,8 @@ class MultiheadAttention(Module):
                  batch_heads: bool = True,
                  dropout: float = 0.0,
                  subgraph_branches: int = 0,
-                 bias: lbann.Layer = None,
-                 positional_encoding: SequenceEncoding = None,
+                 bias: Optional[lbann.Layer] = None,
+                 positional_encoding: Optional[SequenceEncoding] = None,
                  name: str = None):
         super().__init__()
         MultiheadAttention.global_count += 1

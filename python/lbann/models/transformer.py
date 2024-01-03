@@ -112,7 +112,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
         activation=lbann.Relu,
         parallel_attention_heads=0,
         attention_bias=None,
-        positional_encoding: SequenceEncoding = None,
+        positional_encoding: Optional[SequenceEncoding] = None,
         attention_module=lbann.modules.MultiheadAttention,
         name=None,
     ):
@@ -276,7 +276,7 @@ class TransformerDecoderLayer(lbann.modules.Module):
         activation=lbann.Relu,
         parallel_attention_heads=0,
         attention_bias=None,
-        positional_encoding: SequenceEncoding = None,
+        positional_encoding: Optional[SequenceEncoding] = None,
         attention_module=lbann.modules.MultiheadAttention,
         name=None,
     ):
