@@ -186,7 +186,7 @@ __global__ void fp_output_kernel(size_t local_num_samples,
       const auto& mean = means[i * means_stride + j];
       const auto& var = vars[i * vars_stride + j];
       const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
-      for (size_t k = gidx; k < normalization_size; k += nthreadsz) {
+      for (size_t k = gidx; k < normalization_size; k += nthreadsx) {
         const auto& x = input[i * input_ldim + j * normalization_stride + k];
         auto& y = output[i * input_ldim + j * normalization_stride + k];
         auto result = (x - mean) * inv_stdev;
