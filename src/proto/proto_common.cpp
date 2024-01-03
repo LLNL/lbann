@@ -446,6 +446,20 @@ void init_data_readers(
                   "but LBANN is not built with Python/C API");
 #endif // LBANN_HAS_EMBEDDED_PYTHON
     }
+    else if (name == "python_v2") {
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
+      const auto& params = readme.python_v2();
+      reader = new python_reader_v2(params.module(),
+                                    params.module_dir(),
+                                    params.sample_function(),
+                                    params.num_samples_function(),
+                                    params.sample_dims_function(),
+                                    shuffle);
+#else
+      LBANN_ERROR("attempted to construct Python data reader, "
+                  "but LBANN is not built with Python/C API");
+#endif // LBANN_HAS_EMBEDDED_PYTHON
+    }
     else if (name == "node2vec") {
 #ifdef LBANN_HAS_LARGESCALE_NODE2VEC
       const auto& params = readme.node2vec();
@@ -644,6 +658,21 @@ void init_data_readers(
                                              params.sample_dims_function(),
                                              shuffle);
             (*(python_reader*)split_reader) = (*(python_reader*)reader);
+#else
+            LBANN_ERROR("attempted to construct Python data reader, "
+                        "but LBANN is not built with Python/C API");
+#endif // LBANN_HAS_EMBEDDED_PYTHON
+          }
+          else if (name == "python_v2") {
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
+            const auto& params = readme.python_v2();
+            split_reader = new python_reader_v2(params.module(),
+                                             params.module_dir(),
+                                             params.sample_function(),
+                                             params.num_samples_function(),
+                                             params.sample_dims_function(),
+                                             shuffle);
+            (*(python_reader_v2*)split_reader) = (*(python_reader_v2*)reader);
 #else
             LBANN_ERROR("attempted to construct Python data reader, "
                         "but LBANN is not built with Python/C API");
