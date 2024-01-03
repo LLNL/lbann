@@ -37,7 +37,8 @@ void layer_norm_layer<TensorDataType, Layout, Device>::serialize(ArchiveT& ar)
                         ::cereal::base_class<DataTypeLayer>(this)),
      CEREAL_NVP(m_epsilon),
      CEREAL_NVP(m_scale),
-     CEREAL_NVP(m_bias));
+     CEREAL_NVP(m_bias),
+     CEREAL_NVP(m_start_dim));
 }
 
 } // namespace lbann
