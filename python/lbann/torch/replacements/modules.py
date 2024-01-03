@@ -183,7 +183,8 @@ def embedding_impl(mod: nn.Embedding, x, *args, **kwargs):
 
 @register_module(nn.LayerNorm)
 def ln_impl(mod: nn.LayerNorm, x, *args, **kwargs):
-    return lbann.LayerNorm(x, epsilon=mod.eps)
+    return lbann.LayerNorm(x, epsilon=mod.eps,
+                           start_dim=-len(mod.normalized_shape))
 
 
 @register_module([nn.BatchNorm1d, nn.BatchNorm2d, nn.BatchNorm3d])

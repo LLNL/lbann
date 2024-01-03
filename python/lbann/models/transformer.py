@@ -45,6 +45,7 @@ class LayerNorm(lbann.modules.Module):
             return lbann.LayerNorm(x,
                                    scale=True,
                                    bias=True,
+                                   start_dim=-1,
                                    name=self.name,
                                    weights=[self.weight, self.bias])
 
