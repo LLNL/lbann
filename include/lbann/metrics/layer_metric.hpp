@@ -76,13 +76,6 @@ protected:
   void setup(model& m) override;
   EvalType evaluate(execution_mode mode, int mini_batch_size) override;
 
-  /** Computation to evaluate the metric function (deprecated).
-   *  This function is not called since the 'evaluate' function is
-   *  overridden.
-   */
-  EvalType evaluate_compute(const AbsDistMat& prediction,
-                            const AbsDistMat& ground_truth) override;
-
 private:
   /** Descriptive name for metric. */
   std::string m_name;

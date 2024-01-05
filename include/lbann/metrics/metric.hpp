@@ -162,13 +162,6 @@ public:
   virtual bool load_from_checkpoint_distributed(persist& p) = 0;
 
 protected:
-  /** Computation to evaluate the metric function.
-   *  This should return the sum of metric values across the
-   *  mini-batch, not the mean value.
-   */
-  virtual EvalType evaluate_compute(const AbsDistMat& prediction,
-                                    const AbsDistMat& ground_truth) = 0;
-
   /** Get LBANN communicator. */
   lbann_comm& get_comm() { return *m_comm; }
 
