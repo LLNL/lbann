@@ -29,6 +29,10 @@
 
 #include "lbann/metrics/metric.hpp"
 
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
+#include "lbann/utils/python.hpp"
+#endif
+
 namespace lbann {
 
 /** @brief A metric that receives its value from the return value of a Python
@@ -42,10 +46,12 @@ namespace lbann {
  *  to ``myfile``.
  *
  *  Within the imported Python module, the function ``function`` will be called.
- *  The function is expected to accept only one string argument, representing
- *  the experiment path, and returns one float value (cast to ``EvalType`` in
+ *  The function is expected to accept one string argument, representing
+ *  the experiment path (trainer and model names), and one int argument
+ *  representing the rank. It returns one float value (cast to ``EvalType`` in
  *  LBANN). For example, for a function called "evaluate", the expected
- *  prototype would be: ``def evaluate(experiment_path: str) -> float: ...``
+ *  prototype would be:
+ *  ``def evaluate(experiment_path: str, rank: int) -> float: ...``
  *
  *  Note that this metric is only available if LBANN was compiled with Python
  *  support.
@@ -106,6 +112,11 @@ private:
 
   /** Python function to call in module. */
   std::string m_function;
+
+#ifdef LBANN_HAS_EMBEDDED_PYTHON
+  python::object m_evaluate_function;
+  std::string m_model_dir;
+#endif
 };
 
 } // namespace lbann

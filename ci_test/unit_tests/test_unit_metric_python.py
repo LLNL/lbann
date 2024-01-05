@@ -1,22 +1,30 @@
+import lbann
+import numpy as np
 import os
 import os.path
-import numpy as np
-import lbann
-import test_util
+import sys
 
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 module_name = os.path.splitext(os.path.basename(current_file))[0]
+
+sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
+import test_util
+
 
 # ==============================================
 # Functionality for Python metric
 # ==============================================
 # Note: The Python metric class imports this file as a module and calls
 # the function below to return a value.
-def evaluate(experiment_path):
+def evaluate(experiment_path, rank):
     if not experiment_path or not isinstance(experiment_path, str):
-        # Failing result
         return -1.0
+    if experiment_path != 'trainer0/model0':
+        return -2.0
+    if not isinstance(rank, int) or rank < 0:
+        return -3.0
+
     # Successful result
     return 1.0
 
