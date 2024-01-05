@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2024, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,46 +24,45 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_METRIC_LAYER_METRIC_HPP
-#define LBANN_METRIC_LAYER_METRIC_HPP
+#ifndef LBANN_METRIC_EXECUTABLE_METRIC_HPP
+#define LBANN_METRIC_EXECUTABLE_METRIC_HPP
 
-#include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/metrics/metric.hpp"
 
 namespace lbann {
 
-/** @brief A metric that receives its value from the output of a given layer.
+/** @brief A metric that receives its value from parsing the output of a running
+ *  executable.
  *
- *  The layer name, provided as ``layer``, will be used as the evaluated metric
- *  source. If ``unit`` is given and set to "%", the value will be multiplied
- *  by 100.
+ *  This metric spawns an executable file with every evaluation and reads its
+ *  output to receive one value of type ``EvalType``. It expects the program
+ *  to have no other output to ``stdout``, and will be called with the following
+ *  command-line arguments: ``<filename> [other_args] <experiment directory>``.
  */
-class layer_metric : public metric
+class executable_metric : public metric
 {
 
 public:
-  layer_metric(lbann_comm* comm = nullptr,
-               std::string name = "",
-               std::string unit = "");
-  layer_metric(const layer_metric& other) = default;
-  layer_metric& operator=(const layer_metric& other) = default;
-  virtual ~layer_metric() = default;
-  layer_metric* copy() const override { return new layer_metric(*this); }
+  executable_metric(lbann_comm* comm = nullptr,
+                    std::string name = "",
+                    std::string filename = "",
+                    std::string other_args = "")
+    : metric(comm), m_name(name), m_filename(filename), m_other_args(other_args)
+  {}
+  executable_metric(const executable_metric& other) = default;
+  executable_metric& operator=(const executable_metric& other) = default;
+  virtual ~executable_metric() = default;
+  executable_metric* copy() const override
+  {
+    return new executable_metric(*this);
+  }
 
   /** Return a string name for this metric. */
   std::string name() const override;
-  std::string get_unit() const override { return m_unit; }
 
   /** Archive for checkpoint and restart */
   template <class Archive>
   void serialize(Archive& ar);
-
-  /** Set corresponding layer. */
-  void set_layer(ViewingLayerPtr l);
-  /** Get corresponding layer. */
-  Layer& get_layer();
-  /** Get corresponding layer (const). */
-  const Layer& get_layer() const;
 
   /** Get list of pointers to layers. */
   std::vector<ViewingLayerPtr> get_layer_pointers() const override;
@@ -85,17 +84,14 @@ protected:
 private:
   /** Descriptive name for metric. */
   std::string m_name;
-  /** Metric unit.
-   *  If the unit is "%", the reported value is multiplied by 100.
-   */
-  std::string m_unit;
-  /** Corresponding layer. */
-  ViewingLayerPtr m_layer;
 
-  /** Get corresponding evaluation layer. */
-  /*abstract_evaluation_*/ Layer& get_evaluation_layer();
+  /** Path to executable to run. */
+  std::string m_filename;
+
+  /** Arguments to prepend before experiment path. */
+  std::string m_other_args;
 };
 
 } // namespace lbann
 
-#endif // LBANN_METRIC_LAYER_METRIC_HPP
+#endif // LBANN_METRIC_EXECUTABLE_METRIC_HPP

@@ -35,5 +35,23 @@ message Metric {
     string unit = 3;
   }
 
-  LayerMetric layer_metric = 11;
+  message ExecutableMetric {
+    string name = 1;        // Metric name
+    string filename = 2;    // Executable path, accessible by evaluating rank
+    string other_args = 3;  // Arguments to prepend before experiment path
+  }
+
+  message PythonMetric {
+    string name = 1;        // Metric name
+    string module = 2;      // Python module
+    string module_dir = 3;  // Directory containing Python module
+    string function = 4;    // Function to call in module. Accepts one string
+                            // parameter: experiment path
+  }
+
+  oneof metric_type {
+    LayerMetric layer_metric = 11;
+    ExecutableMetric executable_metric = 12;
+    PythonMetric python_metric = 13;
+  }
 }

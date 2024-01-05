@@ -46,6 +46,21 @@ std::unique_ptr<metric> construct_metric(lbann_comm* comm,
     auto const& lm = proto_metric.layer_metric();
     return std::make_unique<layer_metric>(comm, lm.name(), lm.unit());
   }
+  else if (metric_type == "executable_metric") {
+    auto const& xm = proto_metric.executable_metric();
+    return std::make_unique<executable_metric>(comm,
+                                               xm.name(),
+                                               xm.filename(),
+                                               xm.other_args());
+  }
+  else if (metric_type == "python_metric") {
+    auto const& pym = proto_metric.python_metric();
+    return std::make_unique<python_metric>(comm,
+                                           pym.name(),
+                                           pym.module(),
+                                           pym.module_dir(),
+                                           pym.function());
+  }
   else {
     LBANN_ERROR("Unsupported metric type \"", metric_type, "\"");
   }

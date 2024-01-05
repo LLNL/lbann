@@ -27,6 +27,8 @@
 set_full_path(THIS_DIR_HEADERS
   metric.hpp
   layer_metric.hpp
+  executable_metric.hpp
+  python_metric.hpp
   )
 
 # Propagate the files up the tree

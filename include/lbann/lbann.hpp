@@ -217,7 +217,9 @@
 #include "lbann/objective_functions/weight_regularization/l2.hpp"
 
 /// Metrics
+#include "lbann/metrics/executable_metric.hpp"
 #include "lbann/metrics/layer_metric.hpp"
+#include "lbann/metrics/python_metric.hpp"
 
 /// Utilities, exceptions, library interface, etc.
 #include "lbann/io/file_io.hpp"

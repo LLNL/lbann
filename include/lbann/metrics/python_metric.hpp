@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2024, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,46 +24,58 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_METRIC_LAYER_METRIC_HPP
-#define LBANN_METRIC_LAYER_METRIC_HPP
+#ifndef LBANN_METRIC_PYTHON_METRIC_HPP
+#define LBANN_METRIC_PYTHON_METRIC_HPP
 
-#include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/metrics/metric.hpp"
 
 namespace lbann {
 
-/** @brief A metric that receives its value from the output of a given layer.
+/** @brief A metric that receives its value from the return value of a Python
+ *  function.
  *
- *  The layer name, provided as ``layer``, will be used as the evaluated metric
- *  source. If ``unit`` is given and set to "%", the value will be multiplied
- *  by 100.
+ *  Similarly to the Python data reader, this metric will use the built-in
+ *  Python interpreter to import a module and call a function within it.
+ *  The module (given as ``module``) should be accessible by trainer ranks and
+ *  located in the ``module_dir`` path. For example, if the Python file is in
+ *  ``/path/to/myfile.py``, set ``module_dir`` to ``/path/to`` and ``module``
+ *  to ``myfile``.
+ *
+ *  Within the imported Python module, the function ``function`` will be called.
+ *  The function is expected to accept only one string argument, representing
+ *  the experiment path, and returns one float value (cast to ``EvalType`` in
+ *  LBANN). For example, for a function called "evaluate", the expected
+ *  prototype would be: ``def evaluate(experiment_path: str) -> float: ...``
+ *
+ *  Note that this metric is only available if LBANN was compiled with Python
+ *  support.
  */
-class layer_metric : public metric
+class python_metric : public metric
 {
 
 public:
-  layer_metric(lbann_comm* comm = nullptr,
-               std::string name = "",
-               std::string unit = "");
-  layer_metric(const layer_metric& other) = default;
-  layer_metric& operator=(const layer_metric& other) = default;
-  virtual ~layer_metric() = default;
-  layer_metric* copy() const override { return new layer_metric(*this); }
+  python_metric(lbann_comm* comm = nullptr,
+                std::string name = "",
+                std::string module = "",
+                std::string module_dir = "",
+                std::string function = "")
+    : metric(comm),
+      m_name(name),
+      m_module(module),
+      m_module_dir(module_dir),
+      m_function(function)
+  {}
+  python_metric(const python_metric& other) = default;
+  python_metric& operator=(const python_metric& other) = default;
+  virtual ~python_metric() = default;
+  python_metric* copy() const override { return new python_metric(*this); }
 
   /** Return a string name for this metric. */
   std::string name() const override;
-  std::string get_unit() const override { return m_unit; }
 
   /** Archive for checkpoint and restart */
   template <class Archive>
   void serialize(Archive& ar);
-
-  /** Set corresponding layer. */
-  void set_layer(ViewingLayerPtr l);
-  /** Get corresponding layer. */
-  Layer& get_layer();
-  /** Get corresponding layer (const). */
-  const Layer& get_layer() const;
 
   /** Get list of pointers to layers. */
   std::vector<ViewingLayerPtr> get_layer_pointers() const override;
@@ -85,17 +97,17 @@ protected:
 private:
   /** Descriptive name for metric. */
   std::string m_name;
-  /** Metric unit.
-   *  If the unit is "%", the reported value is multiplied by 100.
-   */
-  std::string m_unit;
-  /** Corresponding layer. */
-  ViewingLayerPtr m_layer;
 
-  /** Get corresponding evaluation layer. */
-  /*abstract_evaluation_*/ Layer& get_evaluation_layer();
+  /** Python module name to load. */
+  std::string m_module;
+
+  /** Directory in which the Python module resides. */
+  std::string m_module_dir;
+
+  /** Python function to call in module. */
+  std::string m_function;
 };
 
 } // namespace lbann
 
-#endif // LBANN_METRIC_LAYER_METRIC_HPP
+#endif // LBANN_METRIC_PYTHON_METRIC_HPP
