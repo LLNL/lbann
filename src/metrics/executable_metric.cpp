@@ -76,8 +76,23 @@ static inline EvalType spawn_process_and_read_output(const char* cmd)
   char buffer[2048];
 
   FILE* fp = popen(cmd, "r");
+  if (fp == nullptr) {
+    LBANN_ERROR("Failed to open metric executable process \"", cmd, "\"");
+  }
+
   size_t read = fread(buffer, sizeof(char), 2048, fp);
-  pclose(fp);
+  int err = pclose(fp);
+  if (err < 0) {
+    LBANN_ERROR("Failed to close metric executable process \"", cmd, "\"");
+  }
+  int exitcode = WEXITSTATUS(err);
+  if (exitcode != 0) {
+    LBANN_ERROR("Metric executable process \"",
+                cmd,
+                "\" exited with return "
+                "code ",
+                exitcode);
+  }
 
   if (read == 2048) { // Buffer is potentially too long
     std::string as_str;
