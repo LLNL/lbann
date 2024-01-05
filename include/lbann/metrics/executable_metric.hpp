@@ -38,6 +38,9 @@ namespace lbann {
  *  output to receive one value of type ``EvalType``. It expects the program
  *  to have no other output to ``stdout``, and will be called with the following
  *  command-line arguments: ``<filename> [other_args] <experiment directory>``.
+ *  Experiment directory is defined as the trainer name and model name,
+ *  separated by a slash (e.g., ``trainer0/model0``). The executable will be
+ *  run from the current working directory of the experiment folder itself.
  */
 class executable_metric : public metric
 {
@@ -90,6 +93,9 @@ private:
 
   /** Arguments to prepend before experiment path. */
   std::string m_other_args;
+
+  /** Full command line to run. */
+  std::string m_cmd;
 };
 
 } // namespace lbann

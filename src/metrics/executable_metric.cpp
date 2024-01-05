@@ -24,8 +24,14 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/metrics/executable_metric.hpp"
+#include <cstdio>  // For popen, pclose, fread
+#include <cstdlib> // For strtod
+
 #include "lbann/io/persist_impl.hpp"
+#include "lbann/metrics/executable_metric.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/trainers/trainer.hpp"
+#include "lbann/utils/exception.hpp"
 #include "lbann/utils/serialize.hpp"
 #include "lbann/utils/timer.hpp"
 
@@ -52,12 +58,55 @@ void executable_metric::set_layer_pointers(std::vector<ViewingLayerPtr> layers)
   LBANN_ERROR("Layer pointers should not be set with this metric type");
 }
 
-void executable_metric::setup(model& m) { metric::setup(m); }
+void executable_metric::setup(model& m)
+{
+  metric::setup(m);
+  m_cmd = build_string(m_filename,
+                       " ",
+                       m_other_args,
+                       " ",
+                       get_const_trainer().get_name(),
+                       "/",
+                       m.get_name());
+}
+
+static inline EvalType spawn_process_and_read_output(const char* cmd)
+{
+  // More than enough to read one EvalType value (I hope)
+  char buffer[2048];
+
+  FILE* fp = popen(cmd, "r");
+  size_t read = fread(buffer, sizeof(char), 2048, fp);
+  pclose(fp);
+
+  if (read == 2048) { // Buffer is potentially too long
+    std::string as_str;
+    as_str.assign(buffer, 2048);
+    LBANN_ERROR("Process output of \"",
+                cmd,
+                "\" is too long. Contents of ",
+                "output start with:\n",
+                as_str);
+  }
+  buffer[read] = '\0'; // NULL terminator
+
+  char* endptr;
+  double result = strtod(buffer, &endptr);
+  if (endptr == buffer) { // Invalid number
+    LBANN_ERROR("Process output of \"",
+                cmd,
+                "\" is not a valid number. ",
+                "Output:\n",
+                std::string(buffer));
+  }
+
+  return static_cast<EvalType>(result);
+}
 
 EvalType executable_metric::evaluate(execution_mode mode, int mini_batch_size)
 {
   const auto& start = get_time();
-  EvalType value = 1.3; // TODO
+  EvalType value = spawn_process_and_read_output(m_cmd.c_str());
   get_evaluate_time() += get_time() - start;
   get_statistics()[mode].add_value(value * mini_batch_size, mini_batch_size);
   return value;
