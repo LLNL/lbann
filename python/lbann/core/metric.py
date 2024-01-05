@@ -1,7 +1,13 @@
 """Neural network tensor operations."""
 from lbann import metrics_pb2
+from typing import List, Union
 
-class Metric:
+
+class BaseMetric:
+    pass
+
+
+class Metric(BaseMetric):
     """Metric that takes value from a layer.
 
     Corresponds to a "layer metric" in LBANN. This may need to be
@@ -10,7 +16,7 @@ class Metric:
     """
 
     def __init__(self, layer, name=None, unit=''):
-        """Initialize a metric based of off layer."""
+        """Initialize a metric based off of a layer."""
         self.layer = layer
         self.name = name if name else self.layer.name
         self.unit = unit
