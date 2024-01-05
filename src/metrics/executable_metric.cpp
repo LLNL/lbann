@@ -89,8 +89,7 @@ static inline EvalType spawn_process_and_read_output(const char* cmd)
   if (exitcode != 0) {
     LBANN_ERROR("Metric executable process \"",
                 cmd,
-                "\" exited with return "
-                "code ",
+                "\" exited with return code ",
                 exitcode);
   }
 
@@ -99,8 +98,7 @@ static inline EvalType spawn_process_and_read_output(const char* cmd)
     as_str.assign(buffer, 2048);
     LBANN_ERROR("Process output of \"",
                 cmd,
-                "\" is too long. Contents of ",
-                "output start with:\n",
+                "\" is too long. Contents of output start with:\n",
                 as_str);
   }
   buffer[read] = '\0'; // NULL terminator
@@ -110,8 +108,7 @@ static inline EvalType spawn_process_and_read_output(const char* cmd)
   if (endptr == buffer) { // Invalid number
     LBANN_ERROR("Process output of \"",
                 cmd,
-                "\" is not a valid number. ",
-                "Output:\n",
+                "\" is not a valid number. Output:\n",
                 std::string(buffer));
   }
 
