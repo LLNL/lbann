@@ -122,7 +122,8 @@ def make_batch_script(model: lbann.Model,
 
     # Create LBANN trainer and data reader
     trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size,
-                            training_algo=algo, random_seed=args.random_seed)
+                            training_algo=algo,
+                            random_seed=args.random_seed)
     reader = make_data_reader(dataset_name, args.dataset_fraction,
                               not args.skip_validation,
                               args.validation_set_fraction,
@@ -197,10 +198,12 @@ def make_batch_script(model: lbann.Model,
     # Print a progress bar
     if args.progress:
         model.callbacks.append(
-            lbann.CallbackProgressBar(newline_interval=args.pbar_newline_interval,
-                                      print_mem_usage=True,
-                                      moving_average_length=args.pbar_moving_avg,
-                                      bar_width=args.pbar_width))
+            lbann.CallbackProgressBar(
+                newline_interval=args.pbar_newline_interval,
+                print_mem_usage=True,
+                moving_average_length=args.pbar_moving_avg,
+                bar_width=args.pbar_width,
+                scientific_notation=args.pbar_scientific))
 
     model.callbacks.extend(lbann.contrib.args.create_profile_callbacks(args))
 
@@ -286,6 +289,12 @@ def add_training_arguments(parser: argparse.ArgumentParser):
                         help='Progress bar iteration time moving average '
                         'length in iterations. Disable moving average with 1 '
                         '(default: 10)')
+    parser.add_argument('--pbar-scientific',
+                        action='store_true',
+                        default=False,
+                        help='Use scientific notation for objective value '
+                        'printouts in progress bar (default: false)')
+
 
 # ----------------------------------------------
 # Second-order optimization functionality
