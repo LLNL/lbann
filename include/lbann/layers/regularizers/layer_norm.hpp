@@ -263,18 +263,18 @@ void layer_norm_layer<TensorDataType, Layout, Device>::setup_data(
   const auto& output_dims = this->get_output_dims();
   std::vector<size_t> out_dims{output_dims.begin(), output_dims.end()};
 
-  unsigned int start_dim;
+  int start_dim;
   if (m_start_dim >= 0) {
-    start_dim = static_cast<unsigned int>(m_start_dim);
+    start_dim = m_start_dim;
   }
   else {
-    start_dim = static_cast<unsigned int>(out_dims.size() + m_start_dim);
+    start_dim = static_cast<int>(out_dims.size() + m_start_dim);
   }
   if (start_dim < 0 || start_dim >= output_dims.size()) {
     LBANN_ERROR("Layer normalization \"",
                 this->get_name(),
                 "\" start dimension ",
-                start_dim,
+                m_start_dim,
                 "does not match the input "
                 "tensor dimensionality of ",
                 output_dims.size());
