@@ -121,12 +121,7 @@ message PythonDataReader {
 }
 
 message PythonDataReaderV2 {
-  string module = 1;                // Python module
-  string module_dir = 2;            // Directory containing Python module
-  string sample_function = 3;       // Function that gets data sample
-  string num_samples_function = 4;  // Function that gets number of data samples
-  string sample_dims_function =
-      5;  // Function that gets dimensions of data sample
+  string dataset_path = 1;           // Path to pickled Dataset object
 }
 
 message Node2VecDataReader {

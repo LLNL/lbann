@@ -28,6 +28,7 @@
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/dim_helpers.hpp"
+#include "lbann/utils/distconv.hpp"
 #ifdef LBANN_HAS_EMBEDDED_PYTHON
 #include <algorithm>
 #include <cstdio>
@@ -40,47 +41,84 @@
 
 namespace lbann {
 
-python_reader_v2::python_reader_v2(std::string module,
-                             std::string module_dir,
-                             std::string sample_function,
-                             std::string num_samples_function,
-                             std::string sample_dims_function,
-                             bool shuffle)
+python_reader_v2::python_reader_v2(std::string dataset_path,
+                                   bool shuffle)
   : generic_data_reader(shuffle)
 {
 
   // Make sure Python is running and acquire GIL
   python::global_interpreter_lock gil;
 
-  // Import Python module for data
-  if (!module_dir.empty()) {
-    auto path = PySys_GetObject("path"); // Borrowed reference
-    PyList_Append(path, python::object(module_dir));
-    python::check_error();
+  // Load the dataset object
+  static El::Int instance_id = 0;
+  instance_id++;
+  const std::string dataset_name =
+    ("_DATA_READER_PYTHON_CPP_dataset" +
+     std::to_string(instance_id));
+  std::string load_command = R"(
+import pickle
+with open('@dataset_path@', 'rb') as f:
+  @dataset_name@ = pickle.load(f)
+)";
+  load_command = std::regex_replace(load_command,
+                                    std::regex("\\@dataset_path\\@"),
+                                    dataset_path);
+  load_command = std::regex_replace(load_command,
+                                    std::regex("\\@dataset_name\\@"),
+                                    dataset_name);
+  PyRun_SimpleString(load_command.c_str());
+  python::object main_module = PyImport_ImportModule("__main__");
+  m_dataset = PyObject_GetAttrString(main_module, dataset_name.c_str());
+  python::check_error();
+
+#ifdef LBANN_HAS_DISTCONV
+  // Check if dataset supports distconv
+  python::object lbann_data_module = PyImport_ImportModule("lbann.util.data");
+  python::object distconv_dataset_class = PyObject_GetAttrString(lbann_data_module, "DistConvDataset");
+  if (PyObject_IsInstance(m_dataset, distconv_dataset_class)) {
+    m_tensor_shuffle_required = false;
+    PyObject_SetAttrString(m_dataset, "rank", PyLong_FromLong(m_comm->get_rank_in_trainer()));
+    PyObject_SetAttrString(m_dataset, "num_io_partitions", PyLong_FromLong(dc::get_number_of_io_partitions()));
   }
-  python::object data_module = PyImport_ImportModule(module.c_str());
+  python::check_error();
+#endif // LBANN_HAS_DISTCONV
 
   // Get number of samples
-  python::object num_func =
-    PyObject_GetAttrString(data_module, num_samples_function.c_str());
-  python::object num = PyObject_CallObject(num_func, nullptr);
+  python::object num = PyObject_CallMethod(m_dataset, "__len__", nullptr);
   m_num_samples = PyLong_AsLong(num);
   python::check_error();
 
   // Get sample dimensions
-  python::object dims_func =
-    PyObject_GetAttrString(data_module, sample_dims_function.c_str());
-  python::object dims = PyObject_CallObject(dims_func, nullptr);
-  dims = PyObject_GetIter(dims);
-  for (auto d = PyIter_Next(dims); d != nullptr; d = PyIter_Next(dims)) {
-    m_sample_dims.push_back(PyLong_AsLong(d));
-    Py_DECREF(d);
+  python::object sample_dims = PyObject_GetAttrString(m_dataset, "sample_dims");
+  python::object dims;
+  if (PyObject_HasAttrString(sample_dims, "sample")) {
+    dims = PyObject_GetAttrString(sample_dims, "sample");
+    dims = PyObject_GetIter(dims);
+    for (auto d = PyIter_Next(dims); d != nullptr; d = PyIter_Next(dims)) {
+      m_sample_dims.push_back(PyLong_AsLong(d));
+      Py_DECREF(d);
+    }
+    python::check_error();
   }
-  python::check_error();
+
+  // Get label dimensions
+  if (PyObject_HasAttrString(sample_dims, "label")) {
+    dims = PyObject_GetAttrString(sample_dims, "label");
+    m_num_labels = PyLong_AsLong(dims);
+    python::check_error();
+    generic_data_reader::set_has_labels(true);
+  }
+
+  // Get response dimensions
+  if (PyObject_HasAttrString(sample_dims, "response")) {
+    dims = PyObject_GetAttrString(sample_dims, "response");
+    m_num_responses = PyLong_AsLong(dims);
+    python::check_error();
+    generic_data_reader::set_has_responses(true);
+  }
 
   // Get sample access function
-  m_sample_function =
-    PyObject_GetAttrString(data_module, sample_function.c_str());
+  m_sample_function = PyObject_GetAttrString(m_dataset, "__getitem__");
 }
 
 python_reader_v2::~python_reader_v2()
@@ -100,7 +138,8 @@ const std::vector<El::Int> python_reader_v2::get_data_dims() const
   }
   return dims;
 }
-int python_reader_v2::get_num_labels() const { return 1; }
+int python_reader_v2::get_num_labels() const { return m_num_labels; }
+int python_reader_v2::get_num_responses() const { return m_num_responses; }
 int python_reader_v2::get_linearized_data_size() const
 {
   return get_linear_size(get_data_dims());
@@ -108,6 +147,10 @@ int python_reader_v2::get_linearized_data_size() const
 int python_reader_v2::get_linearized_label_size() const
 {
   return get_num_labels();
+}
+int python_reader_v2::get_linearized_response_size() const
+{
+  return get_num_responses();
 }
 
 bool python_reader_v2::fetch_data_block(
@@ -146,10 +189,9 @@ bool python_reader_v2::fetch_data_block(
   for (uint64_t i = 0; i < mb_size; ++i) {
     El::Int sample_index =
       m_shuffled_indices[current_position_in_data_set + i * sample_stride];
-    El::Int array_offset = sample_size * i;
     PyList_Append(
       args_list,
-      python::object(Py_BuildValue("(l,l)", sample_index, array_offset)));
+      python::object(Py_BuildValue("(l,l)", sample_index, i)));
     indices_fetched.Set(i, 0, sample_index);
   }
 
@@ -167,16 +209,21 @@ bool python_reader_v2::fetch_data_block(
                               sample_size);
   El::Copy(shared_memory_matrix, X);
 
-  return true;
-}
+  if (has_responses()) {
+    CPUMat& Y = *(input_buffers[INPUT_DATA_TYPE_RESPONSES]);
+    // Copy data from shared memory to output matrix
+    CPUMat response_shared_memory_matrix(get_num_responses(),
+                                mb_size,
+                                m_response_shared_memory_array_ptr,
+                                get_num_responses());
+    El::Copy(response_shared_memory_matrix, Y);
+  }
 
-bool python_reader_v2::fetch_label(CPUMat& Y, uint64_t data_id, uint64_t col)
-{
   return true;
 }
 
 void python_reader_v2::setup(int num_io_threads,
-                          observer_ptr<thread_pool> io_thread_pool)
+                             observer_ptr<thread_pool> io_thread_pool)
 {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
 
@@ -197,7 +244,11 @@ void python_reader_v2::setup(int num_io_threads,
 
   // Allocate shared memory array
   /// @todo Figure out more robust way to get max mini-batch size
-  const El::Int sample_size = get_linearized_data_size();
+  El::Int num_io_partitions = 1;
+#ifdef LBANN_HAS_DISTCONV
+  num_io_partitions = dc::get_number_of_io_partitions();
+#endif // LBANN_HAS_DISTCONV
+  const El::Int sample_size = get_linearized_data_size() / num_io_partitions;
   const El::Int mini_batch_size = get_trainer().get_max_mini_batch_size();
   std::string datatype_typecode;
   switch (sizeof(DataType)) {
@@ -245,6 +296,28 @@ void python_reader_v2::setup(int num_io_threads,
                          m_shared_memory_array);
   python::check_error();
 
+  std::string response_shared_array_name = "None";
+  if (has_responses()) {
+    m_response_shared_memory_array = PyObject_CallMethod(multiprocessing_module,
+                                                "RawArray",
+                                                "(s, l)",
+                                                datatype_typecode.c_str(),
+                                                get_num_responses() * mini_batch_size);
+    python::object response_shared_memory_ptr =
+      PyObject_CallMethod(ctypes_module,
+                          "addressof",
+                          "(O)",
+                          m_response_shared_memory_array.get());
+    m_response_shared_memory_array_ptr = reinterpret_cast<DataType*>(PyLong_AsLong(response_shared_memory_ptr));
+    response_shared_array_name =
+      ("_DATA_READER_PYTHON_CPP_response_shared_memory_array" +
+      std::to_string(instance_id));
+    PyObject_SetAttrString(main_module,
+                          response_shared_array_name.c_str(),
+                          m_response_shared_memory_array);
+    python::check_error();
+  }
+
   // Create wrapper around sample function
   // Note: We attempt accessing the sample with the buffer protocol
   // since they can be copied more efficiently. If this fails, we just
@@ -259,22 +332,22 @@ def @wrapper_func@(sample_index, array_offset):
     # Get sample
     sample = @sample_func@(sample_index)
 
-    # Copy entries from sample to shared memory array
-    # Note: We attempt to copy via the buffer protocol since it is
-    # much more efficient than naively looping through the arrays.
-    try:
-        # Note: ctypes arrays explicitly specify their endianness, but
-        # memoryview copies only work when the endianness is
-        # explicitly set to the system default. We need to do some
-        # type casting to get around this excessive error checking.
-        input_buffer = memoryview(sample)
-        output_buffer = memoryview(@shared_array@)
-        output_buffer = output_buffer[array_offset:array_offset+@sample_size@]
+    input_buffer = memoryview(sample.sample)
+    assert input_buffer.format == '@datatype_typecode@'
+    input_buffer = input_buffer.cast('B').cast('@datatype_typecode@')
+    output_buffer = memoryview(@shared_array@)
+    output_buffer = output_buffer[array_offset*@sample_size@:(array_offset+1)*@sample_size@]
+    output_buffer = output_buffer.cast('B').cast('@datatype_typecode@')
+    output_buffer[:] = input_buffer
+
+    # Get response
+    if sample.response is not None:
+        response = sample.response
+        input_buffer = memoryview(response)
+        output_buffer = memoryview(@response_shared_array@)
+        output_buffer = output_buffer[array_offset*len(response):(array_offset+1)*len(response)]
         output_buffer = output_buffer.cast('B').cast('@datatype_typecode@')
         output_buffer[:] = input_buffer
-    except:
-        for i, val in enumerate(sample):
-            @shared_array@[i + array_offset] = val
 )";
   wrapper_func_def = std::regex_replace(wrapper_func_def,
                                         std::regex("\\@wrapper_func\\@"),
@@ -285,6 +358,9 @@ def @wrapper_func@(sample_index, array_offset):
   wrapper_func_def = std::regex_replace(wrapper_func_def,
                                         std::regex("\\@shared_array\\@"),
                                         shared_array_name);
+  wrapper_func_def = std::regex_replace(wrapper_func_def,
+                                        std::regex("\\@response_shared_array\\@"),
+                                        response_shared_array_name);
   wrapper_func_def = std::regex_replace(wrapper_func_def,
                                         std::regex("\\@sample_size\\@"),
                                         std::to_string(sample_size));
