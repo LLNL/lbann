@@ -268,7 +268,7 @@ void layer_norm_layer<TensorDataType, Layout, Device>::setup_data(
     start_dim = m_start_dim;
   }
   else {
-    start_dim = static_cast<int>(out_dims.size() + m_start_dim);
+    start_dim = static_cast<int>(out_dims.size()) + m_start_dim;
   }
   if (start_dim < 0 || start_dim >= output_dims.size()) {
     LBANN_ERROR("Layer normalization \"",
