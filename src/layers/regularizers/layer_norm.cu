@@ -60,7 +60,9 @@ struct pair_sum
  */
 template <size_t bdimx, typename TensorDataType>
 __global__ void fp_sums_kernel(size_t local_num_samples,
-                               size_t local_sample_size,
+                               size_t normalization_size,
+                               size_t num_normalized,
+                               size_t normalization_stride,
                                const TensorDataType* __restrict__ vals,
                                size_t vals_ldim,
                                TensorDataType* sums,
@@ -72,30 +74,35 @@ __global__ void fp_sums_kernel(size_t local_num_samples,
   // Indices and dimensions
   constexpr size_t bdimy = 1;
   constexpr size_t bdimz = 1;
-  const size_t tid = threadIdx.x + blockDim.x * threadIdx.y;
+  const size_t tid = threadIdx.x;
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+  const size_t gidz = threadIdx.z + blockIdx.z * blockDim.z;
   const size_t nthreadsx = blockDim.x * gridDim.x;
   const size_t nthreadsy = blockDim.y * gridDim.y;
+  const size_t nthreadsz = blockDim.z * gridDim.z;
 
-  for (size_t i = gidy; i < local_num_samples; i += nthreadsy) {
+  for (size_t k = gidz; k < local_num_samples; k += nthreadsz) {
+    for (size_t i = gidy; i < num_normalized; i += nthreadsy) {
 
-    // Accumulate sums and perform block-wide reduction
-    using pair_t = thrust::pair<TensorDataType, TensorDataType>;
-    using pair_sum_t = pair_sum<pair_t>;
-    pair_t sum_sqsum(0, 0);
-    for (size_t j = gidx; j < local_sample_size; j += nthreadsx) {
-      const auto& x = vals[i * vals_ldim + j];
-      sum_sqsum.first += x;
-      sum_sqsum.second += x * x;
-    }
-    sum_sqsum =
-      gpu_lib::block_reduce<bdimx, bdimy, bdimz, pair_t, pair_sum_t>(sum_sqsum);
+      // Accumulate sums and perform block-wide reduction
+      using pair_t = thrust::pair<TensorDataType, TensorDataType>;
+      using pair_sum_t = pair_sum<pair_t>;
+      pair_t sum_sqsum(0, 0);
+      for (size_t j = gidx; j < normalization_size; j += nthreadsx) {
+        const auto& x = vals[k * vals_ldim + i * normalization_stride + j];
+        sum_sqsum.first += x;
+        sum_sqsum.second += x * x;
+      }
+      sum_sqsum =
+        gpu_lib::block_reduce<bdimx, bdimy, bdimz, pair_t, pair_sum_t>(
+          sum_sqsum);
 
-    // Output result to global memory
-    if (tid == 0) {
-      gpu_lib::atomic_add(&sums[i * sums_stride], sum_sqsum.first);
-      gpu_lib::atomic_add(&sqsums[i * sqsums_stride], sum_sqsum.second);
+      // Output result to global memory
+      if (tid == 0) {
+        gpu_lib::atomic_add(&sums[i + k * sums_stride], sum_sqsum.first);
+        gpu_lib::atomic_add(&sqsums[i + k * sqsums_stride], sum_sqsum.second);
+      }
     }
   }
 }
@@ -114,25 +121,30 @@ __global__ void fp_sums_kernel(size_t local_num_samples,
  *  Grid dimensions: (local_num_samples / bsize) x 1 x 1
  */
 template <typename TensorDataType>
-__global__ void fp_statistics_kernel(unsigned long long sample_size,
-                                     size_t local_num_samples,
+__global__ void fp_statistics_kernel(size_t local_num_samples,
+                                     size_t normalization_size,
+                                     size_t num_normalized,
                                      TensorDataType* means,
                                      size_t means_stride,
                                      TensorDataType* vars,
                                      size_t vars_stride)
 {
 
-  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const size_t nthreads = blockDim.x * gridDim.x;
-  for (size_t i = gid; i < local_num_samples; i += nthreads) {
-    const auto sum = means[i * means_stride];
-    const auto sqsum = vars[i * means_stride];
-    const TensorDataType sample_size_dt = TensorDataType(sample_size);
-    const auto& mean = sum / sample_size_dt;
-    const auto& sqmean = sqsum / sample_size_dt;
-    const auto& var = (sqmean - mean * mean);
-    means[i * means_stride] = mean;
-    vars[i * vars_stride] = gpu_lib::max(var, TensorDataType(0.0));
+  const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
+  const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+  const size_t nthreadsx = blockDim.x * gridDim.x;
+  const size_t nthreadsy = blockDim.y * gridDim.y;
+  for (size_t i = gidy; i < local_num_samples; i += nthreadsy) {
+    for (size_t j = gidx; j < num_normalized; j += nthreadsx) {
+      const auto sum = means[i * means_stride + j];
+      const auto sqsum = vars[i * vars_stride + j];
+      const TensorDataType sample_size_dt = TensorDataType(normalization_size);
+      const auto& mean = sum / sample_size_dt;
+      const auto& sqmean = sqsum / sample_size_dt;
+      const auto& var = (sqmean - mean * mean);
+      means[i * means_stride + j] = mean;
+      vars[i * vars_stride + j] = gpu_lib::max(var, TensorDataType(0.0));
+    }
   }
 }
 
@@ -147,7 +159,9 @@ __global__ void fp_statistics_kernel(unsigned long long sample_size,
  */
 template <typename TensorDataType, bool HAS_SCALE, bool HAS_BIAS>
 __global__ void fp_output_kernel(size_t local_num_samples,
-                                 size_t local_sample_size,
+                                 size_t normalization_size,
+                                 size_t num_normalized,
+                                 size_t normalization_stride,
                                  TensorDataType epsilon,
                                  const TensorDataType* __restrict__ input,
                                  size_t input_ldim,
@@ -163,21 +177,25 @@ __global__ void fp_output_kernel(size_t local_num_samples,
 
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+  const size_t gidz = threadIdx.z + blockIdx.z * blockDim.z;
   const size_t nthreadsx = blockDim.x * gridDim.x;
   const size_t nthreadsy = blockDim.y * gridDim.y;
-  for (size_t i = gidy; i < local_num_samples; i += nthreadsy) {
-    const auto& mean = means[i * means_stride];
-    const auto& var = vars[i * vars_stride];
-    const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
-    for (size_t j = gidx; j < local_sample_size; j += nthreadsx) {
-      const auto& x = input[i * input_ldim + j];
-      auto& y = output[i * output_ldim + j];
-      auto result = (x - mean) * inv_stdev;
-      if constexpr (HAS_SCALE)
-        result *= scale[j];
-      if constexpr (HAS_BIAS)
-        result += bias[j];
-      y = result;
+  const size_t nthreadsz = blockDim.z * gridDim.z;
+  for (size_t i = gidz; i < local_num_samples; i += nthreadsz) {
+    for (size_t j = gidy; j < num_normalized; j += nthreadsy) {
+      const auto& mean = means[i * means_stride + j];
+      const auto& var = vars[i * vars_stride + j];
+      const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
+      for (size_t k = gidx; k < normalization_size; k += nthreadsx) {
+        const auto& x = input[i * input_ldim + j * normalization_stride + k];
+        auto& y = output[i * input_ldim + j * normalization_stride + k];
+        auto result = (x - mean) * inv_stdev;
+        if constexpr (HAS_SCALE)
+          result *= scale[k];
+        if constexpr (HAS_BIAS)
+          result += bias[k];
+        y = result;
+      }
     }
   }
 }
@@ -186,6 +204,9 @@ __global__ void fp_output_kernel(size_t local_num_samples,
 template <typename TensorDataType>
 void fp_impl(lbann_comm& comm,
              TensorDataType epsilon,
+             El::Int normalization_size,
+             El::Int num_normalized,
+             El::Int normalization_stride,
              const El::AbstractDistMatrix<TensorDataType>& input,
              El::AbstractDistMatrix<TensorDataType>& output,
              El::AbstractDistMatrix<TensorDataType>& statistics,
@@ -197,15 +218,18 @@ void fp_impl(lbann_comm& comm,
   // Workspace buffer
   statistics.Empty(false);
   statistics.AlignWith(input);
-  statistics.Resize(2, input.Width());
+  statistics.Resize(2 * num_normalized, input.Width());
 
   // Local matrices
   const auto& local_input =
     dynamic_cast<const GPUMatType&>(input.LockedMatrix());
   auto& local_output = dynamic_cast<GPUMatType&>(output.Matrix());
   auto& local_statistics = dynamic_cast<GPUMatType&>(statistics.Matrix());
-  auto local_means = El::View(local_statistics, El::IR(0), El::ALL);
-  auto local_vars = El::View(local_statistics, El::IR(1), El::ALL);
+  auto local_means =
+    El::View(local_statistics, El::IR(0, num_normalized), El::ALL);
+  auto local_vars = El::View(local_statistics,
+                             El::IR(num_normalized, 2 * num_normalized),
+                             El::ALL);
 
   // Dimensions
   const size_t sample_size = input.Height();
@@ -222,18 +246,32 @@ void fp_impl(lbann_comm& comm,
   if (!local_input.IsEmpty()) {
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_statistics),
                                        gpu::get_sync_info(local_input));
-    constexpr size_t block_size = 256;
+    auto kernel = (normalization_size >= 256
+                     ? fp_sums_kernel<256, TensorDataType>
+                     : (normalization_size >= 128
+                          ? fp_sums_kernel<128, TensorDataType>
+                          : (normalization_size >= 64
+                               ? fp_sums_kernel<64, TensorDataType>
+                               : fp_sums_kernel<32, TensorDataType>)));
+    size_t block_size =
+      (normalization_size >= 256
+         ? 256
+         : (normalization_size >= 128 ? 128
+                                      : (normalization_size >= 64 ? 64 : 32)));
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
-    grid_dims.x = (local_sample_size + block_size - 1) / block_size;
-    grid_dims.y = local_num_samples;
-    hydrogen::gpu::LaunchKernel(fp_sums_kernel<block_size, TensorDataType>,
+    grid_dims.x = (normalization_size + block_size - 1) / block_size;
+    grid_dims.y = num_normalized;
+    grid_dims.z = local_num_samples;
+    hydrogen::gpu::LaunchKernel(kernel,
                                 grid_dims,
                                 block_dims,
                                 0,
                                 multisync,
                                 local_num_samples,
-                                local_sample_size,
+                                normalization_size,
+                                num_normalized,
+                                normalization_stride,
                                 local_input.LockedBuffer(),
                                 local_input.LDim(),
                                 local_means.Buffer(),
@@ -253,14 +291,16 @@ void fp_impl(lbann_comm& comm,
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
-    grid_dims.x = (local_num_samples + block_size - 1) / block_size;
+    grid_dims.x = (num_normalized + block_size - 1) / block_size;
+    grid_dims.y = local_num_samples;
     hydrogen::gpu::LaunchKernel(fp_statistics_kernel<TensorDataType>,
                                 grid_dims,
                                 block_dims,
                                 0,
                                 sync_info,
-                                sample_size,
                                 local_num_samples,
+                                normalization_size,
+                                num_normalized,
                                 local_means.Buffer(),
                                 local_means.LDim(),
                                 local_vars.Buffer(),
@@ -272,11 +312,12 @@ void fp_impl(lbann_comm& comm,
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
                                        gpu::get_sync_info(local_statistics),
                                        gpu::get_sync_info(local_input));
-    constexpr size_t block_size = 256;
+    size_t block_size = min(256, normalization_size);
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
-    grid_dims.x = (local_sample_size + block_size - 1) / block_size;
-    grid_dims.y = local_num_samples;
+    grid_dims.x = (normalization_size + block_size - 1) / block_size;
+    grid_dims.y = num_normalized;
+    grid_dims.z = local_num_samples;
     auto kernel =
       ((!local_scale && !local_bias)
          ? fp_output_kernel<TensorDataType, false, false>
@@ -291,7 +332,9 @@ void fp_impl(lbann_comm& comm,
                                 0,
                                 multisync,
                                 local_num_samples,
-                                local_sample_size,
+                                normalization_size,
+                                num_normalized,
+                                normalization_stride,
                                 epsilon,
                                 local_input.LockedBuffer(),
                                 local_input.LDim(),
@@ -316,12 +359,15 @@ void fp_impl(lbann_comm& comm,
  *
  *  Block dimensions: bsize x 1 x 1
  *
- *  Grid dimensions: (local_sample_size / bsize) x local_num_samples x 1
+ *  Grid dimensions: (normalization_size / bsize) x num_normalized x
+ * local_num_samples
  */
 template <size_t bdimx, typename TensorDataType, bool HAS_SCALE, bool HAS_BIAS>
 __global__ void
 bp_statistics_grad_kernel(size_t local_num_samples,
-                          size_t local_sample_size,
+                          size_t normalization_size,
+                          size_t num_normalized,
+                          size_t normalization_stride,
                           TensorDataType epsilon,
                           const TensorDataType* __restrict__ input,
                           size_t input_ldim,
@@ -343,44 +389,51 @@ bp_statistics_grad_kernel(size_t local_num_samples,
   // Indices and dimensions
   constexpr size_t bdimy = 1;
   constexpr size_t bdimz = 1;
-  const size_t tid = threadIdx.x + blockDim.x * threadIdx.y;
+  const size_t tid = threadIdx.x;
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+  const size_t gidz = threadIdx.z + blockIdx.z * blockDim.z;
   const size_t nthreadsx = blockDim.x * gridDim.x;
   const size_t nthreadsy = blockDim.y * gridDim.y;
+  const size_t nthreadsz = blockDim.z * gridDim.z;
 
-  for (size_t i = gidy; i < local_num_samples; i += nthreadsy) {
-    const auto& var = vars[i * vars_stride];
-    const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
+  for (size_t i = gidz; i < local_num_samples; i += nthreadsz) {
+    for (size_t j = gidy; j < num_normalized; j += nthreadsy) {
 
-    // Accumulate sums and perform block-wide reduction
-    using pair_t = thrust::pair<TensorDataType, TensorDataType>;
-    using pair_sum_t = pair_sum<pair_t>;
-    pair_t sums(0, 0);
-    const auto& mean = means[i * means_stride];
-    for (size_t j = gidx; j < local_sample_size; j += nthreadsx) {
-      const auto& x = input[i * input_ldim + j];
-      auto dy = output_grad[i * output_grad_ldim + j];
-      if constexpr (HAS_BIAS)
-        gpu_lib::atomic_add(bias_grad + j, dy);
+      const auto& var = vars[i * vars_stride + j];
+      const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
 
-      if constexpr (HAS_SCALE) {
-        gpu_lib::atomic_add(scale_grad + j, dy * (x - mean) * inv_stdev);
-        dy *= scale[j];
+      // Accumulate sums and perform block-wide reduction
+      using pair_t = thrust::pair<TensorDataType, TensorDataType>;
+      using pair_sum_t = pair_sum<pair_t>;
+      pair_t sums(0, 0);
+      const auto& mean = means[i * means_stride + j];
+      for (size_t k = gidx; k < normalization_size; k += nthreadsx) {
+        const auto& x = input[i * input_ldim + j * normalization_stride + k];
+        auto dy =
+          output_grad[i * output_grad_ldim + j * normalization_stride + k];
+        if constexpr (HAS_BIAS)
+          gpu_lib::atomic_add(bias_grad + k, dy);
+
+        if constexpr (HAS_SCALE) {
+          gpu_lib::atomic_add(scale_grad + k, dy * (x - mean) * inv_stdev);
+          dy *= scale[k];
+        }
+
+        sums.first += dy;
+        sums.second += dy * (x - mean);
       }
+      sums =
+        gpu_lib::block_reduce<bdimx, bdimy, bdimz, pair_t, pair_sum_t>(sums);
 
-      sums.first += dy;
-      sums.second += dy * (x - mean);
-    }
-    sums = gpu_lib::block_reduce<bdimx, bdimy, bdimz, pair_t, pair_sum_t>(sums);
-
-    // Output result to global memory
-    if (tid == 0) {
-      const TensorDataType dmean = -sums.first * inv_stdev;
-      const TensorDataType dvar =
-        -sums.second * inv_stdev * inv_stdev * inv_stdev / TensorDataType(2);
-      gpu_lib::atomic_add(&means_grad[i * means_grad_stride], dmean);
-      gpu_lib::atomic_add(&vars_grad[i * vars_grad_stride], dvar);
+      // Output result to global memory
+      if (tid == 0) {
+        const TensorDataType dmean = -sums.first * inv_stdev;
+        const TensorDataType dvar =
+          -sums.second * inv_stdev * inv_stdev * inv_stdev / TensorDataType(2);
+        gpu_lib::atomic_add(&means_grad[i * means_grad_stride + j], dmean);
+        gpu_lib::atomic_add(&vars_grad[i * vars_grad_stride + j], dvar);
+      }
     }
   }
 }
@@ -398,9 +451,10 @@ bp_statistics_grad_kernel(size_t local_num_samples,
  */
 template <typename TensorDataType, bool HAS_SCALE>
 __global__ void
-bp_input_grad_kernel(unsigned long long sample_size,
-                     size_t local_num_samples,
-                     size_t local_sample_size,
+bp_input_grad_kernel(size_t local_num_samples,
+                     size_t normalization_size,
+                     size_t num_normalized,
+                     size_t normalization_stride,
                      TensorDataType epsilon,
                      const TensorDataType* __restrict__ input,
                      size_t input_ldim,
@@ -421,27 +475,33 @@ bp_input_grad_kernel(unsigned long long sample_size,
 
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
+  const size_t gidz = threadIdx.z + blockIdx.z * blockDim.z;
   const size_t nthreadsx = blockDim.x * gridDim.x;
   const size_t nthreadsy = blockDim.y * gridDim.y;
-  for (size_t i = gidy; i < local_num_samples; i += nthreadsy) {
-    const auto& mean = means[i * means_stride];
-    const auto& var = vars[i * vars_stride];
-    const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
-    const auto& dmean = means_grad[i * means_grad_stride];
-    const auto& dvar = vars_grad[i * vars_grad_stride];
-    for (size_t j = gidx; j < local_sample_size; j += nthreadsx) {
-      const auto& x = input[i * input_ldim + j];
-      auto dy = output_grad[i * output_grad_ldim + j];
+  const size_t nthreadsz = blockDim.z * gridDim.z;
+  for (size_t i = gidz; i < local_num_samples; i += nthreadsz) {
+    for (size_t j = gidy; j < num_normalized; j += nthreadsy) {
+      const auto& mean = means[i * means_stride + j];
+      const auto& var = vars[i * vars_stride + j];
+      const auto& inv_stdev = gpu_lib::rsqrt(var + epsilon);
+      const auto& dmean = means_grad[i * means_grad_stride + j];
+      const auto& dvar = vars_grad[i * vars_grad_stride + j];
+      for (size_t k = gidx; k < normalization_size; k += nthreadsx) {
+        const auto& x = input[i * input_ldim + j * normalization_stride + k];
+        auto dy =
+          output_grad[i * output_grad_ldim + j * normalization_stride + k];
 
-      if constexpr (HAS_SCALE) {
-        const auto& lscale = scale[j];
-        dy *= lscale;
+        if constexpr (HAS_SCALE) {
+          const auto& lscale = scale[k];
+          dy *= lscale;
+        }
+
+        auto& dx =
+          input_grad[i * input_grad_ldim + j * normalization_stride + k];
+        dx = (dy * inv_stdev + dmean / TensorDataType(normalization_size) +
+              dvar * (x - mean) * TensorDataType(2) /
+                TensorDataType(normalization_size));
       }
-
-      auto& dx = input_grad[i * input_grad_ldim + j];
-      dx =
-        (dy * inv_stdev + dmean / TensorDataType(sample_size) +
-         dvar * (x - mean) * TensorDataType(2) / TensorDataType(sample_size));
     }
   }
 }
@@ -450,6 +510,9 @@ bp_input_grad_kernel(unsigned long long sample_size,
 template <typename TensorDataType>
 void bp_impl(lbann_comm& comm,
              TensorDataType epsilon,
+             El::Int normalization_size,
+             El::Int num_normalized,
+             El::Int normalization_stride,
              const El::AbstractDistMatrix<TensorDataType>& input,
              const El::AbstractDistMatrix<TensorDataType>& output_grad,
              El::AbstractDistMatrix<TensorDataType>& input_grad,
@@ -464,7 +527,7 @@ void bp_impl(lbann_comm& comm,
   // Workspace buffer
   statistics_grad.Empty(false);
   statistics_grad.AlignWith(input);
-  statistics_grad.Resize(2, input.Width());
+  statistics_grad.Resize(2 * num_normalized, input.Width());
 
   // Local matrices
   const auto& local_input =
@@ -474,17 +537,23 @@ void bp_impl(lbann_comm& comm,
   auto& local_input_grad = dynamic_cast<GPUMatType&>(input_grad.Matrix());
   const auto& local_statistics =
     dynamic_cast<const GPUMatType&>(statistics.LockedMatrix());
-  const auto local_means = El::LockedView(local_statistics, El::IR(0), El::ALL);
-  const auto local_vars = El::LockedView(local_statistics, El::IR(1), El::ALL);
+  const auto local_means =
+    El::LockedView(local_statistics, El::IR(0, num_normalized), El::ALL);
+  const auto local_vars =
+    El::LockedView(local_statistics,
+                   El::IR(num_normalized, 2 * num_normalized),
+                   El::ALL);
   auto& local_statistics_grad =
     dynamic_cast<GPUMatType&>(statistics_grad.Matrix());
-  auto local_means_grad = El::View(local_statistics_grad, El::IR(0), El::ALL);
-  auto local_vars_grad = El::View(local_statistics_grad, El::IR(1), El::ALL);
+  auto local_means_grad =
+    El::View(local_statistics_grad, El::IR(0, num_normalized), El::ALL);
+  auto local_vars_grad = El::View(local_statistics_grad,
+                                  El::IR(num_normalized, 2 * num_normalized),
+                                  El::ALL);
 
   // Dimensions
   const size_t sample_size = input.Height();
   const size_t local_num_samples = local_input.Width();
-  const size_t local_sample_size = local_input.Height();
 
   // Trivial case if sample size <= 1
   // Note: Output is constant, so error signal is zero.
@@ -504,8 +573,9 @@ void bp_impl(lbann_comm& comm,
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
-    grid_dims.x = (local_sample_size + block_size - 1) / block_size;
-    grid_dims.y = local_num_samples;
+    grid_dims.x = (normalization_size + block_size - 1) / block_size;
+    grid_dims.y = num_normalized;
+    grid_dims.z = local_num_samples;
     auto kernel =
       ((!scale_grad && !bias_grad)
          ? bp_statistics_grad_kernel<block_size, TensorDataType, false, false>
@@ -529,7 +599,9 @@ void bp_impl(lbann_comm& comm,
                                 0,
                                 multisync,
                                 local_num_samples,
-                                local_sample_size,
+                                normalization_size,
+                                num_normalized,
+                                normalization_stride,
                                 epsilon,
                                 local_input.LockedBuffer(),
                                 local_input.LDim(),
@@ -558,11 +630,12 @@ void bp_impl(lbann_comm& comm,
                         gpu::get_sync_info(local_output_grad),
                         gpu::get_sync_info(local_statistics),
                         gpu::get_sync_info(local_input));
-    constexpr size_t block_size = 256;
+    size_t block_size = min(256, normalization_size);
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
-    grid_dims.x = (local_sample_size + block_size - 1) / block_size;
-    grid_dims.y = local_num_samples;
+    grid_dims.x = (normalization_size + block_size - 1) / block_size;
+    grid_dims.y = num_normalized;
+    grid_dims.z = local_num_samples;
     auto kernel = (local_scale ? bp_input_grad_kernel<TensorDataType, true>
                                : bp_input_grad_kernel<TensorDataType, false>);
     hydrogen::gpu::LaunchKernel(kernel,
@@ -570,9 +643,10 @@ void bp_impl(lbann_comm& comm,
                                 block_dims,
                                 0,
                                 multisync,
-                                sample_size,
                                 local_num_samples,
-                                local_sample_size,
+                                normalization_size,
+                                num_normalized,
+                                normalization_stride,
                                 epsilon,
                                 local_input.LockedBuffer(),
                                 local_input.LDim(),
@@ -608,8 +682,14 @@ void layer_norm_layer<TensorDataType, Layout, Device>::fp_compute()
     bias_weights =
       this->weights_values(weight_idx).LockedMatrix().LockedBuffer();
 
+  El::Int norm_size, num_norm, norm_stride;
+  this->get_normdims(norm_size, num_norm, norm_stride);
+
   fp_impl(*this->get_comm(),
           this->m_epsilon,
+          norm_size,
+          num_norm,
+          norm_stride,
           this->get_prev_activations(),
           this->get_activations(),
           *this->m_statistics,
@@ -636,9 +716,15 @@ void layer_norm_layer<TensorDataType, Layout, Device>::bp_compute()
     bias_grad = this->m_bias_gradient->Buffer();
   }
 
+  El::Int norm_size, num_norm, norm_stride;
+  this->get_normdims(norm_size, num_norm, norm_stride);
+
   // Compute backpropagation
   bp_impl(*this->get_comm(),
           this->m_epsilon,
+          norm_size,
+          num_norm,
+          norm_stride,
           this->get_prev_activations(),
           this->get_prev_error_signals(),
           this->get_error_signals(),

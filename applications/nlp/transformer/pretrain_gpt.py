@@ -44,7 +44,7 @@ SIZES = {
     'xl': GPTConfig(24, 2048, 24, 128, 2e-4),
     '2.7b': GPTConfig(32, 2560, 32, 80, 1.6e-4),
     '6.7b': GPTConfig(32, 4096, 32, 128, 1.2e-4),
-    '13b': GPTConfig(40, 5140, 40, 128, 1e-4),
+    '13b': GPTConfig(40, 5120, 40, 128, 1e-4),
     'gpt3': GPTConfig(96, 12288, 96, 128, 6e-5),
 }
 
@@ -98,6 +98,13 @@ def main():
         default=False,
         help="Use dataset fraction to determine hyperparameter schedule"
         " (default: False)")
+    parser.add_argument(
+        '--positional-encoding',
+        type=str,
+        default='learned',
+        help='The type of positional encoding to use '
+        '(default: learned)',
+        choices=[s.name.lower() for s in modeling.InputEncoding])
 
     parser.set_defaults(progress=True, num_epochs=1)
     args = parser.parse_args()

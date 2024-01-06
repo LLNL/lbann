@@ -581,6 +581,15 @@ message Layer {
      * Apply an elementwise learned bias after normalization
      */
     bool bias = 3;
+
+    /**
+     * The tensor dimension to start normalizing from. All dimensions
+     * including the given one will be normalized. A value of 0 (default)
+     * normalizes each data sample in its entirety. Negative numbers
+     * are also permitted. For example, -1 will normalize only the last
+     * tensor dimension.
+     */
+    int64 start_dim = 4;
   }
 
   /** @brief Normalize over data channels

@@ -211,8 +211,13 @@ deviation. See:
 Jimmy Lei Ba, Jamie Ryan Kiros, and Geoffrey E. Hinton. "Layer
 normalization." arXiv preprint arXiv:1607.06450 (2016).
 
-It is common to apply an affine operation after this layer, e.g. with
-the entry-wise scale/bias layer.
+It is common to apply an affine operation after this layer, which is possible
+to enable with the ``scale`` and ``bias`` arguments.
+
+By default, the entire data sample is normalized. The argument ``start_dim``
+controls the normalized shape and dimensions by specifying a subset of
+tensor dimensions to normalize. For example, a value of -1 will normalize only
+the last tensor dimension.
 
 Arguments:
 
@@ -222,6 +227,30 @@ Arguments:
         avoid division by zero.
 
         Default: 1e-5
+
+    :scale:
+
+        (``bool``, optional) Apply an elementwise learned scaling factor
+        after normalization.
+
+        Default: false
+
+    :bias:
+
+        (``bool``, optional) Apply an elementwise learned bias after
+        normalization.
+
+        Default: false
+
+    :start_dim:
+
+        (``int64``, optional) The tensor dimension to start normalizing from.
+        All dimensions including the given one will be normalized. A value of 0
+        normalizes each data sample in its entirety. Negative numbers
+        are also permitted.
+
+        Default: 0
+
 
 :ref:`Back to Top<regularization-layers>`
 

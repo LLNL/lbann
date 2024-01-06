@@ -34,7 +34,7 @@ sizes = {
     'xl': GPTConfig(24, 2048, 24, 128),
     '2.7b': GPTConfig(32, 2560, 32, 80),
     '6.7b': GPTConfig(32, 4096, 32, 128),
-    '13b': GPTConfig(40, 5140, 40, 128),
+    '13b': GPTConfig(40, 5120, 40, 128),
     'gpt3': GPTConfig(96, 12288, 96, 128),
 }
 

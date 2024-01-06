@@ -41,6 +41,9 @@ namespace {
 template <typename TensorDataType>
 void fp_impl(lbann_comm& comm,
              TensorDataType epsilon,
+             El::Int normalization_size,
+             El::Int num_normalized,
+             El::Int normalization_stride,
              const El::AbstractDistMatrix<TensorDataType>& input,
              El::AbstractDistMatrix<TensorDataType>& output,
              El::AbstractDistMatrix<TensorDataType>& statistics,
@@ -52,31 +55,35 @@ void fp_impl(lbann_comm& comm,
   // Workspace buffer
   statistics.Empty(false);
   statistics.AlignWith(input);
-  statistics.Resize(2, input.Width());
+  statistics.Resize(2 * num_normalized, input.Width());
 
   // Local matrices
   const auto& local_input =
     dynamic_cast<const CPUMatType&>(input.LockedMatrix());
   auto& local_output = dynamic_cast<CPUMatType&>(output.Matrix());
   auto& local_statistics = dynamic_cast<CPUMatType&>(statistics.Matrix());
-  auto local_means = El::LockedView(local_statistics, El::IR(0), El::ALL);
-  auto local_vars = El::LockedView(local_statistics, El::IR(1), El::ALL);
+  auto local_means =
+    El::LockedView(local_statistics, El::IR(0, num_normalized), El::ALL);
+  auto local_vars = El::LockedView(local_statistics,
+                                   El::IR(num_normalized, 2 * num_normalized),
+                                   El::ALL);
 
   // Dimensions
   const El::Int sample_size = input.Height();
   const El::Int local_num_samples = local_input.Width();
-  const El::Int local_sample_size = local_input.Height();
 
   // Compute sums
   El::Zero(statistics);
-  LBANN_OMP_PARALLEL_FOR
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int i = 0; i < local_num_samples; ++i) {
-    auto& sum = local_means(0, i);
-    auto& sqsum = local_vars(0, i);
-    for (El::Int j = 0; j < local_sample_size; ++j) {
-      const auto& x = local_input(j, i);
-      sum += x;
-      sqsum += x * x;
+    for (El::Int j = 0; j < num_normalized; ++j) {
+      auto& sum = local_means(j, i);
+      auto& sqsum = local_vars(j, i);
+      for (El::Int k = 0; k < normalization_size; ++k) {
+        const auto& x = local_input(k + j * normalization_stride, i);
+        sum += x;
+        sqsum += x * x;
+      }
     }
   }
   comm.allreduce(statistics, statistics.RedundantComm(), El::mpi::SUM);
@@ -89,35 +96,41 @@ void fp_impl(lbann_comm& comm,
     El::Fill(local_vars, El::TypeTraits<TensorDataType>::One());
   }
   else {
-    LBANN_OMP_PARALLEL_FOR
+    LBANN_OMP_PARALLEL_FOR_COLLAPSE2
     for (El::Int i = 0; i < local_num_samples; ++i) {
-      const auto sum = local_means(0, i);
-      const auto sqsum = local_vars(0, i);
-      auto sample_size_dt = El::To<TensorDataType>(sample_size);
-      const auto& mean = sum / sample_size_dt;
-      const auto& sqmean = sqsum / sample_size_dt;
-      const auto& var = (sqmean - mean * mean);
-      local_means(0, i) = mean;
-      local_vars(0, i) = std::max(var, El::TypeTraits<TensorDataType>::Zero());
+      for (El::Int j = 0; j < num_normalized; ++j) {
+        const auto sum = local_means(j, i);
+        const auto sqsum = local_vars(j, i);
+        auto sample_size_dt = El::To<TensorDataType>(sample_size);
+        const auto& mean = sum / sample_size_dt;
+        const auto& sqmean = sqsum / sample_size_dt;
+        const auto& var = (sqmean - mean * mean);
+        local_means(j, i) = mean;
+        local_vars(j, i) =
+          std::max(var, El::TypeTraits<TensorDataType>::Zero());
+      }
     }
   }
 
   // Apply layer norm
   //   y_i = (x_i - mean) / sqrt(var + epsilon)
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int i = 0; i < local_num_samples; ++i) {
-    const auto& mean = local_means(0, i);
-    const auto& var = local_vars(0, i);
-    const TensorDataType inv_stdev =
-      El::TypeTraits<TensorDataType>::One() / El::Sqrt(var + epsilon);
-    for (El::Int j = 0; j < local_sample_size; ++j) {
-      const auto& x = local_input(j, i);
-      auto& y = local_output(j, i);
-      TensorDataType result = (x - mean) * inv_stdev;
-      if (local_scale)
-        result *= local_scale[j];
-      if (local_bias)
-        result += local_bias[j];
-      y = result;
+    for (El::Int j = 0; j < num_normalized; ++j) {
+      const auto& mean = local_means(j, i);
+      const auto& var = local_vars(j, i);
+      const TensorDataType inv_stdev =
+        El::TypeTraits<TensorDataType>::One() / El::Sqrt(var + epsilon);
+      for (El::Int k = 0; k < normalization_size; ++k) {
+        const auto& x = local_input(k + j * normalization_stride, i);
+        auto& y = local_output(k + j * normalization_stride, i);
+        TensorDataType result = (x - mean) * inv_stdev;
+        if (local_scale)
+          result *= local_scale[k];
+        if (local_bias)
+          result += local_bias[k];
+        y = result;
+      }
     }
   }
 }
@@ -126,6 +139,9 @@ void fp_impl(lbann_comm& comm,
 template <typename TensorDataType>
 void bp_impl(lbann_comm& comm,
              TensorDataType epsilon,
+             El::Int normalization_size,
+             El::Int num_normalized,
+             El::Int normalization_stride,
              const El::AbstractDistMatrix<TensorDataType>& input,
              const El::AbstractDistMatrix<TensorDataType>& output_grad,
              El::AbstractDistMatrix<TensorDataType>& input_grad,
@@ -140,7 +156,7 @@ void bp_impl(lbann_comm& comm,
   // Workspace buffer
   statistics_grad.Empty(false);
   statistics_grad.AlignWith(input);
-  statistics_grad.Resize(2, input.Width());
+  statistics_grad.Resize(2 * num_normalized, input.Width());
 
   // Local matrices
   const auto& local_input =
@@ -150,17 +166,23 @@ void bp_impl(lbann_comm& comm,
   auto& local_input_grad = dynamic_cast<CPUMatType&>(input_grad.Matrix());
   const auto& local_statistics =
     dynamic_cast<const CPUMatType&>(statistics.LockedMatrix());
-  const auto local_means = El::LockedView(local_statistics, El::IR(0), El::ALL);
-  const auto local_vars = El::LockedView(local_statistics, El::IR(1), El::ALL);
+  const auto local_means =
+    El::LockedView(local_statistics, El::IR(0, num_normalized), El::ALL);
+  const auto local_vars =
+    El::LockedView(local_statistics,
+                   El::IR(num_normalized, 2 * num_normalized),
+                   El::ALL);
   auto& local_statistics_grad =
     dynamic_cast<CPUMatType&>(statistics_grad.Matrix());
-  auto local_means_grad = El::View(local_statistics_grad, El::IR(0), El::ALL);
-  auto local_vars_grad = El::View(local_statistics_grad, El::IR(1), El::ALL);
+  auto local_means_grad =
+    El::View(local_statistics_grad, El::IR(0, num_normalized), El::ALL);
+  auto local_vars_grad = El::View(local_statistics_grad,
+                                  El::IR(num_normalized, 2 * num_normalized),
+                                  El::ALL);
 
   // Dimensions
   const El::Int sample_size = input.Height();
   const El::Int local_num_samples = local_input.Width();
-  const El::Int local_sample_size = local_input.Height();
 
   // Trivial case if sample size <= 1
   // Note: Output is constant, so error signal is zero.
@@ -173,33 +195,35 @@ void bp_impl(lbann_comm& comm,
   //   dL/dmean = - sum(dL/dy_i) / sqrt(var+epsilon)
   //   dL/dvar = - sum(dL/dy_i * (x_i-mean)) * (var+epsilon)^(-3/2) / 2
   El::Zero(statistics_grad);
-  LBANN_OMP_PARALLEL_FOR
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int i = 0; i < local_num_samples; ++i) {
-    const auto& mean = local_means(0, i);
-    const auto& var = local_vars(0, i);
-    const TensorDataType inv_stdev =
-      El::TypeTraits<TensorDataType>::One() / El::Sqrt(var + epsilon);
-    auto& dmean = local_means_grad(0, i);
-    auto& dvar = local_vars_grad(0, i);
-    for (El::Int j = 0; j < local_sample_size; ++j) {
-      const auto& x = local_input(j, i);
-      auto dy = local_output_grad(j, i);
+    for (El::Int j = 0; j < num_normalized; ++j) {
+      const auto& mean = local_means(j, i);
+      const auto& var = local_vars(j, i);
+      const TensorDataType inv_stdev =
+        El::TypeTraits<TensorDataType>::One() / El::Sqrt(var + epsilon);
+      auto& dmean = local_means_grad(j, i);
+      auto& dvar = local_vars_grad(j, i);
+      for (El::Int k = 0; k < normalization_size; ++k) {
+        const auto& x = local_input(k + j * normalization_stride, i);
+        auto dy = local_output_grad(k + j * normalization_stride, i);
 
-      if (bias_grad) {
-        LBANN_OMP_ATOMIC
-        bias_grad[j] += dy;
-      }
-      if (scale_grad) {
-        LBANN_OMP_ATOMIC
-        scale_grad[j] += dy * (x - mean) * inv_stdev;
-        dy *= local_scale[j];
-      }
+        if (bias_grad) {
+          LBANN_OMP_ATOMIC
+          bias_grad[k] += dy;
+        }
+        if (scale_grad) {
+          LBANN_OMP_ATOMIC
+          scale_grad[k] += dy * (x - mean) * inv_stdev;
+          dy *= local_scale[k];
+        }
 
-      dmean += dy;
-      dvar += dy * (x - mean);
+        dmean += dy;
+        dvar += dy * (x - mean);
+      }
+      dmean *= -inv_stdev;
+      dvar *= -inv_stdev * inv_stdev * inv_stdev / 2;
     }
-    dmean *= -inv_stdev;
-    dvar *= -inv_stdev * inv_stdev * inv_stdev / 2;
   }
   comm.allreduce(statistics_grad,
                  statistics_grad.RedundantComm(),
@@ -209,24 +233,26 @@ void bp_impl(lbann_comm& comm,
   //   dL/dx_i = ( dL/dy_i / sqrt(var+epsilon)
   //             + dL/dmean / n
   //             + dL/dvar * (x_i - mean) * 2/(n-1) )
-  LBANN_OMP_PARALLEL_FOR
+  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int i = 0; i < local_num_samples; ++i) {
-    const auto& mean = local_means(0, i);
-    const auto& var = local_vars(0, i);
-    const TensorDataType inv_stdev =
-      El::TypeTraits<TensorDataType>::One() / El::Sqrt(var + epsilon);
-    const auto& dmean = local_means_grad(0, i);
-    const auto& dvar = local_vars_grad(0, i);
-    for (El::Int j = 0; j < local_sample_size; ++j) {
-      const auto& x = local_input(j, i);
-      auto dy = local_output_grad(j, i);
-      auto& dx = local_input_grad(j, i);
+    for (El::Int j = 0; j < num_normalized; ++j) {
+      const auto& mean = local_means(j, i);
+      const auto& var = local_vars(j, i);
+      const TensorDataType inv_stdev =
+        El::TypeTraits<TensorDataType>::One() / El::Sqrt(var + epsilon);
+      const auto& dmean = local_means_grad(j, i);
+      const auto& dvar = local_vars_grad(j, i);
+      for (El::Int k = 0; k < normalization_size; ++k) {
+        const auto& x = local_input(k + j * normalization_stride, i);
+        auto dy = local_output_grad(k + j * normalization_stride, i);
+        auto& dx = local_input_grad(k + j * normalization_stride, i);
 
-      if (local_scale)
-        dy *= local_scale[j];
+        if (local_scale)
+          dy *= local_scale[k];
 
-      dx = (dy * inv_stdev + dmean / sample_size +
-            dvar * (x - mean) * 2 / sample_size);
+        dx = (dy * inv_stdev + dmean / sample_size +
+              dvar * (x - mean) * 2 / sample_size);
+      }
     }
   }
 }
@@ -247,8 +273,14 @@ void layer_norm_layer<TensorDataType, Layout, Device>::fp_compute()
     bias_weights =
       this->weights_values(weight_idx).LockedMatrix().LockedBuffer();
 
+  El::Int norm_size, num_norm, norm_stride;
+  this->get_normdims(norm_size, num_norm, norm_stride);
+
   fp_impl(*this->get_comm(),
           this->m_epsilon,
+          norm_size,
+          num_norm,
+          norm_stride,
           this->get_prev_activations(),
           this->get_activations(),
           *this->m_statistics,
@@ -275,9 +307,16 @@ void layer_norm_layer<TensorDataType, Layout, Device>::bp_compute()
     bias_grad = this->m_bias_gradient->Buffer();
   }
 
+  El::Int norm_size, num_norm, norm_stride;
+  this->get_normdims(norm_size, num_norm, norm_stride);
+
   // Compute backpropagation
   bp_impl(*this->get_comm(),
           this->m_epsilon,
+          norm_size,
+          num_norm,
+          norm_stride,
+
           this->get_prev_activations(),
           this->get_prev_error_signals(),
           this->get_error_signals(),

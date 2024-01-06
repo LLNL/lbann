@@ -68,7 +68,8 @@ public:
    */
   layer_norm_layer(TensorDataType epsilon = El::To<TensorDataType>(1e-5),
                    bool scale = false,
-                   bool bias = false);
+                   bool bias = false,
+                   int start_dim = 0);
 
   layer_norm_layer(const layer_norm_layer& other);
   layer_norm_layer& operator=(const layer_norm_layer& other);
@@ -114,6 +115,9 @@ private:
   /** @brief Apply elementwise bias after normalization (learned weights). */
   bool m_bias;
 
+  /** @brief The tensor dimension to start normalizing from. */
+  int m_start_dim;
+
   /** @brief Per-sample statistics.
    *
    *  The means and variances are fused for performance.
@@ -130,6 +134,11 @@ private:
 
   /** @brief Gradient w.r.t. bias. */
   std::unique_ptr<AbsDistMatType> m_bias_gradient;
+
+  /** @brief Helper function to obtain normalization parameters. */
+  void get_normdims(El::Int& normalization_size,
+                    El::Int& num_normalized,
+                    El::Int& normalization_stride);
 };
 
 // =========================================================
@@ -145,17 +154,20 @@ void layer_norm_layer<T, L, D>::write_specific_proto(
   msg->mutable_epsilon()->set_value(m_epsilon);
   msg->set_scale(m_scale);
   msg->set_bias(m_bias);
+  msg->set_start_dim(m_start_dim);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 layer_norm_layer<TensorDataType, Layout, Device>::layer_norm_layer(
   TensorDataType epsilon,
   bool scale,
-  bool bias)
+  bool bias,
+  int start_dim)
   : data_type_layer<TensorDataType>(nullptr),
     m_epsilon(epsilon),
     m_scale(scale),
-    m_bias(bias)
+    m_bias(bias),
+    m_start_dim(start_dim)
 {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -165,6 +177,7 @@ layer_norm_layer<TensorDataType, Layout, Device>::layer_norm_layer(
     m_epsilon(other.m_epsilon),
     m_scale(other.m_scale),
     m_bias(other.m_bias),
+    m_start_dim(other.m_start_dim),
     m_statistics(other.m_statistics ? other.m_statistics->Copy() : nullptr),
     m_statistics_gradient(other.m_statistics_gradient
                             ? other.m_statistics_gradient->Copy()
@@ -184,6 +197,7 @@ layer_norm_layer<TensorDataType, Layout, Device>::operator=(
   m_epsilon = other.m_epsilon;
   m_scale = other.m_scale;
   m_bias = other.m_bias;
+  m_start_dim = other.m_start_dim;
   m_statistics.reset(other.m_statistics ? other.m_statistics->Copy() : nullptr);
   m_statistics_gradient.reset(other.m_statistics_gradient
                                 ? other.m_statistics_gradient->Copy()
@@ -230,6 +244,7 @@ layer_norm_layer<TensorDataType, Layout, Device>::get_description() const
   desc.add("Epsilon", m_epsilon);
   desc.add("Affine Scale", m_scale);
   desc.add("Affine Bias", m_bias);
+  desc.add("Start dimension", m_start_dim);
   return desc;
 }
 
@@ -247,6 +262,26 @@ void layer_norm_layer<TensorDataType, Layout, Device>::setup_data(
   data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
   const auto& output_dims = this->get_output_dims();
   std::vector<size_t> out_dims{output_dims.begin(), output_dims.end()};
+
+  int start_dim;
+  if (m_start_dim >= 0) {
+    start_dim = m_start_dim;
+  }
+  else {
+    start_dim = static_cast<int>(out_dims.size()) + m_start_dim;
+  }
+  if (start_dim < 0 || start_dim >= output_dims.size()) {
+    LBANN_ERROR("Layer normalization \"",
+                this->get_name(),
+                "\" start dimension ",
+                m_start_dim,
+                "does not match the input "
+                "tensor dimensionality of ",
+                output_dims.size());
+  }
+  std::vector<size_t> normalized_dims{output_dims.begin() + start_dim,
+                                      output_dims.end()};
+
   auto dist = this->get_prev_activations().DistData();
   dist.colDist = El::STAR;
   m_statistics.reset(AbsDistMatrixType::Instantiate(dist));
@@ -293,7 +328,7 @@ void layer_norm_layer<TensorDataType, Layout, Device>::setup_data(
       this->m_model->add_weights(std::move(w));
     }
     auto& weights = this->get_weights(weight_idx);
-    weights.set_dims(out_dims);
+    weights.set_dims(normalized_dims);
     weights.set_matrix_distribution(dist);
     m_scale_gradient.reset(AbsDistMatrixType::Instantiate(dist));
     m_scale_gradient->AlignWith(dist);
@@ -314,13 +349,40 @@ void layer_norm_layer<TensorDataType, Layout, Device>::setup_data(
       this->m_model->add_weights(std::move(w));
     }
     auto& weights = this->get_weights(weight_idx);
-    weights.set_dims(out_dims);
+    weights.set_dims(normalized_dims);
     weights.set_matrix_distribution(dist);
     m_bias_gradient.reset(AbsDistMatrixType::Instantiate(dist));
     m_bias_gradient->AlignWith(dist);
     m_bias_gradient->Resize(weights.get_matrix_height(),
                             weights.get_matrix_width());
   }
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void layer_norm_layer<TensorDataType, Layout, Device>::get_normdims(
+  El::Int& normalization_size,
+  El::Int& num_normalized,
+  El::Int& normalization_stride)
+{
+  auto const& dims = this->get_output_dims();
+  unsigned int start_dim;
+  if (m_start_dim >= 0) {
+    start_dim = static_cast<unsigned int>(m_start_dim);
+  }
+  else {
+    start_dim = static_cast<unsigned int>(dims.size() + m_start_dim);
+  }
+
+  num_normalized = 1;
+  normalization_size = 1;
+  for (unsigned int i = 0; i < start_dim; ++i) {
+    num_normalized *= dims[i];
+  }
+  for (unsigned int i = start_dim; i < dims.size(); ++i) {
+    normalization_size *= dims[i];
+  }
+  // Assuming contiguous tensors for now
+  normalization_stride = normalization_size;
 }
 
 LBANN_DEFINE_LAYER_BUILDER(layer_norm);

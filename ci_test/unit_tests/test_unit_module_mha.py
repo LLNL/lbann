@@ -54,7 +54,7 @@ def test_multihead_attention():
     tester.make_reference(activations)
 
     # Test module
-    from lbann.modules.transformer import MultiheadAttention
+    from lbann.modules.transformer.attention import MultiheadAttention
     mha = MultiheadAttention(
         embed_dim=embed_dim,
         num_heads=num_heads,
@@ -105,7 +105,7 @@ def test_self_attention():
     tester.make_reference(activations)
 
     # Test module
-    from lbann.modules.transformer import MultiheadAttention
+    from lbann.modules.transformer.attention import MultiheadAttention
     mha = MultiheadAttention(
         embed_dim=embed_dim,
         num_heads=num_heads,

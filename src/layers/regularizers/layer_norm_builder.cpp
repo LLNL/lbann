@@ -37,21 +37,25 @@ lbann::build_layer_norm_layer_from_pbuf(lbann_comm* /*comm*/,
   auto const& params = proto_layer.layer_norm();
   bool const scale = params.scale();
   bool const bias = params.bias();
+  int const start_dim = params.start_dim();
   double const epsilon =
     (params.has_epsilon() ? params.epsilon().value() : 1e-5);
   if constexpr (std::is_same_v<T, float>)
     return std::make_unique<layer_norm_layer<float, L, D>>(epsilon,
                                                            scale,
-                                                           bias);
+                                                           bias,
+                                                           start_dim);
 #ifdef LBANN_HAS_DOUBLE
   else if constexpr (std::is_same_v<T, double>)
     return std::make_unique<layer_norm_layer<double, L, D>>(epsilon,
                                                             scale,
-                                                            bias);
+                                                            bias,
+                                                            start_dim);
 #endif // LBANN_HAS_DOUBLE
   else {
     (void)scale;
     (void)bias;
+    (void)start_dim;
     (void)epsilon;
     LBANN_ERROR(
       "layer_norm_layer is only supported for \"float\" and \"double\".");

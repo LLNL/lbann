@@ -4,9 +4,9 @@ import test_util
 import pytest
 
 
-def numpy_layer_norm(x, scale=None, bias=None, eps=1e-5):
-    mean = x.mean(axis=-1, keepdims=True)
-    std = x.std(axis=-1, ddof=0, keepdims=True)
+def numpy_layer_norm(x, scale=None, bias=None, eps=1e-5, dims=-1):
+    mean = x.mean(axis=dims, keepdims=True)
+    std = x.std(axis=dims, ddof=0, keepdims=True)
     result = (x - mean) / (std + eps)
     if scale is not None:
         result *= scale
@@ -33,6 +33,30 @@ def test_layernorm_basic():
     # Set test loss with a fixed tolerance (since all the values are close to
     # zero by design)
     tester.set_loss(lbann.MeanSquaredError(y, ref), tolerance=1e-8)
+    tester.set_check_gradients_tensor(lbann.Square(y))
+    return tester
+
+
+@pytest.mark.parametrize('start_dim', (-1, 1, 0))
+@test_util.lbann_test(check_gradients=True, train=True)
+def test_layernorm_multidim(start_dim):
+    np.random.seed(20230814)
+    num_samples = 31
+    sample_size = [31, 2, 5]
+    sdim = (len(sample_size) + start_dim) if start_dim < 0 else start_dim
+    dims = tuple(d+1 for d in range(sdim, len(sample_size)))
+    samples = np.random.rand(num_samples, *sample_size).astype(np.float32)
+    reference = numpy_layer_norm(samples, dims=dims)
+
+    tester = test_util.ModelTester()
+    x = tester.inputs(samples)
+    ref = tester.make_reference(reference)
+
+    y = lbann.LayerNorm(x, start_dim=start_dim)
+
+    # Set test loss with a fixed tolerance (since all the values are close to
+    # zero by design)
+    tester.set_loss(lbann.MeanSquaredError(y, ref), tolerance=1e-7)
     tester.set_check_gradients_tensor(lbann.Square(y))
     return tester
 
