@@ -94,7 +94,7 @@ static inline void print_progress(int iteration,
     std::cout << "\r" << std::flush;
 }
 
-static inline std::string get_objective_function(lbann::model* m)
+static inline std::string get_objective_function(lbann::model* m, bool scinot)
 {
   std::stringstream stream;
   stream << "Objective: ";
@@ -126,7 +126,13 @@ static inline std::string get_objective_function(lbann::model* m)
 
     if (!first)
       stream << ", ";
-    stream << std::fixed << std::setprecision(4) << objective;
+
+    if (scinot)
+      stream << std::scientific;
+    else
+      stream << std::fixed;
+
+    stream << std::setprecision(4) << objective;
     first = false;
   }
 
@@ -152,6 +158,7 @@ void progress_bar::write_specific_proto(lbann_data::Callback& proto) const
   msg->set_print_mem_usage(this->m_print_mem_usage);
   msg->set_moving_average_length(this->m_moving_average_length);
   msg->set_bar_width(this->m_bar_width);
+  msg->set_scientific_notation(this->m_scientific_notation);
 }
 
 void progress_bar::on_epoch_begin(model* m)
@@ -189,7 +196,7 @@ void progress_bar::on_forward_prop_begin(model* m)
       for (int i = 0; i < to_avg; ++i)
         avg_time += m_moving_avg_time[i];
       avg_time /= to_avg;
-      prefix = get_objective_function(m);
+      prefix = get_objective_function(m, this->m_scientific_notation);
     }
     print_progress(m_current_iteration,
                    m_training_iterations,
@@ -217,7 +224,8 @@ std::unique_ptr<callback_base> build_progress_bar_callback_from_pbuf(
                                         params.newline_interval(),
                                         params.print_mem_usage(),
                                         params.moving_average_length(),
-                                        params.bar_width());
+                                        params.bar_width(),
+                                        params.scientific_notation());
 }
 
 } // namespace callback

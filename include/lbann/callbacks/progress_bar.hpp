@@ -56,13 +56,15 @@ public:
                int newline_interval = 0,
                bool print_mem_usage = false,
                int moving_average_length = 10,
-               int bar_width = 30)
+               int bar_width = 30,
+               bool scientific_notation = false)
     : callback_base(batch_interval),
       m_newline_interval(newline_interval),
       m_print_mem_usage(print_mem_usage),
       m_moving_average_length(moving_average_length ? moving_average_length
                                                     : 10),
-      m_bar_width(bar_width ? bar_width : 30)
+      m_bar_width(bar_width ? bar_width : 30),
+      m_scientific_notation(scientific_notation)
   {}
   progress_bar(const progress_bar&) = default;
   progress_bar& operator=(const progress_bar&) = default;
@@ -93,6 +95,7 @@ private:
   bool m_print_mem_usage;
   int m_moving_average_length;
   int m_bar_width;
+  bool m_scientific_notation;
 
   // Cached values for epochs
   bool m_print;

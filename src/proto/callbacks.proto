@@ -467,8 +467,10 @@ message Callback {
     bool print_mem_usage = 3;         // If true, also prints GPU memory usage
     int64 moving_average_length = 4;  // The number of iterations to compute a
                                       // average of iteration time on.
-    int64 bar_width = 5;  // The width (in characters) of the printed
-                          // progress bar.
+    int64 bar_width = 5;           // The width (in characters) of the printed
+                                   // progress bar.
+    bool scientific_notation = 6;  // Use scientific notation for objective
+                                   // function values
   }
 
   message CallbackMemoryProfiler {
