@@ -36,12 +36,8 @@ namespace lbann {
 class python_reader_v2 : public generic_data_reader
 {
 public:
-  python_reader_v2(std::string module,
-                std::string module_dir,
-                std::string sample_function,
-                std::string num_samples_function,
-                std::string sample_dims_function,
-                bool shuffle);
+  python_reader_v2(std::string dataset_path,
+                   bool shuffle);
   python_reader_v2(const python_reader_v2&) = default;
   python_reader_v2& operator=(const python_reader_v2&) = default;
   ~python_reader_v2() override;
@@ -51,12 +47,18 @@ public:
 
   const std::vector<El::Int> get_data_dims() const override;
   int get_num_labels() const override;
+  int get_num_responses() const override;
   int get_linearized_data_size() const override;
   int get_linearized_label_size() const override;
+  int get_linearized_response_size() const override;
 
   void setup(int num_io_threads,
              observer_ptr<thread_pool> io_thread_pool) override;
   void load() override;
+
+#ifdef LBANN_HAS_DISTCONV
+  bool is_tensor_shuffle_required() const override { return m_tensor_shuffle_required; }
+#endif // LBANN_HAS_DISTCONV
 
 protected:
   bool fetch_data_block(std::map<data_field_type, CPUMat*>& input_buffers,
@@ -67,19 +69,29 @@ protected:
                         uint64_t mb_size,
                         El::Matrix<El::Int>& indices_fetched,
                         execution_mode mode = execution_mode::invalid) override;
-  bool fetch_label(CPUMat& Y, uint64_t data_id, uint64_t mb_idx) override;
 
 private:
   /** @brief Dimensions of data sample tensor. */
   std::vector<El::Int> m_sample_dims;
+  /** @brief Size of label tensor. */
+  El::Int m_num_labels;
+  /** @brief Size of response tensor. */
+  El::Int m_num_responses;
   /** @brief Number of data samples in data set. */
   El::Int m_num_samples;
+
+  /** @brief User-provided Python dataset object.
+   *
+   *  The object must be a child of lbann.util.Dataset.
+   */
+  python::object m_dataset;
+
 
   /** @brief User-provided Python function to access data samples.
    *
    *  The function is expected to take one integer argument for the
-   *  sample index. It must return an iterator that defines the
-   *  entries in a data sample.
+   *  sample index. It must return a lbann.util.Sample object whose
+   *  attributes can be converted to memoryviews.
    */
   python::object m_sample_function;
 
@@ -108,6 +120,23 @@ private:
    *  Points to buffer for @c m_shared_memory_array.
    */
   DataType* m_shared_memory_array_ptr = nullptr;
+
+  /** @brief Response shared memory array.
+   *
+   *  @c RawArray from the Python @c multiprocessing module.
+   */
+  python::object m_response_shared_memory_array;
+
+  /** @brief Pointer into response shared memory array.
+   *
+   *  Points to buffer for @c m_shared_memory_array.
+   */
+  DataType* m_response_shared_memory_array_ptr = nullptr;
+
+#ifdef LBANN_HAS_DISTCONV
+  /** @brief Whether or not tensor needs shuffling for distconv. */
+  bool m_tensor_shuffle_required = true;
+#endif // LBANN_HAS_DISTCONV
 };
 
 } // namespace lbann

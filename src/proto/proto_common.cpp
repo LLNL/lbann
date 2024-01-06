@@ -449,11 +449,7 @@ void init_data_readers(
     else if (name == "python_v2") {
 #ifdef LBANN_HAS_EMBEDDED_PYTHON
       const auto& params = readme.python_v2();
-      reader = new python_reader_v2(params.module(),
-                                    params.module_dir(),
-                                    params.sample_function(),
-                                    params.num_samples_function(),
-                                    params.sample_dims_function(),
+      reader = new python_reader_v2(params.dataset_path(),
                                     shuffle);
 #else
       LBANN_ERROR("attempted to construct Python data reader, "
@@ -666,12 +662,8 @@ void init_data_readers(
           else if (name == "python_v2") {
 #ifdef LBANN_HAS_EMBEDDED_PYTHON
             const auto& params = readme.python_v2();
-            split_reader = new python_reader_v2(params.module(),
-                                             params.module_dir(),
-                                             params.sample_function(),
-                                             params.num_samples_function(),
-                                             params.sample_dims_function(),
-                                             shuffle);
+            split_reader = new python_reader_v2(params.dataset_path(),
+                                                shuffle);
             (*(python_reader_v2*)split_reader) = (*(python_reader_v2*)reader);
 #else
             LBANN_ERROR("attempted to construct Python data reader, "
