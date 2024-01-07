@@ -41,86 +41,6 @@
 
 namespace lbann {
 
-python_reader_v2::python_reader_v2(std::string dataset_path,
-                                   bool shuffle)
-  : generic_data_reader(shuffle)
-{
-
-  // Make sure Python is running and acquire GIL
-  python::global_interpreter_lock gil;
-
-  // Load the dataset object
-  static El::Int instance_id = 0;
-  instance_id++;
-  const std::string dataset_name =
-    ("_DATA_READER_PYTHON_CPP_dataset" +
-     std::to_string(instance_id));
-  std::string load_command = R"(
-import pickle
-with open('@dataset_path@', 'rb') as f:
-  @dataset_name@ = pickle.load(f)
-)";
-  load_command = std::regex_replace(load_command,
-                                    std::regex("\\@dataset_path\\@"),
-                                    dataset_path);
-  load_command = std::regex_replace(load_command,
-                                    std::regex("\\@dataset_name\\@"),
-                                    dataset_name);
-  PyRun_SimpleString(load_command.c_str());
-  python::object main_module = PyImport_ImportModule("__main__");
-  m_dataset = PyObject_GetAttrString(main_module, dataset_name.c_str());
-  python::check_error();
-
-#ifdef LBANN_HAS_DISTCONV
-  // Check if dataset supports distconv
-  python::object lbann_data_module = PyImport_ImportModule("lbann.util.data");
-  python::object distconv_dataset_class = PyObject_GetAttrString(lbann_data_module, "DistConvDataset");
-  if (PyObject_IsInstance(m_dataset, distconv_dataset_class)) {
-    m_tensor_shuffle_required = false;
-    PyObject_SetAttrString(m_dataset, "rank", PyLong_FromLong(m_comm->get_rank_in_trainer()));
-    PyObject_SetAttrString(m_dataset, "num_io_partitions", PyLong_FromLong(dc::get_number_of_io_partitions()));
-  }
-  python::check_error();
-#endif // LBANN_HAS_DISTCONV
-
-  // Get number of samples
-  python::object num = PyObject_CallMethod(m_dataset, "__len__", nullptr);
-  m_num_samples = PyLong_AsLong(num);
-  python::check_error();
-
-  // Get sample dimensions
-  python::object sample_dims = PyObject_GetAttrString(m_dataset, "sample_dims");
-  python::object dims;
-  if (PyObject_HasAttrString(sample_dims, "sample")) {
-    dims = PyObject_GetAttrString(sample_dims, "sample");
-    dims = PyObject_GetIter(dims);
-    for (auto d = PyIter_Next(dims); d != nullptr; d = PyIter_Next(dims)) {
-      m_sample_dims.push_back(PyLong_AsLong(d));
-      Py_DECREF(d);
-    }
-    python::check_error();
-  }
-
-  // Get label dimensions
-  if (PyObject_HasAttrString(sample_dims, "label")) {
-    dims = PyObject_GetAttrString(sample_dims, "label");
-    m_num_labels = PyLong_AsLong(dims);
-    python::check_error();
-    generic_data_reader::set_has_labels(true);
-  }
-
-  // Get response dimensions
-  if (PyObject_HasAttrString(sample_dims, "response")) {
-    dims = PyObject_GetAttrString(sample_dims, "response");
-    m_num_responses = PyLong_AsLong(dims);
-    python::check_error();
-    generic_data_reader::set_has_responses(true);
-  }
-
-  // Get sample access function
-  m_sample_function = PyObject_GetAttrString(m_dataset, "__getitem__");
-}
-
 python_reader_v2::~python_reader_v2()
 {
   if (python::is_active() && m_process_pool != nullptr) {
@@ -173,7 +93,11 @@ bool python_reader_v2::fetch_data_block(
   python::global_interpreter_lock gil;
 
   // Check that shared memory array is large enough
-  const uint64_t sample_size = get_linearized_data_size();
+  uint64_t num_io_partitions = 1;
+#ifdef LBANN_HAS_DISTCONV
+  num_io_partitions = dc::get_number_of_io_partitions();
+#endif // LBANN_HAS_DISTCONV
+  const uint64_t sample_size = get_linearized_data_size() / num_io_partitions;
   const uint64_t array_size = PyObject_Length(m_shared_memory_array);
   if (array_size < sample_size * mb_size) {
     std::stringstream err;
@@ -232,7 +156,7 @@ void python_reader_v2::setup(int num_io_threads,
 
   // Import modules
   python::object main_module = PyImport_ImportModule("__main__");
-  python::object ctypes_module = PyImport_ImportModule("ctypes");
+    python::object ctypes_module = PyImport_ImportModule("ctypes");
   python::object multiprocessing_module =
     PyImport_ImportModule("multiprocessing");
 
@@ -409,6 +333,80 @@ def @init_func@():
 
 void python_reader_v2::load()
 {
+  // Make sure Python is running and acquire GIL
+  python::global_interpreter_lock gil;
+
+  // Load the dataset object
+  static El::Int instance_id = 0;
+  instance_id++;
+  const std::string dataset_name =
+    ("_DATA_READER_PYTHON_CPP_dataset" +
+     std::to_string(instance_id));
+  std::string load_command = R"(
+import pickle
+with open('@dataset_path@', 'rb') as f:
+  @dataset_name@ = pickle.load(f)
+)";
+  load_command = std::regex_replace(load_command,
+                                    std::regex("\\@dataset_path\\@"),
+                                    m_dataset_path);
+  load_command = std::regex_replace(load_command,
+                                    std::regex("\\@dataset_name\\@"),
+                                    dataset_name);
+  PyRun_SimpleString(load_command.c_str());
+  python::object main_module = PyImport_ImportModule("__main__");
+  m_dataset = PyObject_GetAttrString(main_module, dataset_name.c_str());
+  python::check_error();
+
+#ifdef LBANN_HAS_DISTCONV
+  // Check if dataset supports distconv
+  python::object lbann_data_module = PyImport_ImportModule("lbann.util.data");
+  python::object distconv_dataset_class = PyObject_GetAttrString(lbann_data_module, "DistConvDataset");
+  if (PyObject_IsInstance(m_dataset, distconv_dataset_class)) {
+    m_tensor_shuffle_required = false;
+    PyObject_SetAttrString(m_dataset, "rank", PyLong_FromLong(get_comm()->get_rank_in_trainer()));
+    PyObject_SetAttrString(m_dataset, "num_io_partitions", PyLong_FromLong(dc::get_number_of_io_partitions()));
+  }
+  python::check_error();
+#endif // LBANN_HAS_DISTCONV
+
+  // Get number of samples
+  python::object num = PyObject_CallMethod(m_dataset, "__len__", nullptr);
+  m_num_samples = PyLong_AsLong(num);
+  python::check_error();
+
+  // Get sample dimensions
+  python::object sample_dims = PyObject_GetAttrString(m_dataset, "sample_dims");
+  python::object dims;
+  if (PyObject_HasAttrString(sample_dims, "sample")) {
+    dims = PyObject_GetAttrString(sample_dims, "sample");
+    dims = PyObject_GetIter(dims);
+    for (auto d = PyIter_Next(dims); d != nullptr; d = PyIter_Next(dims)) {
+      m_sample_dims.push_back(PyLong_AsLong(d));
+      Py_DECREF(d);
+    }
+    python::check_error();
+  }
+
+  // Get label dimensions
+  if (PyObject_HasAttrString(sample_dims, "label")) {
+    dims = PyObject_GetAttrString(sample_dims, "label");
+    m_num_labels = PyLong_AsLong(dims);
+    python::check_error();
+    generic_data_reader::set_has_labels(true);
+  }
+
+  // Get response dimensions
+  if (PyObject_HasAttrString(sample_dims, "response")) {
+    dims = PyObject_GetAttrString(sample_dims, "response");
+    m_num_responses = PyLong_AsLong(dims);
+    python::check_error();
+    generic_data_reader::set_has_responses(true);
+  }
+
+  // Get sample access function
+  m_sample_function = PyObject_GetAttrString(m_dataset, "__getitem__");
+
   m_shuffled_indices.resize(m_num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   resize_shuffled_indices();
