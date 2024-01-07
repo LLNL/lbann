@@ -37,7 +37,8 @@ class python_reader_v2 : public generic_data_reader
 {
 public:
   python_reader_v2(std::string dataset_path,
-                   bool shuffle);
+                   bool shuffle)
+    : generic_data_reader(shuffle), m_dataset_path(dataset_path) {}
   python_reader_v2(const python_reader_v2&) = default;
   python_reader_v2& operator=(const python_reader_v2&) = default;
   ~python_reader_v2() override;
@@ -71,6 +72,8 @@ protected:
                         execution_mode mode = execution_mode::invalid) override;
 
 private:
+  /** @brief Path to the pickled dataset object. */
+  std::string m_dataset_path;
   /** @brief Dimensions of data sample tensor. */
   std::vector<El::Int> m_sample_dims;
   /** @brief Size of label tensor. */
@@ -85,7 +88,6 @@ private:
    *  The object must be a child of lbann.util.Dataset.
    */
   python::object m_dataset;
-
 
   /** @brief User-provided Python function to access data samples.
    *
