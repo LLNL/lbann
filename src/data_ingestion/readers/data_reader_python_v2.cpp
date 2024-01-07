@@ -133,6 +133,16 @@ bool python_reader_v2::fetch_data_block(
                               sample_size);
   El::Copy(shared_memory_matrix, X);
 
+  if (has_labels()) {
+    CPUMat& Y = *(input_buffers[INPUT_DATA_TYPE_LABELS]);
+    // Copy data from shared memory to output matrix
+    CPUMat label_shared_memory_matrix(get_num_labels(),
+                                mb_size,
+                                m_label_shared_memory_array_ptr,
+                                get_num_labels());
+    El::Copy(label_shared_memory_matrix, Y);
+  }
+
   if (has_responses()) {
     CPUMat& Y = *(input_buffers[INPUT_DATA_TYPE_RESPONSES]);
     // Copy data from shared memory to output matrix
@@ -142,6 +152,8 @@ bool python_reader_v2::fetch_data_block(
                                 get_num_responses());
     El::Copy(response_shared_memory_matrix, Y);
   }
+
+  /// @todo Implement label reconstruction case
 
   return true;
 }
@@ -220,6 +232,28 @@ void python_reader_v2::setup(int num_io_threads,
                          m_shared_memory_array);
   python::check_error();
 
+  std::string label_shared_array_name = "None";
+  if (has_labels()) {
+    m_label_shared_memory_array = PyObject_CallMethod(multiprocessing_module,
+                                                "RawArray",
+                                                "(s, l)",
+                                                datatype_typecode.c_str(),
+                                                get_num_labels() * mini_batch_size);
+    python::object label_shared_memory_ptr =
+      PyObject_CallMethod(ctypes_module,
+                          "addressof",
+                          "(O)",
+                          m_label_shared_memory_array.get());
+    m_label_shared_memory_array_ptr = reinterpret_cast<DataType*>(PyLong_AsLong(label_shared_memory_ptr));
+    label_shared_array_name =
+      ("_DATA_READER_PYTHON_CPP_label_shared_memory_array" +
+      std::to_string(instance_id));
+    PyObject_SetAttrString(main_module,
+                          label_shared_array_name.c_str(),
+                          m_label_shared_memory_array);
+    python::check_error();
+  }
+
   std::string response_shared_array_name = "None";
   if (has_responses()) {
     m_response_shared_memory_array = PyObject_CallMethod(multiprocessing_module,
@@ -241,6 +275,8 @@ void python_reader_v2::setup(int num_io_threads,
                           m_response_shared_memory_array);
     python::check_error();
   }
+
+  /// @todo Implement label reconstruction case
 
   // Create wrapper around sample function
   // Note: We attempt accessing the sample with the buffer protocol
@@ -264,8 +300,17 @@ def @wrapper_func@(sample_index, array_offset):
     output_buffer = output_buffer.cast('B').cast('@datatype_typecode@')
     output_buffer[:] = input_buffer
 
+    # Get label
+    if hasattr(sample, 'label'):
+        label = sample.label
+        input_buffer = memoryview(label)
+        output_buffer = memoryview(@label_shared_array@)
+        output_buffer = output_buffer[array_offset*len(label):(array_offset+1)*len(label)]
+        output_buffer = output_buffer.cast('B').cast('@datatype_typecode@')
+        output_buffer[:] = input_buffer
+
     # Get response
-    if sample.response is not None:
+    if hasattr(sample, 'response'):
         response = sample.response
         input_buffer = memoryview(response)
         output_buffer = memoryview(@response_shared_array@)
@@ -282,6 +327,9 @@ def @wrapper_func@(sample_index, array_offset):
   wrapper_func_def = std::regex_replace(wrapper_func_def,
                                         std::regex("\\@shared_array\\@"),
                                         shared_array_name);
+  wrapper_func_def = std::regex_replace(wrapper_func_def,
+                                        std::regex("\\@label_shared_array\\@"),
+                                        label_shared_array_name);
   wrapper_func_def = std::regex_replace(wrapper_func_def,
                                         std::regex("\\@response_shared_array\\@"),
                                         response_shared_array_name);
@@ -388,13 +436,13 @@ with open('@dataset_path@', 'rb') as f:
     python::check_error();
   }
 
-  // Get label dimensions
+      // Get label dimensions
   if (PyObject_HasAttrString(sample_dims, "label")) {
     dims = PyObject_GetAttrString(sample_dims, "label");
     m_num_labels = PyLong_AsLong(dims);
     python::check_error();
     generic_data_reader::set_has_labels(true);
-  }
+      }
 
   // Get response dimensions
   if (PyObject_HasAttrString(sample_dims, "response")) {
