@@ -36,13 +36,16 @@ namespace lbann {
 class python_reader_v2 : public generic_data_reader
 {
 public:
-  python_reader_v2(std::string dataset_path,
-                   bool shuffle)
-    : generic_data_reader(shuffle), m_dataset_path(dataset_path) {}
+  python_reader_v2(std::string dataset_path, bool shuffle)
+    : generic_data_reader(shuffle), m_dataset_path(dataset_path)
+  {}
   python_reader_v2(const python_reader_v2&) = default;
   python_reader_v2& operator=(const python_reader_v2&) = default;
   ~python_reader_v2() override;
-  python_reader_v2* copy() const override { return new python_reader_v2(*this); }
+  python_reader_v2* copy() const override
+  {
+    return new python_reader_v2(*this);
+  }
 
   std::string get_type() const override { return "python_reader_v2"; }
 
@@ -58,7 +61,10 @@ public:
   void load() override;
 
 #ifdef LBANN_HAS_DISTCONV
-  bool is_tensor_shuffle_required() const override { return m_tensor_shuffle_required; }
+  bool is_tensor_shuffle_required() const override
+  {
+    return m_tensor_shuffle_required;
+  }
 #endif // LBANN_HAS_DISTCONV
 
 protected:
