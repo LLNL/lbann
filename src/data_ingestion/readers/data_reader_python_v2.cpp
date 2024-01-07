@@ -424,7 +424,7 @@ with open('@dataset_path@', 'rb') as f:
   python::check_error();
 
   // Get sample dimensions
-  python::object sample_dims = PyObject_GetAttrString(m_dataset, "sample_dims");
+  python::object sample_dims = PyObject_CallMethod(m_dataset, "get_sample_dims", nullptr);
   python::object dims;
   if (PyObject_HasAttrString(sample_dims, "sample")) {
     dims = PyObject_GetAttrString(sample_dims, "sample");
@@ -436,13 +436,13 @@ with open('@dataset_path@', 'rb') as f:
     python::check_error();
   }
 
-      // Get label dimensions
+  // Get label dimensions
   if (PyObject_HasAttrString(sample_dims, "label")) {
     dims = PyObject_GetAttrString(sample_dims, "label");
     m_num_labels = PyLong_AsLong(dims);
     python::check_error();
     generic_data_reader::set_has_labels(true);
-      }
+  }
 
   // Get response dimensions
   if (PyObject_HasAttrString(sample_dims, "response")) {
