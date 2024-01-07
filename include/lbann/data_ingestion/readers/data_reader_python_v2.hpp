@@ -131,9 +131,21 @@ private:
 
   /** @brief Pointer into response shared memory array.
    *
-   *  Points to buffer for @c m_shared_memory_array.
+   *  Points to buffer for @c m_response_shared_memory_array.
    */
   DataType* m_response_shared_memory_array_ptr = nullptr;
+
+  /** @brief Label shared memory array.
+   *
+   *  @c RawArray from the Python @c multiprocessing module.
+   */
+  python::object m_label_shared_memory_array;
+
+  /** @brief Pointer into label shared memory array.
+   *
+   *  Points to buffer for @c m_label_shared_memory_array.
+   */
+  DataType* m_label_shared_memory_array_ptr = nullptr;
 
 #ifdef LBANN_HAS_DISTCONV
   /** @brief Whether or not tensor needs shuffling for distconv. */
