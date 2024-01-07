@@ -113,9 +113,8 @@ bool python_reader_v2::fetch_data_block(
   for (uint64_t i = 0; i < mb_size; ++i) {
     El::Int sample_index =
       m_shuffled_indices[current_position_in_data_set + i * sample_stride];
-    PyList_Append(
-      args_list,
-      python::object(Py_BuildValue("(l,l)", sample_index, i)));
+    PyList_Append(args_list,
+                  python::object(Py_BuildValue("(l,l)", sample_index, i)));
     indices_fetched.Set(i, 0, sample_index);
   }
 
@@ -137,9 +136,9 @@ bool python_reader_v2::fetch_data_block(
     CPUMat& Y = *(input_buffers[INPUT_DATA_TYPE_LABELS]);
     // Copy data from shared memory to output matrix
     CPUMat label_shared_memory_matrix(get_num_labels(),
-                                mb_size,
-                                m_label_shared_memory_array_ptr,
-                                get_num_labels());
+                                      mb_size,
+                                      m_label_shared_memory_array_ptr,
+                                      get_num_labels());
     El::Copy(label_shared_memory_matrix, Y);
   }
 
@@ -147,9 +146,9 @@ bool python_reader_v2::fetch_data_block(
     CPUMat& Y = *(input_buffers[INPUT_DATA_TYPE_RESPONSES]);
     // Copy data from shared memory to output matrix
     CPUMat response_shared_memory_matrix(get_num_responses(),
-                                mb_size,
-                                m_response_shared_memory_array_ptr,
-                                get_num_responses());
+                                         mb_size,
+                                         m_response_shared_memory_array_ptr,
+                                         get_num_responses());
     El::Copy(response_shared_memory_matrix, Y);
   }
 
@@ -168,7 +167,7 @@ void python_reader_v2::setup(int num_io_threads,
 
   // Import modules
   python::object main_module = PyImport_ImportModule("__main__");
-    python::object ctypes_module = PyImport_ImportModule("ctypes");
+  python::object ctypes_module = PyImport_ImportModule("ctypes");
   python::object multiprocessing_module =
     PyImport_ImportModule("multiprocessing");
 
@@ -234,45 +233,49 @@ void python_reader_v2::setup(int num_io_threads,
 
   std::string label_shared_array_name = "None";
   if (has_labels()) {
-    m_label_shared_memory_array = PyObject_CallMethod(multiprocessing_module,
-                                                "RawArray",
-                                                "(s, l)",
-                                                datatype_typecode.c_str(),
-                                                get_num_labels() * mini_batch_size);
+    m_label_shared_memory_array =
+      PyObject_CallMethod(multiprocessing_module,
+                          "RawArray",
+                          "(s, l)",
+                          datatype_typecode.c_str(),
+                          get_num_labels() * mini_batch_size);
     python::object label_shared_memory_ptr =
       PyObject_CallMethod(ctypes_module,
                           "addressof",
                           "(O)",
                           m_label_shared_memory_array.get());
-    m_label_shared_memory_array_ptr = reinterpret_cast<DataType*>(PyLong_AsLong(label_shared_memory_ptr));
+    m_label_shared_memory_array_ptr =
+      reinterpret_cast<DataType*>(PyLong_AsLong(label_shared_memory_ptr));
     label_shared_array_name =
       ("_DATA_READER_PYTHON_CPP_label_shared_memory_array" +
-      std::to_string(instance_id));
+       std::to_string(instance_id));
     PyObject_SetAttrString(main_module,
-                          label_shared_array_name.c_str(),
-                          m_label_shared_memory_array);
+                           label_shared_array_name.c_str(),
+                           m_label_shared_memory_array);
     python::check_error();
   }
 
   std::string response_shared_array_name = "None";
   if (has_responses()) {
-    m_response_shared_memory_array = PyObject_CallMethod(multiprocessing_module,
-                                                "RawArray",
-                                                "(s, l)",
-                                                datatype_typecode.c_str(),
-                                                get_num_responses() * mini_batch_size);
+    m_response_shared_memory_array =
+      PyObject_CallMethod(multiprocessing_module,
+                          "RawArray",
+                          "(s, l)",
+                          datatype_typecode.c_str(),
+                          get_num_responses() * mini_batch_size);
     python::object response_shared_memory_ptr =
       PyObject_CallMethod(ctypes_module,
                           "addressof",
                           "(O)",
                           m_response_shared_memory_array.get());
-    m_response_shared_memory_array_ptr = reinterpret_cast<DataType*>(PyLong_AsLong(response_shared_memory_ptr));
+    m_response_shared_memory_array_ptr =
+      reinterpret_cast<DataType*>(PyLong_AsLong(response_shared_memory_ptr));
     response_shared_array_name =
       ("_DATA_READER_PYTHON_CPP_response_shared_memory_array" +
-      std::to_string(instance_id));
+       std::to_string(instance_id));
     PyObject_SetAttrString(main_module,
-                          response_shared_array_name.c_str(),
-                          m_response_shared_memory_array);
+                           response_shared_array_name.c_str(),
+                           m_response_shared_memory_array);
     python::check_error();
   }
 
@@ -330,9 +333,10 @@ def @wrapper_func@(sample_index, array_offset):
   wrapper_func_def = std::regex_replace(wrapper_func_def,
                                         std::regex("\\@label_shared_array\\@"),
                                         label_shared_array_name);
-  wrapper_func_def = std::regex_replace(wrapper_func_def,
-                                        std::regex("\\@response_shared_array\\@"),
-                                        response_shared_array_name);
+  wrapper_func_def =
+    std::regex_replace(wrapper_func_def,
+                       std::regex("\\@response_shared_array\\@"),
+                       response_shared_array_name);
   wrapper_func_def = std::regex_replace(wrapper_func_def,
                                         std::regex("\\@sample_size\\@"),
                                         std::to_string(sample_size));
@@ -388,8 +392,7 @@ void python_reader_v2::load()
   static El::Int instance_id = 0;
   instance_id++;
   const std::string dataset_name =
-    ("_DATA_READER_PYTHON_CPP_dataset" +
-     std::to_string(instance_id));
+    ("_DATA_READER_PYTHON_CPP_dataset" + std::to_string(instance_id));
   std::string load_command = R"(
 import pickle
 with open('@dataset_path@', 'rb') as f:
@@ -409,11 +412,16 @@ with open('@dataset_path@', 'rb') as f:
 #ifdef LBANN_HAS_DISTCONV
   // Check if dataset supports distconv
   python::object lbann_data_module = PyImport_ImportModule("lbann.util.data");
-  python::object distconv_dataset_class = PyObject_GetAttrString(lbann_data_module, "DistConvDataset");
+  python::object distconv_dataset_class =
+    PyObject_GetAttrString(lbann_data_module, "DistConvDataset");
   if (PyObject_IsInstance(m_dataset, distconv_dataset_class)) {
     m_tensor_shuffle_required = false;
-    PyObject_SetAttrString(m_dataset, "rank", PyLong_FromLong(get_comm()->get_rank_in_trainer()));
-    PyObject_SetAttrString(m_dataset, "num_io_partitions", PyLong_FromLong(dc::get_number_of_io_partitions()));
+    PyObject_SetAttrString(m_dataset,
+                           "rank",
+                           PyLong_FromLong(get_comm()->get_rank_in_trainer()));
+    PyObject_SetAttrString(m_dataset,
+                           "num_io_partitions",
+                           PyLong_FromLong(dc::get_number_of_io_partitions()));
   }
   python::check_error();
 #endif // LBANN_HAS_DISTCONV
@@ -424,7 +432,8 @@ with open('@dataset_path@', 'rb') as f:
   python::check_error();
 
   // Get sample dimensions
-  python::object sample_dims = PyObject_CallMethod(m_dataset, "get_sample_dims", nullptr);
+  python::object sample_dims =
+    PyObject_CallMethod(m_dataset, "get_sample_dims", nullptr);
   python::object dims;
   if (PyObject_HasAttrString(sample_dims, "sample")) {
     dims = PyObject_GetAttrString(sample_dims, "sample");
