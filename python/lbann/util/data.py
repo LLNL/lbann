@@ -34,7 +34,7 @@ class DistConvDataset(Dataset):
     @property
     def rank(self):
         if not hasattr(self, '_rank'):
-            self._rank = 0
+            raise Exception('Rank is not set for distconv data reader')
         return self._rank
     
     @rank.setter
@@ -44,7 +44,7 @@ class DistConvDataset(Dataset):
     @property
     def num_io_partitions(self):
         if not hasattr(self, '_num_io_partitions'):
-            self._num_io_partitions = 1
+            raise Exception('Number of IO partitions is not set for distconv data reader')
         return self._num_io_partitions
 
     @num_io_partitions.setter
