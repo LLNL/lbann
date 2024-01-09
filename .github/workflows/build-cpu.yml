@@ -31,13 +31,11 @@ jobs:
         sudo apt-get install -y libblas-dev libopenblas-dev liblapacke-dev
         sudo apt-get install -y openmpi-bin openmpi-common libopenmpi-dev
         python -m pip install --upgrade pip
-
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
+        source /usr/share/lmod/lmod/init/bash
 
     - name: Test dependencies
       run: |
-        lmod avail
+        module avail
 
     - name: Restore cached Spack-built dependencies
       id: cache-spack
