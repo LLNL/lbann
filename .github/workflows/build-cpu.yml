@@ -33,14 +33,12 @@ jobs:
     - name: Build LBANN
       run: |
         source spack/share/spack/setup-env.sh
-        if [ "${{ matrix.simplify }}" = "clang" ]; then
-          export CC=`which clang`
-          export CXX=`which clang++`
+        if [ "${{ matrix.compiler }}" = "clang" ]; then
+          compilerflag='%clang'
         else
-          export CC=`which gcc`
-          export CXX=`which g++`
+          compilerflag='%gcc'
         fi
-        scripts/build_lbann.sh -d -l ci -- +distconv +numpy +pfe +unit_tests
+        scripts/build_lbann.sh -d -l ci -- +numpy +unit_tests $compilerflag
 
     - name: Test Catch2
       run: |
