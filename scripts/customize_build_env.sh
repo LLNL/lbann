@@ -124,7 +124,7 @@ set_center_specific_modules()
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
             "zen3") # Tioga, RZVernal
-                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.09.0 cce/16.0.1 craype/2.7.23 cray-mpich/8.1.27 cray-libsci/23.09.1.1 PrgEnv-cray/8.4.0 StdEnv rocm/5.7.1 cmake/3.24.2"
+                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.09.0 cce/16.0.1 craype/2.7.23 cray-mpich/8.1.27 cray-libsci/23.09.1.1 PrgEnv-cray StdEnv rocm/5.7.1 cmake/3.24.2"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
