@@ -40,7 +40,7 @@ jobs:
         path: |
           ~/.spack
           spack
-        key: ${{ runner.os }}-spackdeps
+        key: ${{ runner.os }}-${{ matrix.compiler }}-spackdeps
 
     - name: Build and install LBANN dependencies
       if: steps.cache-spack.outputs.cache-hit != 'true'
