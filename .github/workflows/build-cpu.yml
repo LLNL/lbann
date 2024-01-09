@@ -26,7 +26,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libyaml-dev cmake lmod ninja
+        sudo apt-get install -y libyaml-dev cmake lmod ninja-build
         sudo apt-get install -y libblas-dev libopenblas-dev liblapacke-dev mpich
         python -m pip install --upgrade pip
         git clone -c feature.manyFiles=true https://github.com/spack/spack.git
