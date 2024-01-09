@@ -61,9 +61,6 @@ jobs:
           spack
         key: ${{ runner.os }}-${{ matrix.compiler }}-spackdeps
 
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
-
     - name: Build LBANN
       run: |
         source /usr/share/lmod/lmod/init/bash
