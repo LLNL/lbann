@@ -134,7 +134,7 @@
 #include "lbann/data_ingestion/readers/data_reader_mnist.hpp"
 #include "lbann/data_ingestion/readers/data_reader_nci.hpp"
 #include "lbann/data_ingestion/readers/data_reader_python.hpp"
-#include "lbann/data_ingestion/readers/data_reader_python_v2.hpp"
+#include "lbann/data_ingestion/readers/data_reader_python_dataset.hpp"
 #include "lbann/data_ingestion/readers/data_reader_synthetic.hpp"
 #ifdef LBANN_HAS_OPENCV
 #include "lbann/data_ingestion/readers/data_reader_imagenet.hpp"

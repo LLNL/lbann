@@ -24,7 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_ingestion/readers/data_reader_python_v2.hpp"
+#include "lbann/data_ingestion/readers/data_reader_python_dataset.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/dim_helpers.hpp"
@@ -41,7 +41,7 @@
 
 namespace lbann {
 
-python_reader_v2::~python_reader_v2()
+python_dataset_reader::~python_dataset_reader()
 {
   if (python::is_active() && m_process_pool != nullptr) {
     python::global_interpreter_lock gil;
@@ -50,7 +50,7 @@ python_reader_v2::~python_reader_v2()
   }
 }
 
-const std::vector<El::Int> python_reader_v2::get_data_dims() const
+const std::vector<El::Int> python_dataset_reader::get_data_dims() const
 {
   std::vector<El::Int> dims;
   for (const auto& d : m_sample_dims) {
@@ -58,22 +58,22 @@ const std::vector<El::Int> python_reader_v2::get_data_dims() const
   }
   return dims;
 }
-int python_reader_v2::get_num_labels() const { return m_num_labels; }
-int python_reader_v2::get_num_responses() const { return m_num_responses; }
-int python_reader_v2::get_linearized_data_size() const
+int python_dataset_reader::get_num_labels() const { return m_num_labels; }
+int python_dataset_reader::get_num_responses() const { return m_num_responses; }
+int python_dataset_reader::get_linearized_data_size() const
 {
   return get_linear_size(get_data_dims());
 }
-int python_reader_v2::get_linearized_label_size() const
+int python_dataset_reader::get_linearized_label_size() const
 {
   return get_num_labels();
 }
-int python_reader_v2::get_linearized_response_size() const
+int python_dataset_reader::get_linearized_response_size() const
 {
   return get_num_responses();
 }
 
-bool python_reader_v2::fetch_data_block(
+bool python_dataset_reader::fetch_data_block(
   std::map<data_field_type, CPUMat*>& input_buffers,
   uint64_t current_position_in_data_set,
   uint64_t block_offset,
@@ -157,7 +157,7 @@ bool python_reader_v2::fetch_data_block(
   return true;
 }
 
-void python_reader_v2::setup(int num_io_threads,
+void python_dataset_reader::setup(int num_io_threads,
                              observer_ptr<thread_pool> io_thread_pool)
 {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
@@ -383,7 +383,7 @@ def @init_func@():
                                        init_func.get());
 }
 
-void python_reader_v2::load()
+void python_dataset_reader::load()
 {
   // Make sure Python is running and acquire GIL
   python::global_interpreter_lock gil;

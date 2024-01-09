@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READERS_PYTHON_V2_HPP_INCLUDED
-#define LBANN_DATA_READERS_PYTHON_V2_HPP_INCLUDED
+#ifndef LBANN_DATA_READERS_PYTHON_DATASET_HPP_INCLUDED
+#define LBANN_DATA_READERS_PYTHON_DATASET_HPP_INCLUDED
 
 #include "lbann/data_ingestion/data_reader.hpp"
 #ifdef LBANN_HAS_EMBEDDED_PYTHON
@@ -33,21 +33,21 @@
 
 namespace lbann {
 
-class python_reader_v2 : public generic_data_reader
+class python_dataset_reader : public generic_data_reader
 {
 public:
-  python_reader_v2(std::string dataset_path, bool shuffle)
+  python_dataset_reader(std::string dataset_path, bool shuffle)
     : generic_data_reader(shuffle), m_dataset_path(dataset_path)
   {}
-  python_reader_v2(const python_reader_v2&) = default;
-  python_reader_v2& operator=(const python_reader_v2&) = default;
-  ~python_reader_v2() override;
-  python_reader_v2* copy() const override
+  python_dataset_reader(const python_dataset_reader&) = default;
+  python_dataset_reader& operator=(const python_dataset_reader&) = default;
+  ~python_dataset_reader() override;
+  python_dataset_reader* copy() const override
   {
-    return new python_reader_v2(*this);
+    return new python_dataset_reader(*this);
   }
 
-  std::string get_type() const override { return "python_reader_v2"; }
+  std::string get_type() const override { return "python_dataset_reader"; }
 
   const std::vector<El::Int> get_data_dims() const override;
   int get_num_labels() const override;
@@ -162,4 +162,4 @@ private:
 } // namespace lbann
 
 #endif // LBANN_HAS_EMBEDDED_PYTHON
-#endif // LBANN_DATA_READERS_PYTHON_V2_HPP_INCLUDED
+#endif // LBANN_DATA_READERS_PYTHON_DATASET_HPP_INCLUDED
