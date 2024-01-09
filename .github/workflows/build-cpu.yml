@@ -31,10 +31,10 @@ jobs:
         sudo apt-get install -y libblas-dev libopenblas-dev liblapacke-dev
         sudo apt-get install -y openmpi-bin openmpi-common libopenmpi-dev
         python -m pip install --upgrade pip
-        source /usr/share/lmod/lmod/init/bash
 
     - name: Test dependencies
       run: |
+        source /usr/share/lmod/lmod/init/bash
         module avail
 
     - name: Restore cached Spack-built dependencies
@@ -49,6 +49,7 @@ jobs:
     - name: Build and install LBANN dependencies
       if: steps.cache-spack.outputs.cache-hit != 'true'
       run: |
+        source /usr/share/lmod/lmod/init/bash
         git clone -c feature.manyFiles=true https://github.com/spack/spack.git
         cd spack
         git checkout 73858df14dc3f0e701814c84bb8bd6b72f80a806 # Use a tried and true version of Spack
@@ -67,6 +68,7 @@ jobs:
 
     - name: Build LBANN
       run: |
+        source /usr/share/lmod/lmod/init/bash
         source spack/share/spack/setup-env.sh
         if [ "${{ matrix.compiler }}" = "clang" ]; then
           compilerflag='%clang'
@@ -77,6 +79,7 @@ jobs:
 
     - name: Test Catch2
       run: |
+        source /usr/share/lmod/lmod/init/bash
         module use builds/*/install/etc/modulefiles
         module load lbann
         cd builds/*/build
