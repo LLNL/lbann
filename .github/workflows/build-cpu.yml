@@ -1,0 +1,53 @@
+name: General Tests
+
+on:
+  push:
+    branches: develop
+  pull_request:
+    branches: develop
+  merge_group:
+    branches: develop
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: 'recursive'
+
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libyaml-dev cmake modules
+        python -m pip install --upgrade pip
+        git clone -c feature.manyFiles=true https://github.com/spack/spack.git
+
+    - name: Build LBANN
+      run: |
+        source spack/share/spack/setup-env.sh
+        if [ "${{ matrix.simplify }}" = "clang" ]; then
+          export CC=`which clang`
+          export CXX=`which clang++`
+        else
+          export CC=`which gcc`
+          export CXX=`which g++`
+        fi
+        scripts/build_lbann.sh -d -l ci -- +distconv +numpy +pfe +unit_tests
+
+    - name: Test Catch2
+      run: |
+        module use builds/*/install/etc/modulefiles
+        module load lbann
+        cd builds/*/build
+        ./unit_test/helpers_tests
+        ./unit_test/seq-catch-tests
