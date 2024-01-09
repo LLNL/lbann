@@ -93,7 +93,7 @@ message Reader {
 
   PythonDataReader python = 501;
   Node2VecDataReader node2vec = 502;
-  PythonDataReaderV2 python_v2 = 503;
+  PythonDatasetDataReader python_dataset = 503;
 
   repeated Transform transforms = 600;  // Ordered list of transforms to apply.
 
@@ -120,7 +120,7 @@ message PythonDataReader {
       5;  // Function that gets dimensions of data sample
 }
 
-message PythonDataReaderV2 {
+message PythonDatasetDataReader {
   string dataset_path = 1;           // Path to pickled Dataset object
 }
 
