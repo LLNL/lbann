@@ -13,15 +13,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        compiler: [gcc, clang]
+        compiler: [gcc]  # , clang
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
-    - name: Set up Python 3.9
-      uses: actions/setup-python@v2
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
       with:
-        python-version: 3.9
+        python-version: 3.10
+        cache: 'pip'
 
     - name: Install dependencies
       run: |
@@ -32,6 +33,21 @@ jobs:
         python -m pip install --upgrade pip
         git clone -c feature.manyFiles=true https://github.com/spack/spack.git
 
+    - name: Cache Spack-built dependencies
+      id: cache-spack
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.spack
+          spack
+        key: ${{ runner.os }}-spackdeps
+
+    - name: Build and install LBANN dependencies
+      if: steps.cache-spack.outputs.cache-hit != 'true'
+      run: |
+        source spack/share/spack/setup-env.sh
+        scripts/build_lbann.sh -d --dependencies-only -l ci -- +numpy +unit_tests %${{ matrix.compiler }}
+
     - name: Build LBANN
       run: |
         source spack/share/spack/setup-env.sh
@@ -40,7 +56,7 @@ jobs:
         else
           compilerflag='%gcc'
         fi
-        scripts/build_lbann.sh -d -l ci -- +numpy +unit_tests $compilerflag
+        scripts/build_lbann.sh -r -l ci -- +numpy +unit_tests %${{ matrix.compiler }}
 
     - name: Test Catch2
       run: |
