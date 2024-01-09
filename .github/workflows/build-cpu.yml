@@ -31,7 +31,6 @@ jobs:
         sudo apt-get install -y libblas-dev libopenblas-dev liblapacke-dev
         sudo apt-get install -y openmpi-bin openmpi-common libopenmpi-dev
         python -m pip install --upgrade pip
-        git clone -c feature.manyFiles=true https://github.com/spack/spack.git
 
     - name: Cache Spack-built dependencies
       id: cache-spack
@@ -45,6 +44,7 @@ jobs:
     - name: Build and install LBANN dependencies
       if: steps.cache-spack.outputs.cache-hit != 'true'
       run: |
+        git clone -c feature.manyFiles=true https://github.com/spack/spack.git
         source spack/share/spack/setup-env.sh
         scripts/build_lbann.sh -d --dependencies-only -l ci -- +numpy +unit_tests %${{ matrix.compiler }}
 
