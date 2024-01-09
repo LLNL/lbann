@@ -1119,7 +1119,7 @@ EOF
             echo "I have found and will use ${MATCHED_CONFIG_FILE}"
             CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
             if [[ ! -e "${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}" ]]; then
-                echo "Overwritting exising CMake config file in ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
+                echo "Overwriting exising CMake config file in ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
             fi
             # Save the config file in the build directory
             CMD="mv ${MATCHED_CONFIG_FILE_PATH} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
