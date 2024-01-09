@@ -312,7 +312,7 @@ void fp_impl(lbann_comm& comm,
     auto multisync = El::MakeMultiSync(gpu::get_sync_info(local_output),
                                        gpu::get_sync_info(local_statistics),
                                        gpu::get_sync_info(local_input));
-    size_t block_size = min(256, normalization_size);
+    El::Int block_size = min(El::Int(256), normalization_size);
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (normalization_size + block_size - 1) / block_size;
@@ -630,7 +630,7 @@ void bp_impl(lbann_comm& comm,
                         gpu::get_sync_info(local_output_grad),
                         gpu::get_sync_info(local_statistics),
                         gpu::get_sync_info(local_input));
-    size_t block_size = min(256, normalization_size);
+    El::Int block_size = min(El::Int(256), normalization_size);
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (normalization_size + block_size - 1) / block_size;
