@@ -108,8 +108,8 @@ void load_mnist_data(const std::string imagepath,
   }
 
   int magicnum1, numitems1;
-  fread(&magicnum1, 4, 1, fplbl);
-  fread(&numitems1, 4, 1, fplbl);
+  static_cast<void>(fread(&magicnum1, 4, 1, fplbl));
+  static_cast<void>(fread(&numitems1, 4, 1, fplbl));
   __swapEndianInt((unsigned int&)magicnum1);
   __swapEndianInt((unsigned int&)numitems1);
 
@@ -122,10 +122,10 @@ void load_mnist_data(const std::string imagepath,
   }
 
   int magicnum2, numitems2, imgwidth, imgheight;
-  fread(&magicnum2, 4, 1, fpimg);
-  fread(&numitems2, 4, 1, fpimg);
-  fread(&imgwidth, 4, 1, fpimg);
-  fread(&imgheight, 4, 1, fpimg);
+  static_cast<void>(fread(&magicnum2, 4, 1, fpimg));
+  static_cast<void>(fread(&numitems2, 4, 1, fpimg));
+  static_cast<void>(fread(&imgwidth, 4, 1, fpimg));
+  static_cast<void>(fread(&imgheight, 4, 1, fpimg));
   __swapEndianInt((unsigned int&)magicnum2);
   __swapEndianInt((unsigned int&)numitems2);
   __swapEndianInt((unsigned int&)imgwidth);
@@ -147,8 +147,9 @@ void load_mnist_data(const std::string imagepath,
   m_image_data.resize(numitems1);
   for (int n = 0; n < numitems1; n++) {
     m_image_data[n].resize(1 + (imgwidth * imgheight));
-    fread(&m_image_data[n][0], 1, 1, fplbl);
-    fread(&m_image_data[n][1], imgwidth * imgheight, 1, fpimg);
+    static_cast<void>(fread(&m_image_data[n][0], 1, 1, fplbl));
+    static_cast<void>(
+      fread(&m_image_data[n][1], imgwidth * imgheight, 1, fpimg));
   }
   fclose(fpimg);
   fclose(fplbl);
