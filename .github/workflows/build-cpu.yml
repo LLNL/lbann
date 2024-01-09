@@ -61,15 +61,13 @@ jobs:
           spack
         key: ${{ runner.os }}-${{ matrix.compiler }}-spackdeps
 
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+
     - name: Build LBANN
       run: |
         source /usr/share/lmod/lmod/init/bash
         source spack/share/spack/setup-env.sh
-        if [ "${{ matrix.compiler }}" = "clang" ]; then
-          compilerflag='%clang'
-        else
-          compilerflag='%gcc'
-        fi
         scripts/build_lbann.sh -r -l ci -- +numpy +unit_tests %${{ matrix.compiler }}
 
     - name: Test Catch2
