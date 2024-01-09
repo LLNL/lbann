@@ -31,11 +31,11 @@ jobs:
         sudo apt-get install -y libblas-dev libopenblas-dev liblapacke-dev
         sudo apt-get install -y openmpi-bin openmpi-common libopenmpi-dev
         python -m pip install --upgrade pip
-        alias module=lmod
+        which lmod
 
     - name: Test dependencies
       run: |
-        module avail
+        lmod avail
 
     - name: Restore cached Spack-built dependencies
       id: cache-spack
