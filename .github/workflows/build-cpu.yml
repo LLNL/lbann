@@ -32,11 +32,6 @@ jobs:
         sudo apt-get install -y openmpi-bin openmpi-common libopenmpi-dev
         python -m pip install --upgrade pip
 
-    - name: Test dependencies
-      run: |
-        source /usr/share/lmod/lmod/init/bash
-        module avail
-
     - name: Restore cached Spack-built dependencies
       id: cache-spack
       uses: actions/cache/restore@v3
