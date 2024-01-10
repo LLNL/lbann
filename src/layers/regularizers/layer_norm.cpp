@@ -42,6 +42,7 @@ template <typename TensorDataType>
 void fp_impl(lbann_comm& comm,
              TensorDataType epsilon,
              El::Int normalization_size,
+             El::Int global_normalization_size,
              El::Int num_normalized,
              El::Int normalization_stride,
              const El::AbstractDistMatrix<TensorDataType>& input,
@@ -69,7 +70,6 @@ void fp_impl(lbann_comm& comm,
                                    El::ALL);
 
   // Dimensions
-  const El::Int sample_size = input.Height();
   const El::Int local_num_samples = local_input.Width();
 
   // Compute sums
@@ -91,7 +91,7 @@ void fp_impl(lbann_comm& comm,
   // Compute statistics from sums
   //   mean = sum(x_i) / n
   //   var = ( sum(x_i^2)/n - mean^2 )
-  if (sample_size <= 1) {
+  if (global_normalization_size <= 1) {
     // local_means already has correct values
     El::Fill(local_vars, El::TypeTraits<TensorDataType>::One());
   }
@@ -101,7 +101,7 @@ void fp_impl(lbann_comm& comm,
       for (El::Int j = 0; j < num_normalized; ++j) {
         const auto sum = local_means(j, i);
         const auto sqsum = local_vars(j, i);
-        auto sample_size_dt = El::To<TensorDataType>(sample_size);
+        auto sample_size_dt = El::To<TensorDataType>(global_normalization_size);
         const auto& mean = sum / sample_size_dt;
         const auto& sqmean = sqsum / sample_size_dt;
         const auto& var = (sqmean - mean * mean);
@@ -140,6 +140,7 @@ template <typename TensorDataType>
 void bp_impl(lbann_comm& comm,
              TensorDataType epsilon,
              El::Int normalization_size,
+             El::Int global_normalization_size,
              El::Int num_normalized,
              El::Int normalization_stride,
              const El::AbstractDistMatrix<TensorDataType>& input,
@@ -181,12 +182,11 @@ void bp_impl(lbann_comm& comm,
                                   El::ALL);
 
   // Dimensions
-  const El::Int sample_size = input.Height();
   const El::Int local_num_samples = local_input.Width();
 
   // Trivial case if sample size <= 1
   // Note: Output is constant, so error signal is zero.
-  if (sample_size <= 1) {
+  if (global_normalization_size <= 1) {
     El::Zero(input_grad);
     return;
   }
@@ -250,8 +250,8 @@ void bp_impl(lbann_comm& comm,
         if (local_scale)
           dy *= local_scale[k];
 
-        dx = (dy * inv_stdev + dmean / sample_size +
-              dvar * (x - mean) * 2 / sample_size);
+        dx = (dy * inv_stdev + dmean / global_normalization_size +
+              dvar * (x - mean) * 2 / global_normalization_size);
       }
     }
   }
@@ -273,12 +273,13 @@ void layer_norm_layer<TensorDataType, Layout, Device>::fp_compute()
     bias_weights =
       this->weights_values(weight_idx).LockedMatrix().LockedBuffer();
 
-  El::Int norm_size, num_norm, norm_stride;
-  this->get_normdims(norm_size, num_norm, norm_stride);
+  El::Int norm_size, global_norm_size, num_norm, norm_stride;
+  this->get_normdims(norm_size, global_norm_size, num_norm, norm_stride);
 
   fp_impl(*this->get_comm(),
           this->m_epsilon,
           norm_size,
+          global_norm_size,
           num_norm,
           norm_stride,
           this->get_prev_activations(),
@@ -307,16 +308,16 @@ void layer_norm_layer<TensorDataType, Layout, Device>::bp_compute()
     bias_grad = this->m_bias_gradient->Buffer();
   }
 
-  El::Int norm_size, num_norm, norm_stride;
-  this->get_normdims(norm_size, num_norm, norm_stride);
+  El::Int norm_size, global_norm_size, num_norm, norm_stride;
+  this->get_normdims(norm_size, global_norm_size, num_norm, norm_stride);
 
   // Compute backpropagation
   bp_impl(*this->get_comm(),
           this->m_epsilon,
           norm_size,
+          global_norm_size,
           num_norm,
           norm_stride,
-
           this->get_prev_activations(),
           this->get_prev_error_signals(),
           this->get_error_signals(),

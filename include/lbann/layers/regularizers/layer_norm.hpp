@@ -137,6 +137,7 @@ private:
 
   /** @brief Helper function to obtain normalization parameters. */
   void get_normdims(El::Int& normalization_size,
+                    El::Int& global_normalization_size,
                     El::Int& num_normalized,
                     El::Int& normalization_stride);
 };
@@ -361,6 +362,7 @@ void layer_norm_layer<TensorDataType, Layout, Device>::setup_data(
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void layer_norm_layer<TensorDataType, Layout, Device>::get_normdims(
   El::Int& normalization_size,
+  El::Int& global_normalization_size,
   El::Int& num_normalized,
   El::Int& normalization_stride)
 {
@@ -373,6 +375,21 @@ void layer_norm_layer<TensorDataType, Layout, Device>::get_normdims(
     start_dim = static_cast<unsigned int>(dims.size() + m_start_dim);
   }
 
+  if constexpr (Layout == data_layout::MODEL_PARALLEL) {
+    if (start_dim != 0) {
+      LBANN_ERROR(
+        "In model-parallel mode, layer normalization is not supported "
+        "for arbitrary normalized dimensions, only on the entire "
+        "tensor. Please specify start_dim=0");
+    }
+    num_normalized = 1;
+
+    normalization_size = this->get_prev_activations().LocalHeight();
+    global_normalization_size = this->get_prev_activations().Height();
+    normalization_stride = normalization_size;
+    return;
+  }
+
   num_normalized = 1;
   normalization_size = 1;
   for (unsigned int i = 0; i < start_dim; ++i) {
@@ -383,6 +400,8 @@ void layer_norm_layer<TensorDataType, Layout, Device>::get_normdims(
   }
   // Assuming contiguous tensors for now
   normalization_stride = normalization_size;
+
+  global_normalization_size = normalization_size;
 }
 
 LBANN_DEFINE_LAYER_BUILDER(layer_norm);
