@@ -457,7 +457,7 @@ cat <<EOF  >> ${yaml}
       version:
       - '8.1.28'
       externals:
-      - spec: cray-mpich@8.1.27 %rocmcc arch=${spack_arch}
+      - spec: cray-mpich@8.1.28 %rocmcc arch=${spack_arch}
         modules:
         - cce/17.0.0 PrgEnv-cray cray-mpich/8.1.28
 EOF
