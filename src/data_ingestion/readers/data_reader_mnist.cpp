@@ -162,8 +162,7 @@ void load_mnist_data(const std::string imagepath,
     if (!fread(&m_image_data[n][0], 1, 1, fplbl)) {
       LBANN_ERROR("Invalid MNIST file format (7)");
     }
-    if (fread(&m_image_data[n][1], imgwidth * imgheight, 1, fpimg) <
-        imgwidth * imgheight) {
+    if (!fread(&m_image_data[n][1], imgwidth * imgheight, 1, fpimg)) {
       LBANN_ERROR("Invalid MNIST file format (8)");
     }
   }
