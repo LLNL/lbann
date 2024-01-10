@@ -450,7 +450,8 @@ void init_data_readers(
 #ifdef LBANN_HAS_EMBEDDED_PYTHON
       const auto& params = readme.python_dataset();
       reader = new python_dataset_reader(params.dataset_path(),
-                                    shuffle);
+                                         params.module_dir(),
+                                         shuffle);
 #else
       LBANN_ERROR("attempted to construct Python data reader, "
                   "but LBANN is not built with Python/C API");
@@ -663,7 +664,8 @@ void init_data_readers(
 #ifdef LBANN_HAS_EMBEDDED_PYTHON
             const auto& params = readme.python_dataset();
             split_reader = new python_dataset_reader(params.dataset_path(),
-                                                shuffle);
+                                                     params.module_dir(),
+                                                     shuffle);
             (*(python_dataset_reader*)split_reader) = (*(python_dataset_reader*)reader);
 #else
             LBANN_ERROR("attempted to construct Python data reader, "

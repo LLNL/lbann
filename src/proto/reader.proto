@@ -122,6 +122,8 @@ message PythonDataReader {
 
 message PythonDatasetDataReader {
   string dataset_path = 1;           // Path to pickled Dataset object
+  string module_dir = 2;             // Optional directory containing module with
+                                     // dataset definition.
 }
 
 message Node2VecDataReader {

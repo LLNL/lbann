@@ -158,7 +158,7 @@ bool python_dataset_reader::fetch_data_block(
 }
 
 void python_dataset_reader::setup(int num_io_threads,
-                             observer_ptr<thread_pool> io_thread_pool)
+                                  observer_ptr<thread_pool> io_thread_pool)
 {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
 
@@ -387,6 +387,12 @@ void python_dataset_reader::load()
 {
   // Make sure Python is running and acquire GIL
   python::global_interpreter_lock gil;
+
+  if (!m_module_dir.empty()) {
+    auto path = PySys_GetObject("path");
+    PyList_Append(path, python::object(m_module_dir));
+    python::check_error();
+  }
 
   // Load the dataset object
   static El::Int instance_id = 0;

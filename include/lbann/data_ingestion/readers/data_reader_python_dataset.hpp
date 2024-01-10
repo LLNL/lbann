@@ -36,8 +36,12 @@ namespace lbann {
 class python_dataset_reader : public generic_data_reader
 {
 public:
-  python_dataset_reader(std::string dataset_path, bool shuffle)
-    : generic_data_reader(shuffle), m_dataset_path(dataset_path)
+  python_dataset_reader(std::string dataset_path,
+                        std::string module_dir,
+                        bool shuffle)
+    : generic_data_reader(shuffle),
+      m_dataset_path(dataset_path),
+      m_module_dir(module_dir)
   {}
   python_dataset_reader(const python_dataset_reader&) = default;
   python_dataset_reader& operator=(const python_dataset_reader&) = default;
@@ -80,6 +84,8 @@ protected:
 private:
   /** @brief Path to the pickled dataset object. */
   std::string m_dataset_path;
+  /** @brief Optional directory containing module with dataset definition. */
+  std::string m_module_dir;
   /** @brief Dimensions of data sample tensor. */
   std::vector<El::Int> m_sample_dims;
   /** @brief Size of label tensor. */
