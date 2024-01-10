@@ -1,4 +1,4 @@
-name: General Tests
+name: LBANN CPU
 
 on:
   push:
@@ -69,10 +69,6 @@ jobs:
 
     - name: Test Catch2
       run: |
-        #source /usr/share/lmod/lmod/init/bash
-        #source spack/share/spack/setup-env.sh
-        #module use builds/*/install/etc/modulefiles
-        #module load lbann
         cd builds/*/build
         ./unit_test/helpers_tests
         ./unit_test/seq-catch-tests
