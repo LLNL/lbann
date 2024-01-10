@@ -108,8 +108,12 @@ void load_mnist_data(const std::string imagepath,
   }
 
   int magicnum1, numitems1;
-  static_cast<void>(fread(&magicnum1, 4, 1, fplbl));
-  static_cast<void>(fread(&numitems1, 4, 1, fplbl));
+  if (!fread(&magicnum1, 4, 1, fplbl)) {
+    LBANN_ERROR("Invalid MNIST file format (1)");
+  }
+  if (!fread(&numitems1, 4, 1, fplbl)) {
+    LBANN_ERROR("Invalid MNIST file format (2)");
+  }
   __swapEndianInt((unsigned int&)magicnum1);
   __swapEndianInt((unsigned int&)numitems1);
 
@@ -122,10 +126,18 @@ void load_mnist_data(const std::string imagepath,
   }
 
   int magicnum2, numitems2, imgwidth, imgheight;
-  static_cast<void>(fread(&magicnum2, 4, 1, fpimg));
-  static_cast<void>(fread(&numitems2, 4, 1, fpimg));
-  static_cast<void>(fread(&imgwidth, 4, 1, fpimg));
-  static_cast<void>(fread(&imgheight, 4, 1, fpimg));
+  if (!fread(&magicnum2, 4, 1, fpimg)) {
+    LBANN_ERROR("Invalid MNIST file format (3)");
+  }
+  if (!fread(&numitems2, 4, 1, fpimg)) {
+    LBANN_ERROR("Invalid MNIST file format (4)");
+  }
+  if (!fread(&imgwidth, 4, 1, fpimg)) {
+    LBANN_ERROR("Invalid MNIST file format (5)");
+  }
+  if (!fread(&imgheight, 4, 1, fpimg)) {
+    LBANN_ERROR("Invalid MNIST file format (6)");
+  }
   __swapEndianInt((unsigned int&)magicnum2);
   __swapEndianInt((unsigned int&)numitems2);
   __swapEndianInt((unsigned int&)imgwidth);
@@ -147,9 +159,13 @@ void load_mnist_data(const std::string imagepath,
   m_image_data.resize(numitems1);
   for (int n = 0; n < numitems1; n++) {
     m_image_data[n].resize(1 + (imgwidth * imgheight));
-    static_cast<void>(fread(&m_image_data[n][0], 1, 1, fplbl));
-    static_cast<void>(
-      fread(&m_image_data[n][1], imgwidth * imgheight, 1, fpimg));
+    if (!fread(&m_image_data[n][0], 1, 1, fplbl)) {
+      LBANN_ERROR("Invalid MNIST file format (7)");
+    }
+    if (fread(&m_image_data[n][1], imgwidth * imgheight, 1, fpimg) <
+        imgwidth * imgheight) {
+      LBANN_ERROR("Invalid MNIST file format (8)");
+    }
   }
   fclose(fpimg);
   fclose(fplbl);

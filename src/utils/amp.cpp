@@ -35,6 +35,7 @@ namespace {
 bool isfinite(__half x) { return std::isfinite((float)x); }
 } // namespace
 #endif
+using std::isfinite;
 
 namespace lbann {
 namespace amp {
