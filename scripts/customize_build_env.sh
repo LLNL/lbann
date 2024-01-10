@@ -217,7 +217,7 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen3") # Tioga, RZVernal
                 CENTER_COMPILER="%rocmcc@5.7.1"
-                CENTER_DEPENDENCIES="^cray-mpich@8.1.27 ^hip@5.7.1 ^python@3.9.12"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.28 ^hip@5.7.1 ^python@3.9.12"
                 CENTER_BLAS_LIBRARY="blas=libsci"
                 # Override the conduit variants for the cray compilers
                 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis"
