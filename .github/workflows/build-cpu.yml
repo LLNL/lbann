@@ -65,7 +65,7 @@ jobs:
       run: |
         source /usr/share/lmod/lmod/init/bash
         source spack/share/spack/setup-env.sh
-        scripts/build_lbann.sh -r -l ci --ci --build-jobs 8 -- +numpy +unit_tests %${{ matrix.compiler }}
+        scripts/build_lbann.sh -r -l ci --ci --build-jobs 16 -- +numpy +unit_tests %${{ matrix.compiler }}
 
     - name: Test Catch2
       run: |
