@@ -889,6 +889,44 @@ def create_python_data_reader(lbann,
 
     return reader
 
+def create_python_dataset_reader(lbann,
+                                      file_name,
+                                      dataset,
+                                      execution_mode,
+                                      dataset_path=None):
+    """Create protobuf message for Pythond dataset reader
+
+    A Python dataset reader gets data by loading a pickled
+    lbann.util.data.Dataset object.
+
+    Args:
+        lbann (module): Module for LBANN Python frontend.
+        file_name (str): Python file with dataset class definition.
+        dataset (lbann.util.data.Dataset): Dataset object to be pickled.
+        execution_mode (str): 'train', 'validation', or 'test'
+
+    """
+
+    # Extract paths
+    if dataset_path is None:
+        dataset_path = os.path.join(os.environ['TMPDIR'], f'dataset_{execution_mode}.pkl')
+    import pickle
+    with open(dataset_path, 'wb') as f:
+        pickle.dump(dataset, f)
+
+    import inspect
+
+    # Construct protobuf message for data reader
+    reader = lbann.reader_pb2.Reader()
+    reader.name = 'python_dataset'
+    reader.role = execution_mode
+    reader.shuffle = False
+    reader.fraction_of_data_to_use = 1.0
+    reader.python_dataset.dataset_path = dataset_path
+    reader.python_dataset.module_dir = os.path.dirname(os.path.abspath(file_name))
+
+    return reader
+
 
 def numpy_l2norm2(x):
     """Square of L2 norm, computed with NumPy
