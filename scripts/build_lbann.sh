@@ -40,6 +40,7 @@ fi
 SPACK_INSTALL_DEPENDENCIES_ONLY=
 # List of packages to install at the root level with LBANN
 SPACK_EXTRA_ROOT_PACKAGES=
+EXTRA_NINJA_FLAGS=
 
 CONFIG_FILE_NAME=
 
@@ -120,7 +121,7 @@ while :; do
         --ci)
             # We want all compilation errors
             LBANN_WARNINGS_AS_ERRORS="TRUE"
-            EXTRA_NINJA_FLAGS="-k 0"
+            EXTRA_NINJA_FLAGS="${EXTRA_NINJA_FLAGS} -k 0"
             ;;
         --ci-pip)
             PIP_EXTRAS="${PIP_EXTRAS} ${LBANN_HOME}/ci_test/requirements.txt"
@@ -174,6 +175,7 @@ while :; do
         -j|--build-jobs)
             if [ -n "${2}" ]; then
                 BUILD_JOBS="-j${2}"
+                EXTRA_NINJA_FLAGS="${EXTRA_NINJA_FLAGS} -j${2}"
                 shift
             else
                 echo "\"${1}\" option requires a non-empty option argument" >&2
@@ -1119,7 +1121,7 @@ EOF
             echo "I have found and will use ${MATCHED_CONFIG_FILE}"
             CONFIG_FILE_NAME=${MATCHED_CONFIG_FILE}
             if [[ ! -e "${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}" ]]; then
-                echo "Overwritting exising CMake config file in ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
+                echo "Overwriting exising CMake config file in ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"
             fi
             # Save the config file in the build directory
             CMD="mv ${MATCHED_CONFIG_FILE_PATH} ${LBANN_BUILD_PARENT_DIR}/${CONFIG_FILE_NAME}"

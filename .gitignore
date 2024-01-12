@@ -18,3 +18,6 @@ spack_environments/users/
 
 # we don't want to collect slurm output
 **/slurm-*.out
+
+# Ignore default lbann output experiment directory names
+????????_??????_lbann*/

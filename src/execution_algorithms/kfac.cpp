@@ -264,7 +264,10 @@ bool KFAC::train_mini_batch(ExeContextType& kfac_context,
                             data_coordinator& dc)
 {
   LBANN_CALIPER_MARK_FUNCTION;
+#ifdef LBANN_HAS_GPU
   bool profile = true;
+#endif
+
   auto& sgd_context = kfac_context.get_sgd_execution_context();
   auto current_epoch = sgd_context.get_epoch();
 

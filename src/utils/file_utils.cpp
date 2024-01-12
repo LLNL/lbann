@@ -214,17 +214,15 @@ namespace file {
 
 std::string extract_parent_directory(const std::string& path)
 {
-  std::vector<char> buffer(path.size() + 1);
+  std::vector<char> buffer(path.size() + 1, '\0');
   path.copy(buffer.data(), path.size());
-  buffer.back() = '\0';
   return ::dirname(buffer.data());
 }
 
 std::string extract_base_name(const std::string& path)
 {
-  std::vector<char> buffer(path.size() + 1);
+  std::vector<char> buffer(path.size() + 1, '\0');
   path.copy(buffer.data(), path.size());
-  buffer.back() = '\0';
   return ::basename(buffer.data());
 }
 

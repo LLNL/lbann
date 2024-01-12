@@ -1,0 +1,74 @@
+name: LBANN CPU
+
+on:
+  push:
+    branches: develop
+  pull_request:
+    branches: develop
+  merge_group:
+    branches: develop
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [gcc]  # , clang
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libyaml-dev cmake lmod ninja-build
+        sudo apt-get install -y libblas-dev libopenblas-dev liblapacke-dev
+        sudo apt-get install -y openmpi-bin openmpi-common libopenmpi-dev
+        python -m pip install --upgrade pip
+
+    - name: Restore cached Spack-built dependencies
+      id: cache-spack
+      uses: actions/cache/restore@v3
+      with:
+        path: |
+          ~/.spack
+          spack
+        key: ${{ runner.os }}-${{ matrix.compiler }}-spackdeps
+
+    - name: Build and install LBANN dependencies
+      if: steps.cache-spack.outputs.cache-hit != 'true'
+      run: |
+        source /usr/share/lmod/lmod/init/bash
+        git clone -c feature.manyFiles=true https://github.com/spack/spack.git
+        cd spack
+        git checkout 73858df14dc3f0e701814c84bb8bd6b72f80a806 # Use a tried and true version of Spack
+        cd ..
+        source spack/share/spack/setup-env.sh
+        scripts/build_lbann.sh -d --dependencies-only -l ci -- +numpy +unit_tests %${{ matrix.compiler }}
+
+    - name: Cache Spack-built dependencies
+      id: cache-spack-save
+      uses: actions/cache/save@v3
+      with:
+        path: |
+          ~/.spack
+          spack
+        key: ${{ runner.os }}-${{ matrix.compiler }}-spackdeps
+
+    - name: Build LBANN
+      run: |
+        source /usr/share/lmod/lmod/init/bash
+        source spack/share/spack/setup-env.sh
+        scripts/build_lbann.sh -r -l ci --ci -- +numpy +unit_tests %${{ matrix.compiler }}
+
+    - name: Test Catch2
+      run: |
+        cd builds/*/build
+        ./unit_test/helpers_tests
+        ./unit_test/seq-catch-tests

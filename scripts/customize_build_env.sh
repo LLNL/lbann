@@ -286,6 +286,7 @@ set_center_specific_spack_dependencies()
         esac
     else
         echo "No center found and no center-specified CENTER_DEPENDENCIES for ${spack_arch_target} at ${center}."
+        CENTER_COMPILER="%gcc"  # Relatively safe default choice
     fi
 }
 
