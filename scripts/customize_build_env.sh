@@ -124,7 +124,7 @@ set_center_specific_modules()
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
             "zen3") # Tioga, RZVernal
-                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.09.0 cce/16.0.1 craype/2.7.23 cray-mpich/8.1.27 cray-libsci/23.09.1.1 PrgEnv-cray/8.4.0 StdEnv rocm/5.7.1 cmake/3.24.2"
+                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.09.0 cce/17.0.0 craype/2.7.23 cray-mpich/8.1.28 cray-libsci/23.09.1.1 PrgEnv-cray StdEnv rocm/5.7.1 cmake/3.24.2"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -217,7 +217,7 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen3") # Tioga, RZVernal
                 CENTER_COMPILER="%rocmcc@5.7.1"
-                CENTER_DEPENDENCIES="^cray-mpich@8.1.27 ^hip@5.7.1 ^python@3.9.12"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.28 ^hip@5.7.1 ^python@3.9.12"
                 CENTER_BLAS_LIBRARY="blas=libsci"
                 # Override the conduit variants for the cray compilers
                 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis"
@@ -393,14 +393,14 @@ cat <<EOF  >> ${yaml}
       target: any
       modules:
       - PrgEnv-cray/8.4.0
-      - cce/16.0.1
+      - cce/17.0.0
       - rocm/5.7.1
       environment: {}
       extra_rpaths:
-      - /opt/cray/pe/cce/16.0.1/cce/x86_64/lib
-      - /opt/cray/pe/cce/16.0.1/cce-clang/x86_64/lib/x86_64-unknown-linux-gnu
+      - /opt/cray/pe/cce/17.0.0/cce/x86_64/lib
+      - /opt/cray/pe/cce/17.0.0/cce-clang/x86_64/lib/x86_64-unknown-linux-gnu
   - compiler:
-      spec: cce@16.0.1
+      spec: cce@17.0.0
       paths:
         cc: craycc
         cxx: crayCC
@@ -410,13 +410,13 @@ cat <<EOF  >> ${yaml}
       operating_system: rhel8
       target: any
       modules:
-      - PrgEnv-cray/8.4.0
-      - cce/16.0.1
+      - PrgEnv-cray
+      - cce/17.0.0
       - rocm/5.7.1
       environment: {}
       extra_rpaths:
-      - /opt/cray/pe/cce/16.0.1/cce/x86_64/lib
-      - /opt/cray/pe/cce/16.0.1/cce-clang/x86_64/lib/x86_64-unknown-linux-gnu
+      - /opt/cray/pe/cce/17.0.0/cce/x86_64/lib
+      - /opt/cray/pe/cce/17.0.0/cce-clang/x86_64/lib/x86_64-unknown-linux-gnu
   packages:
     all:
       require:
@@ -451,18 +451,18 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: cray-libsci@23.09.1.1 %rocmcc arch=${spack_arch}
         modules:
-        - cce/16.0.1 PrgEnv-cray/8.4.0 cray-libsci/23.09.1.1
+        - cce/17.0.0 PrgEnv-cray cray-libsci/23.09.1.1
     cray-mpich:
       buildable: false
       version:
-      - '8.1.27'
+      - '8.1.28'
       externals:
-      - spec: cray-mpich@8.1.27 %rocmcc arch=${spack_arch}
+      - spec: cray-mpich@8.1.28 %rocmcc arch=${spack_arch}
         modules:
-        - cce/16.0.1 PrgEnv-cray/8.4.0 cray-mpich/8.1.27
+        - cce/17.0.0 PrgEnv-cray cray-mpich/8.1.28
 EOF
-        set_superbuild_externals "tioga" "rocm-5.7.1" "cray-mpich-8.1.27" "$yaml" "${LOG}"
-        set_superbuild_DHA_externals "tioga" "rocm-5.7.1" "cray-mpich-8.1.27" "$yaml" "${LOG}"
+        set_superbuild_externals "tioga" "rocm-5.7.1" "cray-mpich-8.1.28" "$yaml" "${LOG}"
+        set_superbuild_DHA_externals "tioga" "rocm-5.7.1" "cray-mpich-8.1.28" "$yaml" "${LOG}"
 
                 ;;
             *)
