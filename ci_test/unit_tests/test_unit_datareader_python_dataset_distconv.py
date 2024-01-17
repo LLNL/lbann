@@ -4,7 +4,7 @@ import sys
 import pytest
 import numpy as np
 import lbann.contrib.args
-from lbann.util.data import DistConvDataset, Sample, SampleDims
+from lbann.util.data import DistConvDataset, Sample, SampleDims, construct_python_dataset_reader
 
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
@@ -142,23 +142,25 @@ def construct_data_reader(lbann):
 
     """
 
+    dataset_path = os.path.join(work_dir, 'dataset.pkl')
+
     # Note: The training data reader should be removed when
     # https://github.com/LLNL/lbann/issues/1098 is resolved.
     message = lbann.reader_pb2.DataReader()
     message.reader.extend([
-        tools.create_python_dataset_reader(
-            lbann,
-            __file__,
+        construct_python_dataset_reader(
             test_dataset,
-            'train'
+            dataset_path,
+            'train',
+            shuffle=False
         )
     ])
     message.reader.extend([
-        tools.create_python_dataset_reader(
-            lbann,
-            __file__,
+        construct_python_dataset_reader(
             test_dataset,
-            'test'
+            dataset_path,
+            'train',
+            shuffle=False
         )
     ])
     return message
@@ -167,8 +169,13 @@ def construct_data_reader(lbann):
 # Setup PyTest
 # ==============================================
 
+work_dir = os.path.join(os.path.dirname(__file__),
+                        'experiments',
+                        os.path.basename(__file__).split('.py')[0])
+os.makedirs(work_dir, exist_ok=True)
+
 # Create test functions that can interact with PyTest
-for _test_func in tools.create_tests(setup_experiment, __file__,
+for _test_func in tools.create_tests(setup_experiment, __file__, work_dir=work_dir,
                                      environment=lbann.contrib.args.get_distconv_environment(
                                          num_io_partitions=tools.gpus_per_node(lbann)
                                      )):
