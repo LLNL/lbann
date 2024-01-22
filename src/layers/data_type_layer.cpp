@@ -87,6 +87,8 @@ data_type_layer<InputTensorDataType, OutputTensorDataType>::operator=(
 template <typename InT, typename OutT>
 bool data_type_layer<InT, OutT>::is_participating() const
 {
+  if (this->subgraph_parallelism_execution())
+    return true;
   if (this->get_num_children() > 0)
     return this->get_activations().Participating();
   if (this->get_num_parents() > 0)
