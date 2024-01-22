@@ -921,53 +921,59 @@ void model::setup_subcommunicators(const std::vector<El::Grid*>& fngrids)
   // Because of this optimization we cannot have dynamic number of sub-graph in
   // a model For example: In a model, module1 cannnot different number of
   // sub-graphs than module2
-  std::string one_index = "1";
+  std::string const one_index = "1";
 
   const auto& layers = this->get_layers();
   const El::Int num_layers = layers.size();
 
   for (El::Int node = 0; node < num_layers; ++node) {
-    if ((layers[node]->get_type() == "slice" ||
-         layers[node]->get_type() == "split" ||
-         layers[node]->get_type() == "concatenate" ||
-         layers[node]->get_type() == "sum") &&
-        layers[node]->subgraph_parallelism_execution()) {
+    Layer* const layer = layers[node];
+    std::string const& layer_type = layer->get_type();
+    if ((layer_type == "slice" ||
+         layer_type == "split" ||
+         layer_type == "concatenate" ||
+         layer_type == "sum") &&
+        layer->subgraph_parallelism_execution()) {
       if (subCommunicatorsSubgrids.find(one_index) !=
           subCommunicatorsSubgrids.end()) {
-        layers[node]->reset_inter_subgrid_vc_comm(
+        layer->reset_inter_subgrid_vc_comm(
           subCommunicatorsSubgrids[one_index]);
       }
       else {
         subCommunicatorsSubgrids[one_index] = std::make_shared<El::mpi::Comm>();
-        const auto& childs = layers[node]->get_child_layers();
+        const auto& childs = layer->get_child_layers();
 
         int indexSubgrid = -1;
-        for (int child = 0; child < layers[node]->get_num_children(); ++child) {
-          if (fngrids[childs[child]->get_grid_tag()]->InGrid())
-
+        for (int child = 0; child < layer->get_num_children(); ++child) {
+          if (fngrids.at(childs[child]->get_grid_tag())->InGrid())
           {
             indexSubgrid = child;
           }
         }
 
         const int child_tag = childs[indexSubgrid]->get_grid_tag();
-        const int layer_tag = layers[node]->get_grid_tag();
+        const int layer_tag = layer->get_grid_tag();
+
+        if (child_tag < 0)
+          LBANN_ERROR("child_tag=", child_tag, " (child=", childs[indexSubgrid]->get_name(), ")");
+        if (layer_tag < 0)
+          LBANN_ERROR("layer_tag=", layer_tag, " (layer=", layer->get_name(), ")");
 
         const int posInSubGrid = fngrids[child_tag]->VCRank();
         const int posInGrid = fngrids[layer_tag]->ViewingRank();
-        El::mpi::Split(layers[node]->get_comm()->get_trainer_comm(),
+        El::mpi::Split(layer->get_comm()->get_trainer_comm(),
                        posInSubGrid,
                        posInGrid,
                        *subCommunicatorsSubgrids[one_index]);
 
-        layers[node]->reset_inter_subgrid_vc_comm(
+        layer->reset_inter_subgrid_vc_comm(
           subCommunicatorsSubgrids[one_index]);
       }
     }
 
-    if (layers[node]->get_type() == "cross_grid_sum" ||
-        layers[node]->get_type() == "cross_grid_sum_slice") {
-      layers[node]->reset_inter_subgrid_vc_comm(
+    if (layer_type == "cross_grid_sum" ||
+        layer_type == "cross_grid_sum_slice") {
+      layer->reset_inter_subgrid_vc_comm(
         subCommunicatorsSubgrids[one_index]);
     }
   }
@@ -1013,6 +1019,7 @@ void model::setup_layer_grid_tags(const std::vector<El::Grid*>& fngrids)
   for (auto& layer : this->get_layers()) {
     int tag = layer->get_grid_tag();
     if (tag < 0) {
+      tag = 0; // now it's at least valid if there are no parents
       for (int i = 0; i < layer->get_num_parents(); ++i) {
         auto const parent_tag = layer->get_parent_layer(i).get_grid_tag();
         if (i == 0) {
