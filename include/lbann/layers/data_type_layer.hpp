@@ -122,7 +122,7 @@ public:
   };
 
   /** @brief Determine if we're participating in the compute on this process */
-  bool is_participating() const final;
+  bool is_participating() const override;
 
   /** Forward propagation step.
    *  Apply a mathematical operation to input tensors to obtain output
