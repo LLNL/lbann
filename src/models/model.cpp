@@ -1016,7 +1016,18 @@ void model::setup_layer_grid_tags(const std::vector<El::Grid*>& fngrids)
   // the same, set to parent value. If any is different, set to 0.
   // (Note that if we're doing "layer parallelism", they should all be
   // -1 and this definition will recover that.)
-  for (auto& layer : this->get_layers()) {
+  bool doing_subgraph_stuff = false;
+  auto const layers = this->get_layers();
+  for (auto& layer : layers) {
+    if (layer->get_grid_tag() > 0) {
+      doing_subgraph_stuff = true;
+      break;
+    }
+  }
+  if (!doing_subgraph_stuff)
+    return;
+
+  for (auto& layer : layers) {
     int tag = layer->get_grid_tag();
     if (tag < 0) {
       tag = 0; // now it's at least valid if there are no parents
