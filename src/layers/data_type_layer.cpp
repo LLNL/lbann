@@ -84,6 +84,21 @@ data_type_layer<InputTensorDataType, OutputTensorDataType>::operator=(
   return *this;
 }
 
+template <typename InT, typename OutT>
+bool data_type_layer<InT, OutT>::is_participating() const
+{
+  if (this->subgraph_parallelism_execution())
+    return true;
+  if (this->get_num_children() > 0)
+    return this->get_activations().Participating();
+  if (this->get_num_parents() > 0)
+    return this->get_prev_activations().Participating();
+
+  LBANN_ERROR("Layer \"", this->get_name(), "\" has no children "
+              "and no parents; cannot determine grid.");
+  return false;
+}
+
 template <typename InputTensorDataType, typename OutputTensorDataType>
 El::Int
 data_type_layer<InputTensorDataType,
@@ -207,6 +222,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::forward_prop()
 #endif // LBANN_HAS_DISTCONV
 
   // Apply layer's compute function
+  if (this->is_participating())
   {
     LBANN_CALIPER_MARK_SCOPE(("fp_compute:" + this->get_name()).c_str());
     const auto fp_compute_start = get_time();
@@ -308,6 +324,7 @@ void data_type_layer<InputTensorDataType,
 #endif // LBANN_HAS_DISTCONV
 
   // Backprop the compute function.
+  if (this->is_participating())
   {
     LBANN_CALIPER_MARK_SCOPE(("bp_compute" + this->get_name()).c_str());
     const auto bp_compute_start = get_time();
@@ -777,67 +794,22 @@ auto MakeMatBuilder(data_layout const layout, El::Device const device)
 
 } // namespace
 
-template <typename InputTensorDataType, typename OutputTensorDataType>
-void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
-  const std::vector<El::Grid*>& grids)
+template <typename InT, typename OutT>
+void data_type_layer<InT, OutT>::do_setup_matrices_subgraph(
+  std::vector<El::Grid*> const& grids)
 {
-
-  LBANN_CALIPER_MARK_FUNCTION;
-  using InputMatrixBuilderType = details::MatrixBuilder<InputTensorDataType>;
-  using OutputMatrixBuilderType = details::MatrixBuilder<OutputTensorDataType>;
-
-  // DEBUG
-  {
-    char* keep_error_signals = getenv("LBANN_KEEP_ERROR_SIGNALS");
-    if (!keep_error_signals || (std::stoi(keep_error_signals) == 0))
-      m_persistent_error_signals = false;
-    else
-      m_persistent_error_signals = true;
-  }
-
-  // If no CUB, force persistent error signals:
-#if defined(HYDROGEN_HAVE_GPU) && !defined(HYDROGEN_HAVE_CUB)
-  if (this->get_device_allocation() == El::Device::GPU)
-    m_persistent_error_signals = true;
-#endif
+  // Only to be called in subgraph_parallelism land.
+  LBANN_ASSERT(this->get_model()->is_subgraph_parallelism_enabled());
 
   // Figure out how to make new matrices
-  std::unique_ptr<InputMatrixBuilderType> input_mat_builder =
-    MakeMatBuilder<InputTensorDataType>(this->get_data_layout(),
-                                        this->get_device_allocation());
-  std::unique_ptr<OutputMatrixBuilderType> output_mat_builder =
-    MakeMatBuilder<OutputTensorDataType>(this->get_data_layout(),
-                                         this->get_device_allocation());
+  auto input_mat_builder =
+    MakeMatBuilder<InT>(this->get_data_layout(), this->get_device_allocation());
+  auto output_mat_builder = MakeMatBuilder<OutT>(this->get_data_layout(),
+                                                 this->get_device_allocation());
 
-  // Destroy previously setup matrices
-  m_inputs.clear();
-  m_outputs.clear();
-  m_gradient_wrt_outputs.clear();
-  m_gradient_wrt_inputs.clear();
-  m_temp_grad.clear();
-  m_subgrid_tensors_split.clear();
-
-  // Construct matrices
-  m_inputs.resize(get_num_parents());
-  m_outputs.resize(get_num_children());
-  m_gradient_wrt_outputs.resize(get_num_children());
-  m_gradient_wrt_inputs.resize(get_num_parents());
-  m_temp_grad.resize(1);
-  m_subgrid_tensors_split.resize(1);
-
-  int tag = this->get_grid_tag();
-  const El::Grid& grid = *grids[tag];
-
-  // If any of the parents reside on different subgrids, do not run in-place
-  if (this->m_runs_inplace) {
-    for (int i = 0; i < get_num_parents(); ++i) {
-      const auto& parent = get_parent_layer(i);
-      if (parent.get_grid_tag() != tag) {
-        this->m_runs_inplace = false;
-        break;
-      }
-    }
-  }
+  int const tag = this->get_grid_tag();
+  LBANN_ASSERT(0 <= tag && tag < static_cast<int>(grids.size()));
+  auto const& grid = *grids[tag];
 
   if (grid.InGrid())
     this->set_run_layer_in_subgraph();
@@ -846,7 +818,6 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
   auto parents = get_parent_layers();
 
   if ((this->get_type() == "split" || this->get_type() == "slice") &&
-      this->get_model()->is_subgraph_parallelism_enabled() &&
       this->subgraph_parallelism_execution()) {
 
     // split layer
@@ -895,8 +866,7 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
     // create interprocess subgrid communicator
   }
   else if ((get_type() == "cross_grid_sum" ||
-            get_type() == "cross_grid_sum_slice") &&
-           this->get_model()->is_subgraph_parallelism_enabled()) {
+            get_type() == "cross_grid_sum_slice")) {
     m_subgrid_tensors_split.clear();
     m_subgrid_tensors_split.resize(childs[0]->get_num_spliting_groups());
 
@@ -933,7 +903,6 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
     }
   }
   else if ((get_type() == "sum" || this->get_type() == "concatenate") &&
-           this->get_model()->is_subgraph_parallelism_enabled() &&
            this->subgraph_parallelism_execution()) {
     // sum layer
 
@@ -973,29 +942,104 @@ void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
     }
   }
   else {
+    this->do_setup_matrices_simple(grid);
+  }
+}
 
-    for (auto& input : m_inputs) {
-      input = input_mat_builder->MakeEmpty(grid, 0);
+template <typename InT, typename OutT>
+void data_type_layer<InT, OutT>::do_setup_matrices_simple(El::Grid const& grid)
+{
+  // Figure out how to make new matrices
+  auto input_mat_builder =
+    MakeMatBuilder<InT>(this->get_data_layout(), this->get_device_allocation());
+  auto output_mat_builder = MakeMatBuilder<OutT>(this->get_data_layout(),
+                                                 this->get_device_allocation());
+
+  for (auto& input : m_inputs) {
+    input = input_mat_builder->MakeEmpty(grid, 0);
+  }
+
+  for (auto& output : m_outputs) {
+    output = output_mat_builder->MakeEmpty(grid, 0);
+  }
+
+  for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
+    grad_wrt_output = output_mat_builder->MakeEmpty(grid, 0);
+  }
+
+  for (auto& grad_wrt_input : m_gradient_wrt_inputs) {
+    grad_wrt_input = input_mat_builder->MakeEmpty(grid, 0);
+  }
+
+  // FIXME (trb 09/29/2023): We should probably skip these if we're
+  // not doing subgraph stuff.
+  for (auto& temp_grad : m_temp_grad) {
+    temp_grad = output_mat_builder->MakeEmpty(grid, 0);
+  }
+  for (auto& subgrid_tensor : m_subgrid_tensors_split) {
+    subgrid_tensor = output_mat_builder->MakeEmpty(grid, 0);
+  }
+}
+
+template <typename InputTensorDataType, typename OutputTensorDataType>
+void data_type_layer<InputTensorDataType, OutputTensorDataType>::setup_matrices(
+  const std::vector<El::Grid*>& grids)
+{
+
+  LBANN_CALIPER_MARK_FUNCTION;
+
+  // DEBUG
+  {
+    char* keep_error_signals = getenv("LBANN_KEEP_ERROR_SIGNALS");
+    if (!keep_error_signals || (std::stoi(keep_error_signals) == 0))
+      m_persistent_error_signals = false;
+    else
+      m_persistent_error_signals = true;
+  }
+
+  // If no CUB, force persistent error signals:
+#if defined(HYDROGEN_HAVE_GPU) && !defined(HYDROGEN_HAVE_CUB)
+  if (this->get_device_allocation() == El::Device::GPU)
+    m_persistent_error_signals = true;
+#endif
+
+  // Destroy previously setup matrices
+  m_inputs.clear();
+  m_outputs.clear();
+  m_gradient_wrt_outputs.clear();
+  m_gradient_wrt_inputs.clear();
+  m_temp_grad.clear();
+  m_subgrid_tensors_split.clear();
+
+  // Construct matrices
+  m_inputs.resize(get_num_parents());
+  m_outputs.resize(get_num_children());
+  m_gradient_wrt_outputs.resize(get_num_children());
+  m_gradient_wrt_inputs.resize(get_num_parents());
+  m_temp_grad.resize(1);
+  m_subgrid_tensors_split.resize(1);
+
+  if (this->get_model()->is_subgraph_parallelism_enabled()) {
+    // If any of the parents reside on different subgrids, do not run in-place
+    int const tag = this->get_grid_tag();
+    if (this->m_runs_inplace) {
+      for (int i = 0; i < get_num_parents(); ++i) {
+        const auto& parent = get_parent_layer(i);
+        if (parent.get_grid_tag() != tag) {
+          this->m_runs_inplace = false;
+          break;
+        }
+      }
     }
 
-    for (auto& output : m_outputs) {
-      output = output_mat_builder->MakeEmpty(grid, 0);
-    }
-
-    for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
-      grad_wrt_output = output_mat_builder->MakeEmpty(grid, 0);
-    }
-
-    for (auto& grad_wrt_input : m_gradient_wrt_inputs) {
-      grad_wrt_input = input_mat_builder->MakeEmpty(grid, 0);
-    }
-
-    for (auto& temp_grad : m_temp_grad) {
-      temp_grad = output_mat_builder->MakeEmpty(grid, 0);
-    }
-    for (auto& subgrid_tensor : m_subgrid_tensors_split) {
-      subgrid_tensor = output_mat_builder->MakeEmpty(grid, 0);
-    }
+    this->do_setup_matrices_subgraph(grids);
+  }
+  else {
+    // Use the "layer parallel" tag. If no layer-parallelism
+    int const tag = std::max(this->grid_tag(), 0);
+    LBANN_ASSERT(tag < static_cast<int>(grids.size()));
+    LBANN_ASSERT(grids[tag]);
+    this->do_setup_matrices_simple(*grids[tag]);
   }
 
 #ifdef LBANN_HAS_GPU

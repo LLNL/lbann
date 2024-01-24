@@ -97,14 +97,6 @@ public:
   /** @name Gradient update management */
   ///@{
 
-  /** @brief Get the full objective function gradient w.r.t. the weights,
-   *  synchronized across all ranks in the trainer.
-   *
-   *  A collective operation (allreduce or allgather) may be launched and/or
-   *  synchronized if needed.
-   */
-  std::unique_ptr<AbsDistMatrixType> get_gradient();
-
   /** @brief Get the raw objective function gradient w.r.t. the weights,
    *  synchronized across all ranks in the trainer. This may be a local sharded
    *  version and not contain the gradients of all weights, but it will

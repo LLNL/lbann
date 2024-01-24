@@ -259,9 +259,28 @@ std::unique_ptr<Layer> construct_layer(lbann_comm* comm,
     }
   }
 
-  // Set additional parameters
+  // Setup the grid tags. Unfortunately, "subgraph parallelism" and
+  // "layer parallelism" use the same terminology. Subgraph
+  // parallelism will, for now, use the parallel_strategy grid tag.
+  // "Layer parallelism" will use the proper Layer message's grid_tag.
+  // This check is designed to "fail fast" when both have been
+  // explicitly specified. However, another check will occur during
+  // model setup to verify that no layer is trying to use both
+  // "subgraph parallelism" and "layer parallelism" features at the
+  // same time.
+  if (proto_layer.parallel_strategy().has_grid_tag() &&
+      proto_layer.has_grid_tag()) {
+    LBANN_ERROR("Parallel strategy and Layer both specify a grid tag. "
+                "The former should be used for legacy \"subgraph "
+                "parallelism\", while the latter should be used for "
+                "\"layer parallelism\". These two cannot be mixed, and "
+                "their code paths will soon be reconciled.");
+  }
   if (proto_layer.parallel_strategy().has_grid_tag()) {
     l->set_grid_tag(proto_layer.parallel_strategy().grid_tag().value());
+  }
+  if (proto_layer.has_grid_tag()) {
+    l->grid_tag(proto_layer.grid_tag().value());
   }
 
   return l;

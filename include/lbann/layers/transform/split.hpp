@@ -116,7 +116,6 @@ protected:
 
   void fp_setup_outputs() override
   {
-
     const auto& input = this->get_prev_activations();
     auto mini_batch_size =
       this->infer_mini_batch_size_from_parents_or_default_to_current();
@@ -129,6 +128,8 @@ protected:
                                                           El::VC,
                                                           El::ELEMENT,
                                                           Dev> const*>(&input);
+      LBANN_ASSERT(ptr_input);
+
       int tag = 0;
       auto childs = this->get_child_layers();
       if (this->get_communication_flag() == COLL_OPT) {

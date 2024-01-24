@@ -65,15 +65,12 @@ void check_dataset::add_to_set(model* m,
     return;
   }
 
-  // FIXME (trb 10/03/2023): This is not the "right" fix (which is
-  // probably to reconsider this callback entirely, but this is the
-  // drop-in replacement for the line that was here
-  // (l->get_sample_indices_per_mb(), which just returns 'nullptr'
-  // (which is never checked, of course, so the loop below would
-  // segfault almost instantly))).
+  // FIXME (trb 10/03/2023): It is probably best to reconsider this
+  // callback entirely.
   auto const mode = m->get_execution_context().get_execution_mode();
   El::Matrix<El::Int> const* const indices =
     get_trainer().get_data_coordinator().get_sample_indices_per_mb(mode);
+  LBANN_ASSERT((bool) indices);
 
   for (El::Int j = 0; j < indices->Width(); j++) {
     for (El::Int i = 0; i < indices->Height(); i++) {

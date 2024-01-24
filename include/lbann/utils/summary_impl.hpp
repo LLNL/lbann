@@ -27,8 +27,8 @@
 #ifndef LBANN_SUMMARY_IMPL_HPP_INCLUDED
 #define LBANN_SUMMARY_IMPL_HPP_INCLUDED
 
-#include "lbann/utils/summary.hpp"
 #include "lbann/utils/profiling.hpp"
+#include "lbann/utils/summary.hpp"
 
 namespace lbann {
 
@@ -48,7 +48,7 @@ lbann_summary::reduce_mean(const std::string tag,
   El::DistData mat_format(mat);
   if (mat_format.colDist == El::STAR && mat_format.rowDist == El::STAR) {
     // Compute local sum on master process if matrix is Star,Star
-    if (m_comm->am_trainer_master()) {
+    if (mat.RedundantRank() == 0) {
       sum = local_sum(mat.LockedMatrix());
     }
   }
@@ -105,7 +105,7 @@ lbann_summary::reduce_stdev(const std::string tag,
   El::DistData mat_format(mat);
   if (mat_format.colDist == El::STAR && mat_format.rowDist == El::STAR) {
     // Compute local sums on master process if matrix is Star,Star
-    if (m_comm->am_trainer_master()) {
+    if (mat.RedundantRank() == 0) {
       local_sum_sqsum(mat.LockedMatrix(), sum, sqsum);
     }
   }
@@ -129,7 +129,7 @@ template <typename TensorDataType>
 inline void
 lbann_summary::reduce_scalar(const std::string tag, TensorDataType s, int step)
 {
-  if (m_comm->am_trainer_master()) {
+  if (mat.RedundantRank() == 0) {
     m_pending_scalars.emplace_back(tag, step, s);
   }
 }
@@ -166,7 +166,7 @@ inline void lbann_summary::reduce_histogram(
   El::DistData mat_format(mat);
   if (mat_format.colDist == El::STAR && mat_format.rowDist == El::STAR) {
     // Compute local sums on master process if matrix is Star,Star
-    if (m_comm->am_trainer_master()) {
+    if (mat.RedundantRank() == 0) {
       local_sum_sqsum(mat.LockedMatrix(), sum, sqsum);
     }
   }

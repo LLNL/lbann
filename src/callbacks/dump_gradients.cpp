@@ -70,8 +70,10 @@ void dump_gradients::on_backward_prop_end(model* m)
          std::to_string(c.get_epoch()) + "-step" +
          std::to_string(c.get_step()) + "-" + w->get_name() + "-Gradient");
       auto* dt_opt = dynamic_cast<data_type_optimizer<DataType>*>(opt);
-      auto grad = dt_opt->get_gradient();
-      El::Write(*grad, file, El::ASCII);
+      auto& grad = dt_opt->get_gradient_sharded();
+      if (grad.Participating()) {
+        El::Write(grad, file, El::ASCII);
+      }
     }
   }
 }

@@ -53,12 +53,7 @@ void do_tensor_copy(const BaseDistMat& src, El::AbstractDistMatrix<TDT>& tgt)
     El::CopyAsync(src, tgt);
   }
   else {
-    if (src.DistData().grid == tgt.DistData().grid) {
-      El::Copy(src, tgt);
-    }
-    else {
-      utils::details::do_tensor_copy_between_grids(src, tgt);
-    }
+    El::Copy(src, tgt);
   }
 }
 
@@ -158,9 +153,13 @@ void view_or_copy_tensor(const BaseDistMat& src,
 
   if (src.DistData() == tgt.DistData()) {
     if (locked_view) {
-      El::LockedView(tgt, dynamic_cast<const El::AbstractDistMatrix<TDT>&>(src));
-    } else {
-      El::View(tgt, dynamic_cast<El::AbstractDistMatrix<TDT>&>(const_cast<BaseDistMat&>(src)));
+      El::LockedView(tgt,
+                     dynamic_cast<const El::AbstractDistMatrix<TDT>&>(src));
+    }
+    else {
+      El::View(tgt,
+               dynamic_cast<El::AbstractDistMatrix<TDT>&>(
+                 const_cast<BaseDistMat&>(src)));
     }
   }
   else {

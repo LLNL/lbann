@@ -164,7 +164,7 @@ protected:
       this->setup_reference_counter(output);
     }
   }
-
+  bool is_participating() const final { return true; }
   void bp_setup_gradient_wrt_inputs() override
   {
     auto children = this->get_child_layers();

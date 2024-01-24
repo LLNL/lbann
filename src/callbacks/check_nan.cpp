@@ -168,8 +168,8 @@ struct DumpWeightsFunctor : DefaultErrorReporter
     El::Write(dtw.get_values().LockedMatrix(), prefix + "Weights", El::ASCII);
     auto* opt = dtw.get_optimizer();
     if (opt != nullptr) {
-      auto grad = opt->get_gradient();
-      El::Write(grad->LockedMatrix(), prefix + "Gradient", El::ASCII);
+      auto& grad = opt->get_gradient_sharded();
+      El::Write(grad.LockedMatrix(), prefix + "Gradient", El::ASCII);
     }
   }
 }; // struct DumpWeightsFunctor
@@ -323,8 +323,8 @@ void check_nan::on_backward_prop_end(model* m)
     auto* opt = dtw.get_optimizer();
     if (opt != nullptr) {
       El::Int row, col;
-      auto grad = opt->get_gradient();
-      proxy_type mat_proxy(*grad);
+      auto& grad = opt->get_gradient_sharded();
+      proxy_type mat_proxy(grad);
       if (has_nan(mat_proxy.GetLocked(), row, col)) {
         dump_network(m);
         LBANN_ERROR("rank ",

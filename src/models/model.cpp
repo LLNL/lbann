@@ -921,53 +921,59 @@ void model::setup_subcommunicators(const std::vector<El::Grid*>& fngrids)
   // Because of this optimization we cannot have dynamic number of sub-graph in
   // a model For example: In a model, module1 cannnot different number of
   // sub-graphs than module2
-  std::string one_index = "1";
+  std::string const one_index = "1";
 
   const auto& layers = this->get_layers();
   const El::Int num_layers = layers.size();
 
   for (El::Int node = 0; node < num_layers; ++node) {
-    if ((layers[node]->get_type() == "slice" ||
-         layers[node]->get_type() == "split" ||
-         layers[node]->get_type() == "concatenate" ||
-         layers[node]->get_type() == "sum") &&
-        layers[node]->subgraph_parallelism_execution()) {
+    Layer* const layer = layers[node];
+    std::string const& layer_type = layer->get_type();
+    if ((layer_type == "slice" ||
+         layer_type == "split" ||
+         layer_type == "concatenate" ||
+         layer_type == "sum") &&
+        layer->subgraph_parallelism_execution()) {
       if (subCommunicatorsSubgrids.find(one_index) !=
           subCommunicatorsSubgrids.end()) {
-        layers[node]->reset_inter_subgrid_vc_comm(
+        layer->reset_inter_subgrid_vc_comm(
           subCommunicatorsSubgrids[one_index]);
       }
       else {
         subCommunicatorsSubgrids[one_index] = std::make_shared<El::mpi::Comm>();
-        const auto& childs = layers[node]->get_child_layers();
+        const auto& childs = layer->get_child_layers();
 
         int indexSubgrid = -1;
-        for (int child = 0; child < layers[node]->get_num_children(); ++child) {
-          if (fngrids[childs[child]->get_grid_tag()]->InGrid())
-
+        for (int child = 0; child < layer->get_num_children(); ++child) {
+          if (fngrids.at(childs[child]->get_grid_tag())->InGrid())
           {
             indexSubgrid = child;
           }
         }
 
         const int child_tag = childs[indexSubgrid]->get_grid_tag();
-        const int layer_tag = layers[node]->get_grid_tag();
+        const int layer_tag = layer->get_grid_tag();
+
+        if (child_tag < 0)
+          LBANN_ERROR("child_tag=", child_tag, " (child=", childs[indexSubgrid]->get_name(), ")");
+        if (layer_tag < 0)
+          LBANN_ERROR("layer_tag=", layer_tag, " (layer=", layer->get_name(), ")");
 
         const int posInSubGrid = fngrids[child_tag]->VCRank();
         const int posInGrid = fngrids[layer_tag]->ViewingRank();
-        El::mpi::Split(layers[node]->get_comm()->get_trainer_comm(),
+        El::mpi::Split(layer->get_comm()->get_trainer_comm(),
                        posInSubGrid,
                        posInGrid,
                        *subCommunicatorsSubgrids[one_index]);
 
-        layers[node]->reset_inter_subgrid_vc_comm(
+        layer->reset_inter_subgrid_vc_comm(
           subCommunicatorsSubgrids[one_index]);
       }
     }
 
-    if (layers[node]->get_type() == "cross_grid_sum" ||
-        layers[node]->get_type() == "cross_grid_sum_slice") {
-      layers[node]->reset_inter_subgrid_vc_comm(
+    if (layer_type == "cross_grid_sum" ||
+        layer_type == "cross_grid_sum_slice") {
+      layer->reset_inter_subgrid_vc_comm(
         subCommunicatorsSubgrids[one_index]);
     }
   }
@@ -1004,27 +1010,39 @@ void model::setup_layer_execution_order()
 
 void model::setup_layer_grid_tags(const std::vector<El::Grid*>& fngrids)
 {
-  for (auto& layer : this->get_layers()) {
-    // Choose process grid to distribute matrices over
+  // This is "subgraph" code. The logic is (now) as follows:
+  //
+  // If a layer tag is -1, then we check its parents. If they are all
+  // the same, set to parent value. If any is different, set to 0.
+  // (Note that if we're doing "layer parallelism", they should all be
+  // -1 and this definition will recover that.)
+  bool doing_subgraph_stuff = false;
+  auto const layers = this->get_layers();
+  for (auto& layer : layers) {
+    if (layer->get_grid_tag() > 0) {
+      doing_subgraph_stuff = true;
+      break;
+    }
+  }
+  if (!doing_subgraph_stuff)
+    return;
+
+  for (auto& layer : layers) {
     int tag = layer->get_grid_tag();
     if (tag < 0) {
-      // Use tag from parent layers if they are all the same. Otherwise
-      // use tag 0.
+      tag = 0; // now it's at least valid if there are no parents
       for (int i = 0; i < layer->get_num_parents(); ++i) {
-        auto parent_tag = layer->get_parent_layer(i).get_grid_tag();
+        auto const parent_tag = layer->get_parent_layer(i).get_grid_tag();
         if (i == 0) {
           tag = parent_tag;
         }
-        if (tag != parent_tag) {
-          tag = -1;
+        else if (tag != parent_tag) {
+          tag = 0;
           break;
         }
       }
-      if (tag < 0) {
-        tag = 0;
-      }
     }
-    if (tag < 0 || tag >= static_cast<int>(fngrids.size())) {
+    if (tag >= static_cast<int>(fngrids.size())) {
       LBANN_ERROR("attempted to initialize ",
                   layer->get_type(),
                   " layer \"",
@@ -1431,7 +1449,7 @@ void model::remove_layer(std::string const& removable_layer_name)
   auto& parent =
     const_cast<Layer&>(l.get_parent_layer(0)); // assuming only one parent
   auto& child =
-    const_cast<Layer&>(l.get_child_layer(0)); // assuming only one child
+    const_cast<Layer&>(l.get_child_layer(0));  // assuming only one child
 
   // Setup relationship between parent layer and child layer
   child.replace_parent_layer(l.get_parent_layer_pointer(0),
@@ -1483,7 +1501,7 @@ void model::replace_layer(OwningLayerPtr&& new_layer,
   auto& parent =
     const_cast<Layer&>(l.get_parent_layer(0)); // assuming only one parent
   auto& child =
-    const_cast<Layer&>(l.get_child_layer(0)); // assuming only one child
+    const_cast<Layer&>(l.get_child_layer(0));  // assuming only one child
 
   // Setup relationship between the new layer and child of old layer (which
   // becomes child of new layer)
@@ -1567,7 +1585,7 @@ void model::forward_prop(execution_mode mode)
     auto& l = get_layer(i);
 
     if (this->is_subgraph_parallelism_enabled()) {
-      if (l.get_run_layer_in_subgraph() || l.get_name() == "layer1") {
+      if (l.get_run_layer_in_subgraph()) {
         do_layer_forward_prop_begin_cbs(mode, &l);
         l.forward_prop();
         do_layer_forward_prop_end_cbs(mode, &l);

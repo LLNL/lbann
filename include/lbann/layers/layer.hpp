@@ -375,6 +375,13 @@ public:
    */
   virtual El::Device get_device_allocation() const = 0;
 
+  /** @brief Get whether this layer participates on this process.
+   *
+   *  @note This is technically possible to implement here, but easier
+   *        in data_type_layer.
+   */
+  virtual bool is_participating() const = 0;
+
   /** @brief Get expected number of parent layers.
    *  A negative value indicates no limit.
    */
@@ -666,9 +673,18 @@ public:
   /** Get reference to LBANN communicator. */
   lbann_comm* get_comm() const;
 
-  /** @brief Identifying tag for process grid */
+  /** @name Layer parallelism interface */
+  ///@{
+  /** @brief Get the "layer parallelism" grid tag. */
+  int grid_tag() const noexcept;
+  /** @brief Set the "layer parallelism" grid tag. */
+  void grid_tag(int tag);
+  ///@}
+
+  /// @todo Unify Layer-Parallel and Subgraph-Parallel implementations
+  /** @brief Identifying tag for process grid (subgraph parallelism) */
   int get_grid_tag() const noexcept;
-  /** @brief Set process grid */
+  /** @brief Set process grid (subgraph parallelism) */
   void set_grid_tag(int tag);
 
   /** @name Hint layer access functions */
@@ -884,6 +900,32 @@ protected:
    * on layer traits and neighboring layers.
    */
   bool m_runs_inplace = false;
+
+  /** @name Layer parallelism */
+  ///@{
+
+  /** @brief The tag used to choose the grid.
+   *
+   *  During model setup, this will be checked. If it has not been set
+   *  (i.e., it is "-1"), then it will be chosen to match its parents
+   *  (which must all be on the same grid -- "transitional" layers
+   *  must be explicitly marked).
+   *
+   *  Temporary: While the legacy "subgraph parallelism"
+   *  infrastructure coexists, setup will also check that this
+   *  and the subgraph-related "m_grid_tag" are not both set. If using
+   *  "subgraph", every layer will leave this as "-1" and the grid
+   *  setup will proceed according to the legacy subgraph setup.
+   *
+   *  After setup, this is guaranteed to be >= 0, except when the
+   *  legacy "subgraph" codepath is being used. The actual @c Grid
+   *  object can be retrieved through the activation matrices. These
+   *  are guaranteed to be assigned the "layer parallelism" grid, if
+   *  any.
+   */
+  int m_lp_grid_tag = -1;
+
+  ///@}
 
   // -------------------------------------------------------
   // Objects for sub-grid parallelism
