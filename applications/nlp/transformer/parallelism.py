@@ -7,6 +7,8 @@ import argparse
 import itertools
 import lbann
 import lbann.models.subgraph.transformer
+import math
+import re
 from typing import Any, Dict, Optional, List, Tuple, Union
 
 #############################################################################
@@ -195,6 +197,64 @@ def apply_subgraph_parallelism(
     return sgmodule, extra_model_kwargs
 
 
+#############################################################################
+# Layer parallelism
+
+lp_grids = None
+def apply_layer_parallelism(module: lbann.models.Transformer,
+                            model: lbann.Model, args: argparse.Namespace):
+    """
+    Applies a model-parallel strategy on sequences of contiguous transformer
+    blocks, sometimes referred to as pipeline parallelism or layer parallelism.
+
+    :param module: Transformer module to take as reference for block counts.
+    :param model: The model to modify.
+    :param args: Command-line arguments.
+    :param layers: If not None, a list of integers representing which blocks
+                   to apply model parallelism to.
+    """
+    if not args.layer_parallel:
+        return
+
+    lp_count = args.lp_count
+    if args.lp_count == 0:
+        lp_count = args.nodes * args.procs_per_node
+
+    blocks = len(module.encoder) + len(module.decoder)
+
+    # Assign blocks to increasing grid tags
+    blocks_per_grid_tag = math.ceil(blocks / lp_count)
+    cur_grid_tag = 0
+
+    # Go over all layers in traversal order, applying grid tags in increasing order
+    last_block_id = -1
+    block_id = -1
+    total_block_id = 0
+    for layer in model.layers:
+        if layer.name.startswith('transformer_decoder'):
+            block_id = int(
+                re.search(r'transformer_decoder(\d+)_',
+                          layer.name).groups(1)[0])
+        elif layer.name.startswith('transformer_encoder'):
+            block_id = int(
+                re.search(r'transformer_encoder(\d+)_',
+                          layer.name).groups(1)[0])
+        if last_block_id != block_id:
+            if total_block_id % blocks_per_grid_tag == 0:
+                cur_grid_tag += 1
+            last_block_id = block_id
+            total_block_id += 1
+
+        # Apply layer parallelism
+        layer.grid_tag = { 'value': cur_grid_tag }
+
+    global lp_grids
+    lp_grids = cur_grid_tag
+
+def get_layer_parallel_args() -> List[str]:
+    if lp_grids is not None:
+        return ['--num-subgrids', str(lp_grids)]
+
 def add_transformer_parallelism_arguments(parser: argparse.Namespace,
                                           subgraph: bool = True):
 
@@ -277,3 +337,16 @@ def add_transformer_parallelism_arguments(parser: argparse.Namespace,
         action='store_true',
         help='Apply Fully-Sharded Data-Parallelism (FSDP) and shard MLP weights'
     )
+
+    #######################################
+    # Layer parallelism
+    parser.add_argument(
+        '--layer-parallel',
+        action='store_true',
+        help='Apply layer parallelism (also referred to as pipelining)')
+    parser.add_argument(
+        '--lp-count',
+        default=0,
+        type=int,
+        help='In layer parallelism, the number of portions to divide network to'
+        ' (Default: divide evenly between all ranks)')

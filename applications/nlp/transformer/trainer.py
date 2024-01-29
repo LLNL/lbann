@@ -12,6 +12,7 @@ import lbann.contrib.launcher
 from lbann.launcher.batch_script import BatchScript
 
 import utils.paths
+import parallelism
 
 
 def construct_training_task(model: lbann.Model,
@@ -238,7 +239,8 @@ def make_batch_script(model: lbann.Model,
     script.add_parallel_command([
         lbann.lbann_exe(),
         f'--prototext={protobuf_file}',
-    ] + lbann.contrib.args.get_profile_args(args))
+    ] + (lbann.contrib.args.get_profile_args(args) +
+         parallelism.get_layer_parallel_args()))
     script.add_command('status=$?')
     script.add_command('echo "Finished training at $(date)"')
     script.add_command('exit ${status}')

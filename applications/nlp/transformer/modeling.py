@@ -124,6 +124,7 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
     )
 
     parallelism.apply_fsdp_allweights(result, args)
+    parallelism.apply_layer_parallelism(transformer, result, args)
     return result
 
 
@@ -227,6 +228,7 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
     )
 
     parallelism.apply_fsdp_allweights(result, args)
+    parallelism.apply_layer_parallelism(transformer, result, args)
     return result
 
 
