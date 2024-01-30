@@ -43,7 +43,7 @@
 namespace lbann {
 namespace callback {
 
-variable_minibatch::variable_minibatch(size_t starting_mbsize)
+variable_minibatch::variable_minibatch(uint64_t starting_mbsize)
   : m_starting_mbsize(starting_mbsize),
     m_current_mini_batch_size(starting_mbsize)
 {}
@@ -177,9 +177,9 @@ float variable_minibatch::get_current_learning_rate(model* m) const
   return 0.0f;
 }
 
-step_minibatch::step_minibatch(size_t starting_mbsize,
-                               size_t step,
-                               size_t ramp_time)
+step_minibatch::step_minibatch(uint64_t starting_mbsize,
+                               uint64_t step,
+                               uint64_t ramp_time)
   : variable_minibatch(starting_mbsize), m_step(step), m_ramp_time(ramp_time)
 {}
 
@@ -209,7 +209,7 @@ void step_minibatch::write_specific_proto(lbann_data::Callback& proto) const
   msg->set_ramp_time(m_ramp_time);
 }
 
-minibatch_schedule::minibatch_schedule(size_t starting_mbsize,
+minibatch_schedule::minibatch_schedule(uint64_t starting_mbsize,
                                        std::vector<minibatch_step> steps)
   : variable_minibatch(starting_mbsize), m_steps(std::move(steps))
 {
@@ -221,9 +221,9 @@ minibatch_schedule::minibatch_schedule(size_t starting_mbsize,
 }
 
 bool minibatch_schedule::schedule(model* m,
-                                  size_t& new_mbsize,
+                                  uint64_t& new_mbsize,
                                   float& new_lr,
-                                  size_t& ramp_time)
+                                  uint64_t& ramp_time)
 {
   const auto& c =
     static_cast<const SGDExecutionContext&>(m->get_execution_context());

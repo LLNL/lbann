@@ -42,7 +42,7 @@ namespace callback {
 class variable_minibatch : public callback_base
 {
 public:
-  variable_minibatch(size_t starting_mbsize);
+  variable_minibatch(uint64_t starting_mbsize);
   variable_minibatch(const variable_minibatch&) = default;
   variable_minibatch& operator=(const variable_minibatch&) = default;
   /// Set the initial mini-batch size.

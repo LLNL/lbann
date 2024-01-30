@@ -541,7 +541,7 @@ private:
   // methods follow
   //=========================================================================
 
-  void start_exchange_data_by_sample(size_t current_pos, size_t mb_size);
+  void start_exchange_data_by_sample(uint64_t current_pos, uint64_t mb_size);
   void finish_exchange_data_by_sample();
 
   void setup_data_store_buffers();
