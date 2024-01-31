@@ -230,7 +230,7 @@ def apply_layer_parallelism(module: lbann.models.Transformer,
     last_block_id = -1
     block_id = -1
     total_block_id = 0
-    for layer in model.layers:
+    for i, layer in enumerate(model.layers):
         if layer.name.startswith('transformer_decoder'):
             block_id = int(
                 re.search(r'transformer_decoder(\d+)_',
@@ -247,6 +247,11 @@ def apply_layer_parallelism(module: lbann.models.Transformer,
 
         # Apply layer parallelism
         layer.grid_tag = { 'value': cur_grid_tag }
+
+        # ...everywhere but the epilogue layers
+        if i >= len(model.layers) - 8:
+            layer.grid_tag = { 'value': 0 }
+        print(layer.grid_tag['value'], '-', layer.name)
 
     global lp_grids
     lp_grids = cur_grid_tag
