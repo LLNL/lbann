@@ -64,7 +64,7 @@ cmake \
     -B ${BUILD_DIR} \
     \
     -D CMAKE_BUILD_TYPE=Release \
-    -D CMAKE_INSTALL_PREFIX=${INSTALL_TOP} \
+    -D CMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
     \
     -D CMAKE_C_COMPILER=$(command -v gcc) \
     -D CMAKE_CXX_COMPILER=$(command -v g++) \
