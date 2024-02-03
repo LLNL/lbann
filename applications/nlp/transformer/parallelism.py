@@ -256,9 +256,12 @@ def apply_layer_parallelism(module: lbann.models.Transformer,
     global lp_grids
     lp_grids = cur_grid_tag
 
+
 def get_layer_parallel_args() -> List[str]:
     if lp_grids is not None:
         return ['--num-subgrids', str(lp_grids)]
+    return []
+
 
 def add_transformer_parallelism_arguments(parser: argparse.Namespace,
                                           subgraph: bool = True):

@@ -1,5 +1,5 @@
 """
-The Pile dataset, stored as pre-tokenized binary files for optimized processing.
+The Pile dataset, stored as pre-tokenized, pre-packed binary files for optimized processing.
 """
 import os
 import os.path
@@ -10,7 +10,9 @@ import numpy as np
 # Options
 # ----------------------------------------------
 
-sequence_length = int(os.getenv('THE_PILE_SEQUENCE_LENGTH', default='512'))
+# Sequence length is hardcoded to 512 in the pre-packed binary dataset.
+# To use other sequence lengths, see ``thepile_pretokenized_varlen.py``
+sequence_length = 512
 
 # ----------------------------------------------
 # Setup
