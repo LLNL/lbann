@@ -40,30 +40,33 @@ class LayerNorm(lbann.modules.Module):
             name=f'{self.name}_bias',
         )
 
-    def forward(self, x):
+    def forward(self, x, **extra_kwargs):
         if self.builtin:
             return lbann.LayerNorm(x,
                                    scale=True,
                                    bias=True,
                                    start_dim=-1,
                                    name=self.name,
-                                   weights=[self.weight, self.bias])
+                                   weights=[self.weight, self.bias],
+                                   **extra_kwargs)
 
         # Normalization
-        x = lbann.InstanceNorm(x)
+        x = lbann.InstanceNorm(x, **extra_kwargs)
 
         # Affine transform
         s = lbann.WeightsLayer(
             weights=self.weight,
             dims=[1] + list(make_iterable(self.normalized_shape)),
+            **extra_kwargs,
         )
-        s = lbann.Tessellate(s, hint_layer=x)
+        s = lbann.Tessellate(s, hint_layer=x, **extra_kwargs)
         b = lbann.WeightsLayer(
             weights=self.bias,
             dims=[1] + list(make_iterable(self.normalized_shape)),
+            **extra_kwargs,
         )
-        b = lbann.Tessellate(b, hint_layer=x)
-        x = lbann.Add(lbann.Multiply(s, x), b)
+        b = lbann.Tessellate(b, hint_layer=x, **extra_kwargs)
+        x = lbann.Add(lbann.Multiply(s, x, **extra_kwargs), b, **extra_kwargs)
         return x
 
 
@@ -124,6 +127,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
         self.pre_layernorm = pre_layernorm
         self.activation = activation
         self.extra_ffn_args = {}
+        self.extra_layer_args = {}
 
         # Module name
         self.name = name
@@ -172,26 +176,27 @@ class TransformerEncoderLayer(lbann.modules.Module):
         name = f'{self.name}_instance{self.instance}'
 
         if self.pre_layernorm:
-            y = self.norm1(x)
+            y = self.norm1(x, **self.extra_layer_args)
         else:
             y = x
 
         # Self-attention with residual connection
-        y = self.attention(y, y, y, mask=mask)
+        y = self.attention(y, y, y, mask=mask, **self.extra_layer_args)
         if self.dropout_prob > 0:
             y = lbann.Dropout(
                 y,
                 keep_prob=1 - self.dropout_prob,
                 name=f'{name}_drop1',
+                **self.extra_layer_args,
             )
-        z = lbann.Sum(x, y, name=f'{name}_sum1')
+        z = lbann.Sum(x, y, name=f'{name}_sum1', **self.extra_layer_args)
         if not self.pre_layernorm:
-            z = self.norm1(z)
+            z = self.norm1(z, **self.extra_layer_args)
         x = z
 
         # Feedforward network with residual connection
         if self.pre_layernorm:
-            y = self.norm2(z)
+            y = self.norm2(z, **self.extra_layer_args)
         else:
             y = x
 
@@ -200,14 +205,19 @@ class TransformerEncoderLayer(lbann.modules.Module):
             weights=self.fc1_weights,
             output_channel_dims=[self.feedforward_dim],
             name=f'{name}_fc1',
+            **self.extra_layer_args,
             **self.extra_ffn_args,
         )
-        y = self.activation(y, name=f'{name}_ffn_act', **self.extra_ffn_args)
+        y = self.activation(y,
+                            name=f'{name}_ffn_act',
+                            **self.extra_layer_args,
+                            **self.extra_ffn_args)
         if self.dropout_prob > 0:
             y = lbann.Dropout(
                 y,
                 keep_prob=1 - self.dropout_prob,
                 name=f'{name}_drop2',
+                **self.extra_layer_args,
                 **self.extra_ffn_args,
             )
         y = lbann.ChannelwiseFullyConnected(
@@ -215,6 +225,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
             weights=self.fc2_weights,
             output_channel_dims=[self.embed_dim],
             name=f'{name}_fc2',
+            **self.extra_layer_args,
             **self.extra_ffn_args,
         )
         if self.dropout_prob > 0:
@@ -222,11 +233,12 @@ class TransformerEncoderLayer(lbann.modules.Module):
                 y,
                 keep_prob=1 - self.dropout_prob,
                 name=f'{name}_drop3',
+                **self.extra_layer_args,
                 **self.extra_ffn_args,
             )
-        z = lbann.Sum(x, y, name=f'{name}_sum2')
+        z = lbann.Sum(x, y, name=f'{name}_sum2', **self.extra_layer_args)
         if not self.pre_layernorm:
-            z = self.norm2(z)
+            z = self.norm2(z, **self.extra_layer_args)
         return z
 
 
@@ -288,6 +300,7 @@ class TransformerDecoderLayer(lbann.modules.Module):
         self.pre_layernorm = pre_layernorm
         self.activation = activation
         self.extra_ffn_args = {}
+        self.extra_layer_args = {}
 
         # Module name
         self.name = name
@@ -350,22 +363,23 @@ class TransformerDecoderLayer(lbann.modules.Module):
         name = f'{self.name}_instance{self.instance}'
 
         if self.pre_layernorm:
-            y = self.norm1(x)
+            y = self.norm1(x, **self.extra_layer_args)
         else:
             y = x
 
         # Self-attention with residual connection
-        y = self.attention1(y, y, y, mask=tgt_mask)
+        y = self.attention1(y, y, y, mask=tgt_mask, **self.extra_layer_args)
         if self.dropout_prob > 0:
             y = lbann.Dropout(
                 y,
                 keep_prob=1 - self.dropout_prob,
                 name=f'{name}_drop1',
+                **self.extra_layer_args,
             )
-        z = lbann.Sum(x, y, name=f'{name}_sum1')
+        z = lbann.Sum(x, y, name=f'{name}_sum1', **self.extra_layer_args)
 
         if not self.pre_layernorm:
-            z = self.norm1(z)
+            z = self.norm1(z, **self.extra_layer_args)
 
         x = z
 
@@ -373,27 +387,30 @@ class TransformerDecoderLayer(lbann.modules.Module):
         if memory is not None:
             # Attention on encoder output with residual connection
             if self.pre_layernorm:
-                y = self.norm2(x)
+                y = self.norm2(x, **self.extra_layer_args)
             else:
                 y = x
 
-            y = self.attention2(y, memory, memory, mask=src_mask)
+            y = self.attention2(y,
+                                memory,
+                                memory,
+                                mask=src_mask,
+                                **self.extra_layer_args)
             if self.dropout_prob > 0:
-                y = lbann.Dropout(
-                    y,
-                    keep_prob=1 - self.dropout_prob,
-                    name=f'{name}_drop2',
-                )
-            z = lbann.Sum(x, y, name=f'{name}_sum2')
+                y = lbann.Dropout(y,
+                                  keep_prob=1 - self.dropout_prob,
+                                  name=f'{name}_drop2',
+                                  **self.extra_layer_args)
+            z = lbann.Sum(x, y, name=f'{name}_sum2', **self.extra_layer_args)
 
             if not self.pre_layernorm:
-                z = self.norm2(z)
+                z = self.norm2(z, **self.extra_layer_args)
 
             x = z
 
         # Feedforward network with residual connection
         if self.pre_layernorm:
-            y = self.norm3(x)
+            y = self.norm3(x, **self.extra_layer_args)
         else:
             y = x
 
@@ -402,14 +419,19 @@ class TransformerDecoderLayer(lbann.modules.Module):
             weights=self.fc1_weights,
             output_channel_dims=[self.feedforward_dim],
             name=f'{name}_fc1',
+            **self.extra_layer_args,
             **self.extra_ffn_args,
         )
-        y = self.activation(y, name=f'{name}_ffn_act', **self.extra_ffn_args)
+        y = self.activation(y,
+                            name=f'{name}_ffn_act',
+                            **self.extra_layer_args,
+                            **self.extra_ffn_args)
         if self.dropout_prob > 0:
             y = lbann.Dropout(
                 y,
                 keep_prob=1 - self.dropout_prob,
                 name=f'{name}_drop3',
+                **self.extra_layer_args,
                 **self.extra_ffn_args,
             )
         y = lbann.ChannelwiseFullyConnected(
@@ -417,6 +439,7 @@ class TransformerDecoderLayer(lbann.modules.Module):
             weights=self.fc2_weights,
             output_channel_dims=[self.embed_dim],
             name=f'{name}_fc2',
+            **self.extra_layer_args,
             **self.extra_ffn_args,
         )
         if self.dropout_prob > 0:
@@ -424,12 +447,13 @@ class TransformerDecoderLayer(lbann.modules.Module):
                 y,
                 keep_prob=1 - self.dropout_prob,
                 name=f'{name}_drop4',
+                **self.extra_layer_args,
                 **self.extra_ffn_args,
             )
-        z = lbann.Sum(x, y, name=f'{name}_sum3')
+        z = lbann.Sum(x, y, name=f'{name}_sum3', **self.extra_layer_args)
 
         if not self.pre_layernorm:
-            z = self.norm3(z)
+            z = self.norm3(z, **self.extra_layer_args)
 
         return z
 

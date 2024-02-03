@@ -15,20 +15,22 @@ class SequenceEncoding:
     the layer type and index.
     """
 
-    def apply_input(self, x: lbann.Layer, length: int) -> lbann.Layer:
+    def apply_input(self, x: lbann.Layer, length: int,
+                    **extra_kwargs) -> lbann.Layer:
         """
         Applies sequence encoding on the input of a transformer, immediately
         after token embedding.
 
         :param x: The output of the embedded sequence minibatch.
         :param length: Sequence length.
+        :param extra_kwargs: Additional arguments to pass to each internal Layer.
         :return: Encoded input.
         """
         return x  # Do nothing
 
     def apply_layer(
-            self, q: lbann.Layer, k: lbann.Layer, v: lbann.Layer,
-            length: int) -> Tuple[lbann.Layer, lbann.Layer, lbann.Layer]:
+            self, q: lbann.Layer, k: lbann.Layer, v: lbann.Layer, length: int,
+            **extra_kwargs) -> Tuple[lbann.Layer, lbann.Layer, lbann.Layer]:
         """
         Applies sequence encoding within a transformer encoder/decoder layer.
         Encoding is performed on each transformer layer's multi-head attention
@@ -38,6 +40,7 @@ class SequenceEncoding:
         :param k: The input keys of the transformer layer.
         :param v: The input values of the transformer layer.
         :param length: Sequence length.
+        :param extra_kwargs: Additional arguments to pass to each internal Layer.
         :return: Encoded tuple of (q, k, v).
         """
         return q, k, v  # Do nothing
@@ -121,13 +124,14 @@ class PositionalEncoding(SequenceEncoding):
         # Return cached positional encoding
         return self._positional_encoding_cache[sequence_length]
 
-    def apply_input(self, inputs, input_length):
+    def apply_input(self, inputs, input_length, **extra_kwargs):
         self.instance += 1
 
         result = lbann.Add(
             inputs,
             self._positional_encoding(input_length),
             name=f'{self.name}_instance{self.instance}_peadd',
+            **extra_kwargs,
         )
 
         # Input dropout
@@ -136,6 +140,7 @@ class PositionalEncoding(SequenceEncoding):
                 result,
                 keep_prob=1 - self.dropout_prob,
                 name=f'{self.name}_pedrop',
+                **extra_kwargs,
             )
         return result
 
@@ -182,7 +187,11 @@ class LearnedInputEncoding(SequenceEncoding):
             embedding_dim=self.embed_dim,
         )
 
-    def apply_input(self, inputs, input_length, learned_encoding=None):
+    def apply_input(self,
+                    inputs,
+                    input_length,
+                    learned_encoding=None,
+                    **extra_kwargs):
         self.instance += 1
 
         if learned_encoding is None:
@@ -193,12 +202,14 @@ class LearnedInputEncoding(SequenceEncoding):
             learned_encoding = lbann.Identity(
                 lbann.Slice(learned_encoding,
                             axis=0,
-                            slice_points=[0, input_length]))
+                            slice_points=[0, input_length],
+                            **extra_kwargs), **extra_kwargs)
 
         result = lbann.Add(
             inputs,
             learned_encoding,
             name=f'{self.name}_instance{self.instance}_peadd',
+            **extra_kwargs,
         )
 
         # Input dropout
@@ -207,6 +218,7 @@ class LearnedInputEncoding(SequenceEncoding):
                 result,
                 keep_prob=1 - self.dropout_prob,
                 name=f'{self.name}_pedrop',
+                **extra_kwargs,
             )
         return result
 
@@ -278,35 +290,43 @@ class RotaryPositionalEmbedding(SequenceEncoding):
             _make_constant_from_array(sin, f'rope_sin_{sequence_length}'),
         )
 
-    def _rotate_half(self, x: lbann.Layer, length: int):
+    def _rotate_half(self, x: lbann.Layer, length: int, **extra_kwargs):
         """
         Helper method that rotates half of a tensor x.
         """
         # SxE -> SxHxP
-        r = lbann.Reshape(x, dims=(length, self.num_heads, self.dim))
-        s = lbann.Slice(r, slice_points=[0, self.dim // 2, self.dim], axis=2)
-        x1 = lbann.Identity(s)
-        x2 = lbann.Identity(s)
-        nx2 = lbann.Scale(x2, constant=-1)
-        cat = lbann.Concatenation([nx2, x1], axis=2)
+        r = lbann.Reshape(x,
+                          dims=(length, self.num_heads, self.dim),
+                          **extra_kwargs)
+        s = lbann.Slice(r,
+                        slice_points=[0, self.dim // 2, self.dim],
+                        axis=2,
+                        **extra_kwargs)
+        x1 = lbann.Identity(s, **extra_kwargs)
+        x2 = lbann.Identity(s, **extra_kwargs)
+        nx2 = lbann.Scale(x2, constant=-1, **extra_kwargs)
+        cat = lbann.Concatenation([nx2, x1], axis=2, **extra_kwargs)
 
         # Reshape back to SxE
-        return lbann.Reshape(cat, dims=(length, self.num_heads * self.dim))
+        return lbann.Reshape(cat,
+                             dims=(length, self.num_heads * self.dim),
+                             **extra_kwargs)
 
     def _embed(self, x: lbann.Layer, length: int, sliced_cos: lbann.Layer,
-               sliced_sin: lbann.Layer):
+               sliced_sin: lbann.Layer, **extra_kwargs):
         """
         Helper method that applies rotary embeddings on a tensor x.
         """
-        rot = self._rotate_half(x, length)
+        rot = self._rotate_half(x, length, **extra_kwargs)
         return lbann.Add(
-            lbann.Multiply(x, sliced_cos),
-            lbann.Multiply(rot, sliced_sin),
+            lbann.Multiply(x, sliced_cos, **extra_kwargs),
+            lbann.Multiply(rot, sliced_sin, **extra_kwargs),
+            **extra_kwargs,
         )
 
     def apply_layer(
-            self, q: lbann.Layer, k: lbann.Layer, v: lbann.Layer,
-            length: int) -> Tuple[lbann.Layer, lbann.Layer, lbann.Layer]:
+            self, q: lbann.Layer, k: lbann.Layer, v: lbann.Layer, length: int,
+            **extra_kwargs) -> Tuple[lbann.Layer, lbann.Layer, lbann.Layer]:
         # If length is not given, maximum sequence length is assumed
         if length is None:
             length = self.max_sequence_length
@@ -316,15 +336,21 @@ class RotaryPositionalEmbedding(SequenceEncoding):
             sliced_sin = self.sin
         else:
             sliced_cos = lbann.Identity(
-                lbann.Slice(self.cos, slice_points=[0, length], axis=0))
+                lbann.Slice(self.cos,
+                            slice_points=[0, length],
+                            axis=0,
+                            **extra_kwargs), **extra_kwargs)
             sliced_sin = lbann.Identity(
-                lbann.Slice(self.sin, slice_points=[0, length], axis=0))
+                lbann.Slice(self.sin,
+                            slice_points=[0, length],
+                            axis=0,
+                            **extra_kwargs), **extra_kwargs)
 
-        eq = self._embed(q, length, sliced_cos, sliced_sin)
-        ek = self._embed(k, length, sliced_cos, sliced_sin)
+        eq = self._embed(q, length, sliced_cos, sliced_sin, **extra_kwargs)
+        ek = self._embed(k, length, sliced_cos, sliced_sin, **extra_kwargs)
 
         if self.embed_values:
-            ev = self._embed(v, length, sliced_cos, sliced_sin)
+            ev = self._embed(v, length, sliced_cos, sliced_sin, **extra_kwargs)
         else:
             ev = v
 

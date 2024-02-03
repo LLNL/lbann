@@ -4,6 +4,7 @@ training. Use the flags in any of the driver scripts to invoke the parallelism
 strategies found in this file.
 """
 import argparse
+import collections
 import itertools
 import lbann
 import lbann.models.subgraph.transformer
@@ -201,17 +202,16 @@ def apply_subgraph_parallelism(
 # Layer parallelism
 
 lp_grids = None
+
+
 def apply_layer_parallelism(module: lbann.models.Transformer,
-                            model: lbann.Model, args: argparse.Namespace):
+                            args: argparse.Namespace):
     """
     Applies a model-parallel strategy on sequences of contiguous transformer
     blocks, sometimes referred to as pipeline parallelism or layer parallelism.
 
-    :param module: Transformer module to take as reference for block counts.
-    :param model: The model to modify.
+    :param module: Transformer module to modify.
     :param args: Command-line arguments.
-    :param layers: If not None, a list of integers representing which blocks
-                   to apply model parallelism to.
     """
     if not args.layer_parallel:
         return
@@ -226,41 +226,78 @@ def apply_layer_parallelism(module: lbann.models.Transformer,
     blocks_per_grid_tag = math.ceil(blocks / lp_count)
     cur_grid_tag = 0
 
-    # Go over all layers in traversal order, applying grid tags in increasing order
-    last_block_id = -1
-    block_id = -1
-    total_block_id = 0
-    for i, layer in enumerate(model.layers):
-        if layer.name.startswith('transformer_decoder'):
-            block_id = int(
-                re.search(r'transformer_decoder(\d+)_',
-                          layer.name).groups(1)[0])
-        elif layer.name.startswith('transformer_encoder'):
-            block_id = int(
-                re.search(r'transformer_encoder(\d+)_',
-                          layer.name).groups(1)[0])
-        if last_block_id != block_id:
-            if total_block_id % blocks_per_grid_tag == 0:
-                cur_grid_tag += 1
-            last_block_id = block_id
-            total_block_id += 1
-
-        # Apply layer parallelism
-        layer.grid_tag = { 'value': cur_grid_tag }
-
-        # ...everywhere but the epilogue layers
-        if i >= len(model.layers) - 8:
-            layer.grid_tag = { 'value': 0 }
-        print(layer.grid_tag['value'], '-', layer.name)
+    # Go over all blocks, applying grid tags in increasing order
+    for i, block in enumerate(itertools.chain(module.encoder, module.decoder)):
+        cur_grid_tag = max(cur_grid_tag, (i // blocks_per_grid_tag) + 1)
+        block.extra_layer_args['grid_tag'] = cur_grid_tag
 
     global lp_grids
     lp_grids = cur_grid_tag
+
+
+def _get_grid_tag(tag: Union[int, Dict[str, int]]):
+    if isinstance(tag, dict):
+        return tag.get('value', 0)
+    return tag
+
+
+def apply_layer_parallelism_postamble(model: lbann.Model,
+                                      args: argparse.Namespace):
+    """
+    Applies post-model creation optimizations of the layer-parallel strategy
+    (see ``apply_layer_parallelism``).
+
+    :param model: LBANN Model to modify.
+    :param args: Command-line arguments.
+    """
+    if not args.layer_parallel:
+        return
+
+    # Loop over all layers that have multiple outgoing cross-grid edges
+    layers_to_insert = []
+    for i, layer in enumerate(model.layers):
+        if len(layer.children) == 1:
+            continue
+        tag = _get_grid_tag(layer.grid_tag)
+        unique_grids = collections.defaultdict(list)
+        new_children = []
+        for child in layer.children:
+            ctag = _get_grid_tag(child.grid_tag)
+            if ctag != tag:
+                unique_grids[ctag].append(child)
+                new_children.append(None)
+            else:
+                new_children.append(child)
+
+        # Inject interim layers for each grid and reconnect
+        for dst_grid, children in unique_grids.items():
+            interim = lbann.Identity(layer, grid_tag=dst_grid)
+            layers_to_insert.append((i, interim))
+
+            # Reconnect parents
+            for child in children:
+                pind = child.parents.index(layer)
+                child.parents[pind] = interim
+                cind = layer.children.index(child)
+                new_children[cind] = interim
+
+        # Reconnect children
+        if unique_grids:
+            layer.children = new_children
+
+    # Add identity layers to the traversed graph right after the source layer
+    # was computed
+    for i, l in reversed(layers_to_insert):
+        model.layers.insert(i, l)
 
 
 def get_layer_parallel_args() -> List[str]:
     if lp_grids is not None:
         return ['--num-subgrids', str(lp_grids)]
     return []
+
+
+#############################################################################
 
 
 def add_transformer_parallelism_arguments(parser: argparse.Namespace,
