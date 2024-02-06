@@ -480,7 +480,7 @@ bool model::is_layer_needed_for_backprop(const Layer* l) const
 
   // Second, check the layer itself. If frozen, backprop is not necessary.
   if (l->is_frozen()) {
-    return true;
+    return false;
   }
 
   // Otherwise, check weight optimizers. If one of the associated optimizers
