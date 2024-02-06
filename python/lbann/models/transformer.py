@@ -594,7 +594,7 @@ class Transformer(lbann.modules.Module):
 
             weights = lbann.Weights(
                 initializer=lbann.ValueInitializer(values=vals.flat),
-                optimizer=None,
+                optimizer=lbann.NoOptimizer(),
                 name=f'{self.name}_mask{size}_weights',
             )
             self._subsequent_mask_cache[size] = lbann.WeightsLayer(
