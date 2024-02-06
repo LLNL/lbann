@@ -53,6 +53,7 @@ void construct_std_options()
   arg_parser.add_flag(
     LBANN_OPTION_DISABLE_SIGNAL_HANDLER,
     {"--disable_signal_handler"},
+    utils::ENV("LBANN_DISABLE_SIGNAL_HANDLER"),
     "[STD] Disables signal handling (signal handling on by default)");
   arg_parser.add_flag(LBANN_OPTION_EXIT_AFTER_SETUP,
                       {"--exit_after_setup"},
