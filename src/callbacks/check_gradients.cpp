@@ -273,8 +273,8 @@ void check_gradients::do_check_gradients(model& m) const
   m.get_objective_function()->differentiate();
   m.get_objective_function()->compute_weight_regularization();
 
-  // Compute analytical gradients through model
-  m.backward_prop(false, /*skip_callbacks=*/true);
+  // Compute all analytical gradients through model
+  m.backward_prop(/*compute_weight_grads_only=*/false, /*skip_callbacks=*/true);
 
   // Choose finite difference step
   // Note: Consider a central difference scheme:

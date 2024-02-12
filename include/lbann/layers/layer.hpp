@@ -297,6 +297,8 @@ class Layer
   template <hydrogen::Device Device>
   friend class kfac_block_gru;
 
+  friend class model;
+
 public:
   /** @name Lifecycle */
   ///@{
