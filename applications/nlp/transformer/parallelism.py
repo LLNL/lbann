@@ -11,6 +11,11 @@ from typing import Any, Dict, Optional, List, Tuple, Union
 
 #############################################################################
 
+def _get_sharding_strategy(args: argparse.Namespace) -> lbann.ShardingStrategy:
+    if args.fsdp_ranks > 0:
+        return lbann.ShardingStrategy.GRID_ROWS
+    return lbann.ShardingStrategy.FULL
+
 
 # Fully-sharded data parallelism (MLP only)
 def apply_fsdp_mlp(module: lbann.models.Transformer,
@@ -34,11 +39,14 @@ def apply_fsdp_mlp(module: lbann.models.Transformer,
                                         enumerate(module.decoder)):
         for w in submodule.fc1_weights:
             w.sharded = True
+            w.sharding_strategy = _get_sharding_strategy(args)
         for w in submodule.fc2_weights:
             w.sharded = True
+            w.sharding_strategy = _get_sharding_strategy(args)
 
     for w in other_weights:
         w.sharded = True
+        w.sharding_strategy = _get_sharding_strategy(args)
 
 
 # Fully-sharded data parallelism (all weights)
@@ -63,6 +71,7 @@ def apply_fsdp_allweights(model: lbann.Model, args: argparse.Namespace):
         if layer.weights:
             if len(layer.weights) > 0:
                 layer.weights[0].sharded = True
+                layer.weights[0].sharding_strategy = _get_sharding_strategy(args)
 
 
 # Model (FFN tensor) parallelism
@@ -252,6 +261,15 @@ def add_transformer_parallelism_arguments(parser: argparse.Namespace,
         '--fsdp',
         action='store_true',
         help='Apply Fully-Sharded Data-Parallelism (FSDP) and shard all weights'
+    )
+
+    parser.add_argument(
+        '--fsdp-ranks',
+        default=0,
+        type=int,
+        help='Number of consecutive nodes to shard weights in FSDP. This '
+        'setting will modify the LBANN process grid height. (default: 0, shard '
+        'across all ranks)'
     )
 
     parser.add_argument(

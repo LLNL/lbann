@@ -31,12 +31,19 @@ import "optimizers.proto";
 
 package lbann_data;
 
+enum ShardingStrategy {
+  FULL = 0;       // Sharded across all ranks (STAR x VC)
+  GRID_ROWS = 1;  // Sharded across the process grid rows (STAR x MC)
+  GRID_COLS = 2;  // Sharded across the process grid columns (STAR x MR)
+}
+
 message Weights {
   string name = 1;
   Optimizer optimizer = 2;
   Initializer initializer = 3;
   DataType datatype = 4;
   bool sharded = 5;
+  ShardingStrategy sharding_strategy = 6;
 }
 
 message Initializer {

@@ -174,7 +174,26 @@ lbann::proto::construct_weights(lbann_comm* comm,
     w->set_name(name);
   }
 
+  // Set sharding configuration and strategy
   w->set_sharded(proto_weights.sharded());
+  if (proto_weights.sharded()) {
+    El::Dist dist;
+    switch (proto_weights.sharding_strategy()) {
+    case lbann_data::ShardingStrategy::FULL:
+      dist = El::VC;
+      break;
+    case lbann_data::ShardingStrategy::GRID_ROWS:
+      dist = El::MC;
+      break;
+    case lbann_data::ShardingStrategy::GRID_COLS:
+      dist = El::MR;
+      break;
+    default:
+      dist = El::STAR;
+      break;
+    }
+    w->set_sharding_distribution(dist);
+  }
 
   // Set weights initializer and optimizer
   w->set_initializer(std::move(init));

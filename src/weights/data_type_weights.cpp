@@ -239,16 +239,17 @@ void data_type_weights<TensorDataType>::do_setup_()
   }
 
   // Construct matrix for weight values
-  // If sharded, use STAR_VC distribution (column distributed) or VC_STAR (row
+  // If sharded, use STAR_{VC,MC,MR} distribution or {VC,MC,MR}_STAR (row
   // distributed) if width=1.
+  auto dist = this->get_sharding_distribution();
   auto matrix_dist = this->get_matrix_distribution();
-  bool must_use_vc_star = (this->get_matrix_width() == 1);
+  bool must_use_x_star = (this->get_matrix_width() == 1);
   m_values.reset(AbsDistMatrixType::Instantiate(
     *matrix_dist.grid,
     matrix_dist.root,
-    this->is_sharded() ? (must_use_vc_star ? El::VC : El::STAR)
+    this->is_sharded() ? (must_use_x_star ? dist : El::STAR)
                        : matrix_dist.colDist,
-    this->is_sharded() ? (must_use_vc_star ? El::STAR : El::VC)
+    this->is_sharded() ? (must_use_x_star ? El::STAR : dist)
                        : matrix_dist.rowDist,
     (matrix_dist.blockHeight == 1 && matrix_dist.blockWidth == 1 ? El::ELEMENT
                                                                  : El::BLOCK),

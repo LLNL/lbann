@@ -262,6 +262,10 @@ public:
   bool is_sharded() const { return m_sharded; }
   /** Set weight sharding configuration. */
   void set_sharded(bool value) { m_sharded = value; }
+  /** Get sharding distribution (VC, MC, MR, or STAR if not sharded). */
+  El::Dist get_sharding_distribution() const { return m_sharding_strategy; }
+  /** Set sharding distribution (VC, MC, MR, or STAR if not sharded). */
+  void set_sharding_distribution(El::Dist dist) { m_sharding_strategy = dist; }
 
   // -----------------------------------------------
   // Freezing
@@ -370,6 +374,9 @@ private:
 
   /** Whether weights are sharded across ranks. */
   bool m_sharded;
+
+  /** How weights are sharded across ranks. */
+  El::Dist m_sharding_strategy;
 };
 
 } // namespace lbann

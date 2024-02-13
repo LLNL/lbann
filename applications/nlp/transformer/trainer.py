@@ -215,6 +215,10 @@ def make_batch_script(model: lbann.Model,
         "LBANN_DISABLE_DISTCONV": 1,
     }
 
+    # Set FSDP ranks, if given, by changing the trainer grid height
+    if args.fsdp_ranks > 0:
+        script_params['environment']['LBANN_TRAINER_GRID_HEIGHT'] = args.fsdp_ranks
+
     save_text = args.save_prototext
     filename = 'experiment.prototext' if save_text else 'experiment.protobin'
     # Create Protobuf file

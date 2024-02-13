@@ -64,7 +64,11 @@ std::string get_dims_string(const std::vector<size_t>& matrix_height_dims,
 
 } // namespace
 
-weights::weights() : m_comm(nullptr), m_frozen(false), m_sharded(false)
+weights::weights()
+  : m_comm(nullptr),
+    m_frozen(false),
+    m_sharded(false),
+    m_sharding_strategy(El::STAR)
 {
 
   // Initialize weights name
@@ -84,12 +88,13 @@ weights::weights(lbann_comm& comm) : weights()
 template <typename ArchiveT>
 void weights::serialize(ArchiveT& ar)
 {
-  ar(CEREAL_NVP(m_name), CEREAL_NVP(m_frozen));
+  ar(CEREAL_NVP(m_name), CEREAL_NVP(m_frozen), CEREAL_NVP(m_sharded));
 
   // What about:
   //   m_matrix_height_dims
   //   m_matrix_width_dims
   //   m_matrix_dist
+  //   m_sharding_strategy
 }
 
 description weights::get_description() const
@@ -118,7 +123,7 @@ description weights::get_description() const
 
   // Sharding state
   if (is_sharded()) {
-    desc.add("Sharded");
+    desc.add("Sharded, distribution", get_sharding_distribution());
   }
 
   // Derived class contribution
