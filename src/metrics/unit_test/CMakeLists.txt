@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2024, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,13 +23,12 @@
 ## implied. See the License for the specific language governing
 ## permissions and limitations under the license.
 ################################################################################
-# Add the headers for this directory
-set_full_path(THIS_DIR_HEADERS
-  metric.hpp
-  layer_metric.hpp
-  executable_metric.hpp
-  python_metric.hpp
+set_full_path(THIS_DIR_MPI_CATCH2_TEST_FILES
+  executable_metric_test.cpp
   )
 
-# Propagate the files up the tree
-set(HEADERS "${HEADERS}" "${THIS_DIR_HEADERS}" PARENT_SCOPE)
+set(LBANN_MPI_CATCH2_TEST_FILES
+  "${LBANN_MPI_CATCH2_TEST_FILES}"
+  "${THIS_DIR_MPI_CATCH2_TEST_FILES}" PARENT_SCOPE)
+
+add_executable(metric-tester metric_tester.cpp)

@@ -27,6 +27,8 @@
 set_full_path(THIS_DIR_SOURCES
   layer_metric.cpp
   metric.cpp
+  executable_metric.cpp
+  python_metric.cpp
   )
 
 # Propagate the files up the tree

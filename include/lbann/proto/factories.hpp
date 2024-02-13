@@ -41,6 +41,7 @@
 
 namespace lbann_data {
 class Layer;
+class Metric;
 class Model;
 class ObjectiveFunction;
 class Optimizer;
@@ -56,6 +57,7 @@ namespace lbann {
 class callback_base;
 class Layer;
 class lbann_summary;
+class metric;
 class model;
 class objective_function;
 class optimizer;
@@ -127,6 +129,10 @@ construct_transform(const lbann_data::Transform& trans);
 /** Construct a transform pipeline given a data reader prototext. */
 transform::transform_pipeline
 construct_transform_pipeline(const lbann_data::Reader& data_reader);
+
+/** Construct a metric specified with prototext. */
+std::unique_ptr<metric>
+construct_metric(lbann_comm* comm, const lbann_data::Metric& proto_metric);
 
 } // namespace proto
 } // namespace lbann

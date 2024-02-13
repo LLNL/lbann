@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2024, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,34 +24,39 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-syntax = "proto3";
+// Example metric executable for use in the executable_metric unit tests
 
-package lbann_data;
+#include <iostream>
 
-message Metric {
-  message LayerMetric {
-    string layer = 1;
-    string name = 2;
-    string unit = 3;
+int main(int argc, char** argv)
+{
+  if (argc < 2 || argc > 3) {
+    std::cout << "USAGE: "
+              << "metric-tester [extra argument] <trainer and model ID>"
+              << std::endl;
+    return 1;
   }
 
-  message ExecutableMetric {
-    string name = 1;        // Metric name
-    string filename = 2;    // Executable path, accessible by evaluating rank
-    string other_args = 3;  // Arguments to prepend before experiment path
+  // Failing cases
+  if (argc == 3) {
+    if (argv[1][0] == 'f') {
+      // Non-numeric output
+      std::cout << "fail" << std::endl;
+      return 0;
+    }
+    else if (argv[1][0] == 'r') {
+      // Nonzero return code
+      return 2;
+    }
+    else {
+      // Different output value
+      std::cout << "-2.8" << std::endl;
+      return 0;
+    }
   }
 
-  message PythonMetric {
-    string name = 1;        // Metric name
-    string module = 2;      // Python module
-    string module_dir = 3;  // Directory containing Python module
-    string function = 4;    // Function to call in module. Accepts one string
-                            // parameter: experiment path
-  }
+  // Successful run
+  std::cout << "1.40000" << std::endl;
 
-  oneof metric_type {
-    LayerMetric layer_metric = 11;
-    ExecutableMetric executable_metric = 12;
-    PythonMetric python_metric = 13;
-  }
+  return 0;
 }

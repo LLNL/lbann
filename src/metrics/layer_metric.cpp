@@ -112,13 +112,6 @@ EvalType layer_metric::evaluate(execution_mode mode, int mini_batch_size)
   return value;
 }
 
-EvalType layer_metric::evaluate_compute(const AbsDistMat& prediction,
-                                        const AbsDistMat& ground_truth)
-{
-  LBANN_ERROR("This function should not be called");
-  return EvalType(0);
-}
-
 /*abstract_evaluation_*/ Layer& layer_metric::get_evaluation_layer()
 {
   auto& l = get_layer();
@@ -143,7 +136,7 @@ bool layer_metric::save_to_checkpoint_shared(persist& p)
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                        "metrics.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                        "metrics.bin"
+                                       "metrics.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
     );
   }
@@ -158,7 +151,7 @@ bool layer_metric::load_from_checkpoint_shared(persist& p)
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                                 "metrics.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                                 "metrics.bin"
+                                                "metrics.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   );
   return true;
@@ -171,7 +164,7 @@ bool layer_metric::save_to_checkpoint_distributed(persist& p)
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                      "metrics.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                      "metrics.bin"
+                                     "metrics.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   );
   return true;
@@ -184,7 +177,7 @@ bool layer_metric::load_from_checkpoint_distributed(persist& p)
 #ifdef LBANN_HAS_CEREAL_XML_ARCHIVES
                                     "metrics.xml"
 #else  // defined LBANN_HAS_CEREAL_BINARY_ARCHIVES
-                                     "metrics.bin"
+                                    "metrics.bin"
 #endif // LBANN_HAS_CEREAL_XML_ARCHIVES
   );
   return true;

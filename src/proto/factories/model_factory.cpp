@@ -262,9 +262,7 @@ std::unique_ptr<model> construct_model(lbann_comm* comm,
   // Construct metrics
   std::vector<std::unique_ptr<metric>> metric_list;
   for (int i = 0; i < proto_model.metric_size(); ++i) {
-    const auto& params = proto_model.metric(i).layer_metric();
-    metric_list.push_back(
-      make_unique<layer_metric>(comm, params.name(), params.unit()));
+    metric_list.emplace_back(construct_metric(comm, proto_model.metric(i)));
   }
   assign_layers_to_metrics(layer_list, metric_list, proto_model);
 

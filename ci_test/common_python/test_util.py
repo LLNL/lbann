@@ -170,7 +170,7 @@ class ModelTester:
     tolerance: float = 0.0  #: Tolerance value for loss test
 
     # Optional additional metrics to use in test
-    extra_metrics: List[lbann.Metric] = field(default_factory=list)
+    extra_metrics: List[lbann.BaseMetric] = field(default_factory=list)
 
     # Optional additional callbacks to use in test
     extra_callbacks: List[lbann.Callback] = field(default_factory=list)
