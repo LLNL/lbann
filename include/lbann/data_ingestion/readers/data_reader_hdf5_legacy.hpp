@@ -143,11 +143,14 @@ protected:
                            TensorDataType* sample);
   void read_hdf5_sample(uint64_t data_id,
                         TensorDataType* sample,
-                        TensorDataType* labels);
+                        TensorDataType* labels,
+                        bool get_sample = true,
+                        bool get_labels = true,
+                        bool get_responses = true);
   // void set_defaults() override;
   void load_sample(conduit::Node& node, uint64_t data_id);
   bool fetch_datum(CPUMat& X, uint64_t data_id, uint64_t mb_idx) override;
-  void fetch_datum_conduit(Mat& X, uint64_t data_id);
+  void fetch_sample_conduit(Mat& X, uint64_t data_id, std::string field);
   bool fetch_data_field(data_field_type data_field,
                         CPUMat& Y,
                         uint64_t data_id,
