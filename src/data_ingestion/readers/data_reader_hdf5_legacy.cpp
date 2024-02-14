@@ -185,7 +185,8 @@ void hdf5_reader<TensorDataType>::read_hdf5_sample(uint64_t data_id,
   }
   else if (this->has_responses() && get_responses) {
     assert_always(labels == nullptr);
-    hid_t h_data = CHECK_HDF5(H5Dopen(h_file, m_key_responses.c_str(), H5P_DEFAULT));
+    hid_t h_data =
+      CHECK_HDF5(H5Dopen(h_file, m_key_responses.c_str(), H5P_DEFAULT));
     CHECK_HDF5(H5Dread(h_data,
                        H5T_NATIVE_FLOAT,
                        H5S_ALL,
@@ -398,14 +399,21 @@ bool hdf5_reader<TensorDataType>::fetch_datum(Mat& X,
     fetch_sample_conduit(X_v, data_id, "slab");
   }
   else {
-    read_hdf5_sample(data_id, (TensorDataType*)X_v.Buffer(), nullptr, true, false, false);
+    read_hdf5_sample(data_id,
+                     (TensorDataType*)X_v.Buffer(),
+                     nullptr,
+                     true,
+                     false,
+                     false);
   }
   prof_region_end("fetch_datum", false);
   return true;
 }
 
 template <typename TensorDataType>
-void hdf5_reader<TensorDataType>::fetch_sample_conduit(Mat& X, uint64_t data_id, std::string field)
+void hdf5_reader<TensorDataType>::fetch_sample_conduit(Mat& X,
+                                                       uint64_t data_id,
+                                                       std::string field)
 {
   const std::string conduit_key = LBANN_DATA_ID_STR(data_id);
   // Create a node to hold all of the data
@@ -456,7 +464,9 @@ bool hdf5_reader<TensorDataType>::fetch_response(Mat& Y,
     }
     else {
       read_hdf5_sample(data_id, nullptr, nullptr, false, false, true);
-      std::memcpy(Y_v.Buffer(), &m_all_responses[0], m_all_responses.size() * sizeof(DataType));
+      std::memcpy(Y_v.Buffer(),
+                  &m_all_responses[0],
+                  m_all_responses.size() * sizeof(DataType));
     }
   }
   prof_region_end("fetch_response", false);
