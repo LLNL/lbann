@@ -72,7 +72,9 @@ set_center_specific_gpu_arch()
                 ;;
             "zen3") # Tioga, RZVernal
                 # Use a HIP Clang variant
-                GPU_ARCH_VARIANTS="amdgpu_target=gfx90a"
+#                GPU_ARCH_VARIANTS="amdgpu_target=gfx90a"
+                GPU_ARCH_VARIANTS="amdgpu_target=gfx90a,gfx942"
+#                GPU_ARCH_VARIANTS="amdgpu_target=gfx940"
                 ;;
             *)
                 ;;
@@ -124,7 +126,8 @@ set_center_specific_modules()
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
             "zen3") # Tioga, RZVernal
-                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.09.0 cce/17.0.0 craype/2.7.23 cray-mpich/8.1.28 cray-libsci/23.09.1.1 PrgEnv-cray StdEnv rocm/5.7.1 cmake/3.24.2"
+                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.12.0 cce/17.0.0 craype/2.7.30 cray-mpich/8.1.28 cray-libsci/23.12.5 PrgEnv-cray StdEnv rocm/5.7.1 cmake/3.24.2"
+#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.09.0 cce/16.0.1 craype/2.7.23 cray-mpich/8.1.27 cray-libsci/23.09.1.1 PrgEnv-cray/8.4.0 StdEnv rocm/5.7.1 cmake/3.24.2"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -299,6 +302,7 @@ set_center_specific_externals()
     local module_dir="$5"
 
     if [[ ${center} = "llnl_lc" ]]; then
+        prefix="/p/vast1/lbann/stable_dependencies"
         case ${spack_arch_target} in
             "broadwell" | "haswell" | "sandybridge" | "ivybridge")
 cat <<EOF  >> ${yaml}
@@ -319,8 +323,8 @@ cat <<EOF  >> ${yaml}
         modules:
         - mvapich2/2.3.7
 EOF
-        set_superbuild_externals "pascal" "cuda-11.8.0" "openmpi-4.1.2" "$yaml" "${LOG}"
-        set_superbuild_DHA_externals "pascal" "cuda-11.8.0" "openmpi-4.1.2" "$yaml" "${LOG}"
+        set_superbuild_externals "pascal" "cuda-11.8.0" "openmpi-4.1.2" "$yaml" "${LOG}" "${prefix}"
+        set_superbuild_DHA_externals "pascal" "cuda-11.8.0" "openmpi-4.1.2" "$yaml" "${prefix}"
                 ;;
             "power9le" | "power8le")
 cat <<EOF  >> ${yaml}
@@ -333,9 +337,9 @@ cat <<EOF  >> ${yaml}
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
 EOF
-        set_superbuild_externals "lassen" "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${LOG}"
-        set_superbuild_DHA_externals "lassen" "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${LOG}"
-        set_superbuild_power_externals "lassen" "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${LOG}"
+        set_superbuild_externals "lassen" "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${LOG}" "${prefix}"
+        set_superbuild_DHA_externals "lassen" "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${prefix}"
+        set_superbuild_power_externals "lassen" "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${prefix}"
 
                 ;;
             "zen" | "zen2")
@@ -373,11 +377,12 @@ cat <<EOF  >> ${yaml}
         - openmpi/4.1.2
 EOF
 
-        set_superbuild_externals "corona" "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${LOG}"
-        set_superbuild_DHA_externals "corona" "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${LOG}"
+        set_superbuild_externals "corona" "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${LOG}" "${prefix}"
+        set_superbuild_DHA_externals "corona" "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${prefix}"
 
                 ;;
             "zen3")
+                prefix="/usr/workspace/lbann/stable_dependencies"
 cat <<EOF  >> ${yaml}
   compilers:
   - compiler:
@@ -462,8 +467,8 @@ cat <<EOF  >> ${yaml}
         modules:
         - cce/17.0.0 PrgEnv-cray cray-mpich/8.1.28
 EOF
-        set_superbuild_externals "tioga" "rocm-5.7.1" "cray-mpich-8.1.28" "$yaml" "${LOG}"
-        set_superbuild_DHA_externals "tioga" "rocm-5.7.1" "cray-mpich-8.1.28" "$yaml" "${LOG}"
+        set_superbuild_externals "rzvernal" "rocm-5.7.1" "cray-mpich-8.1.28" "$yaml" "${LOG}" "${prefix}" "mi300a"
+        set_superbuild_DHA_externals "rzvernal" "rocm-5.7.1" "cray-mpich-8.1.28" "$yaml" "${prefix}" "mi300a"
 
                 ;;
             *)
