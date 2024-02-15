@@ -303,6 +303,7 @@ set_center_specific_externals()
 
     if [[ ${center} = "llnl_lc" ]]; then
         prefix="/p/vast1/lbann/stable_dependencies"
+        host=$(host_basename)
         case ${spack_arch_target} in
             "broadwell" | "haswell" | "sandybridge" | "ivybridge")
 cat <<EOF  >> ${yaml}
@@ -323,8 +324,8 @@ cat <<EOF  >> ${yaml}
         modules:
         - mvapich2/2.3.7
 EOF
-        set_superbuild_externals "pascal" "cuda-11.8.0" "openmpi-4.1.2" "$yaml" "${LOG}" "${prefix}"
-        set_superbuild_DHA_externals "pascal" "cuda-11.8.0" "openmpi-4.1.2" "$yaml" "${prefix}"
+        set_superbuild_externals ${host} "cuda-11.8.0" "openmpi-4.1.2" "$yaml" "${LOG}" "${prefix}"
+        set_superbuild_DHA_externals ${host} "cuda-11.8.0" "openmpi-4.1.2" "$yaml" "${prefix}"
                 ;;
             "power9le" | "power8le")
 cat <<EOF  >> ${yaml}
@@ -337,9 +338,9 @@ cat <<EOF  >> ${yaml}
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
 EOF
-        set_superbuild_externals "lassen" "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${LOG}" "${prefix}"
-        set_superbuild_DHA_externals "lassen" "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${prefix}"
-        set_superbuild_power_externals "lassen" "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${prefix}"
+        set_superbuild_externals ${host} "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${LOG}" "${prefix}"
+        set_superbuild_DHA_externals ${host} "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${prefix}"
+        set_superbuild_power_externals ${host} "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${prefix}"
 
                 ;;
             "zen" | "zen2")
@@ -377,12 +378,15 @@ cat <<EOF  >> ${yaml}
         - openmpi/4.1.2
 EOF
 
-        set_superbuild_externals "corona" "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${LOG}" "${prefix}"
-        set_superbuild_DHA_externals "corona" "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${prefix}"
+        set_superbuild_externals ${host} "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${LOG}" "${prefix}"
+        set_superbuild_DHA_externals ${host} "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${prefix}"
 
                 ;;
             "zen3")
-                prefix="/usr/workspace/lbann/stable_dependencies"
+                if [ ${host} == "rzvernal" ]; then
+                    # Override the prefix path for this system
+                    prefix="/usr/workspace/lbann/stable_dependencies"
+                fi
 cat <<EOF  >> ${yaml}
   compilers:
   - compiler:
@@ -467,9 +471,8 @@ cat <<EOF  >> ${yaml}
         modules:
         - cce/17.0.0 PrgEnv-cray cray-mpich/8.1.28
 EOF
-        set_superbuild_externals "rzvernal" "rocm-5.7.1" "cray-mpich-8.1.28" "$yaml" "${LOG}" "${prefix}" "mi300a"
-        set_superbuild_DHA_externals "rzvernal" "rocm-5.7.1" "cray-mpich-8.1.28" "$yaml" "${prefix}" "mi300a"
-
+        set_superbuild_externals ${host} "rocm-5.7.1" "cray-mpich-8.1.28" "$yaml" "${LOG}" "${prefix}" "mi300a"
+        set_superbuild_DHA_externals ${host} "rocm-5.7.1" "cray-mpich-8.1.28" "$yaml" "${prefix}" "mi300a"
                 ;;
             *)
                 echo "No center-specified externals."

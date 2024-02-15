@@ -17,6 +17,13 @@ osx_realpath() {
     [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
 }
 
+host_basename() {
+    HOST=$(hostname)
+    HOST=${HOST//[[:digit:]]/}
+    HOST=${HOST//\-/}
+    echo ${HOST}
+}
+
 function normpath() {
   # Remove all /./ sequences.
   local path=${1//\/.\//\/}
