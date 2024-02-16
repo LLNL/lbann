@@ -15,6 +15,7 @@ import network
 import paths
 
 import dataset_utils
+import arg_utils
 import applications.FLASK.Transformer.network as network
 
 
@@ -267,85 +268,15 @@ def make_batch_script(
     return script
 
 
-def add_training_arguments(parser: argparse.ArgumentParser):
-    parser.add_argument(
-        "--skip-validation",
-        action="store_true",
-        default=False,
-        help="Do not run validation (default: false)",
-    )
-    parser.add_argument(
-        "--always-shuffle",
-        action="store_true",
-        default=False,
-        help="Always shuffle training dataset, even if pretokenized (default: false)",
-    )
-    parser.add_argument(
-        "--validation-set-fraction",
-        type=float,
-        default=0.01,
-        help="Fraction of the validation dataset to use (default: 0.001)",
-    )
-    parser.add_argument(
-        "--save-prototext",
-        action="store_true",
-        default=False,
-        help="Save prototext experiment file instead of protobin (slower but "
-        "debuggable) (default: false)",
-    )
-    parser.add_argument(
-        "--validate-every",
-        type=int,
-        default=100,
-        help="Run validation every N steps (default: 100)",
-    )
-    parser.add_argument(
-        "--random-seed",
-        action="store",
-        default=None,
-        type=int,
-        help=f"Set random seed explicitly",
-        metavar="NUM",
-    )
-    parser.add_argument(
-        "--pbar-newline-interval",
-        type=int,
-        default=100,
-        help="Number of iterations in progress bar before "
-        "printing a newline (default: 100)",
-    )
-    parser.add_argument(
-        "--pbar-width",
-        type=int,
-        default=30,
-        help="Progress bar width, if enabled (default: 30)",
-    )
-    parser.add_argument(
-        "--pbar-moving-avg",
-        type=int,
-        default=10,
-        help="Progress bar iteration time moving average "
-        "length in iterations. Disable moving average with 1 "
-        "(default: 10)",
-    )
-    parser.add_argument(
-        "--pbar-scientific",
-        action="store_true",
-        default=False,
-        help="Use scientific notation for objective value "
-        "printouts in progress bar (default: false)",
-    )
-
-
 def main():
     # Setup command line options
     parser = argparse.ArgumentParser()
     lbann.contrib.args.add_scheduler_arguments(parser, "lbann_transformer")
     lbann.contrib.args.add_profiling_arguments(parser)
     lbann.contrib.args.add_training_arguments(parser)
-    network.add_transformer_architecture_arguments(parser)
-    add_training_arguments(parser)
-    dataset_utils.add_dataset_arguments(parser, default="qm9")
+    arg_utils.add_transformer_architecture_arguments(parser)
+    arg_utils.add_training_arguments(parser)
+    arg_utils.add_dataset_arguments(parser, default="qm9")
 
     parser.add_argument(
         "--optimizer",
