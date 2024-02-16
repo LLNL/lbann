@@ -9,7 +9,8 @@ import numpy as np
 
 
 class InputEncoding(Enum):
-    """ Different types of input encoding used by the transformer samples. """
+    """Different types of input encoding used by the transformer samples."""
+
     POSITIONAL = auto()  # Positional encoding
     LEARNED = auto()  # Learned embeddings
     NONE = auto()  # No encoding
@@ -17,7 +18,7 @@ class InputEncoding(Enum):
 
 def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
     """
-    Creates an Encoder-Decoder Transformer model as per Vaswani et al., 
+    Creates an Encoder-Decoder Transformer model as per Vaswani et al.,
     "Attention is all you need" (2017), with a language modeling head for
     sequence transduction tasks (e.g. translation).
     """
@@ -28,12 +29,12 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
     # Embedding weights
     var = 2 / (args.embed_dim + vocab_size)  # Glorot initialization
     embedding_weights = lbann.Weights(
-        name='embeddings',
+        name="embeddings",
         initializer=lbann.NormalInitializer(standard_deviation=math.sqrt(var)),
     )
 
     # Input is two sequences of token IDs
-    input_tokens = lbann.Input(data_field='samples')
+    input_tokens = lbann.Input(data_field="samples")
 
     # Get sequences of embedding vectors
     # Note: Scale embeddings by sqrt(embed_dim).
@@ -44,7 +45,8 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
             input_tokens,
             axis=0,
             slice_points=[0, 2 * sequence_length - 1],
-        ))
+        )
+    )
     embeddings = lbann.Embedding(
         embeddings_tokens,
         weights=embedding_weights,
@@ -66,8 +68,14 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
 
     # Apply input encoding
     encoder_input, decoder_input = _add_input_encoding(
-        encoder_input, decoder_input, InputEncoding.POSITIONAL, args.embed_dim,
-        args.input_dropout, sequence_length, sequence_length - 1)
+        encoder_input,
+        decoder_input,
+        InputEncoding.POSITIONAL,
+        args.embed_dim,
+        args.input_dropout,
+        sequence_length,
+        sequence_length - 1,
+    )
 
     # Add encoder-decoder transformer model
     transformer = lbann.models.Transformer(
@@ -75,31 +83,35 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
         num_heads=args.num_attention_heads,
         dropout=args.dropout,
         feedforward_size=args.feedforward_dim,
-        name='transformer',
+        name="transformer",
         num_encoder_layers=num_encoders,
-        num_decoder_layers=num_decoders)
+        num_decoder_layers=num_decoders,
+    )
     result = transformer(encoder_input, decoder_input, sequence_length - 1)
 
     # Reconstruct decoder input
-    lm_head = lbann.ChannelwiseFullyConnected(result,
-                                              weights=embedding_weights,
-                                              output_channel_dims=[vocab_size],
-                                              bias=False,
-                                              transpose=True,
-                                              name="prediction_layer")
+    lm_head = lbann.ChannelwiseFullyConnected(
+        result,
+        weights=embedding_weights,
+        output_channel_dims=[vocab_size],
+        bias=False,
+        transpose=True,
+        name="prediction_layer",
+    )
     preds = lbann.ChannelwiseSoftmax(lm_head)
     preds = lbann.TensorPermute(preds, axes=[1, 0])
 
     # Compute loss
-    loss = _add_encoder_decoder_loss(preds, input_tokens, sequence_length,
-                                     vocab_size, dataset.pad_index)
-    
+    loss = _add_encoder_decoder_loss(
+        preds, input_tokens, sequence_length, vocab_size, dataset.pad_index
+    )
+
     # Construct model
     metrics = []
     callbacks = [
         lbann.CallbackPrint(),
         lbann.CallbackTimer(),
-        lbann.CallbackGPUMemoryUsage()
+        lbann.CallbackGPUMemoryUsage(),
     ]
     result = lbann.Model(
         args.num_epochs,
@@ -107,16 +119,20 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
         objective_function=loss,
         metrics=metrics,
         callbacks=callbacks,
-        **extra_model_kwargs,
     )
 
     return result
 
+
 def _add_input_encoding(
-        encoder_input: lbann.Layer, decoder_input: lbann.Layer,
-        encoding_kind: InputEncoding, embed_dim: int, input_dropout: float,
-        encoder_sequence_length: int,
-        decoder_sequence_length: int) -> Tuple[lbann.Layer, lbann.Layer]:
+    encoder_input: lbann.Layer,
+    decoder_input: lbann.Layer,
+    encoding_kind: InputEncoding,
+    embed_dim: int,
+    input_dropout: float,
+    encoder_sequence_length: int,
+    decoder_sequence_length: int,
+) -> Tuple[lbann.Layer, lbann.Layer]:
     if encoding_kind == InputEncoding.NONE:
         # Do nothing
         return encoder_input, decoder_input
@@ -128,33 +144,83 @@ def _add_input_encoding(
 
     # Apply encoder
     if encoder_input is not None:
-        encoder_input = positional_encoder(encoder_input,
-                                           encoder_sequence_length, **kwargs)
+        encoder_input = positional_encoder(
+            encoder_input, encoder_sequence_length, **kwargs
+        )
     if decoder_input is not None:
-        decoder_input = positional_encoder(decoder_input,
-                                           decoder_sequence_length, **kwargs)
+        decoder_input = positional_encoder(
+            decoder_input, decoder_sequence_length, **kwargs
+        )
 
     return encoder_input, decoder_input
 
 
-def _add_encoder_decoder_loss(preds, both_sequences, sequence_length,
-                              vocab_size, pad_index):
+def _add_encoder_decoder_loss(
+    preds, both_sequences, sequence_length, vocab_size, pad_index
+):
     # Get label tokens from the second sequence, starting from the second token
     # onwards
     target_sequence = lbann.Identity(
         lbann.Slice(
             both_sequences,
             slice_points=[sequence_length + 1, 2 * sequence_length],
-        ))
+        )
+    )
     labels = lbann.Reshape(target_sequence, dims=[1, sequence_length - 1])
 
     # Filter out output predictions that are in padding from cross-entropy by
     # using values that will never contribute to the cross-entropy loss
-    labels = lbann.Select(labels,
-                          lbann.Identity(labels),
-                          value=pad_index,
-                          if_true=(vocab_size + 1))
+    labels = lbann.Select(
+        labels, lbann.Identity(labels), value=pad_index, if_true=(vocab_size + 1)
+    )
 
     # Compute cross-entropy
     ce = lbann.CrossEntropy(preds, labels, use_labels=True)
     return lbann.Scale(ce, constant=1 / (sequence_length - 1))
+
+
+def add_transformer_architecture_arguments(args: argparse.Namespace):
+    """
+    Adds the command line arguments to specify transformer architecture model
+    parameters. This is only relevant for the encoder-decoder transformer model.
+    """
+    args.add_argument(
+        "--num-attention-heads",
+        action="store",
+        default=8,
+        type=int,
+        help="number of parallel attention layers (default: 8)",
+        metavar="NUM",
+    )
+    args.add_argument(
+        "--embed-dim",
+        action="store",
+        default=512,
+        type=int,
+        help="embedding space dimension (default: 512)",
+        metavar="NUM",
+    )
+    args.add_argument(
+        "--feedforward-dim",
+        action="store",
+        default=0,
+        type=int,
+        help="feedforward network dimension. If zero, set to be "
+        "4 times the embedding dimension (default: 0)",
+        metavar="NUM",
+    )
+    args.add_argument(
+        "--num-layers",
+        action="store",
+        default=6,
+        type=int,
+        help="Number of encoder and decoder layers (default: 6)",
+        metavar="NUM",
+    )
+    args.add_argument(
+        "--positional-encoding",
+        type=str,
+        default="learned",
+        help="The type of positional encoding to use " "(default: learned)",
+        choices=[s.name.lower() for s in InputEncoding],
+    )

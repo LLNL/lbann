@@ -11,7 +11,6 @@ class MolTokenizer:
     def __init__(
         self,
         vocab_file: str = "",
-        do_lower_case=False,
         unk_token="<pad>",
         sep_token="<eos>",
         pad_token="<pad>",
@@ -79,36 +78,12 @@ if __name__ == "__main__":
     from tqdm import tqdm
 
     tokenizer = MolTokenizer()
-    # with open("CID-SMILES-CANONICAL.smi", "r") as f:
-    #     data = f.readlines()
-    # max_len = 0
-    # for i in tqdm(range(len(data))):
-    #     line = data[i].split(" ")
-    #     print(line[1])
-    #     tokens = tokenizer._tokenize(line[1])
-    #     print(tokens)
-    #     if len(tokens) > max_len:
-    #         max_len = len(tokens)
-    #     break
-    # print(max_len)
-
-    from glob import glob
-    from multiprocessing import Pool
-
-    zinc_files = glob("ZINC/*.smi")
-    print(len(zinc_files))
-
-    def find_max_per_file(_fname):
-        with open(_fname, "r") as f:
-            data = f.readlines()
-        max_len = 0
-        for i in tqdm(range(1, len(data))):
-            line = data[i].split(" ")
-            tokens = tokenizer._tokenize(line[0])
-            if len(tokens) > max_len:
-                max_len = len(tokens)
-        return max_len
-
-    with Pool(20) as p:
-        max_len = p.map(find_max_per_file, zinc_files)
-    print(max(max_len))
+    with open("CID-SMILES-CANONICAL.smi", "r") as f:
+        data = f.readlines()
+    max_len = 0
+    for i in tqdm(range(len(data))):
+        line = data[i].split(" ")
+        tokens = tokenizer._tokenize(line[1])
+        if len(tokens) > max_len:
+            max_len = len(tokens)
+    print(max_len)
