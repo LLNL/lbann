@@ -72,18 +72,3 @@ class MolTokenizer:
 
     def token_to_id(self, token):
         return self.vocab_dict[token]
-
-
-if __name__ == "__main__":
-    from tqdm import tqdm
-
-    tokenizer = MolTokenizer()
-    with open("CID-SMILES-CANONICAL.smi", "r") as f:
-        data = f.readlines()
-    max_len = 0
-    for i in tqdm(range(len(data))):
-        line = data[i].split(" ")
-        tokens = tokenizer._tokenize(line[1])
-        if len(tokens) > max_len:
-            max_len = len(tokens)
-    print(max_len)
