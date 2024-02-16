@@ -157,15 +157,29 @@ void weights_layer<TensorDataType, Layout, Device>::fp_compute()
 
   // Duplicate weights across columns of output matrix
   const auto& local_weights = this->weights_values(0).LockedMatrix();
-  MatType ones;
-  El::Ones(ones, local_output.Width(), 1);
-  El::Gemm(El::NORMAL,
-           El::TRANSPOSE,
-           El::TypeTraits<TensorDataType>::One(),
-           local_weights,
-           ones,
-           El::TypeTraits<TensorDataType>::Zero(),
-           local_output);
+  if (local_output.Width() <= 32) { // The number 32 is a heuristic
+    // Use copies for broadcast
+    for (int i = 0; i < local_output.Width(); ++i) {
+      MatType v;
+      El::View(v,
+               local_output,
+               El::IR(0, local_weights.Height()),
+               El::IR(i, i + 1));
+      El::Copy(local_weights, v);
+    }
+  }
+  else {
+    // Use GEMM with ones for broadcast
+    MatType ones;
+    El::Ones(ones, local_output.Width(), 1);
+    El::Gemm(El::NORMAL,
+             El::TRANSPOSE,
+             El::TypeTraits<TensorDataType>::One(),
+             local_weights,
+             ones,
+             El::TypeTraits<TensorDataType>::Zero(),
+             local_output);
+  }
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
