@@ -175,7 +175,7 @@ software.
 
 .. code-block:: bash
 
-   spack install lbann <variants and dependencies>
+   spack install --add lbann <variants and dependencies>
    spack load lbann@develop
 
 .. note::
@@ -190,7 +190,7 @@ software.
       module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.0 mvapich2/2.3 python/3.7.2
       spack compiler find --scope env:lbann
       spack external find --scope env:lbann
-      spack install lbann@develop cuda_arch=60 +cuda ^hydrogen@develop+al ^aluminum@master ^mvapich2
+      spack install --add lbann@develop cuda_arch=60 +cuda ^hydrogen@develop+al ^aluminum@master ^mvapich2
       spack load lbann@develop
 
 Please note that when getting LBANN to build as a user will encounter
