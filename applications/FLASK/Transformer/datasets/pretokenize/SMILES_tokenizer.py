@@ -7,31 +7,44 @@ import os
 PATTERN = "(\[[^\]]+]|Br?|Cl?|N|O|S|P|F|I|b|c|n|o|s|p|\(|\)|\.|=|#|-|\+|\\\\|\/|:|~|@|\?|>|\*|\$|\%[0-9]{2}|[0-9])"
 
 
-class MolTokenizer():
-    def __init__(self, vocab_file: str = '',
-                 do_lower_case=False,
-                 unk_token='<pad>',
-                 sep_token='<eos>',
-                 pad_token='<pad>',
-                 cls_token='<bos>',
-                 mask_token='<mask>',
-                 **kwargs):
+class MolTokenizer:
+    def __init__(
+        self,
+        vocab_file: str = "",
+        do_lower_case=False,
+        unk_token="<pad>",
+        sep_token="<eos>",
+        pad_token="<pad>",
+        cls_token="<bos>",
+        mask_token="<mask>",
+        **kwargs
+    ):
         self.unk_token = unk_token
         self.pad_token = pad_token
         self.sep_token = sep_token
         self.cls_token = cls_token
-        self.mask_token = mask_token 
+        self.mask_token = mask_token
         self.regex_tokenizer = re.compile(PATTERN)
         self.wordpiece_tokenizer = None
         self.basic_tokenizer = None
         self.vocab_file = vocab_file
+        self.vocab_dict = {}
+        self.vocab_dict[self.pad_token] = 0
+        self.vocab_dict[self.sep_token] = 1
+        self.vocab_dict[self.cls_token] = 2
+        self.vocab_dict[self.mask_token] = 3
+        self.counter = 4
 
     def load_vocab_file(self):
         if os.path.exists(self.vocab_file):
-            with open(self.vocab_file, 'r') as f:
-              self.vocab = json.load(f)
+            with open(self.vocab_file, "r") as f:
+                self.vocab_dict = json.load(f)
         else:
             raise NameError("Vocab file not douns")
+
+    def load_vocab_dict(self, vocab_dict):
+        self.vocab_dict = vocab_dict
+        self.counter = len(vocab_dict)
 
     def _tokenize(self, text):
         split_tokens = self.regex_tokenizer.findall(text)
@@ -41,30 +54,61 @@ class MolTokenizer():
         split_tokens = self._tokenize(text)
         output = np.zeros(len(split_tokens))
         for i, each in enumerate(split_tokens):
-            output[i] = self.vocab[each]
+            if each not in self.vocab_dict.keys():
+                self.vocab_dict[each] = self.counter
+                self.counter += 1
+            output[i] = self.vocab_dict[each]
         return output
 
     def encode(self, token):
-        return self.vocab[token]
+        return self.vocab_dict[token]
 
     def convert_tokens_to_string(self, tokens):
         out_string = "".join(tokens).strip()
-        return out_string  
-    
-    def generate_vocab_file(self, dataset_name):
-        vocab_dict = {}
-        vocab_dict[self.pad_token] = 0
-        vocab_dict[self.sep_token] = 1
-        vocab_dict[self.cls_token] = 2
-        vocab_dict[self.mask_token] = 3
+        return out_string
 
-        counter = 4
-        with open(dataset_name, 'r') as f:
-            for smiles in f:
-                for token in self._tokenize(smiles.strip()):
-                    if not token in vocab_dict.keys():
-                        vocab_dict[token] = counter
-                        counter += 1
+    def generate_vocab_file(self, vocab_file_name):
+        with open(vocab_file_name, "w") as f:
+            f.write(json.dumps(self.vocab_dict))
 
-        with open(self.vocab_file, 'w') as f:
-          f.write(json.dumps(vocab_dict))
+    def token_to_id(self, token):
+        return self.vocab_dict[token]
+
+
+if __name__ == "__main__":
+    from tqdm import tqdm
+
+    tokenizer = MolTokenizer()
+    # with open("CID-SMILES-CANONICAL.smi", "r") as f:
+    #     data = f.readlines()
+    # max_len = 0
+    # for i in tqdm(range(len(data))):
+    #     line = data[i].split(" ")
+    #     print(line[1])
+    #     tokens = tokenizer._tokenize(line[1])
+    #     print(tokens)
+    #     if len(tokens) > max_len:
+    #         max_len = len(tokens)
+    #     break
+    # print(max_len)
+
+    from glob import glob
+    from multiprocessing import Pool
+
+    zinc_files = glob("ZINC/*.smi")
+    print(len(zinc_files))
+
+    def find_max_per_file(_fname):
+        with open(_fname, "r") as f:
+            data = f.readlines()
+        max_len = 0
+        for i in tqdm(range(1, len(data))):
+            line = data[i].split(" ")
+            tokens = tokenizer._tokenize(line[0])
+            if len(tokens) > max_len:
+                max_len = len(tokens)
+        return max_len
+
+    with Pool(20) as p:
+        max_len = p.map(find_max_per_file, zinc_files)
+    print(max(max_len))
