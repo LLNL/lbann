@@ -76,7 +76,7 @@ def main():
 
         final_vocab = join_vocabs(zinc_vocab_dicts)
 
-        final_tokenizer = MolTokenizer("ZINC_SMILES_vocab.json")
+        final_tokenizer = MolTokenizer("ZINC_vocab.json")
         final_tokenizer.load_vocab_dict(final_vocab)
         final_tokenizer.generate_vocab_file("ZINC_SMILES_vocab.json")
         print("ZINC vocab file generated")
@@ -92,7 +92,7 @@ def main():
                 smiles = line.split(" ")[1]
                 tokens = tokenizer.tokenize(smiles)
 
-            tokenizer.generate_vocab_file("PubChem_SMILES_vocab.json")
+            tokenizer.generate_vocab_file("PubChem_vocab.json")
             print("PubChem vocab file generated")
 
 
