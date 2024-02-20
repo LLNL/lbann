@@ -39,7 +39,7 @@ class MolTokenizer:
             with open(self.vocab_file, "r") as f:
                 self.vocab_dict = json.load(f)
         else:
-            raise NameError("Vocab file not douns")
+            raise NameError(f"Vocab file not found in {self.vocab_file}")
 
     def load_vocab_dict(self, vocab_dict):
         self.vocab_dict = vocab_dict

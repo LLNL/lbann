@@ -4,7 +4,7 @@ import lbann
 import math
 from typing import Tuple
 from lbann.models.transformer import LayerNorm
-from lbann.modules.transformer import PositionalEncoding
+from lbann.modules.transformer.encoding import PositionalEncoding
 import numpy as np
 
 

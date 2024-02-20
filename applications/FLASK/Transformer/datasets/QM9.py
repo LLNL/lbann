@@ -17,10 +17,10 @@ sequence_length = int(os.getenv("QM9_SEQUENCE_LENGTH", default="32"))
 # Load the datasets
 data_dir = os.getenv("QM9_DATA_DIR", "/p/vast1/lbann/datasets/FLASK/QM9")
 
-tokenizer = MolTokenizer("SMILES_vocab.json")
+tokenizer = MolTokenizer(os.path.join(data_dir, "QM9_vocab.json"))
 tokenizer.load_vocab_file()
 
-dataset_train = np.load(os.path.join(data_dir, "QM9_Pretokenized.npy"))
+dataset_train = np.load(os.path.join(data_dir, "QM9_Pretokenized.npy"), allow_pickle=True)
 
 _vocab_size = 46
 

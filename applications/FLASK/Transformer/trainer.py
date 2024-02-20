@@ -16,7 +16,7 @@ import paths
 
 import dataset_utils
 import arg_utils
-import applications.FLASK.Transformer.network as network
+import network
 
 
 def construct_training_task(
@@ -276,7 +276,7 @@ def main():
     lbann.contrib.args.add_training_arguments(parser)
     arg_utils.add_transformer_architecture_arguments(parser)
     arg_utils.add_training_arguments(parser)
-    arg_utils.add_dataset_arguments(parser, default="qm9")
+    arg_utils.add_dataset_arguments(parser, default="QM9")
 
     parser.add_argument(
         "--optimizer",
