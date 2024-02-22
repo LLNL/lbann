@@ -257,9 +257,8 @@ trainer& construct_trainer(lbann_comm* comm,
 #endif
 
   // Initialize the general RNGs and the data sequence RNGs
-  int max_io_rng_banks = arg_parser.get<int>(LBANN_OPTION_MAX_IO_RNG_BANKS);
   // Create a set of RNG banks for both training and validation type phases
-  init_random(random_seed, max_io_rng_banks * 2);
+  init_random(random_seed, io_threads_per_process * 2);
   init_data_seq_random(data_seq_random_seed);
   init_ltfb_random(root_random_seed);
   global_trainer_->set_random_seeds(root_random_seed,
@@ -374,21 +373,17 @@ std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm* comm,
 
   auto& arg_parser = global_argument_parser();
   int req_io_threads = arg_parser.get<int>(LBANN_OPTION_NUM_IO_THREADS);
-  int max_io_rng_banks = arg_parser.get<int>(LBANN_OPTION_MAX_IO_RNG_BANKS);
   // Limit the number of I/O threads to:
   //   < number of available free cores per process
-  //   < number of RNG banks provisioned
   // and at least one
-  int num_io_threads = std::max(
-    std::min(max_io_rng_banks, std::min(max_io_threads, req_io_threads)),
-    1);
+  int num_io_threads = std::max(std::min(max_io_threads, req_io_threads), 1);
 
   auto io_threads_offset = free_core_offset(comm);
 
   if (comm->am_world_master()) {
     std::cout << "\tNum. I/O Threads: " << num_io_threads
               << " (Limited to # Unused Compute Cores [" << max_io_threads
-              << "] # of RNG banks [" << max_io_rng_banks
+              << "] # of RNG banks [" << (num_io_threads * 2)
               << "] or 1) at offset " << io_threads_offset << std::endl;
   }
 

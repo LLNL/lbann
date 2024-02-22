@@ -79,7 +79,6 @@ namespace lbann {
 #define LBANN_OPTION_MODEL "model"
 #define LBANN_OPTION_NUM_EPOCHS "num_epochs"
 #define LBANN_OPTION_NUM_IO_THREADS "Num. IO threads"
-#define LBANN_OPTION_MAX_IO_RNG_BANKS "Max IO RNG banks"
 #define LBANN_OPTION_OPTIMIZER "optimizer"
 #define LBANN_OPTION_PROCS_PER_TRAINER "Processes per trainer"
 #define LBANN_OPTION_PROTOTEXT "prototext"

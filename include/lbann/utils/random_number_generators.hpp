@@ -85,16 +85,27 @@ struct locked_io_rng_ref
 
 /**
  * Return a reference to the global LBANN random number generator.
- * @note If compiling with OpenMP, this is stored in a threadprivate variable.
  */
 rng_gen& get_generator();
 
 /**
  * Return a reference to a possibly-faster global LBANN random number generator.
  * Compared to get_generator, this should be slightly faster.
- * @note If compiling with OpenMP, this is stored in a threadprivate variable.
  */
 fast_rng_gen& get_fast_generator();
+
+/**
+ * Return a reference to the OMP thread local LBANN random number generator.
+ * @note This is stored in a threadprivate variable.
+ */
+rng_gen& get_OMP_generator();
+
+/**
+ * Return a reference to a possibly-faster OMP thread local LBANN random number
+ * generator. Compared to get_generator, this should be slightly faster.
+ * @note This is stored in a threadprivate variable.
+ */
+fast_rng_gen& get_OMP_fast_generator();
 
 /**
  * Return a reference to a global LBANN random number generator for LTFB.

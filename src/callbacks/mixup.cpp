@@ -31,9 +31,9 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/beta.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/profiling.hpp"
 #include "lbann/utils/protobuf.hpp"
 #include "lbann/utils/serialize.hpp"
-#include "lbann/utils/profiling.hpp"
 #include <algorithm>
 
 #include "lbann/proto/callbacks.pb.h"
@@ -96,7 +96,6 @@ void mixup::on_forward_prop_end(model* m, Layer* l)
   El::Int mbsize = samples.Width();
   const El::Int samples_height = samples.Height();
   const El::Int labels_height = labels.Height();
-  auto& gen = get_fast_generator();
   beta_distribution<float> dist(m_alpha, m_alpha);
 
   // For now, data must be on the CPU.
@@ -108,7 +107,9 @@ void mixup::on_forward_prop_end(model* m, Layer* l)
   // Decide how to mix the mini-batch.
   std::vector<El::Int> shuffled_indices(mbsize);
   std::iota(shuffled_indices.begin(), shuffled_indices.end(), 0);
-  std::shuffle(shuffled_indices.begin(), shuffled_indices.end(), gen);
+  std::shuffle(shuffled_indices.begin(),
+               shuffled_indices.end(),
+               get_fast_generator());
 
   LBANN_OMP_PARALLEL_FOR
   for (El::Int i = 0; i < mbsize; ++i) {
@@ -116,7 +117,7 @@ void mixup::on_forward_prop_end(model* m, Layer* l)
     if (i == j) {
       continue;
     }
-    float lambda = dist(gen);
+    float lambda = dist(get_OMP_fast_generator());
     lambda = std::max(lambda, 1.0f - lambda);
     const float lambda_sub = 1.0f - lambda;
     const DataType* __restrict__ x1_buf = samples.LockedBuffer(0, i);
