@@ -87,6 +87,7 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
         transformer, args)
     parallelism.apply_ffn_model_parallelism(transformer, args)
     parallelism.apply_fsdp_mlp(transformer, [embedding_weights], args)
+    parallelism.apply_layer_parallelism(transformer, args)
 
     # Run through transformer
     result = transformer(encoder_input, decoder_input, sequence_length - 1)
@@ -124,6 +125,7 @@ def create_encoder_decoder_transformer(dataset, args: argparse.Namespace):
     )
 
     parallelism.apply_fsdp_allweights(result, args)
+    parallelism.apply_layer_parallelism_postamble(result, args)
     return result
 
 
@@ -186,6 +188,7 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
         transformer, args)
     parallelism.apply_ffn_model_parallelism(transformer, args)
     parallelism.apply_fsdp_mlp(transformer, [embedding_weights], args)
+    parallelism.apply_layer_parallelism(transformer, args)
 
     # Run through transformer with the same sequence
     result = transformer(decoder_input, decoder_input, sequence_length)
@@ -227,6 +230,7 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
     )
 
     parallelism.apply_fsdp_allweights(result, args)
+    parallelism.apply_layer_parallelism_postamble(result, args)
     return result
 
 

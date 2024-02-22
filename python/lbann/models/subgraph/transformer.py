@@ -1285,7 +1285,7 @@ class TransformerAllSubgraph(lbann.modules.Module):
             vals = np.triu(np.full((size, size), -1e9), k=1)
             weights = lbann.Weights(
                 initializer=lbann.ValueInitializer(values=vals.flat),
-                optimizer=None,
+                optimizer=lbann.NoOptimizer(),
                 name=f"{self.name}_mask{size}_weights",
             )
             self._subsequent_mask_cache[size] = lbann.WeightsLayer(

@@ -80,3 +80,21 @@ def bin2text(infile: str, outfile: str):
         f.write(
             google.protobuf.text_format.MessageToString(
                 message, use_index_order=True).encode())
+
+
+def generic_load(filename: str):
+    """
+    Loads a .protobin or .prototext file.
+    """
+    try:  # Try binary first
+        message = lbann_pb2.LbannPB()
+
+        # Read file
+        with open(filename, 'rb') as f:
+            message.ParseFromString(f.read())
+    except:  # Try text
+        with open(filename, 'rb') as f:
+            message = google.protobuf.text_format.Parse(
+                f.read(), lbann_pb2.LbannPB())
+
+    return message

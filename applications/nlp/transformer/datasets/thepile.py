@@ -91,7 +91,7 @@ def get_train_sample(index):
 
 def get_val_sample(index):
     """Token indices for a data sample from the validation set."""
-    text = dataset_train[index]['text']
+    text = dataset_val[index]['text']
     tokenized = tokenize(text)
 
     # Trim long sequences, left-pad short sequences
@@ -120,3 +120,12 @@ def sample_dims():
 
 def vocab_size():
     return tokenizer.get_vocab_size()
+
+
+if __name__ == '__main__':
+    print('Training samples:', num_train_samples())
+    print('Validation samples:', num_val_samples())
+    print('Training sample 101:')
+    print(tokenizer.decode(get_train_sample(101)))
+    print('Validation sample 233:')
+    print(tokenizer.decode(get_val_sample(233)))

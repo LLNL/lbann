@@ -1382,10 +1382,13 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names)
       split->set_name(name);
       layer_names.insert(name);
 
-      // Copy parallel strategy from parent.
+      // Copy parallel strategy and grid tag from parent.
       ParallelStrategy& ps = split->get_parallel_strategy();
       ParallelStrategy& orig_ps = l.get_parallel_strategy();
       ps = orig_ps;
+      if (l.grid_tag() >= 0) {
+        split->grid_tag(l.grid_tag());
+      }
 
       // Setup relationships between split layer and child layers
       for (int j = 0; j < l.get_num_children(); ++j) {
@@ -1674,8 +1677,9 @@ void model::backward_prop(bool compute_weight_grads_only, bool skip_callbacks)
 
       // Based on gradient/optimizer requirements
       if (compute_weight_grads_only && m_needed_for_backprop.size() > 0 &&
-          m_needed_for_backprop.find(&l) == m_needed_for_backprop.end())
+          m_needed_for_backprop.find(&l) == m_needed_for_backprop.end()) {
         enable_layer = false;
+      }
     }
 
     // Check if all children skip gradient backpropagation
