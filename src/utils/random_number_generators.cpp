@@ -34,18 +34,18 @@
 namespace {
 #if not defined(LBANN_DETERMINISTIC) && defined(_OPENMP)
 #ifdef __ICC
-lbann::rng_gen generator;
-#pragma omp threadprivate(generator)
+lbann::rng_gen OMP_generator;
+#pragma omp threadprivate(OMP_generator)
 
-lbann::fast_rng_gen fast_generator;
-#pragma omp threadprivate(fast_generator)
+lbann::fast_rng_gen OMP_fast_generator;
+#pragma omp threadprivate(OMP_fast_generator)
 
 bool OMP_generator_inited = false;
 #pragma omp threadprivate(OMP_generator_inited)
 
 bool OMP_fast_generator_inited = false;
 #pragma omp threadprivate(OMP_fast_generator_inited)
-#else
+#else // ! __ICC
 // Random number generator, file-visible only.
 // Defined like this to work around a GCC problem with threadprivate objects:
 // https://stackoverflow.com/questions/23552077/how-to-define-a-object-or-struct-as-threadprivate-in-openmp/
