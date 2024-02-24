@@ -32,6 +32,7 @@ set_full_path(THIS_DIR_HEADERS
   cloneable.hpp
   commify.hpp
   compiler_control.hpp
+  conduit_extensions.hpp
   dataset.hpp
   describable.hpp
   description.hpp

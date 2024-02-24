@@ -25,6 +25,7 @@
 //
 /////////////////////////////////////////////////////////////////////////////////
 #include "conduit/conduit_relay_mpi.hpp"
+#include "lbann/utils/conduit_extensions.hpp"
 
 #include "lbann/data_ingestion/readers/data_reader_HDF5.hpp"
 #include "lbann/data_ingestion/readers/data_reader_sample_list_impl.hpp"
@@ -357,7 +358,23 @@ void hdf5_data_reader::load_sample(conduit::Node& node,
                                       original_path,
                                       node[new_pathname]);
       }
+      // Check that the dimensions of each node matches its metadata
+      if (metadata.has_child(HDF5_METADATA_KEY_DIMS)) {
+        int n_elts = node[pathname].dtype().number_of_elements();
+        conduit::int64_array data_array_dims = metadata[HDF5_METADATA_KEY_DIMS].value();
+        auto expected_n_elts = data_array_prod(data_array_dims);
 
+        if (n_elts != expected_n_elts) {
+          LBANN_WARNING("Ingesting sample field ",
+                        pathname,
+                        " for sample ",
+                        sample_name,
+                        " where the dimensions in the metadata don't match the actual field: ",
+                        expected_n_elts,
+                        " != ",
+                        n_elts);
+        }
+      }
       // check to see if there are integer types left in the sample and warn the
       // user
       auto dtype = node[new_pathname].dtype();
