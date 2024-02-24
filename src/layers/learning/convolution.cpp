@@ -264,10 +264,6 @@ bool convolution_layer<TensorDataType, Layout, Device>::is_distconv_supported()
 {
   const auto& kernel_dims = get_kernel_dims();
   for (int i = 0; i < dc::get_num_spatial_dims(*this); i++) {
-    if (kernel_dims[2 + i] != kernel_dims[2]) {
-      dc::MPIRootPrintStreamDebug() << "Nonsymmetric kernel not supported";
-      return false;
-    }
     if (kernel_dims[2 + i] != this->m_pads[i] / this->m_dilations[i] * 2 + 1) {
       dc::MPIRootPrintStreamDebug()
         << "Unsupported as padding does not match the kernel size";
