@@ -84,3 +84,20 @@ COOList:
     pack: "coo_list"
     coerce: "float"
 )FOO";
+
+const std::string hdf5_c3fd_experiment_parallel_io_schema = R"FOO(
+NodeFeatures:
+  metadata:
+    pack: "node_fts"
+    coerce: "float"
+    parallel_io: true
+    parallel_split: [0, 1]
+EdgeFeatures:
+  metadata:
+    pack: "edge_fts"
+    coerce: "float"
+COOList:
+  metadata:
+    pack: "coo_list"
+    coerce: "float"
+)FOO";

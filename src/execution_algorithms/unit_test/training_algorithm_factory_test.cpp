@@ -31,7 +31,7 @@
 #include "lbann/utils/make_abstract.hpp"
 
 #include <exception>
-#include <google/protobuf/stubs/logging.h>
+// #include <google/protobuf/stubs/logging.h>
 #include <lbann/execution_algorithms/factory.hpp>
 
 #include "lbann/proto/training_algorithm.pb.h"
@@ -87,7 +87,7 @@ parameters {
     // Protobuf will log stuff to stderr when errors occur. We know
     // these errors will occur, but they'll add potentially confusing
     // output to the catch run, so we silence them in this section
-    google::protobuf::LogSilencer tmp_silence_pb_logs;
+    // google::protobuf::LogSilencer tmp_silence_pb_logs;
 
     lbann_data::TrainingAlgorithm algo_msg;
     REQUIRE_FALSE(
@@ -105,7 +105,7 @@ parameters {
   }
 })proto";
 
-    google::protobuf::LogSilencer tmp_silence_pb_logs;
+    // google::protobuf::LogSilencer tmp_silence_pb_logs;
     lbann_data::TrainingAlgorithm algo_msg;
     REQUIRE_FALSE(
       pb::TextFormat::ParseFromString(unknown_class_prototext, &algo_msg));
@@ -123,7 +123,7 @@ parameters {
   }
 })proto";
 
-    google::protobuf::LogSilencer tmp_silence_pb_logs;
+    // google::protobuf::LogSilencer tmp_silence_pb_logs;
     lbann_data::TrainingAlgorithm algo_msg;
     REQUIRE_FALSE(
       pb::TextFormat::ParseFromString(bad_class_prototext, &algo_msg));

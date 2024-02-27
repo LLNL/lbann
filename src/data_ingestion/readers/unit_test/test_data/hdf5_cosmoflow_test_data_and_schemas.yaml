@@ -60,6 +60,19 @@ unitPar:
     ordering: 1
 )FOO";
 
+const std::string hdf5_cosmoflow_experiment_parallel_io_schema = R"FOO(
+full:
+  metadata:
+    coerce: float
+    pack: volume
+    parallel_io: true
+  hsize_t offset[4] = {0, m_hyperslab_dims[1] * spatial_offset, 0, 0};
+unitPar:
+  metadata:
+    coerce: float
+    pack: params
+)FOO";
+
 const std::string hdf5_cosmoflow_experiment_schema = R"FOO(
 full:
   metadata:

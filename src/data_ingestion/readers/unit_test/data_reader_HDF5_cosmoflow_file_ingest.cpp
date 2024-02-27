@@ -46,11 +46,13 @@
 TEST_CASE("HDF5 CosmoFlow data reader file ingest tests",
           "[.filesystem][data_reader][hdf5][cosmoflow][file_ingest]")
 {
+  auto& comm = unit_test::utilities::current_world_comm();
   // initialize stuff (boilerplate)
   lbann::init_random(0, 2);
   lbann::init_data_seq_random(42);
 
   auto hdf5_dr = std::make_unique<lbann::hdf5_data_reader>();
+  hdf5_dr->set_comm(&comm);
   DataReaderHDF5WhiteboxTester white_box_tester;
 
   const std::string original_path = "000000001";

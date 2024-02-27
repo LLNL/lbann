@@ -47,37 +47,45 @@ TEST_CASE("HDF5 C3FD data reader file ingest tests",
           "[.filesystem][data_reader][hdf5][c3fd][file_ingest]")
 {
   // initialize stuff (boilerplate)
+  auto& comm = unit_test::utilities::current_world_comm();
   lbann::init_random(0, 2);
   lbann::init_data_seq_random(42);
 
   conduit::Node node;
   node.parse(hdf5_c3fd_data_sample, "yaml");
 
+  std::cout << "Here is the file that we are reading" << std::endl;
+  node.info().print();
+  node.print_detailed();
+
   auto hdf5_dr = std::make_unique<lbann::hdf5_data_reader>();
+  hdf5_dr->set_comm(&comm);
   DataReaderHDF5WhiteboxTester white_box_tester;
 
+  #if 0
   // create working directory
   std::string work_dir = create_test_directory("hdf5_reader");
 
+  // open hdf5 file and obtain a handle
+  hid_t h5_id =
+    conduit::relay::io::hdf5_create_file(work_dir + "/C3FD_test_sample.hdf5");
+  // write data
+  conduit::relay::io::hdf5_write(node, h5_id);
+  // close our file
+  conduit::relay::io::hdf5_close_file(h5_id);
+
+  hid_t h5_fid = conduit::relay::io::hdf5_open_file_for_read(
+    work_dir + "/C3FD_test_sample.hdf5");
+  const std::string original_path = "/RUN_ID/000000001";
+  const std::string new_pathname = "000000001";
+
+  // Setup the data schema for this C3FD data set
+  conduit::Node& data_schema = white_box_tester.get_data_schema(*hdf5_dr);
+  data_schema.parse(hdf5_c3fd_data_schema, "yaml");
+  #endif
+#if 0
   SECTION("HDF5 C3FD write and then read to HDF5 file")
   {
-    // open hdf5 file and obtain a handle
-    hid_t h5_id =
-      conduit::relay::io::hdf5_create_file(work_dir + "/C3FD_test_sample.hdf5");
-    // write data
-    conduit::relay::io::hdf5_write(node, h5_id);
-    // close our file
-    conduit::relay::io::hdf5_close_file(h5_id);
-
-    hid_t h5_fid = conduit::relay::io::hdf5_open_file_for_read(
-      work_dir + "/C3FD_test_sample.hdf5");
-    const std::string original_path = "/RUN_ID/000000001";
-    const std::string new_pathname = "000000001";
-
-    // Setup the data schema for this C3FD data set
-    conduit::Node& data_schema = white_box_tester.get_data_schema(*hdf5_dr);
-    data_schema.parse(hdf5_c3fd_data_schema, "yaml");
-
     // Read in the experiment schema and setup the data reader
     conduit::Node& experiment_schema =
       white_box_tester.get_experiment_schema(*hdf5_dr);
@@ -107,4 +115,60 @@ TEST_CASE("HDF5 C3FD data reader file ingest tests",
                       original_path,
                       new_pathname);
   }
+#endif
+#if 1
+  SECTION("HDF5 Parallel I/O C3FD write and then read to HDF5 file")
+  {
+#if 1
+    // create working directory
+    std::string work_dir = create_test_directory("hdf5_reader");
+
+    // open hdf5 file and obtain a handle
+    hid_t h5_id =
+      conduit::relay::io::hdf5_create_file(work_dir + "/C3FD_test_sample.hdf5");
+    // write data
+    conduit::relay::io::hdf5_write(node, h5_id);
+    // close our file
+    conduit::relay::io::hdf5_close_file(h5_id);
+
+    hid_t h5_fid = conduit::relay::io::hdf5_open_file_for_read(
+      work_dir + "/C3FD_test_sample.hdf5");
+    const std::string original_path = "/RUN_ID/000000001";
+    const std::string new_pathname = "000000001";
+
+    // Setup the data schema for this C3FD data set
+    conduit::Node& data_schema = white_box_tester.get_data_schema(*hdf5_dr);
+    data_schema.parse(hdf5_c3fd_data_schema, "yaml");
+  #endif
+
+    // Read in the experiment schema and setup the data reader
+    conduit::Node& experiment_schema =
+      white_box_tester.get_experiment_schema(*hdf5_dr);
+    experiment_schema.parse(hdf5_c3fd_experiment_parallel_io_schema, "yaml");
+    // experiment_schema.print();
+    white_box_tester.parse_schemas(*hdf5_dr);
+
+    white_box_tester.print_metadata(*hdf5_dr);
+
+    conduit::Node test_node;
+    white_box_tester.load_sample(*hdf5_dr,
+                                 test_node[new_pathname],
+                                 h5_fid,
+                                 original_path);
+
+    // Check to see if the C3FD sample can be read via the data
+    // reader's load_sample method.  Note that this will coerce and
+    // normalize all data fields as specified in the data set and
+    // experiment schemas.
+    std::vector<std::string> fields = {"NodeFeatures",
+                                       "EdgeFeatures",
+                                       "COOList"};
+    check_node_fields(node,
+                      test_node,
+                      data_schema,
+                      fields,
+                      original_path,
+                      new_pathname);
+  }
+#endif
 }

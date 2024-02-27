@@ -51,8 +51,12 @@ function find_cmake_config_file() {
         # OS X and Linux have different flags for the stat call
         SYS_UNAME=$(uname -s)
         if [[ ${SYS_UNAME} = "Darwin" ]]; then
+            CMD="find ${lbann_build_dir} -maxdepth 1 -type f -name "LBANN_${HOST}_${label}-${SYS}-${generic_compiler}@*.cmake" -exec stat -f '%a %N' {} \; -print | sort -nr | awk 'NR==1,NR==1 {print $2}'"
+            echo "${CMD}"
             MATCHED_CONFIG_FILE_PATH=$(find ${lbann_build_dir} -maxdepth 1 -type f -name "LBANN_${HOST}_${label}-${SYS}-${generic_compiler}@*.cmake" -exec stat -f '%a %N' {} \; -print | sort -nr | awk 'NR==1,NR==1 {print $2}')
         else
+            CMD="find ${lbann_build_dir} -maxdepth 1 -type f -name "LBANN_${HOST}_${label}-${SYS}-${generic_compiler}@*.cmake" -exec stat -c '%X %n' {} \; -print | sort -nr | awk 'NR==1,NR==1 {print $2}'"
+            echo "${CMD}"
             MATCHED_CONFIG_FILE_PATH=$(find ${lbann_build_dir} -maxdepth 1 -type f -name "LBANN_${HOST}_${label}-${SYS}-${generic_compiler}@*.cmake" -exec stat -c '%X %n' {} \; -print | sort -nr | awk 'NR==1,NR==1 {print $2}')
         fi
         if [[ -n "${MATCHED_CONFIG_FILE_PATH}" ]]; then

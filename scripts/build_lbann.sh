@@ -1115,6 +1115,7 @@ EOF
     ##########################################################################################
 
     # Now that the config file is generated set the field
+    echo "Looking for a config file with pattern ${LBANN_LABEL} ${CENTER_COMPILER} ${LBANN_HOME}"
     find_cmake_config_file ${LBANN_LABEL} ${CENTER_COMPILER} ${LBANN_HOME}
     if [[ ! -z "${MATCHED_CONFIG_FILE_PATH}" ]]; then
         if [[ -e "${MATCHED_CONFIG_FILE_PATH}" && -r "${MATCHED_CONFIG_FILE_PATH}" ]]; then

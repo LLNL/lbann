@@ -608,7 +608,7 @@ if (LBANN_WITH_HWLOC)
 endif (LBANN_WITH_HWLOC)
 
 if (LBANN_WITH_CONDUIT)
-  find_package(Conduit 0.7.0 CONFIG REQUIRED)
+  find_package(Conduit 0.8.9 CONFIG REQUIRED)
   message(STATUS "Found CONDUIT: ${Conduit_DIR}")
 
   if (NOT TARGET conduit::conduit OR NOT TARGET conduit::conduit_mpi)

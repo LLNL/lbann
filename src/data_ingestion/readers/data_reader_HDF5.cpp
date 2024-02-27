@@ -358,6 +358,119 @@ void hdf5_data_reader::load_sample(conduit::Node& node,
                                       original_path,
                                       node[new_pathname]);
       }
+
+      if (metadata.has_child(HDF5_METADATA_KEY_PARALLEL_IO) &&
+          (conduit_to_string(metadata[HDF5_METADATA_KEY_PARALLEL_IO]) ==
+           HDF5_METADATA_VALUE_TRUE)){
+            int nprocs = get_comm()->get_procs_per_trainer();
+            // int num_io_partitions = dc::get_number_of_io_partitions();
+            // if ((nprocs % dc::get_number_of_io_partitions()) != 0) {
+            //   LBANN_ERROR("nprocs should be divisible by num of io partitions otherwise "
+            //               "this wont work");
+            // }
+            LBANN_MSG("I think that I have ", nprocs, " procs ");
+            //            LBANN_MSG("I think that I have ", nprocs, " procs, and ", num_io_partitions);
+
+            //          ) {
+        //      if (pathname == "NodeFeatures") {
+        // ------------------------------------------------------------------
+        // Now read a subset of that 2D array from the HDF5 file.
+        // Two rows, two columns; total of four elements.
+            if (!metadata.has_child(HDF5_METADATA_KEY_DIMS)) {
+              LBANN_ERROR("HDF5 field has requested parallel I/O but does not have a valid dims field.");
+            }
+            int n_elts = node[pathname].dtype().number_of_elements();
+            conduit::int64_array data_array_dims = metadata[HDF5_METADATA_KEY_DIMS].value();
+            int constexpr rnrows = 2; //4;
+        int constexpr rncols = 2;
+        int constexpr reltcount = rnrows * rncols;
+        //        int constexpr reltcount = n_elts;//rnrows * rncols;
+        //get_comm()->get_rank_in_trainer()
+        int rank = get_comm()->get_rank_in_trainer();
+        const int ranks = get_comm()->get_procs_per_trainer();
+        std::cout << "How many ranks do I see " << rank << " out of " << ranks << std::endl;
+        // As noted earlier, HDF5 orders all dimensions from slowest- to
+        // fastest-varying.  In this two-dimensional example, row (or y-index)
+        // always comes before column (or x-index).  If working with a 3D
+        // dataset, level (or z-index) would come before row.
+        int p_sizes[1]{rnrows * rncols};
+        //        int p_sizes[2]{rnrows, rncols};
+        // offset to row 0, column 1
+        int p_offsets[1]{0};
+        //        int p_offsets[2]{0, 1};
+        //        int p_offsets[2]{0, 1};
+        // read every row, every other column
+        int p_strides[1]{2};
+        //        int p_strides[2]{1, 2};
+        std::cout << "Here is p_sizes" << p_sizes[0] << " and " << p_sizes[1] << std::endl;
+        // Store pointers to these parameters in the read_opts Node
+        conduit::Node read_opts;
+        //read_opts["sizes"].set(p_sizes, rank);
+        read_opts["sizes"].set_external(p_sizes, 1 /*2*//*ranks*/);
+        read_opts["offsets"].set_external(p_offsets, 1/*2*//*ranks*/);
+        read_opts["strides"].set_external(p_strides, 1/*2*//*ranks*/);
+        //read_opts["foo"]
+        // conduit::DataType read_opts_too;
+        // read_opts_too.set_number_of_elements(conduit::index_t(p_offsets));
+        // read_opts_too.set_offset(conduit::index_t(p_offsets));
+        // read_opts_too.set_strides(conduit::index_t(p_strides));
+
+        //read_opts["sizes"][{4,5}, 0]
+
+std::cout << "\nHDF5 Options for reading the array:" << std::endl;
+read_opts.print();
+
+//  hid_t h5_status = conduit::relay::io::hdf5_read_dataspace(file_handle, original_path, conduit::DataType::double, read_opts);
+// CONDUIT_CHECK_HDF5_ERROR(h5_status,
+//       "Error selecting hyper slab from HDF5 dataspace: ");
+//      "Error selecting hyper slab from HDF5 dataspace: " << h5_dspace_id);
+
+
+// Read some of the 2D array in the HDF5 file into an array of doubles
+conduit::Node read_data;
+double p_data_out[reltcount]{42, 42, 42, 42};
+read_data.set_external(p_data_out, reltcount);
+std::string in_path;
+//in_path.append(fname).append(":").append(pathname);
+ std::cout << "Reading original path " << original_path << std::endl;
+conduit::relay::io::hdf5_read(file_handle, original_path, read_opts, read_data);
+
+std::cout << "\nHDF5 Read results:" << std::endl;
+read_data.info().print();
+read_data.print_detailed();
+
+ if (get_comm()->am_trainer_master()) {
+// Show what we read
+   std::stringstream msg;
+msg << "Trainer master Subset of array, read from '" << in_path << "'" << std::endl;
+for (int j = 0; j < rnrows; ++j)
+{
+    for (int i = 0; i < rncols; ++i)
+    {
+        msg << std::right << std::setw(8) << p_data_out[j * rncols + i];
+    }
+    msg << std::endl;
+}
+ std::cout << msg.str();
+ }else {
+   std::stringstream msg;
+msg << "Other rank Subset of array, read from '" << in_path << "'" << std::endl;
+for (int j = 0; j < rnrows; ++j)
+{
+    for (int i = 0; i < rncols; ++i)
+    {
+        msg << std::right << std::setw(8) << p_data_out[j * rncols + i];
+    }
+    msg << std::endl;
+}
+ std::cout << msg.str();
+ }
+      }
+      // conduit::Node io_about;
+        // conduit::relay::io::about(io_about);
+        // std::cout << "\nRelay I/O Info and Default Options:" << std::endl;
+        // std::cout << io_about.to_yaml() << std::endl;
+      // https://llnl-conduit.readthedocs.io/en/latest/relay_io.html
       // Check that the dimensions of each node matches its metadata
       if (metadata.has_child(HDF5_METADATA_KEY_DIMS)) {
         int n_elts = node[pathname].dtype().number_of_elements();

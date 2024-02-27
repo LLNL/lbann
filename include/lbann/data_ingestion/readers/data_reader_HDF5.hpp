@@ -46,6 +46,8 @@ class DataReaderHDF5WhiteboxTester;
 #define HDF5_METADATA_KEY_TRANSPOSE "transpose"
 #define HDF5_METADATA_KEY_COERCE "coerce"
 #define HDF5_METADATA_KEY_PACK "pack"
+#define HDF5_METADATA_KEY_PARALLEL_IO "parallel_io"
+#define HDF5_METADATA_KEY_PARALLEL_SPLIT "parallel_split"
 /** Valid string values for a metadata file */
 #define HDF5_METADATA_VALUE_COERCE_FLOAT "float"
 #define HDF5_METADATA_VALUE_COERCE_DOUBLE "double"
@@ -55,6 +57,7 @@ class DataReaderHDF5WhiteboxTester;
 #define HDF5_METADATA_VALUE_LAYOUT_HWC "hwc"
 #define HDF5_METADATA_VALUE_LAYOUT_CDHW "cdhw"
 #define HDF5_METADATA_VALUE_LAYOUT_DHWC "dhwc"
+#define HDF5_METADATA_VALUE_TRUE "true"
 
 namespace lbann {
 
@@ -78,6 +81,8 @@ static std::set<std::string> const hdf5_metadata_valid_keys = {
   HDF5_METADATA_KEY_TRANSPOSE,
   HDF5_METADATA_KEY_COERCE,
   HDF5_METADATA_KEY_PACK,
+  HDF5_METADATA_KEY_PARALLEL_IO,
+  HDF5_METADATA_KEY_PARALLEL_SPLIT
 };
 
 /**
