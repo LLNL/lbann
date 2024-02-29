@@ -116,6 +116,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void multidim_reduction_layer<TensorDataType, Layout, Device>::setup_dims()
 {
   data_type_layer<TensorDataType>::setup_dims();
+#ifdef LBANN_HAS_CUTENSOR
   std::vector<int> dims = this->get_input_dims();
   int original_dims = static_cast<int>(dims.size());
 
@@ -137,6 +138,7 @@ void multidim_reduction_layer<TensorDataType, Layout, Device>::setup_dims()
     m_output_modes.erase(m_output_modes.begin() + (original_dims - axis - 1));
   }
   this->set_output_dims(dims);
+#endif
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
