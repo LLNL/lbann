@@ -27,14 +27,9 @@
 #define LBANN_SRC_LAYERS_TRANSFORM_CUTENSOR_PERMUTEIMPL_HPP_INCLUDED
 
 #include "lbann/base.hpp" // Elemental support.
+#include "lbann/utils/cutensor_support.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/typename.hpp"
-
-#include "tensor_dims_utils.hpp"
-
-// This is only separated to make it easier if we "formally accept"
-// cuTENSOR like we have cuDNN or cuBLAS, etc.
-#include "cutensor_support.hpp"
 
 #include <iterator>
 #include <sstream>
@@ -44,6 +39,8 @@
 #include <vector>
 
 namespace lbann {
+
+using namespace cutensor;
 
 /** @brief cuTENSOR-based implementation of tensor permute.
  *
@@ -55,9 +52,9 @@ namespace lbann {
 class cuTENSOR_PermuteImpl
 {
 public:
-  using DimsType = ColMajorDims<int64_t>;
-  using StridesType = ColMajorStrides<int64_t>;
-  using ModesType = std::vector<int32_t>;
+  using DimsType = cutensor::DimsType;
+  using StridesType = cutensor::StridesType;
+  using ModesType = cutensor::ModesType;
 
 public:
   /** @name Lifecycle */
@@ -123,23 +120,6 @@ public:
   ///@}
 
 private:
-  /** @brief Keep track of descriptors so we don't have to repeatedly
-   *         rebuild them.
-   */
-  inline static std::unordered_map<std::string, cutensorTensorDescriptor_t>
-    m_desc_map;
-
-private:
-  static std::vector<int32_t> make_modes(size_t const ndims);
-  template <typename DataT>
-  static std::string get_desc_key(El::Matrix<DataT, El::Device::GPU> const& mat,
-                                  DimsType const& dims);
-  template <typename DataT>
-  static cutensorTensorDescriptor_t
-  get_descriptor(El::Matrix<DataT, El::Device::GPU> const& mat,
-                 DimsType const& dims);
-
-private:
   ColMajorPerm m_perm;
   DimsType m_input_dims;
   DimsType m_output_dims;
@@ -191,58 +171,6 @@ inline auto cuTENSOR_PermuteImpl::input_strides() const -> StridesType
 inline auto cuTENSOR_PermuteImpl::output_strides() const -> StridesType
 {
   return get_strides(m_output_dims);
-}
-
-inline auto cuTENSOR_PermuteImpl::make_modes(size_t const ndims) -> ModesType
-{
-  std::vector<int32_t> modes(ndims + 1); // Add the sample dim.
-  std::iota(begin(modes), end(modes), static_cast<int>('a'));
-  return modes;
-}
-
-template <typename DataT>
-std::string cuTENSOR_PermuteImpl::get_desc_key(
-  El::Matrix<DataT, El::Device::GPU> const& mat,
-  DimsType const& dims_in)
-{
-  auto const& dims = dims_in.get();
-  std::ostringstream oss;
-  oss << mat.Height() << "," << mat.Width() << "," << mat.LDim() << ";"
-      << dims.front();
-  for (size_t ii = 1; ii < dims.size(); ++ii)
-    oss << "," << dims[ii];
-  oss << ";" << lbann::TypeName<DataT>();
-  return oss.str();
-}
-
-template <typename DataT>
-cutensorTensorDescriptor_t cuTENSOR_PermuteImpl::get_descriptor(
-  El::Matrix<DataT, El::Device::GPU> const& mat,
-  DimsType const& dims)
-{
-  auto key = get_desc_key(mat, dims); // captures Width to account for
-                                      // minibatch size and LDim to
-                                      // account for stride.
-  auto iter = m_desc_map.find(key);
-  if (iter == end(m_desc_map)) {
-    std::vector<int64_t> extents = dims.get();
-    extents.push_back(mat.Width()); // Don't forget MB size
-
-    auto strides = get_strides(dims);
-    strides.get().push_back(mat.LDim()); // Don't forget sample stride.
-
-    cutensorTensorDescriptor_t desc;
-    CHECK_CUTENSOR(cutensorInitTensorDescriptor(get_handle_ptr(),
-                                                &desc,
-                                                extents.size(),
-                                                extents.data(),
-                                                strides.get().data(),
-                                                CUDAType<DataT>,
-                                                CUTENSOR_OP_IDENTITY));
-    m_desc_map.emplace(std::move(key), desc);
-    return desc;
-  }
-  return iter->second;
 }
 
 inline void cuTENSOR_PermuteImpl::set_dims(DimsType input_dims)

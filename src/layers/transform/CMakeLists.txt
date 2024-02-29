@@ -41,6 +41,7 @@ set_full_path(THIS_DIR_SOURCES
   hadamard.cpp
   identity_zero.cpp
   in_top_k.cpp
+  multidim_reduction.cpp
   pooling.cpp
   reduction.cpp
   reshape.cpp
@@ -63,12 +64,10 @@ if (LBANN_HAS_GPU)
   if (LBANN_HAS_TENSOR_PERMUTE)
     list(APPEND THIS_DIR_SOURCES
       "${CMAKE_CURRENT_SOURCE_DIR}/permute/permuteimpl.hpp"
-      "${CMAKE_CURRENT_SOURCE_DIR}/permute/tensor_dims_utils.hpp"
       "${CMAKE_CURRENT_SOURCE_DIR}/permute.cpp"
     )
     if (LBANN_HAS_CUTENSOR)
       list(APPEND THIS_DIR_SOURCES
-        "${CMAKE_CURRENT_SOURCE_DIR}/permute/cutensor_support.hpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/permute/cutensor_permuteimpl.hpp"
       )
     elseif (LBANN_HAS_CUTT OR LBANN_HAS_HIPTT)

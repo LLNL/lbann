@@ -39,6 +39,7 @@ set_full_path(THIS_DIR_SOURCES
   hadamard.cpp
   identity_zero.cpp
   in_top_k.cpp
+  multidim_reduction.cpp
   pooling.cpp
   reduction.cpp
   reshape.cpp

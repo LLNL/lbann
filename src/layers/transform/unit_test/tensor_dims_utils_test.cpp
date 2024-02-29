@@ -27,7 +27,7 @@
 // MUST include this
 #include "Catch2BasicSupport.hpp"
 
-#include "../permute/tensor_dims_utils.hpp"
+#include <lbann/utils/tensor_dims_utils.hpp>
 
 #include <algorithm>
 #include <sstream>

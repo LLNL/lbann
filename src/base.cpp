@@ -502,6 +502,7 @@ CEREAL_FORCE_DYNAMIC_INIT(mean_absolute_error_layer);
 CEREAL_FORCE_DYNAMIC_INIT(mean_squared_error_layer);
 CEREAL_FORCE_DYNAMIC_INIT(mini_batch_index_layer);
 CEREAL_FORCE_DYNAMIC_INIT(mini_batch_size_layer);
+CEREAL_FORCE_DYNAMIC_INIT(multidim_reduction_layer);
 CEREAL_FORCE_DYNAMIC_INIT(one_hot_layer);
 CEREAL_FORCE_DYNAMIC_INIT(pooling_layer);
 CEREAL_FORCE_DYNAMIC_INIT(reduction_layer);

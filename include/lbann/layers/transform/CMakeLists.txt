@@ -55,6 +55,7 @@ set_full_path(THIS_DIR_HEADERS
   tessellate.hpp
   scatter.hpp
   gather.hpp
+  multidim_reduction.hpp
   )
 
 if (LBANN_HAS_DISTCONV AND LBANN_HAS_NVSHMEM)

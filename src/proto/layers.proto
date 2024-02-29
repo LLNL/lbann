@@ -168,6 +168,7 @@ message Layer {
     BatchwiseReduceSum batchwise_reduce_sum = 76;
     TensorPermute permute = 77;
     IdentityZero identity_zero = 78;
+    MultiDimReduction multidim_reduction = 79;
     CategoricalRandom categorical_random = 406;  // Deprecated
     DiscreteRandom discrete_random = 407;        // Deprecated
 
@@ -817,6 +818,13 @@ message Layer {
      *  @details Options: sum (default) or mean
      */
     string mode = 1;
+  }
+
+  /** @brief Reduce tensor dimensions with an operation (e.g., sum).
+      Equivalent to ``numpy.sum(tensor, axis=axes)`` */
+  message MultiDimReduction {
+    string mode = 1;  // Reduction operation: "sum", "product", "max", or "min"
+    repeated uint32 axes = 2;  // A list of tensor dimensions to reduce
   }
 
   /** @brief Interface with objective function and metrics
