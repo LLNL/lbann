@@ -144,7 +144,8 @@ void multidim_reduction_layer<TensorDataType, Layout, Device>::setup_dims()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void multidim_reduction_layer<TensorDataType, Layout, Device>::fp_compute()
 {
-  // No model parallelism
+#ifdef LBANN_HAS_CUTENSOR
+  // No model parallelism nor CPU
   LBANN_ASSERT(Layout == data_layout::DATA_PARALLEL);
   LBANN_ASSERT(Device == El::Device::GPU);
 
@@ -158,7 +159,6 @@ void multidim_reduction_layer<TensorDataType, Layout, Device>::fp_compute()
     static_cast<LocalMat const&>(this->get_prev_activations().LockedMatrix());
   LocalMat& output = static_cast<LocalMat&>(this->get_activations().Matrix());
 
-#ifdef LBANN_HAS_CUTENSOR
   // Determine reduction operator
   cutensorOperator_t cutensor_reduce_op;
   switch (m_mode) {
