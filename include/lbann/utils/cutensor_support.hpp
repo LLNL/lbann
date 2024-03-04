@@ -29,6 +29,7 @@
 #include "lbann/base.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/tensor_dims_utils.hpp"
+#include "lbann/utils/typename.hpp"
 
 #include <cuda_runtime.h>
 #include <cutensor.h>
