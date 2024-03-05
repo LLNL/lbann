@@ -6,6 +6,9 @@ import pytest
 
 @test_util.lbann_test(check_gradients=True)
 def test_multidim_reduction():
+    if not lbann.has_feature('CUTENSOR'):
+        pytest.skip('Test requires LBANN to be built with cuTENSOR')
+
     # Prepare reference output
     np.random.seed(20240228)
     shape = [25, 3, 4, 5, 6]
@@ -30,6 +33,9 @@ def test_multidim_reduction():
 
 @test_util.lbann_test(check_gradients=False)
 def test_multidim_reduction_max():
+    if not lbann.has_feature('CUTENSOR'):
+        pytest.skip('Test requires LBANN to be built with cuTENSOR')
+
     # Prepare reference output
     np.random.seed(20240228)
     shape = [25, 3, 4, 5, 6]
