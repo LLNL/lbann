@@ -144,11 +144,11 @@ def _add_input_encoding(
 
     # Apply encoder
     if encoder_input is not None:
-        encoder_input = positional_encoder(
+        encoder_input = positional_encoder.apply_input(
             encoder_input, encoder_sequence_length, **kwargs
         )
     if decoder_input is not None:
-        decoder_input = positional_encoder(
+        decoder_input = positional_encoder.apply_input(
             decoder_input, decoder_sequence_length, **kwargs
         )
 
