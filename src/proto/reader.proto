@@ -121,9 +121,10 @@ message PythonDataReader {
 }
 
 message PythonDatasetReader {
-  string dataset_path = 1;           // Path to pickled Dataset object
+  string dataset_path = 1;           // Path to pickled Dataset object.
   string module_dir = 2;             // Optional directory containing module with
                                      // dataset definition.
+  uint64 prefetch_factor = 3;        // Number of samples to prefetch per worker.
 }
 
 message Node2VecDataReader {

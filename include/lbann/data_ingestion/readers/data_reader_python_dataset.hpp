@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2024, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -38,10 +38,12 @@ class python_dataset_reader : public generic_data_reader
 public:
   python_dataset_reader(std::string dataset_path,
                         std::string module_dir,
+                        uint64_t prefetch_factor,
                         bool shuffle)
     : generic_data_reader(shuffle),
       m_dataset_path(dataset_path),
-      m_module_dir(module_dir)
+      m_module_dir(module_dir),
+      m_prefetch_factor(prefetch_factor)
   {}
   python_dataset_reader(const python_dataset_reader&) = default;
   python_dataset_reader& operator=(const python_dataset_reader&) = default;
@@ -63,6 +65,7 @@ public:
   void setup(int num_io_threads,
              observer_ptr<thread_pool> io_thread_pool) override;
   void load() override;
+  void update(bool epoch_complete) override;
 
 #ifdef LBANN_HAS_DISTCONV
   bool is_tensor_shuffle_required() const override
@@ -82,10 +85,14 @@ protected:
                         execution_mode mode = execution_mode::invalid) override;
 
 private:
+  void queue_epoch();
+
   /** @brief Path to the pickled dataset object. */
   std::string m_dataset_path;
   /** @brief Optional directory containing module with dataset definition. */
   std::string m_module_dir;
+  /** @brief Number of samples to prefetch per worker. */
+  uint64_t m_prefetch_factor;
   /** @brief Dimensions of data sample tensor. */
   std::vector<El::Int> m_sample_dims;
   /** @brief Size of label tensor. */
@@ -97,67 +104,15 @@ private:
 
   /** @brief User-provided Python dataset object.
    *
-   *  The object must be a child of lbann.util.Dataset.
+   *  The object must be a subclass of lbann.util.data.Dataset.
    */
   python::object m_dataset;
 
-  /** @brief User-provided Python function to access data samples.
+  /** @brief Python DataReader object.
    *
-   *  The function is expected to take one integer argument for the
-   *  sample index. It must return a lbann.util.Sample object whose
-   *  attributes can be converted to memoryviews.
+   *  Instance of lbann.util.data.DataReader used to launch worker processes.
    */
-  python::object m_sample_function;
-
-  /** @brief Wrapper function around sample access function.
-   *
-   *  This function will be executed on worker processes (see @c
-   *  m_process_pool). It will obtain a data sample from @c
-   *  m_sample_function and copy it into a @c m_shared_memory_array.
-   */
-  python::object m_sample_function_wrapper;
-
-  /** @brief Pool of worker processes.
-   *
-   *  From the Python @c multiprocessing module.
-   */
-  python::object m_process_pool;
-
-  /** @brief Shared memory array.
-   *
-   *  @c RawArray from the Python @c multiprocessing module.
-   */
-  python::object m_shared_memory_array;
-
-  /** @brief Pointer into shared memory array.
-   *
-   *  Points to buffer for @c m_shared_memory_array.
-   */
-  DataType* m_shared_memory_array_ptr = nullptr;
-
-  /** @brief Response shared memory array.
-   *
-   *  @c RawArray from the Python @c multiprocessing module.
-   */
-  python::object m_response_shared_memory_array;
-
-  /** @brief Pointer into response shared memory array.
-   *
-   *  Points to buffer for @c m_response_shared_memory_array.
-   */
-  DataType* m_response_shared_memory_array_ptr = nullptr;
-
-  /** @brief Label shared memory array.
-   *
-   *  @c RawArray from the Python @c multiprocessing module.
-   */
-  python::object m_label_shared_memory_array;
-
-  /** @brief Pointer into label shared memory array.
-   *
-   *  Points to buffer for @c m_label_shared_memory_array.
-   */
-  DataType* m_label_shared_memory_array_ptr = nullptr;
+  python::object m_data_reader;
 
 #ifdef LBANN_HAS_DISTCONV
   /** @brief Whether or not tensor needs shuffling for distconv. */
