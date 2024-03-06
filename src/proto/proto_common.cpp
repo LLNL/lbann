@@ -451,6 +451,7 @@ void init_data_readers(
       const auto& params = readme.python_dataset();
       reader = new python_dataset_reader(params.dataset_path(),
                                          params.module_dir(),
+                                         params.prefetch_factor(),
                                          shuffle);
 #else
       LBANN_ERROR("attempted to construct Python data reader, "
@@ -665,6 +666,7 @@ void init_data_readers(
             const auto& params = readme.python_dataset();
             split_reader = new python_dataset_reader(params.dataset_path(),
                                                      params.module_dir(),
+                                                     params.prefetch_factor(),
                                                      shuffle);
             (*(python_dataset_reader*)split_reader) = (*(python_dataset_reader*)reader);
 #else

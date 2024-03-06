@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2024, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_ingestion/readers/data_reader_python_dataset.hpp"
+#include "lbann/data_ingestion/data_coordinator.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/dim_helpers.hpp"
@@ -43,10 +44,9 @@ namespace lbann {
 
 python_dataset_reader::~python_dataset_reader()
 {
-  if (python::is_active() && m_process_pool != nullptr) {
+  if (python::is_active() && m_data_reader != nullptr) {
     python::global_interpreter_lock gil;
-    PyObject_CallMethod(m_process_pool, "terminate", nullptr);
-    PyObject_CallMethod(m_process_pool, "join", nullptr);
+    python::object(PyObject_CallMethod(m_data_reader, "terminate", nullptr));
   }
 }
 
@@ -83,13 +83,12 @@ bool python_dataset_reader::fetch_data_block(
   El::Matrix<El::Int>& indices_fetched,
   const execution_mode mode)
 {
-
-  CPUMat& X = *(input_buffers[INPUT_DATA_TYPE_SAMPLES]);
-  // Acquire Python GIL on first IO thread
   // Note: Do nothing on other IO threads.
   if (block_offset != 0) {
     return true;
   }
+
+  // Acquire Python GIL on first IO thread
   python::global_interpreter_lock gil;
 
   // Check that shared memory array is large enough
@@ -98,57 +97,50 @@ bool python_dataset_reader::fetch_data_block(
   num_io_partitions = dc::get_number_of_io_partitions();
 #endif // LBANN_HAS_DISTCONV
   const uint64_t sample_size = get_linearized_data_size() / num_io_partitions;
-  const uint64_t array_size = PyObject_Length(m_shared_memory_array);
-  if (array_size < sample_size * mb_size) {
-    std::stringstream err;
-    err << "Python data reader attempted to load "
-        << sample_size * mb_size * sizeof(DataType) << " B "
-        << "into shared memory array, but only "
-        << array_size * sizeof(DataType) << " B is available";
-    LBANN_ERROR(err.str());
-  }
 
-  // Get arguments for sample access function
-  python::object args_list = PyList_New(0);
+  El::Int sample_index;
   for (uint64_t i = 0; i < mb_size; ++i) {
-    El::Int sample_index =
+    sample_index =
       m_shuffled_indices[current_position_in_data_set + i * sample_stride];
-    PyList_Append(args_list,
-                  python::object(Py_BuildValue("(l,l)", sample_index, i)));
     indices_fetched.Set(i, 0, sample_index);
   }
 
-  // Get samples using Python process pool
-  python::object samples = PyObject_CallMethod(m_process_pool,
-                                               "starmap",
-                                               "(O,O)",
-                                               m_sample_function_wrapper.get(),
-                                               args_list.get());
-
-  // Copy data from shared memory to output matrix
+  // Get the next batch from the Python data reader
+  python::object batch = PyObject_CallMethod(m_data_reader, "get_batch", "(l)", mb_size);
+  python::check_error();
+  
+  // Get samples
+  python::object sample_ptr = PyDict_GetItemString(batch, "sample_ptr");
+  Py_XINCREF(sample_ptr);
+  python::check_error();
   CPUMat shared_memory_matrix(sample_size,
                               mb_size,
-                              m_shared_memory_array_ptr,
+                              static_cast<DataType*>(PyLong_AsVoidPtr(sample_ptr)),
                               sample_size);
+  CPUMat& X = *(input_buffers[INPUT_DATA_TYPE_SAMPLES]);
   El::Copy(shared_memory_matrix, X);
 
+  // Get labels
   if (has_labels()) {
-    CPUMat& Y = *(input_buffers[INPUT_DATA_TYPE_LABELS]);
-    // Copy data from shared memory to output matrix
+    python::object label_ptr = PyDict_GetItemString(batch, "label_ptr");
+    Py_XINCREF(label_ptr);
     CPUMat label_shared_memory_matrix(get_num_labels(),
                                       mb_size,
-                                      m_label_shared_memory_array_ptr,
+                                      static_cast<DataType*>(PyLong_AsVoidPtr(label_ptr)),
                                       get_num_labels());
+    CPUMat& Y = *(input_buffers[INPUT_DATA_TYPE_LABELS]);
     El::Copy(label_shared_memory_matrix, Y);
   }
 
+  // Get responses
   if (has_responses()) {
-    CPUMat& Y = *(input_buffers[INPUT_DATA_TYPE_RESPONSES]);
-    // Copy data from shared memory to output matrix
+    python::object response_ptr = PyDict_GetItemString(batch, "response_ptr");
+    Py_XINCREF(response_ptr);
     CPUMat response_shared_memory_matrix(get_num_responses(),
                                          mb_size,
-                                         m_response_shared_memory_array_ptr,
+                                         static_cast<DataType*>(PyLong_AsVoidPtr(response_ptr)),
                                          get_num_responses());
+    CPUMat& Y = *(input_buffers[INPUT_DATA_TYPE_RESPONSES]);
     El::Copy(response_shared_memory_matrix, Y);
   }
 
@@ -165,222 +157,40 @@ void python_dataset_reader::setup(int num_io_threads,
   // Acquire Python GIL
   python::global_interpreter_lock gil;
 
-  // Import modules
-  python::object main_module = PyImport_ImportModule("__main__");
-  python::object ctypes_module = PyImport_ImportModule("ctypes");
-  python::object multiprocessing_module =
-    PyImport_ImportModule("multiprocessing");
-
-  // Stop process pool if needed
-  if (m_process_pool != nullptr) {
-    PyObject_CallMethod(m_process_pool, "terminate", nullptr);
-    m_process_pool = nullptr;
-  }
-
-  // Allocate shared memory array
-  /// @todo Figure out more robust way to get max mini-batch size
-  El::Int num_io_partitions = 1;
-#ifdef LBANN_HAS_DISTCONV
-  num_io_partitions = dc::get_number_of_io_partitions();
-#endif // LBANN_HAS_DISTCONV
-  const El::Int sample_size = get_linearized_data_size() / num_io_partitions;
-  const El::Int mini_batch_size = get_trainer().get_max_mini_batch_size();
   std::string datatype_typecode;
-  switch (sizeof(DataType)) {
-  case 4:
+#if DataType == float
     datatype_typecode = "f";
-    break;
-  case 8:
+#elif DataType == double
     datatype_typecode = "d";
-    break;
-  default:
+#else
     LBANN_ERROR("invalid data type for Python data reader "
                 "(only float and double are supported)");
-  }
-  m_shared_memory_array = PyObject_CallMethod(multiprocessing_module,
-                                              "RawArray",
-                                              "(s, l)",
-                                              datatype_typecode.c_str(),
-                                              sample_size * mini_batch_size);
+#endif
 
-  // Get address of shared memory buffer
-  python::object shared_memory_ptr =
-    PyObject_CallMethod(ctypes_module,
-                        "addressof",
-                        "(O)",
-                        m_shared_memory_array.get());
-  m_shared_memory_array_ptr =
-    reinterpret_cast<DataType*>(PyLong_AsLong(shared_memory_ptr));
-
-  // Create global variables in Python
-  // Note: The static counter makes sure variable names are unique.
-  static El::Int instance_id = 0;
-  instance_id++;
-  const std::string sample_func_name =
-    ("_DATA_READER_PYTHON_CPP_sample_function_wrapper" +
-     std::to_string(instance_id));
-  PyObject_SetAttrString(main_module,
-                         sample_func_name.c_str(),
-                         m_sample_function);
-  python::check_error();
-  const std::string shared_array_name =
-    ("_DATA_READER_PYTHON_CPP_shared_memory_array" +
-     std::to_string(instance_id));
-  PyObject_SetAttrString(main_module,
-                         shared_array_name.c_str(),
-                         m_shared_memory_array);
+  // Create Python data reader and worker processes
+  python::object lbann_data = PyImport_ImportModule("lbann.util.data");
+  m_data_reader = PyObject_CallMethod(lbann_data, "DataReader", "(O, l, l, s)", m_dataset.get(), num_io_threads, m_prefetch_factor, datatype_typecode.c_str());
   python::check_error();
 
-  std::string label_shared_array_name = "None";
-  if (has_labels()) {
-    m_label_shared_memory_array =
-      PyObject_CallMethod(multiprocessing_module,
-                          "RawArray",
-                          "(s, l)",
-                          datatype_typecode.c_str(),
-                          get_num_labels() * mini_batch_size);
-    python::object label_shared_memory_ptr =
-      PyObject_CallMethod(ctypes_module,
-                          "addressof",
-                          "(O)",
-                          m_label_shared_memory_array.get());
-    m_label_shared_memory_array_ptr =
-      reinterpret_cast<DataType*>(PyLong_AsLong(label_shared_memory_ptr));
-    label_shared_array_name =
-      ("_DATA_READER_PYTHON_CPP_label_shared_memory_array" +
-       std::to_string(instance_id));
-    PyObject_SetAttrString(main_module,
-                           label_shared_array_name.c_str(),
-                           m_label_shared_memory_array);
-    python::check_error();
+  queue_epoch();
+}
+
+void python_dataset_reader::queue_epoch() {
+  // Acquire Python GIL
+  python::global_interpreter_lock gil;
+
+  execution_mode mode = exec_mode_from_string(get_role());
+  dataset& ds = get_trainer().get_data_coordinator().get_dataset(mode);
+
+  // Get shuffled indices to be fetched by worker processes
+  python::object inds_list = PyList_New(0);
+  for (uint64_t i = ds.get_base_offset(); i < m_shuffled_indices.size(); i += ds.get_sample_stride()) {
+    PyList_Append(inds_list,
+                  python::object(PyLong_FromLong(m_shuffled_indices[i])));
   }
 
-  std::string response_shared_array_name = "None";
-  if (has_responses()) {
-    m_response_shared_memory_array =
-      PyObject_CallMethod(multiprocessing_module,
-                          "RawArray",
-                          "(s, l)",
-                          datatype_typecode.c_str(),
-                          get_num_responses() * mini_batch_size);
-    python::object response_shared_memory_ptr =
-      PyObject_CallMethod(ctypes_module,
-                          "addressof",
-                          "(O)",
-                          m_response_shared_memory_array.get());
-    m_response_shared_memory_array_ptr =
-      reinterpret_cast<DataType*>(PyLong_AsLong(response_shared_memory_ptr));
-    response_shared_array_name =
-      ("_DATA_READER_PYTHON_CPP_response_shared_memory_array" +
-       std::to_string(instance_id));
-    PyObject_SetAttrString(main_module,
-                           response_shared_array_name.c_str(),
-                           m_response_shared_memory_array);
-    python::check_error();
-  }
-
-  /// @todo Implement label reconstruction case
-
-  // Create wrapper around sample function
-  // Note: We attempt accessing the sample with the buffer protocol
-  // since they can be copied more efficiently. If this fails, we just
-  // iterate through the sample entries.
-  /// @todo Handle multi-dimensional NumPy arrays.
-  const std::string wrapper_func_name =
-    ("_DATA_READER_PYTHON_CPP_sample_function" + std::to_string(instance_id));
-  std::string wrapper_func_def = R"(
-def @wrapper_func@(sample_index, array_offset):
-    """Get data sample and copy to shared memory array."""
-
-    # Get sample
-    sample = @sample_func@(sample_index)
-
-    input_buffer = memoryview(sample.sample)
-    assert input_buffer.format == '@datatype_typecode@'
-    input_buffer = input_buffer.cast('B').cast('@datatype_typecode@')
-    output_buffer = memoryview(@shared_array@)
-    output_buffer = output_buffer[array_offset*@sample_size@:(array_offset+1)*@sample_size@]
-    output_buffer = output_buffer.cast('B').cast('@datatype_typecode@')
-    output_buffer[:] = input_buffer
-
-    # Get label
-    if hasattr(sample, 'label'):
-        label = sample.label
-        input_buffer = memoryview(label)
-        output_buffer = memoryview(@label_shared_array@)
-        output_buffer = output_buffer[array_offset*len(label):(array_offset+1)*len(label)]
-        output_buffer = output_buffer.cast('B').cast('@datatype_typecode@')
-        output_buffer[:] = input_buffer
-
-    # Get response
-    if hasattr(sample, 'response'):
-        response = sample.response
-        input_buffer = memoryview(response)
-        output_buffer = memoryview(@response_shared_array@)
-        output_buffer = output_buffer[array_offset*len(response):(array_offset+1)*len(response)]
-        output_buffer = output_buffer.cast('B').cast('@datatype_typecode@')
-        output_buffer[:] = input_buffer
-)";
-  wrapper_func_def = std::regex_replace(wrapper_func_def,
-                                        std::regex("\\@wrapper_func\\@"),
-                                        wrapper_func_name);
-  wrapper_func_def = std::regex_replace(wrapper_func_def,
-                                        std::regex("\\@sample_func\\@"),
-                                        sample_func_name);
-  wrapper_func_def = std::regex_replace(wrapper_func_def,
-                                        std::regex("\\@shared_array\\@"),
-                                        shared_array_name);
-  wrapper_func_def = std::regex_replace(wrapper_func_def,
-                                        std::regex("\\@label_shared_array\\@"),
-                                        label_shared_array_name);
-  wrapper_func_def =
-    std::regex_replace(wrapper_func_def,
-                       std::regex("\\@response_shared_array\\@"),
-                       response_shared_array_name);
-  wrapper_func_def = std::regex_replace(wrapper_func_def,
-                                        std::regex("\\@sample_size\\@"),
-                                        std::to_string(sample_size));
-  wrapper_func_def = std::regex_replace(wrapper_func_def,
-                                        std::regex("\\@datatype_typecode\\@"),
-                                        datatype_typecode);
-  PyRun_SimpleString(wrapper_func_def.c_str());
+  python::object(PyObject_CallMethod(m_data_reader, "queue_epoch", "(O)", inds_list.get()));
   python::check_error();
-  m_sample_function_wrapper =
-    PyObject_GetAttrString(main_module, wrapper_func_name.c_str());
-
-  // Create initializer function for worker processes
-  const std::string init_func_name = "_DATA_READER_PYTHON_CPP_init_function";
-  std::string init_func_def = R"(
-def @init_func@():
-    """Initialize worker process.
-
-    Disables the LBANN signal handler since it reports a spurious error
-    when the worker process recieves SIGTERM from the master process.
-
-    """
-
-    # Disable LBANN signal handler
-    import signal
-    for sig in range(signal.NSIG):
-        try:
-            signal.signal(sig, signal.SIG_DFL)
-            pass
-        except: pass
-)";
-  init_func_def = std::regex_replace(init_func_def,
-                                     std::regex("\\@init_func\\@"),
-                                     init_func_name);
-  PyRun_SimpleString(init_func_def.c_str());
-  python::check_error();
-  python::object init_func =
-    PyObject_GetAttrString(main_module, init_func_name.c_str());
-
-  // Start Python process pool
-  m_process_pool = PyObject_CallMethod(multiprocessing_module,
-                                       "Pool",
-                                       "(L,O)",
-                                       num_io_threads,
-                                       init_func.get());
 }
 
 void python_dataset_reader::load()
@@ -394,25 +204,12 @@ void python_dataset_reader::load()
     python::check_error();
   }
 
-  // Load the dataset object
-  static El::Int instance_id = 0;
-  instance_id++;
-  const std::string dataset_name =
-    ("_DATA_READER_PYTHON_CPP_dataset" + std::to_string(instance_id));
-  std::string load_command = R"(
-import pickle
-with open('@dataset_path@', 'rb') as f:
-  @dataset_name@ = pickle.load(f)
-)";
-  load_command = std::regex_replace(load_command,
-                                    std::regex("\\@dataset_path\\@"),
-                                    m_dataset_path);
-  load_command = std::regex_replace(load_command,
-                                    std::regex("\\@dataset_name\\@"),
-                                    dataset_name);
-  PyRun_SimpleString(load_command.c_str());
-  python::object main_module = PyImport_ImportModule("__main__");
-  m_dataset = PyObject_GetAttrString(main_module, dataset_name.c_str());
+  // Load Python dataset
+  python::object pickle_module = PyImport_ImportModule("pickle");
+  std::ifstream file(m_dataset_path, std::ios::binary);
+  std::string buffer(std::istreambuf_iterator<char>(file), {});
+  python::object data = PyBytes_FromStringAndSize(buffer.c_str(), buffer.size());
+  m_dataset = PyObject_CallMethod(pickle_module, "loads", "(O)", data.get());
   python::check_error();
 
 #ifdef LBANN_HAS_DISTCONV
@@ -444,9 +241,8 @@ with open('@dataset_path@', 'rb') as f:
   if (PyObject_HasAttrString(sample_dims, "sample")) {
     dims = PyObject_GetAttrString(sample_dims, "sample");
     dims = PyObject_GetIter(dims);
-    for (auto d = PyIter_Next(dims); d != nullptr; d = PyIter_Next(dims)) {
+    for (python::object d = PyIter_Next(dims); d != nullptr; d = PyIter_Next(dims)) {
       m_sample_dims.push_back(PyLong_AsLong(d));
-      Py_DECREF(d);
     }
     python::check_error();
   }
@@ -467,13 +263,17 @@ with open('@dataset_path@', 'rb') as f:
     generic_data_reader::set_has_responses(true);
   }
 
-  // Get sample access function
-  m_sample_function = PyObject_GetAttrString(m_dataset, "__getitem__");
-
   m_shuffled_indices.resize(m_num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   resize_shuffled_indices();
   select_subset_of_data();
+}
+
+void python_dataset_reader::update(bool epoch_complete)
+{
+  generic_data_reader::update(epoch_complete);
+
+  if (epoch_complete) queue_epoch();
 }
 
 } // namespace lbann
