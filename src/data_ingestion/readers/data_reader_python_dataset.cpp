@@ -102,7 +102,7 @@ bool python_dataset_reader::fetch_data_block(
   for (uint64_t i = 0; i < mb_size; ++i) {
     sample_index =
       m_shuffled_indices[current_position_in_data_set + i * sample_stride];
-    indices_fetched.Set(i, 0, sample_index);
+        indices_fetched.Set(i, 0, sample_index);
   }
 
   // Get the next batch from the Python data reader
@@ -184,9 +184,15 @@ void python_dataset_reader::queue_epoch() {
 
   // Get shuffled indices to be fetched by worker processes
   python::object inds_list = PyList_New(0);
-  for (uint64_t i = ds.get_base_offset(); i < m_shuffled_indices.size(); i += ds.get_sample_stride()) {
-    PyList_Append(inds_list,
-                  python::object(PyLong_FromLong(m_shuffled_indices[i])));
+  uint64_t num_samples = m_num_samples;
+  uint64_t base_offset = ds.get_base_offset();
+  uint64_t sample_stride = ds.get_sample_stride();
+  uint64_t mini_batch_stride = ds.get_stride_to_next_mini_batch();
+  for (uint64_t i = base_offset; i < num_samples; i += mini_batch_stride) {
+    for (uint64_t j = i; j < std::min(num_samples, i - base_offset + mini_batch_stride); j += sample_stride) {
+      PyList_Append(inds_list,
+                    python::object(PyLong_FromLong(m_shuffled_indices[j])));
+    }
   }
 
   python::object(PyObject_CallMethod(m_data_reader, "queue_epoch", "(O)", inds_list.get()));
