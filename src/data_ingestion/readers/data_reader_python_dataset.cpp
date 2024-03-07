@@ -227,6 +227,8 @@ void python_dataset_reader::load()
   // Load Python dataset
   python::object pickle_module = PyImport_ImportModule("pickle");
   std::ifstream file(m_dataset_path, std::ios::binary);
+  if (!file)
+    LBANN_ERROR("failed to open dataset pickle file");
   std::string buffer(std::istreambuf_iterator<char>(file), {});
   python::object data =
     PyBytes_FromStringAndSize(buffer.c_str(), buffer.size());
