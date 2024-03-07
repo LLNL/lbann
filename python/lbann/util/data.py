@@ -19,7 +19,6 @@ class Sample:
         sample: Optional[ArrayLike] = None,
         label: Optional[ArrayLike] = None,
         response: Optional[ArrayLike] = None,
-        label_reconstruction: Optional[ArrayLike] = None,
     ) -> None:
         """
         Sample Constructor
@@ -30,8 +29,6 @@ class Sample:
         :type label: Optional[ArrayLike], optional
         :param response: Response input field, defaults to None
         :type response: Optional[ArrayLike], optional
-        :param label_reconstruction: Label reconstruction input field, defaults to None
-        :type label_reconstruction: Optional[ArrayLike], optional
         """
         if sample is not None:
             self.sample = sample
@@ -39,8 +36,6 @@ class Sample:
             self.label = label
         if response is not None:
             self.response = response
-        if label_reconstruction is not None:
-            self.label_reconstruction = label_reconstruction
 
 
 class SampleDims:
@@ -53,7 +48,6 @@ class SampleDims:
         sample: Optional[ArrayLike] = None,
         label: Optional[ArrayLike] = None,
         response: Optional[ArrayLike] = None,
-        label_reconstruction: Optional[ArrayLike] = None,
     ) -> None:
         """
         SampleDims Constructor
@@ -64,8 +58,6 @@ class SampleDims:
         :type label: Optional[ArrayLike], optional
         :param response: Response dimensions, defaults to None
         :type response: Optional[ArrayLike], optional
-        :param label_reconstruction: Label reconstruction dims, defaults to None
-        :type label_reconstruction: Optional[ArrayLike], optional
         """
         if sample is not None:
             self.sample = sample
@@ -73,8 +65,6 @@ class SampleDims:
             self.label = label
         if response is not None:
             self.response = response
-        if label_reconstruction is not None:
-            self.label_reconstruction = label_reconstruction
 
 
 class Dataset(ABC):
@@ -199,6 +189,11 @@ class DataReader:
         self.tasks_queued = 0
         self.next_task = Value("i", 0)
         self.condition = Condition()
+        self.sample_dims = dataset.get_sample_dims()
+        self.num_io_partitions = 1
+
+        if isinstance(self.dataset, DistConvDataset):
+            self.num_io_partitions = self.dataset.num_io_partitions
 
         self.procs = [Process(target=self.worker) for _ in range(self.num_procs)]
         for p in self.procs:
@@ -263,31 +258,31 @@ class DataReader:
 
         # Note: we return the arrays wiht the pointers so that they aren't
         # deallocated by the garbage collector.
-        if hasattr(samples[0], "sample"):
-            batch["sample"] = np.ascontiguousarray(
-                [s.sample for s in samples], dtype=self.dtype
-            )
-            batch["sample_ptr"] = batch["sample"].ctypes.data
+        batch["sample"] = np.ascontiguousarray(
+            [s.sample for s in samples], dtype=self.dtype
+        )
+        batch["sample_ptr"] = batch["sample"].ctypes.data
+        assert (
+            batch["sample"].size
+            == np.prod(self.sample_dims.sample) * batch_size / self.num_io_partitions
+        )
 
-        if hasattr(samples[0], "label"):
+        if hasattr(self.sample_dims, "label"):
             batch["label"] = np.ascontiguousarray(
                 [s.label for s in samples], dtype=self.dtype
             )
             batch["label_ptr"] = batch["label"].ctypes.data
+            assert batch["label"].size == np.prod(self.sample_dims.label) * batch_size
 
-        if hasattr(samples[0], "response"):
+        if hasattr(self.sample_dims, "response"):
             batch["response"] = np.ascontiguousarray(
                 [s.response for s in samples], dtype=self.dtype
             )
             batch["response_ptr"] = batch["response"].ctypes.data
-
-        if hasattr(samples[0], "label_reconstruction"):
-            batch["label_reconstruction"] = np.ascontiguousarray(
-                [s.label_reconstruction for s in samples], dtype=self.dtype
+            assert (
+                batch["response"].size
+                == np.prod(self.sample_dims.response) * batch_size
             )
-            batch["label_reconstruction_ptr"] = batch[
-                "label_reconstruction"
-            ].ctypes.data
 
         return batch
 
