@@ -121,9 +121,12 @@ message PythonDataReader {
 }
 
 message PythonDatasetReader {
-  string dataset_path = 1;           // Path to pickled Dataset object.
-  string module_dir = 2;             // Optional directory containing module with
-                                     // dataset definition.
+  string dataset_path = 1;           // Path to a pickle file containing a
+                                     // lbann.util.data.Dataset object.
+  string module_dir = 2;             // Optional directory to append to PYTHONPATH
+                                     // when the Dataset definition is in a module
+                                     // that needs to be imported and that module is
+                                     // not already accessible from the PYTHONPATH.
   uint64 prefetch_factor = 3;        // Number of samples to prefetch per worker.
 }
 
