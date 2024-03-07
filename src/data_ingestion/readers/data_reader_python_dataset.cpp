@@ -111,8 +111,10 @@ bool python_dataset_reader::fetch_data_block(
   python::check_error();
 
   // Get samples
-  python::object sample_ptr = PyDict_GetItemString(batch, "sample_ptr");
-  Py_XINCREF(sample_ptr);
+  // Note: we don't use python::objects here because PyDict_GetItemString
+  // returns a borrowed reference (not a new pointer) and python::object
+  // would try to decref it when it goes out of scope: SEGFAULT time
+  auto sample_ptr = PyDict_GetItemString(batch, "sample_ptr");
   python::check_error();
   CPUMat shared_memory_matrix(
     sample_size,
@@ -124,8 +126,7 @@ bool python_dataset_reader::fetch_data_block(
 
   // Get labels
   if (has_labels()) {
-    python::object label_ptr = PyDict_GetItemString(batch, "label_ptr");
-    Py_XINCREF(label_ptr);
+    auto label_ptr = PyDict_GetItemString(batch, "label_ptr");
     CPUMat label_shared_memory_matrix(
       get_num_labels(),
       mb_size,
@@ -137,8 +138,7 @@ bool python_dataset_reader::fetch_data_block(
 
   // Get responses
   if (has_responses()) {
-    python::object response_ptr = PyDict_GetItemString(batch, "response_ptr");
-    Py_XINCREF(response_ptr);
+    auto response_ptr = PyDict_GetItemString(batch, "response_ptr");
     CPUMat response_shared_memory_matrix(
       get_num_responses(),
       mb_size,
@@ -147,8 +147,6 @@ bool python_dataset_reader::fetch_data_block(
     CPUMat& Y = *(input_buffers[INPUT_DATA_TYPE_RESPONSES]);
     El::Copy(response_shared_memory_matrix, Y);
   }
-
-  /// @todo Implement label reconstruction case
 
   return true;
 }
