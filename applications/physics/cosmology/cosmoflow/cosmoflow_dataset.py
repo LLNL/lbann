@@ -11,6 +11,7 @@ class CosmoFlowDataset(DistConvDataset):
         self.input_width = input_width
         self.num_secrets = num_secrets
         self.samples = glob(os.path.join(data_dir, '*.hdf5'))
+        self.samples.sort()
     
     def __len__(self):
         return len(self.samples)
