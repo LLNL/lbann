@@ -102,21 +102,23 @@ bool python_dataset_reader::fetch_data_block(
   for (uint64_t i = 0; i < mb_size; ++i) {
     sample_index =
       m_shuffled_indices[current_position_in_data_set + i * sample_stride];
-        indices_fetched.Set(i, 0, sample_index);
+    indices_fetched.Set(i, 0, sample_index);
   }
 
   // Get the next batch from the Python data reader
-  python::object batch = PyObject_CallMethod(m_data_reader, "get_batch", "(l)", mb_size);
+  python::object batch =
+    PyObject_CallMethod(m_data_reader, "get_batch", "(l)", mb_size);
   python::check_error();
-  
+
   // Get samples
   python::object sample_ptr = PyDict_GetItemString(batch, "sample_ptr");
   Py_XINCREF(sample_ptr);
   python::check_error();
-  CPUMat shared_memory_matrix(sample_size,
-                              mb_size,
-                              static_cast<DataType*>(PyLong_AsVoidPtr(sample_ptr)),
-                              sample_size);
+  CPUMat shared_memory_matrix(
+    sample_size,
+    mb_size,
+    static_cast<DataType*>(PyLong_AsVoidPtr(sample_ptr)),
+    sample_size);
   CPUMat& X = *(input_buffers[INPUT_DATA_TYPE_SAMPLES]);
   El::Copy(shared_memory_matrix, X);
 
@@ -124,10 +126,11 @@ bool python_dataset_reader::fetch_data_block(
   if (has_labels()) {
     python::object label_ptr = PyDict_GetItemString(batch, "label_ptr");
     Py_XINCREF(label_ptr);
-    CPUMat label_shared_memory_matrix(get_num_labels(),
-                                      mb_size,
-                                      static_cast<DataType*>(PyLong_AsVoidPtr(label_ptr)),
-                                      get_num_labels());
+    CPUMat label_shared_memory_matrix(
+      get_num_labels(),
+      mb_size,
+      static_cast<DataType*>(PyLong_AsVoidPtr(label_ptr)),
+      get_num_labels());
     CPUMat& Y = *(input_buffers[INPUT_DATA_TYPE_LABELS]);
     El::Copy(label_shared_memory_matrix, Y);
   }
@@ -136,10 +139,11 @@ bool python_dataset_reader::fetch_data_block(
   if (has_responses()) {
     python::object response_ptr = PyDict_GetItemString(batch, "response_ptr");
     Py_XINCREF(response_ptr);
-    CPUMat response_shared_memory_matrix(get_num_responses(),
-                                         mb_size,
-                                         static_cast<DataType*>(PyLong_AsVoidPtr(response_ptr)),
-                                         get_num_responses());
+    CPUMat response_shared_memory_matrix(
+      get_num_responses(),
+      mb_size,
+      static_cast<DataType*>(PyLong_AsVoidPtr(response_ptr)),
+      get_num_responses());
     CPUMat& Y = *(input_buffers[INPUT_DATA_TYPE_RESPONSES]);
     El::Copy(response_shared_memory_matrix, Y);
   }
@@ -159,23 +163,30 @@ void python_dataset_reader::setup(int num_io_threads,
 
   std::string datatype_typecode;
 #if DataType == float
-    datatype_typecode = "f";
+  datatype_typecode = "f";
 #elif DataType == double
-    datatype_typecode = "d";
+  datatype_typecode = "d";
 #else
-    LBANN_ERROR("invalid data type for Python data reader "
-                "(only float and double are supported)");
+  LBANN_ERROR("invalid data type for Python data reader "
+              "(only float and double are supported)");
 #endif
 
   // Create Python data reader and worker processes
   python::object lbann_data = PyImport_ImportModule("lbann.util.data");
-  m_data_reader = PyObject_CallMethod(lbann_data, "DataReader", "(O, l, l, s)", m_dataset.get(), num_io_threads, m_prefetch_factor, datatype_typecode.c_str());
+  m_data_reader = PyObject_CallMethod(lbann_data,
+                                      "DataReader",
+                                      "(O, l, l, s)",
+                                      m_dataset.get(),
+                                      num_io_threads,
+                                      m_prefetch_factor,
+                                      datatype_typecode.c_str());
   python::check_error();
 
   queue_epoch();
 }
 
-void python_dataset_reader::queue_epoch() {
+void python_dataset_reader::queue_epoch()
+{
   // Acquire Python GIL
   python::global_interpreter_lock gil;
 
@@ -189,13 +200,16 @@ void python_dataset_reader::queue_epoch() {
   uint64_t sample_stride = ds.get_sample_stride();
   uint64_t mini_batch_stride = ds.get_stride_to_next_mini_batch();
   for (uint64_t i = base_offset; i < num_samples; i += mini_batch_stride) {
-    for (uint64_t j = i; j < std::min(num_samples, i - base_offset + mini_batch_stride); j += sample_stride) {
+    for (uint64_t j = i;
+         j < std::min(num_samples, i - base_offset + mini_batch_stride);
+         j += sample_stride) {
       PyList_Append(inds_list,
                     python::object(PyLong_FromLong(m_shuffled_indices[j])));
     }
   }
 
-  python::object(PyObject_CallMethod(m_data_reader, "queue_epoch", "(O)", inds_list.get()));
+  python::object(
+    PyObject_CallMethod(m_data_reader, "queue_epoch", "(O)", inds_list.get()));
   python::check_error();
 }
 
@@ -214,7 +228,8 @@ void python_dataset_reader::load()
   python::object pickle_module = PyImport_ImportModule("pickle");
   std::ifstream file(m_dataset_path, std::ios::binary);
   std::string buffer(std::istreambuf_iterator<char>(file), {});
-  python::object data = PyBytes_FromStringAndSize(buffer.c_str(), buffer.size());
+  python::object data =
+    PyBytes_FromStringAndSize(buffer.c_str(), buffer.size());
   m_dataset = PyObject_CallMethod(pickle_module, "loads", "(O)", data.get());
   python::check_error();
 
@@ -247,7 +262,8 @@ void python_dataset_reader::load()
   if (PyObject_HasAttrString(sample_dims, "sample")) {
     dims = PyObject_GetAttrString(sample_dims, "sample");
     dims = PyObject_GetIter(dims);
-    for (python::object d = PyIter_Next(dims); d != nullptr; d = PyIter_Next(dims)) {
+    for (python::object d = PyIter_Next(dims); d != nullptr;
+         d = PyIter_Next(dims)) {
       m_sample_dims.push_back(PyLong_AsLong(d));
     }
     python::check_error();
@@ -279,7 +295,8 @@ void python_dataset_reader::update(bool epoch_complete)
 {
   generic_data_reader::update(epoch_complete);
 
-  if (epoch_complete) queue_epoch();
+  if (epoch_complete)
+    queue_epoch();
 }
 
 } // namespace lbann
