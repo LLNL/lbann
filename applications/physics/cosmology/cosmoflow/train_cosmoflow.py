@@ -237,6 +237,7 @@ if __name__ == "__main__":
     # optimizer.learn_rate *= 1e-2
 
     # Setup data reader
+    serialize_io = False
     if args.synthetic:
         data_reader = create_synthetic_data_reader(
             args.input_width, args.num_secrets)
@@ -248,13 +249,14 @@ if __name__ == "__main__":
             args.val_dir,
             args.test_dir,
             num_responses=args.num_secrets)
+        serialize_io = True
 
     # Setup trainer
     random_seed_arg = {'random_seed': args.random_seed} \
         if args.random_seed is not None else {}
     trainer = lbann.Trainer(
         mini_batch_size=args.mini_batch_size,
-        serialize_io=True,
+        serialize_io=serialize_io,
         **random_seed_arg)
 
     # Runtime parameters/arguments
