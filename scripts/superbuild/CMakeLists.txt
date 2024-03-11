@@ -77,6 +77,9 @@ lbann_sb_add_packages(
   Aluminum     # Hydrogen, DiHydrogen
   Catch2       # Hydrogen, DiHydrogen
   HDF5         # Conduit
+  ZFP          # LBANN
+  H5Z-ZFP      # LBANN
+  HDF5_PLUGINS # LBANN
   JPEG-TURBO   # OpenCV
   OpenBLAS     # Hydrogen
   spdlog       # DiHydrogen, LBANN
@@ -112,7 +115,11 @@ foreach (pkg ${LBANN_SB_BUILD_PKGS})
 endforeach ()
 
 # Print a helpful(?) message
-set(LBANN_SB_SUGG_CMAKE_PREFIX_PATH_TMP "\$\{CMAKE_PREFIX_PATH\}")
+set(LBANN_SB_SUGG_CMAKE_PREFIX_PATH_TMP "${CMAKE_PREFIX_PATH}:\$\{CMAKE_PREFIX_PATH\}")
+message("BVE I think that there is a prefix path ${CMAKE_PREFIX_PATH}")
+message("BVE I think that there is a foo ${FOO}")
+message("BVE I think that there is a suggesed prefix path ${LBANN_SB_SUGG_CMAKE_PREFIX_PATH_TMP}")
+#set(LBANN_SB_SUGG_CMAKE_PREFIX_PATH_TMP "\$\{CMAKE_PREFIX_PATH\}")
 message("\n-----------------------------------------------------------------\n")
 message("LBANN SuperBuild will build the following packages:\n")
 foreach (pkg ${LBANN_SB_BUILD_PKGS})
@@ -139,6 +146,11 @@ message("Note that these assume a Bourne-compatible shell.")
 message("\n-----------------------------------------------------------------\n")
 file(WRITE "${CMAKE_BINARY_DIR}/lbann_sb_suggested_cmake_prefix_path.sh"
   "export CMAKE_PREFIX_PATH=${LBANN_SB_SUGG_CMAKE_PREFIX_PATH}\n")
+
+if (LBANN_SB_BUILD_H5Z-ZFP)
+file(APPEND "${CMAKE_BINARY_DIR}/lbann_sb_suggested_cmake_prefix_path.sh"
+  "\nexport HDF5_PLUGIN_PATH=${H5Z-ZFP_DIR}/plugin\n")
+endif (LBANN_SB_BUILD_H5Z-ZFP)
 
 # Add a custom target for bundling all things up
 if (UNIX)

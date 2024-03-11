@@ -24,6 +24,11 @@
 ## permissions and limitations under the license.
 ################################################################################
 
+#source $LMOD_PKG/init/zsh
+#ml cuda/11.8 cmake/3.23 ninja gcc/11
+ml load cuda/12.2.2 cmake/3.23.1 gcc/11.2.1 spectrum-mpi/rolling-release python/3.8.2
+export LIBRARY_PATH=$LD_LIBRARY_PATH
+
 # Set to ON (or any CMake truthy value) to build all of the
 # dependencies of the LBANN stack
 BUILD_EXTERNAL_TPLS=ON
@@ -53,18 +58,21 @@ LBANN_SRC_DIR=$(git rev-parse --show-toplevel)
 SUPERBUILD_SRC_DIR=${LBANN_SRC_DIR}/scripts/superbuild
 
 # Set to the preferred install directory
-INSTALL_PREFIX=${PWD}/install-cuda-distconv
+#INSTALL_PREFIX=${PWD}/install-cuda-distconv
+INSTALL_PREFIX=/p/vast1/lbann/stable_dependencies/lassen/gcc-11.2.1/cuda-12.2.2/spectrum-mpi-rolling-release
 
 # Set to the preferred build directory
 BUILD_DIR=${TMPDIR}/lbann-superbuild
 
+#    -G Ninja \
 cmake \
-    -G Ninja \
+    -G "Unix Makefiles" \
     -S ${SUPERBUILD_SRC_DIR} \
     -B ${BUILD_DIR} \
     \
     -D CMAKE_BUILD_TYPE=Release \
     -D CMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
+    -D BUILD_SHARED_LIBS=ON \
     \
     -D CMAKE_C_COMPILER=$(command -v gcc) \
     -D CMAKE_CXX_COMPILER=$(command -v g++) \
@@ -74,7 +82,7 @@ cmake \
     \
     -D CMAKE_CXX_STANDARD=17 \
     -D CMAKE_CUDA_STANDARD=17 \
-    -D CMAKE_CUDA_ARCHITECTURES=${GPU_ARCH} \
+    -D CMAKE_CUDA_ARCHITECTURES=${CUDA_GPU_ARCH} \
     \
     -D CMAKE_POSITION_INDEPENDENT_CODE=ON \
     \
@@ -107,12 +115,13 @@ cmake \
     -D LBANN_SB_BUILD_Aluminum=${BUILD_LBANN_STACK} \
     -D LBANN_SB_Aluminum_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
     -D LBANN_SB_Aluminum_CUDA_FLAGS="${EXTRA_CUDA_FLAGS}" \
-    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_CALIPER=ON \
+    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_CALIPER=OFF \
     -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_NCCL=ON \
     -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_HOST_TRANSFER=ON \
     -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_TESTS=OFF \
     -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_BENCHMARKS=OFF \
     -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_THREAD_MULTIPLE=OFF \
+    -D LBANN_SB_FWD_Aluminum_NCCL_DIR=${INSTALL_PREFIX}/nccl_2.20.3-1+cuda12.2_ppc64le \
     \
     -D LBANN_SB_BUILD_Hydrogen=${BUILD_LBANN_STACK} \
     -D LBANN_SB_Hydrogen_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
@@ -122,12 +131,15 @@ cmake \
     -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_HALF=OFF \
     -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_TESTING=ON \
     -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_UNIT_TESTS=OFF \
+    -D LBANN_SB_FWD_Hydrogen_NCCL_DIR=${INSTALL_PREFIX}/nccl_2.20.3-1+cuda12.2_ppc64le \
     \
     -D LBANN_SB_BUILD_DiHydrogen=${BUILD_LBANN_STACK} \
     -D LBANN_SB_DiHydrogen_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
     -D LBANN_SB_DiHydrogen_CUDA_FLAGS="${EXTRA_CUDA_FLAGS}" \
     -D LBANN_SB_FWD_DiHydrogen_BLA_VENDOR="Generic" \
     -D LBANN_SB_FWD_DiHydrogen_H2_ENABLE_DISTCONV_LEGACY=${BUILD_WITH_DISTCONV} \
+    -D LBANN_SB_FWD_DiHydrogen_NCCL_DIR=${INSTALL_PREFIX}/nccl_2.20.3-1+cuda12.2_ppc64le \
+    -D LBANN_SB_FWD_DiHydrogen_CUDNN_DIR=${INSTALL_PREFIX}/cudnn-linux-ppc64le-8.9.7.29_cuda12-archive \
     \
     -D LBANN_SB_BUILD_LBANN=${BUILD_LBANN_STACK} \
     -D LBANN_SB_LBANN_SOURCE_DIR=${LBANN_SRC_DIR} \
@@ -137,7 +149,9 @@ cmake \
     -D LBANN_SB_FWD_LBANN_BLA_VENDOR="Generic" \
     -D LBANN_SB_FWD_LBANN_CMAKE_EXPORT_COMPILE_COMMANDS=ON \
     -D LBANN_SB_FWD_LBANN_LBANN_DATATYPE=float \
-    -D LBANN_SB_FWD_LBANN_LBANN_WITH_CALIPER=ON \
+    -D LBANN_SB_FWD_LBANN_LBANN_WITH_CALIPER=OFF \
     -D LBANN_SB_FWD_LBANN_LBANN_WITH_DISTCONV=${BUILD_WITH_DISTCONV} \
     -D LBANN_SB_FWD_LBANN_LBANN_WITH_TBINF=OFF \
-    -D LBANN_SB_FWD_LBANN_LBANN_WITH_UNIT_TESTING=ON
+    -D LBANN_SB_FWD_LBANN_LBANN_WITH_UNIT_TESTING=ON \
+    -D LBANN_SB_FWD_LBANN_NCCL_DIR=${INSTALL_PREFIX}/nccl_2.20.3-1+cuda12.2_ppc64le \
+    -D LBANN_SB_FWD_LBANN_CUDNN_DIR=${INSTALL_PREFIX}/cudnn-linux-ppc64le-8.9.7.29_cuda12-archive
