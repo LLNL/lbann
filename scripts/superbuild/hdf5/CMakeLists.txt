@@ -24,8 +24,8 @@
 ## permissions and limitations under the license.
 ################################################################################
 # These defaults are set so as to be most amenable to LBANN(/Conduit).
-set(LBANN_SB_FWD_HDF5_DEFAULT_API_VERSION "v18"
-  CACHE BOOL "Default API version for HDF5")
+set(LBANN_SB_FWD_HDF5_DEFAULT_API_VERSION "v112"
+  CACHE STRING "Default API version for HDF5")
 
 option(LBANN_SB_FWD_HDF5_BUILD_TESTING
   "Build HDF5 tests."
@@ -37,24 +37,30 @@ option(LBANN_SB_FWD_HDF5_HDF5_BUILD_EXAMPLES
 option(LBANN_SB_FWD_HDF5_HDF5_ENABLE_PARALLEL
   "Build HDF5 with parallel (MPI) support." ON)
 
-option(LBANN_SB_FWD_HDF5_HDF5_USE_16_API_DEFAULT
-  "Use 1.6 API by default"
-  OFF)
-option(LBANN_SB_FWD_HDF5_HDF5_USE_18_API_DEFAULT
-  "Use 1.8 API by default"
-  ON)
-option(LBANN_SB_FWD_HDF5_HDF5_USE_110_API_DEFAULT
-  "Use 1.10 API by default"
-  OFF)
-option(LBANN_SB_FWD_HDF5_HDF5_USE_112_API_DEFAULT
-  "Use 1.12 API by default"
-  OFF)
+# option(LBANN_SB_FWD_HDF5_HDF5_USE_16_API_DEFAULT
+#   "Use 1.6 API by default"
+#   OFF)
+# option(LBANN_SB_FWD_HDF5_HDF5_USE_18_API_DEFAULT
+#   "Use 1.8 API by default"
+#   OFF)
+# option(LBANN_SB_FWD_HDF5_HDF5_USE_110_API_DEFAULT
+#   "Use 1.10 API by default"
+#   OFF)
+# option(LBANN_SB_FWD_HDF5_HDF5_USE_112_API_DEFAULT
+#   "Use 1.12 API by default"
+#   ON)
 option(LBANN_SB_FWD_HDF5_HDF5_BUILD_FORTRAN
   "Build HDF5 with fortran support"
   OFF)
 option(LBANN_SB_FWD_HDF5_HDF5_GENERATE_HEADERS
   "See HDF5 docs."
   ON)
+option(LBANN_SB_FWD_HDF5_ONLY_SHARED_LIBS
+  "Only Build Shared Libraries."
+  ON)
+# option(LBANN_SB_FWD_HDF5_DEFAULT_API_VERSION
+#   "Only Build Shared Libraries."
+#   v112)
 
 # At present, this is required for LBANN/JAG use.
 option(LBANN_SB_FWD_HDF5_HDF5_ENABLE_Z_LIB_SUPPORT
@@ -75,7 +81,7 @@ lbann_sb_add_cmake_extern_pkg(
   NAME HDF5
   LANGUAGES C CXX ${MAYBE_HDF5_FORTRAN}
   GITHUB_URL HDFGroup/hdf5
-  GIT_TAG "hdf5-1_10_9")
+  GIT_TAG "hdf5-1_12_3")
 
 set(HDF5_DIR ${LBANN_SB_HDF5_PREFIX}
   CACHE INTERNAL "The install prefix of HDF5.")

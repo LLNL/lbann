@@ -186,7 +186,8 @@ macro(lbann_sb_add_cmake_extern_pkg)
     NAME
     GITHUB_URL
     GIT_TAG
-    SOURCE_SUBDIR)
+    SOURCE_SUBDIR
+    INIT_CONFIG)
   set(_macro_multi_val
     LANGUAGES
     EXTRA_CMAKE_ARGS
@@ -272,6 +273,11 @@ macro(lbann_sb_add_cmake_extern_pkg)
     set(LBANN_SB_GIT_SUBMODULES_TAG "GIT_SUBMODULES")
     set(LBANN_SB_GIT_SUBMODULES_VAL "")
     message("\nLBANN!\n")
+  endif ()
+
+  if (lbann_sb_add_INIT_CONFIG)
+    list(PREPEND LBANN_SB_${PKG_NAME}_CMAKE_LANG_ARGS
+      "-C${lbann_sb_add_INIT_CONFIG}")
   endif ()
 
   # Finally add the project.
