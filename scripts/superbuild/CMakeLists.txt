@@ -149,8 +149,13 @@ file(WRITE "${CMAKE_BINARY_DIR}/lbann_sb_suggested_cmake_prefix_path.sh"
 
 if (LBANN_SB_BUILD_H5Z-ZFP)
 file(APPEND "${CMAKE_BINARY_DIR}/lbann_sb_suggested_cmake_prefix_path.sh"
-  "\nexport HDF5_PLUGIN_PATH=${H5Z-ZFP_DIR}/plugin\n")
+  "\nexport HDF5_PLUGIN_PATH=${H5Z-ZFP_DIR}/plugin:\$\{HDF5_PLUGIN_PATH\}\n")
 endif (LBANN_SB_BUILD_H5Z-ZFP)
+
+if (LBANN_SB_BUILD_HDF5_PLUGINS)
+file(APPEND "${CMAKE_BINARY_DIR}/lbann_sb_suggested_cmake_prefix_path.sh"
+  "\nexport HDF5_PLUGIN_PATH=${HDF5_PLUGINS_DIR}/lib/plugin:\$\{HDF5_PLUGIN_PATH\}\n")
+endif (LBANN_SB_BUILD_HDF5_PLUGINS)
 
 # Add a custom target for bundling all things up
 if (UNIX)
