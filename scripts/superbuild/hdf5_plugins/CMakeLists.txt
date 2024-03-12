@@ -62,10 +62,10 @@ set(LBANN_SB_FWD_HDF5_PLUGINS_H5PL_TGZPATH:PATH "${CMAKE_CURRENT_BINARY_DIR}/src
 
 # set (LBANN_SB_FWD_HDF5_PLUGINS_USE_SHARED_LIBS ON CACHE BOOL "Use Shared Libraries" FORCE)
 
-set (LBANN_SB_FWD_HDF5_PLUGINS_HDF_ENABLE_BLOSC_SUPPORT OFF CACHE BOOL "Enable BLOSC compression" FORCE)
-set (LBANN_SB_FWD_HDF5_PLUGINS_HDF_HDF_ENABLE_BLOSC_ZLIB_SUPPORT OFF CACHE BOOL "Enable BLOSC compression" FORCE)
+# set (LBANN_SB_FWD_HDF5_PLUGINS_HDF_ENABLE_BLOSC_SUPPORT OFF CACHE BOOL "Enable BLOSC compression" FORCE)
+# set (LBANN_SB_FWD_HDF5_PLUGINS_HDF_HDF_ENABLE_BLOSC_ZLIB_SUPPORT OFF CACHE BOOL "Enable BLOSC compression" FORCE)
 
-set (LBANN_SB_FWD_HDF5_PLUGINS_BUILD_TESTING OFF CACHE BOOL "Build h5blosc Unit Testing" FORCE)
+# set (LBANN_SB_FWD_HDF5_PLUGINS_BUILD_TESTING OFF CACHE BOOL "Build h5blosc Unit Testing" FORCE)
 # set (LBANN_SB_FWD_HDF5_PLUGINS_H5PL_BUILD_TESTING ON CACHE BOOL "Enable h5pl examples" FORCE)
 
 # set (LBANN_SB_FWD_HDF5_PLUGINS_BUILD_EXAMPLES ON CACHE BOOL "Build h5pl Examples" FORCE)
@@ -91,7 +91,7 @@ set (LBANN_SB_FWD_HDF5_PLUGINS_BUILD_TESTING OFF CACHE BOOL "Build h5blosc Unit 
 
 ############################# bitshuffle ################################################
 
-set (LBANN_SB_FWD_HDF5_PLUGINS_BUILD_BSHUF_LZ4_LIBRARY_SOURCE OFF CACHE BOOL "build the lz4 library within the BSHUF plugin" FORCE)
+# set (LBANN_SB_FWD_HDF5_PLUGINS_BUILD_BSHUF_LZ4_LIBRARY_SOURCE OFF CACHE BOOL "build the lz4 library within the BSHUF plugin" FORCE)
 
 # set (BSHUF_GIT_URL "https://github.com/kiyo-masui/bitshuffle.git" CACHE STRING "Use BSHUF from HDF repository" FORCE)
 # set (BSHUF_GIT_BRANCH "master" CACHE STRING "" FORCE)
@@ -122,7 +122,8 @@ set (LBANN_SB_FWD_HDF5_PLUGINS_BUILD_BSHUF_LZ4_LIBRARY_SOURCE OFF CACHE BOOL "bu
 
 # ############################# bzip2 ################################################
 
-set (LBANN_SB_FWD_HDF5_PLUGINS_HDF_ENABLE_BZ2_USE_EXTERNAL OFF CACHE BOOL "Use External Library Building for BZ2" FORCE)
+#BVE
+# set (LBANN_SB_FWD_HDF5_PLUGINS_BZ2_USE_EXTERNAL ON CACHE BOOL "Use External Library Building for BZ2" FORCE)
 
 # set (BZ2_GIT_URL "https://github.com/libarchive/bzip2.git" CACHE STRING "Use BZ2 from  GitHub repository" FORCE)
 # set (BZ2_GIT_BRANCH "bzip2-1.0.8" CACHE STRING "" FORCE)
@@ -154,7 +155,7 @@ set (LBANN_SB_FWD_HDF5_PLUGINS_HDF_ENABLE_BZ2_USE_EXTERNAL OFF CACHE BOOL "Use E
 
 # ############################# lz4 ################################################
 
-set (LBANN_SB_FWD_HDF5_PLUGINS_BUILD_LZ4_LIBRARY_SOURCE OFF CACHE BOOL "build the lz4 library within the plugin" FORCE)
+# set (LBANN_SB_FWD_HDF5_PLUGINS_BUILD_LZ4_LIBRARY_SOURCE OFF CACHE BOOL "build the lz4 library within the plugin" FORCE)
 
 # set (LZ4_GIT_URL "https://github.com/lz4/lz4.git" CACHE STRING "Use LZ4 from  GitHub repository" FORCE)
 # set (LZ4_GIT_BRANCH "dev" CACHE STRING "" FORCE)
@@ -216,9 +217,9 @@ lbann_sb_add_cmake_extern_pkg(
   LANGUAGES C CXX ${lbann_sb_ftn_lang}
   GITHUB_URL HDFGroup/hdf5_plugins.git
   GIT_TAG "master"
+  INIT_CONFIG ${CMAKE_CURRENT_BINARY_DIR}/src/config/cmake/cacheinit.cmake
   DEPENDS_ON HDF5
   EXTRA_CMAKE_ARGS
-  -C${CMAKE_CURRENT_BINARY_DIR}/src/config/cmake/cacheinit.cmake
   -DUSE_SHARED_LIBS:BOOL=ON
   -DBUILD_SHARED_LIBS:BOOL=ON
 )
