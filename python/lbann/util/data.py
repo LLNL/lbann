@@ -3,7 +3,7 @@ import os
 import inspect
 import pickle
 import lbann
-from multiprocessing import Process, Queue, Value, Condition
+from multiprocessing import Pool
 import numpy as np
 from typing import Dict, List, Optional, Union
 from numpy.typing import ArrayLike
@@ -182,33 +182,23 @@ class DataReader:
         self.num_procs = num_procs
         self.prefetch_factor = prefetch_factor
         self.dtype = dtype
-        self.queue = Queue()
-        # Note: one sample is always sitting in worker memory, hence the
-        # prefetch_factor - 1 for the queue size below
-        self.rqueue = Queue(maxsize=max(1, (self.prefetch_factor - 1) * self.num_procs))
-        self.tasks_queued = 0
-        self.next_task = Value("i", 0)
-        self.condition = Condition()
         self.sample_dims = dataset.get_sample_dims()
         self.num_io_partitions = 1
+        self.queued_indices = []
+        self.loaded_samples = []
 
         if isinstance(self.dataset, DistConvDataset):
             self.num_io_partitions = self.dataset.num_io_partitions
 
-        self.procs = [Process(target=self.worker) for _ in range(self.num_procs)]
-        for p in self.procs:
-            p.start()
+        self.pool = Pool(processes=num_procs, initializer=DataReader.init_worker)
 
-    def terminate(self) -> None:
+    @staticmethod
+    def init_worker():
         """
-        Terminate all worker processes.
-        """
-        for p in self.procs:
-            p.terminate()
+        Initialize worker process.
 
-    def worker(self) -> None:
-        """
-        Worker function that loads each sample and guarantees that they are returned in order.
+        Disables the LBANN signal handler since it reports a spurious error
+        when the worker process recieves SIGTERM from the master process.
         """
         import signal
 
@@ -219,29 +209,50 @@ class DataReader:
             except:
                 pass
 
-        while True:
-            task_id, ind = self.queue.get()
+    def terminate(self) -> None:
+        """
+        Terminate all worker processes.
+        """
+        self.pool.terminate()
 
-            sample = self.dataset[ind]
+    @staticmethod
+    def load_sample(dataset, ind) -> None:
+        """
+        Loads the sample from the dataset at the specified index.
 
-            with self.condition:
-                self.condition.wait_for(lambda: task_id == self.next_task.value)
+        :param dataset: Dataset
+        :type dataset: Dataset
+        :param ind: Index to load
+        :type ind: int
+        :return: Sample
+        :rtype: Sample
+        """
+        return dataset[ind]
 
-                self.rqueue.put(sample)
-                self.next_task.value += 1
-
-                self.condition.notify_all()
+    def load_next_sample_async(self):
+        """
+        Submit the next sample index to be loaded to the worker pool.
+        """
+        self.loaded_samples.append(
+            self.pool.apply_async(
+                DataReader.load_sample, (self.dataset, self.queued_indices.pop(0))
+            )
+        )
 
     def queue_epoch(self, inds: List[int]) -> None:
         """
-        Place a list of samples indices into the worker queue.
+        Set the indices to be loaded this epoch and start submitting jobs
+        to the worker pool.
 
         :param inds: List of sample indices
         :type inds: List[int]
         """
-        for ind in inds:
-            self.queue.put((self.tasks_queued, ind))
-            self.tasks_queued += 1
+        self.queued_indices += inds
+        while (
+            len(self.loaded_samples) < self.num_procs * self.prefetch_factor
+            and len(self.queued_indices) > 0
+        ):
+            self.load_next_sample_async()
 
     def get_batch(self, batch_size: int) -> Dict[str, Union[np.ndarray, int]]:
         """
@@ -252,7 +263,11 @@ class DataReader:
         :return: Batch of samples and pointers for each input field
         :rtype: Dict[str, Union[np.ndarray, int]]
         """
-        samples = [self.rqueue.get() for _ in range(batch_size)]
+        samples = []
+        for _ in range(batch_size):
+            samples.append(self.loaded_samples.pop(0).get())
+            if len(self.queued_indices) > 0:
+                self.load_next_sample_async()
 
         batch = {}
 
