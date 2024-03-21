@@ -271,7 +271,7 @@ class DataReader:
 
         batch = {}
 
-        # Note: we return the arrays wiht the pointers so that they aren't
+        # Note: we return the arrays with the pointers so that they aren't
         # deallocated by the garbage collector.
         batch["sample"] = np.ascontiguousarray(
             [s.sample for s in samples], dtype=self.dtype
