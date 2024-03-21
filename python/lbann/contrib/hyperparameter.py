@@ -11,6 +11,7 @@ def grid_search(
         make_experiment,
         procs_per_trainer=1,
         hyperparameters_file=None,
+        use_data_store=False,
         **kwargs,
 ):
     """Run LBANN with exhaustive grid search over hyperparameter values
@@ -85,6 +86,10 @@ def grid_search(
                 f'--procs_per_trainer={procs_per_trainer}',
                 '--generate_multi_proto',
                 f'--prototext={work_dir}/run{run_id}.trainer0']
+            if use_data_store:
+                command = command + [
+                f'--use_data_store',
+                f'--preload_data_store']
             script.add_parallel_command(
                 command, nodes=num_nodes, procs_per_node=procs_per_node)
 
@@ -106,6 +111,10 @@ def grid_search(
             f'--procs_per_trainer={procs_per_trainer}',
             '--generate_multi_proto',
             f'--prototext={work_dir}/run{run_id}.trainer0']
+        if use_data_store:
+            command = command + [
+            f'--use_data_store',
+            f'--preload_data_store']
         script.add_parallel_command(
             command,
             nodes=((trainer_id+1)*procs_per_trainer) // procs_per_node,
