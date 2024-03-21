@@ -28,9 +28,8 @@
 
 #include "lbann/base.hpp" // Elemental support.
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/tensor_dims_utils.hpp"
 #include "lbann/utils/typename.hpp"
-
-#include "tensor_dims_utils.hpp"
 
 #include <cutt.h>
 

@@ -79,6 +79,7 @@ set_full_path(THIS_DIR_HEADERS
   sync_info_helpers.hpp
   system_info.hpp
   tensor.hpp
+  tensor_dims_utils.hpp
   tensor_impl.hpp
   timer.hpp
   trainer_file_utils.hpp
@@ -112,6 +113,10 @@ endif ()
 
 if (LBANN_HAS_CNPY)
   list(APPEND THIS_DIR_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/cnpy_utils.hpp")
+endif ()
+
+if (LBANN_HAS_CUTENSOR)
+  list(APPEND THIS_DIR_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/cutensor_support.hpp")
 endif ()
 
 # Add the subdirectories

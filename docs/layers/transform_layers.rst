@@ -28,6 +28,7 @@
    :ref:`Hadamard`, "Entry-wise tensor product"
    :ref:`IdentityZero`, "Identity/zero function if layer is unfrozen/frozen."
    :ref:`InTopK`, "One-hot vector indicating top-k entries"
+   :ref:`MultiDimReduction`, "Reduce certain dimensions of a given tensor"
    :ref:`Pooling`, "Traverses the spatial dimensions of a data tensor
    with a sliding window and applies a reduction operation"
    :ref:`Reduction`, "Reduce tensor to scalar"
@@ -363,6 +364,41 @@ indices.
 Arguments:
 
    :k: (``int64``) Number of non-zeros in one-hot vector
+
+:ref:`Back to Top<transform-layers>`
+
+________________________________________
+
+
+.. _MultiDimReduction:
+
+----------------------------------------
+MultiDimReduction
+----------------------------------------
+
+The :python:`MultiDimReduction` layer reduces one or more dimensions in the
+given tensor. The reduction operation can be chosen separately.
+
+It expects one input tensor of order N, and an up to length N array of
+reduced axes [0..N-1], with respect to the input tensor
+dimensions (not including the mini-batch dimension). Therefore, passing 
+``axes=[0,1,2]`` for a rank-3 tensor will reduce the entire tensor into a
+scalar.
+
+Arguments:
+
+   :mode:
+
+      (``string``, optional) Reduction operation
+
+      Options: ``sum`` (default), ``product``, ``max``, or ``min``.
+      Only ``sum`` is currently supported for backpropagation.
+
+   :axes:
+
+      (``uint32``) Reduced tensor dimensions 
+
+      List of integers
 
 :ref:`Back to Top<transform-layers>`
 

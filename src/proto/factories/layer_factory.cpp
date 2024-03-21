@@ -146,6 +146,7 @@ private:
     LBANN_REGISTER_BUILDER(Hadamard, hadamard);
     LBANN_REGISTER_BUILDER(IdentityZero, identity_zero);
     LBANN_REGISTER_BUILDER(InTopK, in_top_k);
+    LBANN_REGISTER_BUILDER(MultiDimReduction, multidim_reduction);
     LBANN_REGISTER_BUILDER(Pooling, pooling);
     LBANN_REGISTER_BUILDER(Reduction, reduction);
     LBANN_REGISTER_BUILDER(Reshape, reshape);

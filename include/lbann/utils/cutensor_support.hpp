@@ -23,14 +23,20 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef LBANN_SRC_LAYERS_TRANSFORM_CUTENSOR_SUPPORT_HPP_INCLUDED
-#define LBANN_SRC_LAYERS_TRANSFORM_CUTENSOR_SUPPORT_HPP_INCLUDED
+#ifndef LBANN_UTILS_CUTENSOR_SUPPORT_HPP_INCLUDED
+#define LBANN_UTILS_CUTENSOR_SUPPORT_HPP_INCLUDED
 
 #include "lbann/base.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/tensor_dims_utils.hpp"
+#include "lbann/utils/typename.hpp"
 
 #include <cuda_runtime.h>
 #include <cutensor.h>
+
+/**
+ * The interface below is designed for CUTENSOR v1.
+ **/
 
 #define CHECK_CUTENSOR(cmd)                                                    \
   do {                                                                         \
@@ -44,6 +50,12 @@
   } while (false)
 
 namespace lbann {
+
+namespace cutensor {
+  using DimsType = ColMajorDims<int64_t>;
+  using StridesType = ColMajorStrides<int64_t>;
+  using ModesType = std::vector<int32_t>;
+}  // namespace cutensor
 
 template <typename CppType>
 struct CUDATypeT;
@@ -101,6 +113,64 @@ static cutensorHandle_t* get_handle_ptr()
   return &handle;
 }
 
+
+static inline cutensor::ModesType make_modes(size_t const ndims)
+{
+  std::vector<int32_t> modes(ndims + 1); // Add the sample dim.
+  std::iota(begin(modes), end(modes), static_cast<int>('a'));
+  return modes;
+}
+
+template <typename DataT>
+static std::string get_desc_key(
+  El::Matrix<DataT, El::Device::GPU> const& mat,
+  cutensor::DimsType const& dims_in)
+{
+  auto const& dims = dims_in.get();
+  std::ostringstream oss;
+  oss << mat.Height() << "," << mat.Width() << "," << mat.LDim() << ";"
+      << dims.front();
+  for (size_t ii = 1; ii < dims.size(); ++ii)
+    oss << "," << dims[ii];
+  oss << ";" << lbann::TypeName<DataT>();
+  return oss.str();
+}
+
+template <typename DataT>
+static cutensorTensorDescriptor_t get_descriptor(
+  El::Matrix<DataT, El::Device::GPU> const& mat,
+  cutensor::DimsType const& dims)
+{
+  /** @brief Keep track of descriptors so we don't have to repeatedly
+   *         rebuild them.
+   */
+  static std::unordered_map<std::string, cutensorTensorDescriptor_t> s_desc_map;
+
+  auto key = get_desc_key(mat, dims); // captures Width to account for
+                                      // minibatch size and LDim to
+                                      // account for stride.
+  auto iter = s_desc_map.find(key);
+  if (iter == end(s_desc_map)) {
+    std::vector<int64_t> extents = dims.get();
+    extents.push_back(mat.Width()); // Don't forget MB size
+
+    auto strides = get_strides(dims);
+    strides.get().push_back(mat.LDim()); // Don't forget sample stride.
+
+    cutensorTensorDescriptor_t desc;
+    CHECK_CUTENSOR(cutensorInitTensorDescriptor(get_handle_ptr(),
+                                                &desc,
+                                                extents.size(),
+                                                extents.data(),
+                                                strides.get().data(),
+                                                CUDAType<DataT>,
+                                                CUTENSOR_OP_IDENTITY));
+    s_desc_map.emplace(std::move(key), desc);
+    return desc;
+  }
+  return iter->second;
+}
+
 } // namespace lbann
 
-#endif // LBANN_SRC_LAYERS_TRANSFORM_CUTENSOR_SUPPORT_HPP_INCLUDED
+#endif // LBANN_UTILS_CUTENSOR_SUPPORT_HPP_INCLUDED

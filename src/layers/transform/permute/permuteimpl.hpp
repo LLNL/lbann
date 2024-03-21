@@ -36,7 +36,7 @@
 #include "cutt_permuteimpl.hpp"
 #endif
 
-#include "tensor_dims_utils.hpp"
+#include "lbann/utils/tensor_dims_utils.hpp"
 
 #include <cereal/cereal.hpp>
 

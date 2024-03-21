@@ -6,6 +6,7 @@ Support for new training algorithms:
 Support for new network structures:
 
 Support for new layers:
+ - Multi-dimensional reduction (requires cuTENSOR)
 
 Python front-end:
 
