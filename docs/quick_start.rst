@@ -336,7 +336,7 @@ defining an optimizer, and building a training loop:
 
             print('Training Epoch: {},\tLoss: {:.3f}'.format(epoch, loss.item()))
 
-With LBANN, we also define learning parameterrs and an optimizer.  With LBANN,
+With LBANN, we also define learning parameters and an optimizer.  With LBANN,
 a :python:`Trainer` is provided that negates the need to build your own
 training loop:
 

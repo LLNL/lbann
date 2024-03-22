@@ -38,7 +38,7 @@ The metalearning strategy is assumed to be a global operation across
 the LBANN "universe" (i.e., the collection of all trainers running in
 a single job). The canonical implementation of the LTFB algorithm will
 use a random pairwise tournament metalearning strategy in which the
-trainers in the unverse are paired off, with each set of partners
+trainers in the universe are paired off, with each set of partners
 exchanging models, evaluating them using a trainer-local "tournament"
 data set, and making a trainer-local decision about which of the two
 candidate models "wins" the tournament and survives. Because the
@@ -210,7 +210,7 @@ lbann.RandomPairwiseExchange Interface
 
 .. py:class:: RandomPairwiseExchange(MetaLearningStrategy)
 
-   The classic LTFB pairwise tourament metalearning strategy.
+   The classic LTFB pairwise tournament metalearning strategy.
 
    This metalearning strategy is the original algorithm used for
    LTFB. After each local training step, all trainers in the LBANN

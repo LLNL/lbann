@@ -32,12 +32,12 @@ packages necessary for infiniband interconnects (lines 15-19). It
 builds openmpi outside of the spack step to ensure it is built with
 infiniband support (lines 37-55). Experienced users should modify
 these sections to match with the underlying resources they intend to
-run on. This defintion file also builds GCC version 4.9.3, and uses it
+run on. This definition file also builds GCC version 4.9.3, and uses it
 to build Open-MPI and LBANN (lines 33-35). This is also customized to
 run on specific LLNL LC resources, and can be modified depending on
 the users system.
 
-Running LBANN with Singualrity
+Running LBANN with Singularity
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To run LBANN use mpirun and singularity's execute command:
@@ -76,7 +76,7 @@ directory contains the Dockerfile:
 Customizing Configuration in Dockerfile
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The Dockerfile container defintion is less complicated than its
+The Dockerfile container definition is less complicated than its
 Singularity counterpart. GCC 7.1.0 is built and registered with spack
 in lines 19-21. Users can change this, as well as LBANN-specific build
 options in spack (line 22). For example, to add gpu support, a user can

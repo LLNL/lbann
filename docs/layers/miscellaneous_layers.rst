@@ -120,7 +120,7 @@ ________________________________________
 Covariance
 ----------------------------------------
 
-The :python:`Covariance` layer computes the covarience between entries
+The :python:`Covariance` layer computes the covariance between entries
 of two tensors.
 
 Arguments:
@@ -303,7 +303,7 @@ a weights matrix.
 
 .. warning::
 
-   This layer is experimental and finnicky. It is intended for use
+   This layer is experimental and finicky. It is intended for use
    with the matrix weights from a fully-connected layer, and other
    use-cases may have strange behavior.
 

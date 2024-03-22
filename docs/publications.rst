@@ -117,7 +117,7 @@ Presentations highlighting LBANN and its impact on science applications:
 
 .. note:: Presentations and links to be added
 
-Posters about LBANN and its core algorthms and features:
+Posters about LBANN and its core algorithms and features:
 
 .. note:: Posters and links to be added
 
