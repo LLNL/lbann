@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_ingestion/readers/data_reader_python_dataset.hpp"
+#include "lbann/comm_impl.hpp"
 #include "lbann/data_ingestion/data_coordinator.hpp"
 #include "lbann/execution_algorithms/execution_context.hpp"
 #include "lbann/trainers/trainer.hpp"
@@ -138,18 +139,105 @@ bool python_dataset_reader::fetch_data_block(
 
   // Get responses
   if (has_responses()) {
-    auto response_ptr = PyDict_GetItemString(batch, "response_ptr");
-    CPUMat response_shared_memory_matrix(
-      get_num_responses(),
-      mb_size,
-      static_cast<DataType*>(PyLong_AsVoidPtr(response_ptr)),
-      get_num_responses());
+    DataType* responses_ptr = static_cast<DataType*>(
+      PyLong_AsVoidPtr(PyDict_GetItemString(batch, "response_ptr")));
+
+#ifdef LBANN_HAS_DISTCONV
+    if (!m_tensor_shuffle_required)
+      shuffle_responses(responses_ptr);
+#endif // LBANN_HAS_DISTCONV
+
+    CPUMat response_shared_memory_matrix(get_num_responses(),
+                                         mb_size,
+                                         responses_ptr,
+                                         get_num_responses());
     CPUMat& Y = *(input_buffers[INPUT_DATA_TYPE_RESPONSES]);
     El::Copy(response_shared_memory_matrix, Y);
   }
 
   return true;
 }
+
+#ifdef LBANN_HAS_DISTCONV
+void python_dataset_reader::shuffle_responses(DataType* responses_ptr)
+{
+  // Shuffles the responses so that they are on the same ranks as the
+  // non-distconv model predicitions to ensure correct loss calculations.
+  // The shuffling calculations here assume that each sample in the distconv
+  // layers and the shuffled non-distconv layers are indexed in order by all
+  // samples in rank 0, then 1, and so on. The number of samples on each rank
+  // (both in the distconv and non-distconv layers) is set such that they
+  // are evenly distributed across all ranks and any additional samples
+  // in a batch that can't be split evenly will be split evenly across the
+  // first n ranks (or subsets of ranks in the distconv case).
+
+  MPI_Comm trainer_comm = m_comm->get_trainer_comm().GetMPIComm();
+  uint64_t rank = m_comm->get_rank_in_trainer();
+  uint64_t nprocs = m_comm->get_procs_per_trainer();
+  uint64_t trainer_rank = m_comm->get_trainer_rank();
+  uint64_t num_io_partitions = dc::get_number_of_io_partitions();
+
+  execution_mode mode = exec_mode_from_string(get_role());
+  dataset& ds = get_trainer().get_data_coordinator().get_dataset(mode);
+  uint64_t global_mb_size = ds.get_current_mini_batch_size();
+
+  uint64_t local_mb_size = global_mb_size / nprocs;
+  uint64_t extra_samples = global_mb_size % nprocs;
+  uint64_t local_distconv_mb_size =
+    global_mb_size / (nprocs / num_io_partitions);
+  uint64_t distconv_extra_samples =
+    global_mb_size % (nprocs / num_io_partitions);
+
+    uint64_t send_rank, recv_rank, send_rank_count, recv_rank_count;
+  send_rank = recv_rank = send_rank_count = recv_rank_count = 0;
+  uint64_t send_rank_max_count =
+    local_distconv_mb_size + (distconv_extra_samples > 0);
+  uint64_t recv_rank_max_count = local_mb_size + (extra_samples > 0);
+  for (uint64_t i = 0; i < global_mb_size; i++) {
+    if (rank == send_rank) {
+      if (send_rank == recv_rank) {
+        std::memcpy(&responses_ptr[recv_rank_count * m_num_responses],
+                    &responses_ptr[send_rank_count * m_num_responses],
+                    m_num_responses * sizeof(DataType));
+      }
+      else {
+        EL_CHECK_MPI_CALL(
+          MPI_Ssend(&responses_ptr[send_rank_count * m_num_responses],
+                    m_num_responses * sizeof(DataType),
+                    MPI_BYTE,
+                    recv_rank,
+                    0,
+                    trainer_comm));
+      }
+    }
+    else if (rank == recv_rank) {
+      EL_CHECK_MPI_CALL(
+        MPI_Recv(&responses_ptr[send_rank_count * m_num_responses],
+                 m_num_responses * sizeof(DataType),
+                 MPI_BYTE,
+                 send_rank,
+                 0,
+                 trainer_comm,
+                 MPI_STATUS_IGNORE));
+    }
+
+    send_rank_count += 1;
+    recv_rank_count += 1;
+    if (send_rank_count == send_rank_max_count) {
+      send_rank += num_io_partitions;
+      send_rank_count = 0;
+      if (send_rank / num_io_partitions == distconv_extra_samples)
+        send_rank_max_count -= 1;
+    }
+    if (recv_rank_count == recv_rank_max_count) {
+      recv_rank += 1;
+      recv_rank_count = 0;
+      if (recv_rank == extra_samples)
+        recv_rank_max_count -= 1;
+    }
+  }
+}
+#endif // LBANN_HAS_DISTCONV
 
 void python_dataset_reader::setup(int num_io_threads,
                                   observer_ptr<thread_pool> io_thread_pool)
