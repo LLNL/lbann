@@ -72,6 +72,7 @@ public:
   {
     return m_tensor_shuffle_required;
   }
+  void shuffle_responses(DataType* responses_ptr);
 #endif // LBANN_HAS_DISTCONV
 
 protected:
