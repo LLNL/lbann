@@ -93,6 +93,7 @@ message Reader {
 
   PythonDataReader python = 501;
   Node2VecDataReader node2vec = 502;
+  PythonDatasetReader python_dataset = 503;
 
   repeated Transform transforms = 600;  // Ordered list of transforms to apply.
 
@@ -117,6 +118,16 @@ message PythonDataReader {
   string num_samples_function = 4;  // Function that gets number of data samples
   string sample_dims_function =
       5;  // Function that gets dimensions of data sample
+}
+
+message PythonDatasetReader {
+  string dataset_path = 1;           // Path to a pickle file containing a
+                                     // lbann.util.data.Dataset object.
+  string module_dir = 2;             // Optional directory to append to PYTHONPATH
+                                     // when the Dataset definition is in a module
+                                     // that needs to be imported and that module is
+                                     // not already accessible from the PYTHONPATH.
+  uint64 prefetch_factor = 3;        // Number of samples to prefetch per worker.
 }
 
 message Node2VecDataReader {

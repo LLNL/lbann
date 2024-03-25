@@ -100,15 +100,6 @@ void data_coordinator::setup(
     }
   }
 
-  /// @todo BVE FIXME the list of execution modes should not include
-  // ones will null data readers.  Fix this in next PR.
-  // Setup data readers
-  for (auto&& dr : m_data_readers) {
-    if (!dr.second)
-      continue;
-    dr.second->setup(m_io_thread_pool->get_num_threads(), m_io_thread_pool);
-  }
-
   /** Calculate how many iterations are required for training, testing,
    *  and validation given a specified mini-batch size.
    */
@@ -116,6 +107,15 @@ void data_coordinator::setup(
     if (!dataset.initialized())
       continue;
     calculate_num_iterations_per_epoch(max_mini_batch_size, dataset);
+  }
+
+  /// @todo BVE FIXME the list of execution modes should not include
+  // ones will null data readers.  Fix this in next PR.
+  // Setup data readers
+  for (auto&& dr : m_data_readers) {
+    if (!dr.second)
+      continue;
+    dr.second->setup(m_io_thread_pool->get_num_threads(), m_io_thread_pool);
   }
 
   auto& arg_parser = global_argument_parser();
