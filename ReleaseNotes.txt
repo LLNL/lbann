@@ -19,6 +19,8 @@ Experiments & Applications:
 Internal features:
 
 I/O & data ingestion:
+ - Added a new python dataset reader for simple, flexible, and distconv-supported
+   python data readers.
 
 Build system:
 

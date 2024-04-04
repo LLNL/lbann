@@ -10,7 +10,21 @@ import numpy as np
 import lbann.contrib.args
 import lbann.contrib.launcher
 from lbann.core.util import get_parallel_strategy_args
+import lbann.util.data
 import os
+from cosmoflow_dataset import CosmoFlowDataset
+
+def create_python_dataset_reader(args):
+    """Create a python dataset reader for CosmoFlow."""
+
+    readers = []
+    for role in ['train', 'val', 'test']:
+        role_dir = getattr(args, f'{role}_dir')
+        dataset = CosmoFlowDataset(role_dir, args.input_width, args.num_secrets)
+        reader = lbann.util.data.construct_python_dataset_reader(dataset, role=role)
+        readers.append(reader)
+
+    return lbann.reader_pb2.DataReader(reader=readers)
 
 def create_cosmoflow_data_reader(
         train_path, val_path, test_path, num_responses):
@@ -134,6 +148,9 @@ if __name__ == "__main__":
         '--synthetic', action='store_true',
         help='Use synthetic data')
     parser.add_argument(
+        '--python-dataset', action='store_true',
+        help='Use python dataset reader')
+    parser.add_argument(
         '--no-datastore', action='store_true',
         help='Disable the data store')
     parser.add_argument(
@@ -220,22 +237,26 @@ if __name__ == "__main__":
     # optimizer.learn_rate *= 1e-2
 
     # Setup data reader
+    serialize_io = False
     if args.synthetic:
         data_reader = create_synthetic_data_reader(
             args.input_width, args.num_secrets)
+    elif args.python_dataset:
+        data_reader = create_python_dataset_reader(args)
     else:
         data_reader = create_cosmoflow_data_reader(
             args.train_dir,
             args.val_dir,
             args.test_dir,
             num_responses=args.num_secrets)
+        serialize_io = True
 
     # Setup trainer
     random_seed_arg = {'random_seed': args.random_seed} \
         if args.random_seed is not None else {}
     trainer = lbann.Trainer(
         mini_batch_size=args.mini_batch_size,
-        serialize_io=True,
+        serialize_io=serialize_io,
         **random_seed_arg)
 
     # Runtime parameters/arguments
