@@ -234,6 +234,138 @@ def create_causal_lm_decoder_transformer(dataset, embed_dim: int,
     return result
 
 
+def create_masked_language_modeling_transformer(
+        dataset, embed_dim: int, num_encoders: int, num_decoders: int, num_heads: int,
+        dropout: float, input_dropout: float, attn_dropout: float,
+        num_epochs: int, args: argparse.Namespace):
+    """
+    Creates a flexible transformer for masked language modeling tasks.
+    """
+    sequence_length = dataset.sequence_length
+    vocab_size = dataset.vocab_size()
+
+    # Embedding weights
+    var = 2 / (embed_dim + vocab_size)  # Glorot initialization
+    embedding_weights = lbann.Weights(
+        name='embeddings',
+        initializer=lbann.NormalInitializer(standard_deviation=math.sqrt(var)),
+    )
+
+    # Input is a sequences of token IDs followed by a mask sequence
+    all_inputs = lbann.Input(data_field='samples')
+    slc = lbann.Slice(
+        all_inputs,
+        slice_points=[
+            0,
+            sequence_length,
+            2 * sequence_length,  # custom mask
+            #custom attention: 2 * sequence_length + sequence_length * sequence_length
+        ],
+    )
+    input_tokens = lbann.Identity(slc)
+    mask = lbann.Identity(slc)
+    attn = None
+    # attn = lbann.Reshape(lbann.Identity(slc),
+    #                      dims=[sequence_length, sequence_length])
+
+    masked_input = lbann.Select(mask,
+                                input_tokens,
+                                value=1,
+                                if_false=dataset.mask_index)
+
+    # Get sequences of embedding vectors
+    embeddings = lbann.Embedding(
+        masked_input,
+        weights=embedding_weights,
+        num_embeddings=vocab_size,
+        embedding_dim=embed_dim,
+        padding_idx=dataset.pad_index,
+    )
+    decoder_input = lbann.WeightedSum(
+        embeddings,
+        scaling_factors=math.sqrt(embed_dim),
+    )
+
+    petype = InputEncoding[args.positional_encoding.upper()]
+
+    # Apply input encoding
+    _, decoder_input, posenc = _add_input_encoding(None, decoder_input, petype,
+                                                   embed_dim, input_dropout, 0,
+                                                   sequence_length, num_heads)
+
+    # Add a GPT-style (decoder-only) transformer model
+    transformer = Transformer(hidden_size=embed_dim,
+                              num_heads=num_heads,
+                              dropout=dropout,
+                              attn_dropout=attn_dropout,
+                              num_encoder_layers=num_encoders,
+                              num_decoder_layers=num_decoders,
+                              pre_layernorm=True,
+                              activation=lbann.Gelu,
+                              positional_encoding=posenc,
+                              name='transformer')
+
+    # Tessellate attention pattern for all heads (note that this is a memory issue)
+    if attn is not None and not transformer.separate_heads:
+        # TODO(later): Use broadcasting semantics to save memory
+        attn = lbann.Reshape(attn, dims=[1, sequence_length, sequence_length])
+        attn = lbann.Tessellate(
+            attn, dims=[num_heads, sequence_length, sequence_length])
+
+    # Apply parallelism techniques
+    transformer, extra_model_kwargs = parallelism.apply_subgraph_parallelism(
+        transformer, args)
+    parallelism.apply_ffn_model_parallelism(transformer, args)
+    parallelism.apply_fsdp_mlp(transformer, [embedding_weights], args)
+    parallelism.apply_layer_parallelism(transformer, args)
+
+    # Run through transformer with the same sequence
+    result = transformer(decoder_input,
+                         decoder_input,
+                         sequence_length,
+                         target_mask=attn)
+
+    # Apply layer normalization on the outputs
+    norm_final = LayerNorm(embed_dim, name=f'final_layernorm')
+    result = norm_final(result)
+
+    # Apply language modeling head on results
+    lm_head = lbann.ChannelwiseFullyConnected(result,
+                                              weights=embedding_weights,
+                                              output_channel_dims=[vocab_size],
+                                              bias=False,
+                                              transpose=True,
+                                              name="prediction_layer")
+    preds = lbann.ChannelwiseSoftmax(lm_head)
+    preds = lbann.TensorPermute(preds, axes=[1, 0])
+
+    # Compute loss
+    loss = _add_mlm_loss(preds, input_tokens, sequence_length, vocab_size,
+                         dataset.pad_index)
+
+    parallelism.apply_lm_head_model_parallelism(lm_head, args)
+
+    # Construct model
+    metrics = []
+    callbacks = [
+        lbann.CallbackPrint(),
+        lbann.CallbackTimer(),
+        lbann.CallbackGPUMemoryUsage()
+    ]
+    result = lbann.Model(
+        num_epochs,
+        layers=lbann.traverse_layer_graph(input_tokens),
+        objective_function=loss,
+        metrics=metrics,
+        callbacks=callbacks,
+        **extra_model_kwargs,
+    )
+
+    parallelism.apply_fsdp_allweights(result, args)
+    parallelism.apply_layer_parallelism_postamble(result, args)
+    return result
+
+
 def _add_input_encoding(
     encoder_input: lbann.Layer, decoder_input: lbann.Layer,
     encoding_kind: InputEncoding, embed_dim: int, input_dropout: float,
@@ -321,6 +453,25 @@ def _add_autoregressive_loss(preds, input_tokens, sequence_length, vocab_size,
     # Compute mean cross-entropy over the sequence
     ce = lbann.CrossEntropy(shifted_preds, flat_labels, use_labels=True)
     return lbann.Scale(ce, constant=1 / (sequence_length - 1))
+
+
+def _add_mlm_loss(preds, input_tokens, sequence_length, vocab_size, pad_index):
+    # Compute cross-entropy loss between preds and the original tokens from a
+    # masked input
+
+    # Flatten labels
+    flat_labels = lbann.Reshape(input_tokens, dims=[1, sequence_length])
+
+    # Filter out output predictions that are in padding from cross-entropy by
+    # using values that will never contribute to the cross-entropy loss
+    flat_labels = lbann.Select(flat_labels,
+                               lbann.Identity(flat_labels),
+                               value=pad_index,
+                               if_true=(vocab_size + 1))
+
+    # Compute mean cross-entropy over the sequence
+    ce = lbann.CrossEntropy(preds, flat_labels, use_labels=True)
+    return lbann.Scale(ce, constant=1 / sequence_length)
 
 
 # Command-line arguments
