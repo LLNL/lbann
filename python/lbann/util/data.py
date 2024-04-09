@@ -190,10 +190,10 @@ class DataReader:
         if isinstance(self.dataset, DistConvDataset):
             self.num_io_partitions = self.dataset.num_io_partitions
 
-        self.pool = Pool(processes=num_procs, initializer=DataReader.init_worker)
+        self.pool = Pool(processes=num_procs, initializer=DataReader.init_worker, initargs=(self.dataset,))
 
     @staticmethod
-    def init_worker():
+    def init_worker(dataset):
         """
         Initialize worker process.
 
@@ -209,6 +209,11 @@ class DataReader:
             except:
                 pass
 
+        # Process-local storage
+        global g_dataset
+        g_dataset = dataset
+
+
     def terminate(self) -> None:
         """
         Terminate all worker processes.
@@ -216,9 +221,10 @@ class DataReader:
         self.pool.terminate()
 
     @staticmethod
-    def load_sample(dataset, ind) -> None:
+    def load_sample(ind) -> Sample:
         """
         Loads the sample from the dataset at the specified index.
+        This function must be called from a worker process.
 
         :param dataset: Dataset
         :type dataset: Dataset
@@ -227,7 +233,7 @@ class DataReader:
         :return: Sample
         :rtype: Sample
         """
-        return dataset[ind]
+        return g_dataset[ind]
 
     def load_next_sample_async(self):
         """
@@ -235,7 +241,7 @@ class DataReader:
         """
         self.loaded_samples.append(
             self.pool.apply_async(
-                DataReader.load_sample, (self.dataset, self.queued_indices.pop(0))
+                DataReader.load_sample, (self.queued_indices.pop(0),)
             )
         )
 

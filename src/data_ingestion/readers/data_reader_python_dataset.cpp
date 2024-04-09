@@ -174,7 +174,6 @@ void python_dataset_reader::shuffle_responses(DataType* responses_ptr)
   MPI_Comm trainer_comm = m_comm->get_trainer_comm().GetMPIComm();
   uint64_t rank = m_comm->get_rank_in_trainer();
   uint64_t nprocs = m_comm->get_procs_per_trainer();
-  uint64_t trainer_rank = m_comm->get_trainer_rank();
   uint64_t num_io_partitions = dc::get_number_of_io_partitions();
 
   execution_mode mode = exec_mode_from_string(get_role());
@@ -188,7 +187,7 @@ void python_dataset_reader::shuffle_responses(DataType* responses_ptr)
   uint64_t distconv_extra_samples =
     global_mb_size % (nprocs / num_io_partitions);
 
-    uint64_t send_rank, recv_rank, send_rank_count, recv_rank_count;
+  uint64_t send_rank, recv_rank, send_rank_count, recv_rank_count;
   send_rank = recv_rank = send_rank_count = recv_rank_count = 0;
   uint64_t send_rank_max_count =
     local_distconv_mb_size + (distconv_extra_samples > 0);
