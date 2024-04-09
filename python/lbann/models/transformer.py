@@ -571,9 +571,16 @@ class Transformer(lbann.modules.Module):
                 name=f'{self.name}_decoder{i}',
             ) for i in range(num_decoder_layers)
         ]
-        self.separate_heads = self.decoder[0].attention1.separate_heads
-        assert all(dec.attention1.separate_heads == self.separate_heads
-                   for dec in self.decoder)
+        if len(self.decoder) > 0:
+            self.separate_heads = self.decoder[0].attention1.separate_heads
+            assert all(dec.attention1.separate_heads == self.separate_heads
+                       for dec in self.decoder)
+        elif len(self.encoder) > 0:
+            self.separate_heads = self.encoder[0].attention.separate_heads
+            assert all(enc.attention.separate_heads == self.separate_heads
+                       for enc in self.encoder)
+        else:
+            self.separate_heads = False
 
     def _subsequent_mask(self, size):
         """Attention mask to prevent attending to subsequent positions.
