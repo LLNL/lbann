@@ -55,7 +55,8 @@ def main():
     lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_gpt')
     lbann.contrib.args.add_profiling_arguments(parser)
     lbann.contrib.args.add_training_arguments(parser,
-                                              default_minibatch_size=32)
+                                              default_minibatch_size=32,
+                                              default_epochs=1)
     lbann.contrib.args.add_amp_arguments(parser)
     parallelism.add_transformer_parallelism_arguments(parser)
     trainer.add_training_arguments(parser)
