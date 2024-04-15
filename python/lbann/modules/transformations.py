@@ -120,8 +120,8 @@ def PeriodicPadding2D(x, height, width, padding=1):
     return x
 
 
-def PeriodicPadding3D(x, depth, height, width, padding=1, name=None):
-    """ For 3D volumes of the shape (B, channels, depth, height, width)
+def PeriodicPadding3D(x, depth, height, width, padding=1):
+    """ For 3D volumes of the shape (channels, depth, height, width)
         Args:
             x (lbann.Layer): input tensor to be padded of the shape (channels, depth, height, width)
             depth (int): 1st dimension of the 4D tensor
