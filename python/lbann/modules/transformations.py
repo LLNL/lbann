@@ -90,15 +90,15 @@ def Cumsum(x, dims, axis=0):
 
 
 def PeriodicPadding2D(x, height, width, padding=1):
-    """ For 2D images of the shape (B, *, height, width)
+    """ For 2D images of the shape (channels, height, width)
         Args:
-            x (lbann.Layer): input tensor to padded of the shape (*, height, width)
-            height (int): 2nd dimension of the 4D tensor
-            width (int): 3rd dimension of the 4D tensor
-            padding (int): The amount to pad (default: 1)
+            x (lbann.Layer): input tensor to padded of the shape (channels, height, width)
+            height (int): 1st dimension of the 3D tensor
+            width (int): 2nd dimension of the 3D tensor
+            padding (int): The amount to pad on each side (default: 1)
         returns:
             (lbann.Layer): Returns periodically padded layer of
-                           shape (*, height + padding, width + padding)
+                           shape (channels, height + 2 * padding, width + 2 * padding)
     """
     horizontal_slices = lbann.Slice(x,
                                     slice_points=[0, padding, height - padding, height],
@@ -107,7 +107,7 @@ def PeriodicPadding2D(x, height, width, padding=1):
     _ = lbann.Identity(horizontal_slices)
     bottom = lbann.Identity(horizontal_slices)
 
-    x = lbann.Concatenation([top, x, bottom], axis=1)
+    x = lbann.Concatenation([bottom, x, top], axis=1)
 
     vertical_slices = lbann.Slice(x,
                                   slice_points=[0, padding, width - padding, width],
@@ -116,21 +116,21 @@ def PeriodicPadding2D(x, height, width, padding=1):
     _ = lbann.Identity(vertical_slices)
     right = lbann.Identity(vertical_slices)
 
-    x = lbann.Concatenation([left, x, right], axis=2)
+    x = lbann.Concatenation([right, x, left], axis=2)
     return x
 
 
 def PeriodicPadding3D(x, depth, height, width, padding=1, name=None):
-    """ For 3D volumes of the shape (B, *, channel, depth, height, width)
+    """ For 3D volumes of the shape (B, channels, depth, height, width)
         Args:
-            x (lbann.Layer): input tensor to padded of the shape (*, channel, depth, height, width)
+            x (lbann.Layer): input tensor to be padded of the shape (channels, depth, height, width)
             depth (int): 1st dimension of the 4D tensor
             height (int): 2nd dimension of the 4D tensor
             width (int): 3rd dimension of the 4D tensor
             padding (int): The amount to pad (default: 1)
         returns:
             (lbann.Layer): Returns periodically padded layer of
-                           shape (*, depth + padding, height + padding, width + padding)
+                           shape (channels, depth + 2 * padding, height + 2 * padding, width + 2 * padding)
     """
     #  To do: Hack to get around slice and concatenation limitation. Remove when
     #         support for arbitrary dimensional slice + concatenation is added
@@ -142,7 +142,7 @@ def PeriodicPadding3D(x, depth, height, width, padding=1, name=None):
     _ = lbann.Identity(depth_slices)
     d2 = lbann.Identity(depth_slices)
 
-    x = lbann.Concatenation([d1, x, d2], axis=1)
+    x = lbann.Concatenation([d2, x, d1], axis=1)
 
     #  To do: Hack to get around slice and concatenation limitation. Remove when
     #         support for arbitrary dimensional slice + concatenation is added
@@ -154,7 +154,7 @@ def PeriodicPadding3D(x, depth, height, width, padding=1, name=None):
     _ = lbann.Identity(height_slices)
     h2 = lbann.Identity(height_slices)
 
-    x = lbann.Concatenation([h1, x, h2], axis=1)
+    x = lbann.Concatenation([h2, x, h1], axis=1)
 
     width_slices = lbann.Slice(x,
                                slice_points=[0, padding, width - padding, width],
@@ -163,7 +163,7 @@ def PeriodicPadding3D(x, depth, height, width, padding=1, name=None):
     _ = lbann.Identity(width_slices)
     w2 = lbann.Identity(width_slices)
 
-    x = lbann.Concatenation([w1, x, w2], axis=2)
+    x = lbann.Concatenation([w2, x, w1], axis=2)
 
     #  To do: Hack to get around slice and concatenation limitation. Remove when
     #         support for arbitrary dimensional slice + concatenation is added
