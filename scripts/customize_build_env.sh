@@ -70,7 +70,7 @@ set_center_specific_gpu_arch()
                 # Use a HIP Clang variant
                 GPU_ARCH_VARIANTS="amdgpu_target=gfx906"
                 ;;
-            "zen3") # Tioga, RZVernal
+            "zen3" | "zen4") # Tioga, RZVernal, RZAdams
                 # Use a HIP Clang variant
 #                GPU_ARCH_VARIANTS="amdgpu_target=gfx90a"
                 GPU_ARCH_VARIANTS="amdgpu_target=gfx90a,gfx942"
@@ -125,7 +125,7 @@ set_center_specific_modules()
                 MODULE_CMD="module load StdEnv gcc/10.3.1-magic openmpi/4.1.2 git/2.36.1 cmake/3.26.3 emacs/28.2 rocm/5.7.0"
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
-            "zen3") # Tioga, RZVernal
+            "zen3" | "zen4") # Tioga, RZVernal, RZAdams
                 MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.12.0 amd/6.0.3 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-amd StdEnv rocm/6.0.3 cmake/3.24.2"
 #                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.12.0 cce/17.0.1 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-cray StdEnv rocm/6.0.3 cmake/3.24.2"
                 ;;
@@ -218,7 +218,7 @@ set_center_specific_spack_dependencies()
                 CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.7.0 ^python@3.9.12 ^py-protobuf@4.21.5"
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
-            "zen3") # Tioga, RZVernal
+            "zen3" | "zen4") # Tioga, RZVernal
 #                CENTER_COMPILER="%cce@17.0.1"
                 CENTER_COMPILER="%rocmcc@6.0.3"
                 CENTER_DEPENDENCIES="^cray-mpich@8.1.29 ^hip@6.0.3 ^python@3.9.12"
@@ -383,8 +383,8 @@ EOF
         set_superbuild_DHA_externals ${host} "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${prefix}"
 
                 ;;
-            "zen3")
-                if [ ${host} == "rzvernal" ]; then
+            "zen3" | "zen4")
+                if [[ ${host} == "rzvernal" || ${host} =~ "rzadams" ]]; then
                     # Override the prefix path for this system
                     prefix="/usr/workspace/lbann/stable_dependencies"
                 fi
@@ -722,7 +722,7 @@ set_center_specific_variants()
             "ivybridge") # Catalyst
                 CENTER_USER_VARIANTS="+onednn"
                 ;;
-            "zen" | "zen2") # Corona
+            "zen" | "zen2" | "zen3" | "zen4") # Corona
                 CENTER_USER_VARIANTS="+rocm"
                 ;;
             *)
