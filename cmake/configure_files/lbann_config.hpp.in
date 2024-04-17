@@ -67,6 +67,7 @@
 #cmakedefine LBANN_HAS_SHMEM
 #cmakedefine LBANN_HAS_LARGESCALE_NODE2VEC
 #cmakedefine LBANN_HAS_ONNX
+#cmakedefine LBANN_BUILT_WITH_SPECTRUM
 
 #cmakedefine LBANN_DETERMINISTIC
 
