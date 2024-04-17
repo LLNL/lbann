@@ -6,6 +6,13 @@ import pytest
 from torch import Tensor
 import torch.nn.functional as F
 
+try:
+    from torch import Tensor
+    import torch.nn.functional as F
+except:
+    pytest.skip("PyTorch is required to run this test.", allow_module_level=True)
+
+
 @test_util.lbann_test(check_gradients=False)
 def test_periodic_padding_2D():
     # Prepare reference output
