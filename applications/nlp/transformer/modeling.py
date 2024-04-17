@@ -253,20 +253,26 @@ def create_masked_language_modeling_transformer(
 
     # Input is a sequences of token IDs followed by a mask sequence
     all_inputs = lbann.Input(data_field='samples')
+    slice_points = [
+            0,
+            sequence_length,      # Original sequence
+            2 * sequence_length,  # Mask
+    ]
+    if args.attn_mask:
+        # Attention matrix mask
+        slice_points.append(2 * sequence_length + sequence_length * sequence_length)
+
     slc = lbann.Slice(
         all_inputs,
-        slice_points=[
-            0,
-            sequence_length,
-            2 * sequence_length,  # custom mask
-            #custom attention: 2 * sequence_length + sequence_length * sequence_length
-        ],
+        slice_points=slice_points,
     )
     input_tokens = lbann.Identity(slc)
     mask = lbann.Identity(slc)
-    attn = None
-    # attn = lbann.Reshape(lbann.Identity(slc),
-    #                      dims=[sequence_length, sequence_length])
+    if args.attn_mask:
+        attn = lbann.Reshape(lbann.Identity(slc),
+                             dims=[sequence_length, sequence_length])
+    else:
+        attn = None
 
     masked_input = lbann.Select(mask,
                                 input_tokens,

@@ -2,7 +2,7 @@
 Driver script for LBANN pre-training a masked language modeling task.
 It receives a data loader script and newline-separated strings, or a dataset
 name (see ``pretrain_gpt.py`` for example), and trains the transformer by
-randomly masking out tokens at ``--mlm-probability`` probability.
+randomly masking out tokens at ``--mlm-fraction`` probability.
 """
 import argparse
 from dataclasses import dataclass
@@ -26,10 +26,8 @@ import modeling
 import parallelism
 import trainer
 
-try:
-    import dataloader_mlm
-except (ImportError, ModuleNotFoundError):
-    dataloader_mlm = None
+# In this sample, we are training on molecular data
+from lbann.contrib.data.molecule_dataset import ChemTextDataset, ChemTokenType
 
 
 @dataclass
@@ -121,6 +119,12 @@ def main():
         default=False,
         help="Use encoders instead of decoders (disables causal attention)"
         " (default: False)")
+    parser.add_argument(
+        "--attn-mask",
+        action='store_true',
+        default=False,
+        help="Use custom attention mask (incompatible with --encoder)"
+        " (default: False)")
     parser.add_argument("--mlm-fraction",
                         type=float,
                         default=0.15,
@@ -139,6 +143,17 @@ def main():
         "--train-set",
         type=str,
         help="Path to training dataset file (newline-separated text file)")
+    parser.add_argument("--data-format",
+                        type=str,
+                        help="Dataset format",
+                        default='smiles',
+                        choices=[s.name.lower() for s in ChemTokenType])
+    parser.add_argument(
+        "--token-format",
+        type=str,
+        help="Tokenized data format (specify if different than `--data-format`",
+        default=None,
+        choices=[s.name.lower() for s in ChemTokenType])
     parser.add_argument(
         "--val-set",
         type=str,
@@ -155,22 +170,35 @@ def main():
     if not args.dataset and (not args.train_set or not args.vocab_file):
         raise ValueError(
             'The following arguments are required: --vocab-file, --train-set')
+    if args.attn_mask and args.encoder:
+        raise ValueError('--attn-mask is incompatible with --encoder')
 
     # Load dataset
     val_dataset = None
     if args.dataset:
         dataset = dataset_utils.load_dataset(args.dataset)
     else:
-        dataset = dataloader_mlm.Dataset(args.train_set,
-                                         args.vocab_file,
-                                         args.sequence_length,
-                                         mlm_probability=args.mlm_fraction)
+        input_format = ChemTokenType[args.data_format.upper()]
+        if args.token_format is not None:
+            token_format = ChemTokenType[args.token_format.upper()]
+        else:
+            token_format = input_format
+
+        dataset = ChemTextDataset(args.train_set,
+                                  args.vocab_file,
+                                  args.sequence_length,
+                                  tokenizer_type=token_format,
+                                  input_type=input_format,
+                                  mlm_probability=args.mlm_fraction,
+                                  attn_mask=args.attn_mask)
         if args.val_set:
-            val_dataset = dataloader_mlm.Dataset(
-                args.val_set,
-                args.vocab_file,
-                args.sequence_length,
-                mlm_probability=args.mlm_fraction)
+            val_dataset = ChemTextDataset(args.val_set,
+                                          args.vocab_file,
+                                          args.sequence_length,
+                                          tokenizer_type=token_format,
+                                          input_type=input_format,
+                                          mlm_probability=args.mlm_fraction,
+                                          attn_mask=args.attn_mask)
 
     # Construct model
     chosen_config = SIZES[args.model_type]
