@@ -141,8 +141,8 @@ def main():
                         help="Vocabulary text file to use")
     parser.add_argument(
         "--train-set",
-        type=str,
-        help="Path to training dataset file (newline-separated text file)")
+        action="append",
+        help="Path to training dataset file or files (newline-separated text file)")
     parser.add_argument("--data-format",
                         type=str,
                         help="Dataset format",
@@ -156,9 +156,8 @@ def main():
         choices=[s.name.lower() for s in ChemTokenType])
     parser.add_argument(
         "--val-set",
-        type=str,
-        default=None,
-        help="Path to validation dataset file (newline-separated text file)")
+        action="append",
+        help="Path to validation dataset file or files (newline-separated text file)")
 
     parser.set_defaults(progress=True)
     args = parser.parse_args()

@@ -4,6 +4,7 @@ input formats.
 """
 
 import numpy as np
+import os
 from typing import List, Union
 
 from lbann.contrib.data.chem_tokenizers import TOKENIZERS, ChemTokenType
@@ -38,6 +39,58 @@ class TextDataset(Dataset):
 
     def __getitem__(self, i: int) -> str:
         return self.lines[i]
+
+
+class TextDatasetWithOffsets(Dataset):
+    """
+    PyTorch text dataset with offset files. Not loaded to memory but read
+    on demand.
+    """
+
+    def __init__(self, file_or_files: Union[str, List[str]]):
+        if isinstance(file_or_files, str):
+            file_or_files = [file_or_files]
+        self.files = file_or_files
+
+        self.offsets = [
+            np.memmap(f + '.offsets', dtype=np.uint64) for f in file_or_files
+        ]
+        self.samples = [o.shape[0] for o in self.offsets]
+        self.cs = np.cumsum(np.array(self.samples, dtype=np.uint64), dtype=np.uint64)
+        self.total_samples = sum(self.samples)
+
+        # Clean memmapped files so that the object can be pickled
+        self.offsets = None
+        #self.files = [np.memmap(f, dtype=np.uint8) for f in file_or_files]
+
+    def _lazy_reload(self):
+        if self.offsets is not None:
+            return
+
+        self.offsets = [
+            np.memmap(f + '.offsets', dtype=np.uint64) for f in self.files
+        ]
+        self.files = [np.memmap(f, dtype=np.uint8) for f in self.files]
+
+    def __len__(self):
+        return self.total_samples
+
+    def __getitem__(self, i: int) -> str:
+        self._lazy_reload()
+
+        # Find file
+        f = self.cs.searchsorted(i, side='right')
+        local_i = i - (self.cs[f - 1].item() if f > 0 else 0)
+
+        # Find offset
+        if local_i == 0:
+            soff = 0
+        else:
+            soff = self.offsets[f][local_i - 1].item() + 1
+        eoff = self.offsets[f][local_i].item()
+
+        # Return string
+        return self.files[f][soff:eoff].tobytes().decode('utf-8')
 
 
 class ChemTextDataset(LBANNDataset):
@@ -84,7 +137,12 @@ class ChemTextDataset(LBANNDataset):
         else:
             raise ValueError(f'Unrecognized input type {input_type}')
 
-        self.dataset = TextDataset(fname)
+        if os.path.exists(fname[0] + '.offsets'):
+            print('Using fast text dataset with offsets')
+            self.dataset = TextDatasetWithOffsets(fname)
+        else:
+            self.dataset = TextDataset(fname)
+
         self._vocab_size = len(self.tokenizer)
         self.mlm_prob = mlm_probability
         self.pad_index = self.tokenizer.pad_token_id
@@ -170,7 +228,7 @@ if __name__ == '__main__':
         exit(1)
 
     dataset = ChemTextDataset(
-        fname=sys.argv[1],
+        fname=[sys.argv[1]],
         vocab=sys.argv[2],
         seqlen=64,
         tokenizer_type=ChemTokenType[sys.argv[3].upper()])
