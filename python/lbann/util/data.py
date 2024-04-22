@@ -161,9 +161,8 @@ class DataReader:
     Helper class used by LBANN to control worker processes and handle sample/batch loading.
     """
 
-    def __init__(
-        self, dataset: Dataset, num_procs: int, prefetch_factor: int, dtype: str
-    ) -> None:
+    def __init__(self, dataset: Dataset, num_procs: int, prefetch_factor: int,
+                 dtype: str) -> None:
         """
         DataReader Constructor
 
@@ -184,16 +183,17 @@ class DataReader:
         self.dtype = dtype
         self.sample_dims = dataset.get_sample_dims()
         self.num_io_partitions = 1
-        self.queued_indices = []
         self.loaded_samples = []
 
         if isinstance(self.dataset, DistConvDataset):
             self.num_io_partitions = self.dataset.num_io_partitions
 
-        self.pool = Pool(processes=num_procs, initializer=DataReader.init_worker)
+        self.pool = Pool(processes=num_procs,
+                         initializer=DataReader.init_worker,
+                         initargs=(self.dataset, ))
 
     @staticmethod
-    def init_worker():
+    def init_worker(dataset):
         """
         Initialize worker process.
 
@@ -209,6 +209,10 @@ class DataReader:
             except:
                 pass
 
+        # Process-local storage
+        global g_dataset
+        g_dataset = dataset
+
     def terminate(self) -> None:
         """
         Terminate all worker processes.
@@ -216,9 +220,10 @@ class DataReader:
         self.pool.terminate()
 
     @staticmethod
-    def load_sample(dataset, ind) -> None:
+    def load_sample(ind) -> Sample:
         """
         Loads the sample from the dataset at the specified index.
+        This function must be called from a worker process.
 
         :param dataset: Dataset
         :type dataset: Dataset
@@ -227,19 +232,16 @@ class DataReader:
         :return: Sample
         :rtype: Sample
         """
-        return dataset[ind]
+        return g_dataset[ind]
 
-    def load_next_sample_async(self):
+    def load_next_sample_async(self, ind: int):
         """
         Submit the next sample index to be loaded to the worker pool.
         """
         self.loaded_samples.append(
-            self.pool.apply_async(
-                DataReader.load_sample, (self.dataset, self.queued_indices.pop(0))
-            )
-        )
+            self.pool.apply_async(DataReader.load_sample, (ind, )))
 
-    def queue_epoch(self, inds: List[int]) -> None:
+    def queue_samples(self, inds: List[int]) -> None:
         """
         Set the indices to be loaded this epoch and start submitting jobs
         to the worker pool.
@@ -247,12 +249,8 @@ class DataReader:
         :param inds: List of sample indices
         :type inds: List[int]
         """
-        self.queued_indices += inds
-        while (
-            len(self.loaded_samples) < self.num_procs * self.prefetch_factor
-            and len(self.queued_indices) > 0
-        ):
-            self.load_next_sample_async()
+        for ind in inds:
+            self.load_next_sample_async(ind)
 
     def get_batch(self, batch_size: int) -> Dict[str, Union[np.ndarray, int]]:
         """
@@ -266,38 +264,31 @@ class DataReader:
         samples = []
         for _ in range(batch_size):
             samples.append(self.loaded_samples.pop(0).get())
-            if len(self.queued_indices) > 0:
-                self.load_next_sample_async()
 
         batch = {}
 
         # Note: we return the arrays with the pointers so that they aren't
         # deallocated by the garbage collector.
-        batch["sample"] = np.ascontiguousarray(
-            [s.sample for s in samples], dtype=self.dtype
-        )
+        batch["sample"] = np.ascontiguousarray([s.sample for s in samples],
+                                               dtype=self.dtype)
         batch["sample_ptr"] = batch["sample"].ctypes.data
-        assert (
-            batch["sample"].size
-            == np.prod(self.sample_dims.sample) * batch_size / self.num_io_partitions
-        )
+        assert (batch["sample"].size == np.prod(self.sample_dims.sample) *
+                batch_size / self.num_io_partitions)
 
         if hasattr(self.sample_dims, "label"):
-            batch["label"] = np.ascontiguousarray(
-                [s.label for s in samples], dtype=self.dtype
-            )
+            batch["label"] = np.ascontiguousarray([s.label for s in samples],
+                                                  dtype=self.dtype)
             batch["label_ptr"] = batch["label"].ctypes.data
-            assert batch["label"].size == np.prod(self.sample_dims.label) * batch_size
+            assert batch["label"].size == np.prod(
+                self.sample_dims.label) * batch_size
 
         if hasattr(self.sample_dims, "response"):
             batch["response"] = np.ascontiguousarray(
-                [s.response for s in samples], dtype=self.dtype
-            )
+                [s.response for s in samples], dtype=self.dtype)
             batch["response_ptr"] = batch["response"].ctypes.data
             assert (
-                batch["response"].size
-                == np.prod(self.sample_dims.response) * batch_size
-            )
+                batch["response"].size == np.prod(self.sample_dims.response) *
+                batch_size)
 
         return batch
 
