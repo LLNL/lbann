@@ -56,7 +56,8 @@ class TextDatasetWithOffsets(Dataset):
             np.memmap(f + '.offsets', dtype=np.uint64) for f in file_or_files
         ]
         self.samples = [o.shape[0] for o in self.offsets]
-        self.cs = np.cumsum(np.array(self.samples, dtype=np.uint64), dtype=np.uint64)
+        self.cs = np.cumsum(np.array(self.samples, dtype=np.uint64),
+                            dtype=np.uint64)
         self.total_samples = sum(self.samples)
 
         # Clean memmapped files so that the object can be pickled
@@ -222,17 +223,41 @@ class ChemTextDataset(LBANNDataset):
 
 if __name__ == '__main__':
     import sys
-    if len(sys.argv) != 4:
-        print('USAGE: dataloader_mlm.py <dataset file> <vocabulary file> '
-              '<smiles/selfies/ais>')
+    if len(sys.argv) < 4:
+        print('USAGE: dataloader_mlm.py <vocabulary file> <smiles/selfies/ais>'
+              ' <dataset file> [other dataset files]')
         exit(1)
 
-    dataset = ChemTextDataset(
-        fname=[sys.argv[1]],
-        vocab=sys.argv[2],
-        seqlen=64,
-        tokenizer_type=ChemTokenType[sys.argv[3].upper()])
-    print('Dataset samples:', len(dataset))
+    _, vocab, toktype, *files = sys.argv
+
+    dataset = ChemTextDataset(fname=files,
+                              vocab=vocab,
+                              seqlen=64,
+                              tokenizer_type=ChemTokenType[toktype.upper()])
+
+    # Test 1: Arbitrary sample retrieval
+    num_samples = len(dataset)
+    print('Dataset samples:', num_samples)
     print('Dataset sample -1:')
     print(
         dataset.tokenizer.decode(dataset[-1].sample[:dataset.sequence_length]))
+
+    # Test 2: Retrieval bandwidth
+    import time
+    try:
+        from tqdm import trange
+    except (ModuleNotFoundError, ImportError):
+        trange = range
+
+    # Warmup
+    for _ in range(10):
+        samp = np.random.randint(0, num_samples - 1)
+        _ = dataset[samp]
+
+    SAMPLES = 5000
+    start = time.time()
+    for i in trange(SAMPLES):
+        samp = np.random.randint(0, num_samples - 1)
+        _ = dataset[samp]
+    end = time.time()
+    print('Samples per second:', SAMPLES / (end - start))
