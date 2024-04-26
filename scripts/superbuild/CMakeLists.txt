@@ -92,6 +92,9 @@ lbann_sb_add_packages(
   protobuf
   zstr
 
+  # This should just be provided on relevant systems.
+  AWS_OFI_RCCL
+
   # And finally add the option to build LBANN
   LBANN)
 
@@ -139,6 +142,15 @@ message("Note that these assume a Bourne-compatible shell.")
 message("\n-----------------------------------------------------------------\n")
 file(WRITE "${CMAKE_BINARY_DIR}/lbann_sb_suggested_cmake_prefix_path.sh"
   "export CMAKE_PREFIX_PATH=${LBANN_SB_SUGG_CMAKE_PREFIX_PATH}\n")
+
+if (LBANN_SB_BUILD_AWS_OFI_RCCL)
+  message("-----------------------------------------------------------------\n")
+  message("You are building the AWS_OFI_RCCL plugin. This plugin's library")
+  message("path *must* be in the dynamic library search path at run time to")
+  message("have an effect. It may be useful to do the following:\n")
+  message("export LD_LIBRARY_PATH=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib:\$\{LD_LIBARY_PATH\}\n")
+  message("-----------------------------------------------------------------\n")
+endif ()
 
 # Add a custom target for bundling all things up
 if (UNIX)
