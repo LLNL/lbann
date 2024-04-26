@@ -65,11 +65,9 @@ endif ()
 if (LBANN_SB_FWD_AWS_OFI_RCCL_MPI_PATH)
   set(_aws_ofi_rccl_mpi_path_opt
     "--with-mpi=${LBANN_SB_FWD_AWS_OFI_RCCL_MPI_PATH}")
-else ()
-  if (DEFINED ENV{MPICH_DIR})
-    set(_aws_ofi_rccl_mpi_path_opt
-      "--with-mpi=$ENV{MPICH_DIR}")
-  endif ()
+elseif (DEFINED ENV{MPICH_DIR})
+  set(_aws_ofi_rccl_mpi_path_opt
+    "--with-mpi=$ENV{MPICH_DIR}")
 endif ()
 
 # This is an autotools package, so we need 'make'.
