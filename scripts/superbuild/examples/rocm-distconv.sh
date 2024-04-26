@@ -35,6 +35,14 @@ BUILD_LBANN_STACK=ON
 # LBANN stack.
 BUILD_WITH_DISTCONV=ON
 
+# Set to ON if you're on a Cray machine that doesn't provide the AWS
+# plugin as part of its default RCCL installation.
+#
+# It might also be advisable to build this if you build a custom RCCL.
+# The configuration script takes a RCCL path as a parameter, so it
+# could matter, but it's not clear how much.
+BUILD_AWS_OFI_RCCL_PLUGIN=OFF
+
 # Improve debugging info and remove some misguided warnings. These are
 # passed only to the LBANN stack.
 EXTRA_CXX_FLAGS="-g3 -Wno-deprecated-declarations"
@@ -101,6 +109,8 @@ cmake \
     -D LBANN_SB_BUILD_JPEG-TURBO=${BUILD_EXTERNAL_TPLS} \
     -D LBANN_SB_BUILD_OpenCV=${BUILD_EXTERNAL_TPLS} \
     -D LBANN_SB_OpenCV_TAG=4.x \
+    \
+    -D LBANN_SB_BUILD_AWS_OFI_RCCL=${BUILD_AWS_OFI_RCCL_PLUGIN} \
     \
     -D LBANN_SB_BUILD_Aluminum=${BUILD_LBANN_STACK} \
     -D LBANN_SB_Aluminum_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
