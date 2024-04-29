@@ -158,6 +158,11 @@ def main():
         "--val-set",
         action="append",
         help="Path to validation dataset file or files (newline-separated text file)")
+    parser.add_argument(
+        "--dataset-prefetch-factor",
+        type=int,
+        default=1,
+        help="Prefetching factor for training dataset (default: 1)")
 
     parser.set_defaults(progress=True)
     args = parser.parse_args()

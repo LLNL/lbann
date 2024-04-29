@@ -161,7 +161,8 @@ def make_batch_script(model: lbann.Model,
                 dataset_or_dataset_name,
                 role='train',
                 shuffle=args.always_shuffle,
-                fraction_of_data_to_use=args.dataset_fraction),
+                fraction_of_data_to_use=args.dataset_fraction,
+                prefetch_factor=args.dataset_prefetch_factor),
         ]
         if validation_dataset is not None:
             readers.append(
