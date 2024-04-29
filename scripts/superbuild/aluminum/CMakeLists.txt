@@ -61,7 +61,7 @@ lbann_sb_add_cmake_extern_pkg(
   OPTIONAL_LANGUAGES CUDA HIP
   GITHUB_URL llnl/Aluminum.git
   GIT_TAG "master"
-  DEPENDS_ON Caliper RCCL)
+  DEPENDS_ON Caliper NCCL RCCL)
 
 set(Aluminum_DIR ${LBANN_SB_Aluminum_PREFIX}
   CACHE INTERNAL "The install prefix of Aluminum.")

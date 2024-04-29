@@ -27,14 +27,22 @@ include(CMakeDependentOption)
 
 macro(lbann_sb_default_pkg_option PKG_NAME OPTION_NAME DOC_STR VALUE)
   option(LBANN_SB_FWD_${PKG_NAME}_${OPTION_NAME}
-    "${DOC_STR}"
+    "${PKG_NAME}: ${DOC_STR}"
     ${VALUE})
+endmacro ()
+
+# This assumes PKG_NAME is defined already. No check to ensure this,
+# just don't misuse. :)
+macro(lbann_sb_this_pkg_option OPTNAME DOCSTR DEFVAL)
+  option(LBANN_SB_FWD_${PKG_NAME}_${OPTNAME}
+    "${PKG_NAME}: ${DOCSTR}"
+    ${DEFVAL})
 endmacro ()
 
 macro(lbann_sb_default_cuda_option PKG_NAME OPTION_NAME DOC_STR VALUE)
   cmake_dependent_option(
     LBANN_SB_FWD_${PKG_NAME}_${OPTION_NAME}
-    "${DOC_STR}"
+    "${PKG_NAME}: ${DOC_STR}"
     ${VALUE}
     "LBANN_SB_DEFAULT_CUDA_OPTS"
     OFF)
@@ -43,7 +51,7 @@ endmacro ()
 macro(lbann_sb_default_rocm_option PKG_NAME OPTION_NAME DOC_STR VALUE)
   cmake_dependent_option(
     LBANN_SB_FWD_${PKG_NAME}_${OPTION_NAME}
-    "${DOC_STR}"
+    "${PKG_NAME}: ${DOC_STR}"
     ${VALUE}
     "LBANN_SB_DEFAULT_ROCM_OPTS"
     OFF)
@@ -52,7 +60,7 @@ endmacro ()
 macro(lbann_sb_default_gpu_option PKG_NAME OPTION_NAME DOC_STR VALUE)
   cmake_dependent_option(
     LBANN_SB_FWD_${PKG_NAME}_${OPTION_NAME}
-    "${DOC_STR}"
+    "${PKG_NAME}: ${DOC_STR}"
     ${VALUE}
     "LBANN_SB_DEFAULT_CUDA_OPTS OR LBANN_SB_DEFAULT_ROCM_OPTS"
     OFF)
