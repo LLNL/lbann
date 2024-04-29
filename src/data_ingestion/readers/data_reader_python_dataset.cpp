@@ -291,9 +291,11 @@ void python_dataset_reader::queue_samples(uint64_t samples_to_queue)
   uint64_t sample_stride = ds.get_sample_stride();
   uint64_t mini_batch_stride = ds.get_stride_to_next_mini_batch();
   uint64_t max_mb_size = ds.get_mini_batch_max();
+  uint64_t base_offset = ds.get_base_offset();
 
   for (uint64_t i = 0; i < samples_to_queue; ++i) {
-    uint64_t sample_ind = m_dataset_minibatch_offset * mini_batch_stride +
+    uint64_t sample_ind = base_offset +
+                          m_dataset_minibatch_offset * mini_batch_stride +
                           m_dataset_sample_offset * sample_stride;
 
     // We went over the entire epoch
@@ -327,12 +329,14 @@ void python_dataset_reader::queue_epoch()
 
   execution_mode mode = exec_mode_from_string(get_role());
   dataset& ds = get_trainer().get_data_coordinator().get_dataset(mode);
+  uint64_t mb_size = ds.get_current_mini_batch_size();
 
   // Resets the sample offset to the beginning of the epoch
-  m_dataset_minibatch_offset = ds.get_base_offset();
+  m_dataset_minibatch_offset = 0;
   m_dataset_sample_offset = 0;
 
-  queue_samples(m_prefetch_factor * m_num_io_threads);
+  // Get at least the first minibatch, or the prefetch factor amount of samples
+  queue_samples(max(m_prefetch_factor * m_num_io_threads, mb_size));
 }
 
 void python_dataset_reader::load()
