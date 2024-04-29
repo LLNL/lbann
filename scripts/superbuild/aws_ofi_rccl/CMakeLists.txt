@@ -28,8 +28,7 @@ lbann_sb_init_extern_pkg(
   NAME AWS_OFI_RCCL
   LANGUAGES C
   GITHUB_URL ROCm/aws-ofi-rccl
-  GIT_TAG "cxi"  # This is the head of their develop.
-  DEPENDS_ON RCCL)
+  GIT_TAG "cxi")  # This is the head of their develop.
 
 # Prefer a user-specified HIP path, then check ROCM_PATH.
 if (LBANN_SB_FWD_AWS_OFI_RCCL_HIP_PATH)
