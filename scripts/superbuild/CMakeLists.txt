@@ -69,6 +69,7 @@ set(LBANN_SB_DEFAULT_INSTALL_PATH_STRATEGY "COMMON"
 # descending into subdirectories.
 lbann_sb_add_packages(
   # Ack, a "third-order" dependency
+  NCCL
   RCCL
 
   # These are "second-order" dependencies
