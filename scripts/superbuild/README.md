@@ -60,6 +60,9 @@ The following packages are known by the SuperBuild framework:
 - [Aluminum](https://github.com/LLNL/Aluminum) - High-performance
   communication library that provides a stream-aware interface and
   semantics.
+- [AWS\_OFI\_RCCL](https://github.com/ROCm/aws-ofi-rccl) - A plugin
+  that should be provided by vendors or supercomputing centers to
+  allow RCCL to use libfabric in place of IB.
 - [Catch2](https://github.com/catchorg/catch2) - A unit-testing
   framework for C++ packages. (Mostly for developers; also used by
   H2 and Hydrogen, if enabled.)
