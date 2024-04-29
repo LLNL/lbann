@@ -120,6 +120,10 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: zstr@master arch=${spack_arch}
         prefix: ${prefix}/${system}/${dnn_lib}/${mpi}/zstr
+EOF
+
+    if [[ ${dnn_lib} =~ "cuda" ]]; then
+cat <<EOF  >> ${yaml}
     nccl:
       buildable: false
       version:
@@ -147,6 +151,7 @@ cat <<EOF  >> ${yaml}
         prefix: ${prefix}/cutensor-1.7.0.1/libcutensor-linux-ppc64le-1.7.0.1-archive
 
 EOF
+    fi
 }
 
 set_superbuild_DHA_externals()
