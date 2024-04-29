@@ -472,8 +472,8 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: cray-mpich@8.1.29 %rocmcc arch=${spack_arch}
         modules:
-#        - amd/6.0.3 PrgEnv-amd cray-mpich/8.1.29
-        - cce/17.0.1 PrgEnv-cray cray-mpich/8.1.29
+        - amd/6.0.3 PrgEnv-amd cray-mpich/8.1.29
+#        - cce/17.0.1 PrgEnv-cray cray-mpich/8.1.29
 EOF
         set_superbuild_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.29" "$yaml" "${LOG}" "${prefix}"
         set_superbuild_DHA_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.29" "$yaml" "${prefix}"
