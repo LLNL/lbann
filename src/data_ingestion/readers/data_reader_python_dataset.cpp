@@ -309,7 +309,7 @@ void python_dataset_reader::queue_samples(uint64_t samples_to_queue)
     m_dataset_sample_offset += 1;
 
     // Cycle minibatch offset
-    if (m_dataset_sample_offset >= max_mb_size) {
+    if (m_dataset_sample_offset * sample_stride + base_offset >= mini_batch_stride) {
       m_dataset_sample_offset = 0;
       m_dataset_minibatch_offset += 1;
     }
@@ -336,7 +336,7 @@ void python_dataset_reader::queue_epoch()
   m_dataset_sample_offset = 0;
 
   // Get at least the first minibatch, or the prefetch factor amount of samples
-  queue_samples(max(m_prefetch_factor * m_num_io_threads, mb_size));
+  queue_samples(std::max<uint64_t>(m_prefetch_factor * m_num_io_threads, mb_size));
 }
 
 void python_dataset_reader::load()
