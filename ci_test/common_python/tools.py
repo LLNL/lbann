@@ -697,6 +697,7 @@ def create_tests(setup_func,
                  test_file,
                  test_name_base=None,
                  skip_clusters=[],
+                 post_test_func=None,
                  **kwargs):
     """Create functions that can interact with PyTest
 
@@ -724,6 +725,8 @@ def create_tests(setup_func,
             cases, use `__file__`.
         test_name (str, optional): Descriptive name (default: test
             file name with '.py' removed).
+        post_test_func (function): Runs after the LBANN experiment if
+            successful.
         **kwargs: Keyword arguments to pass into
             `lbann.contrib.launcher.run`.
 
@@ -765,7 +768,8 @@ def create_tests(setup_func,
 
         environment['MIOPEN_USER_DB_PATH'] = f'{db_path}/MIOpen_user_db'
         # Empirically the cache dir cannot be on a parallel file system
-        environment['MIOPEN_CUSTOM_CACHE_DIR'] =f'{tmpdir}/MIOpen_custom_cache'
+        environment[
+            'MIOPEN_CUSTOM_CACHE_DIR'] = f'{tmpdir}/MIOpen_custom_cache'
 
         kwargs['environment'] = environment
 
@@ -777,7 +781,8 @@ def create_tests(setup_func,
         """
         test_name = '{}'.format(test_name_base)
         if cluster in skip_clusters:
-            e = "test \"%s\" not supported on cluster \"%s\"" % (test_name, cluster)
+            e = "test \"%s\" not supported on cluster \"%s\"" % (test_name,
+                                                                 cluster)
             print('Skip - ' + e)
             pytest.skip(e)
 
@@ -786,7 +791,8 @@ def create_tests(setup_func,
         import lbann.contrib.launcher
 
         # Setup LBANN experiment
-        trainer, model, data_reader, optimizer, req_num_nodes = setup_func(lbann, weekly)
+        trainer, model, data_reader, optimizer, req_num_nodes = setup_func(
+            lbann, weekly)
 
         if req_num_nodes:
             kwargs['nodes'] = req_num_nodes
@@ -795,12 +801,12 @@ def create_tests(setup_func,
         _kwargs = copy.deepcopy(kwargs)
         if 'work_dir' not in _kwargs:
             _kwargs['work_dir'] = os.path.join(os.path.dirname(test_file),
-                                               'experiments',
-                                               test_name)
+                                               'experiments', test_name)
 
         # If the user provided a suffix for the work directory, append it
         if 'work_subdir' in _kwargs:
-            _kwargs['work_dir'] = os.path.join(_kwargs['work_dir'], _kwargs['work_subdir'])
+            _kwargs['work_dir'] = os.path.join(_kwargs['work_dir'],
+                                               _kwargs['work_subdir'])
             del _kwargs['work_subdir']
 
         # Delete the work directory
@@ -828,6 +834,8 @@ def create_tests(setup_func,
             **_kwargs,
         )
         assert_success(return_code, stderr_log_file)
+        if post_test_func is not None:
+            post_test_func(lbann, weekly)
         return {
             'return_code': return_code,
             'work_dir': work_dir,
@@ -838,9 +846,7 @@ def create_tests(setup_func,
     # Specific test functions name
     test_func.__name__ = test_name_base
 
-    return (
-        test_func,
-    )
+    return (test_func, )
 
 
 def create_python_data_reader(lbann,
