@@ -336,7 +336,9 @@ void python_dataset_reader::queue_epoch()
   m_dataset_sample_offset = 0;
 
   // Get at least the first minibatch, or the prefetch factor amount of samples
-  queue_samples(max(m_prefetch_factor * m_num_io_threads, mb_size));
+  queue_samples(
+    std::max(static_cast<uint64_t>(m_prefetch_factor * m_num_io_threads),
+             mb_size));
 }
 
 void python_dataset_reader::load()
