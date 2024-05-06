@@ -92,6 +92,11 @@ bool python_dataset_reader::fetch_data_block(
   // Acquire Python GIL on first IO thread
   python::global_interpreter_lock gil;
 
+  // If not enough samples were queued when the epoch began, queue the rest
+  if (m_queued_samples < mb_size) {
+    queue_samples(mb_size - m_queued_samples);
+  }
+
   // Check that shared memory array is large enough
   uint64_t num_io_partitions = 1;
 #ifdef LBANN_HAS_DISTCONV
@@ -290,7 +295,6 @@ void python_dataset_reader::queue_samples(uint64_t samples_to_queue)
   uint64_t num_samples = m_num_samples;
   uint64_t sample_stride = ds.get_sample_stride();
   uint64_t mini_batch_stride = ds.get_stride_to_next_mini_batch();
-  uint64_t max_mb_size = ds.get_mini_batch_max();
   uint64_t base_offset = ds.get_base_offset();
 
   for (uint64_t i = 0; i < samples_to_queue; ++i) {
@@ -306,12 +310,14 @@ void python_dataset_reader::queue_samples(uint64_t samples_to_queue)
       inds_list,
       python::object(PyLong_FromLong(m_shuffled_indices[sample_ind])));
 
-    m_dataset_sample_offset += 1;
+    ++m_dataset_sample_offset;
+    ++m_queued_samples;
 
     // Cycle minibatch offset
-    if (m_dataset_sample_offset >= max_mb_size) {
+    if (m_dataset_sample_offset * sample_stride + base_offset >=
+        mini_batch_stride) {
       m_dataset_sample_offset = 0;
-      m_dataset_minibatch_offset += 1;
+      ++m_dataset_minibatch_offset;
     }
   }
 
@@ -327,18 +333,14 @@ void python_dataset_reader::queue_epoch()
   // Acquire Python GIL
   python::global_interpreter_lock gil;
 
-  execution_mode mode = exec_mode_from_string(get_role());
-  dataset& ds = get_trainer().get_data_coordinator().get_dataset(mode);
-  uint64_t mb_size = ds.get_current_mini_batch_size();
-
   // Resets the sample offset to the beginning of the epoch
   m_dataset_minibatch_offset = 0;
   m_dataset_sample_offset = 0;
+  m_queued_samples = 0;
 
-  // Get at least the first minibatch, or the prefetch factor amount of samples
-  queue_samples(
-    std::max(static_cast<uint64_t>(m_prefetch_factor * m_num_io_threads),
-             mb_size));
+  // Prefetch the first set of samples (if less than minibatch size, the first
+  // minibatch read will take care of the rest)
+  queue_samples(m_prefetch_factor * m_num_io_threads);
 }
 
 void python_dataset_reader::load()

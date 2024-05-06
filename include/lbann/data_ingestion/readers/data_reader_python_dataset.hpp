@@ -101,6 +101,8 @@ private:
   uint64_t m_dataset_minibatch_offset;
   /** @brief The current dataset shuffled sample offset. */
   uint64_t m_dataset_sample_offset;
+  /** @brief Number of samples requested this epoch. */
+  uint64_t m_queued_samples;
   /** @brief Dimensions of data sample tensor. */
   std::vector<El::Int> m_sample_dims;
   /** @brief Size of label tensor. */
