@@ -243,7 +243,7 @@ endif ()
 
 # DiHydrogen and Distconv
 if (LBANN_WITH_DISTCONV)
-  find_package(DiHydrogen 0.3.0 CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
+  find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
   set(LBANN_HAS_DISTCONV TRUE)
   set(LBANN_H2_LIBS
     H2::H2Meta
