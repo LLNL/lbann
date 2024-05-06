@@ -21,7 +21,7 @@ def get_system_seq_launch(cluster):
     if cluster in ['lassen', 'ray']:
         return ['lrun', '-1', '--smpiargs=\"-disable_gpu_hooks\"']
     elif cluster in ['tioga', 'corona']:
-        return ['flux mini run', '-N1', '-n1']
+        return ['flux run', '-N1', '-n1']
     return ['srun', '-N1', '-n1', '--mpibind=off']
 
 def get_system_mpi_launch(cluster):
@@ -30,7 +30,7 @@ def get_system_mpi_launch(cluster):
     elif cluster == 'pascal':
         return ['srun', '-N2', '--ntasks-per-node=2', '--mpibind=off']
     elif cluster in ['tioga', 'corona']:
-        return ['flux mini run', '-N2', '-n2', '-g1', '-o gpu-affinity=per-task', '-o cpu-affinity=per-task']
+        return ['flux run', '-N2', '-n2', '-g1', '-o gpu-affinity=per-task', '-o cpu-affinity=per-task']
     else: # Catalyst
         return ['srun', '-N2', '--ntasks-per-node=4']
 
