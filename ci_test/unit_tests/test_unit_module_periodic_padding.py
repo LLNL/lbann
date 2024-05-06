@@ -3,8 +3,6 @@ import lbann.modules as lm
 import numpy as np
 import test_util
 import pytest
-from torch import Tensor
-import torch.nn.functional as F
 
 try:
     from torch import Tensor
