@@ -36,7 +36,7 @@ def test_command_catalyst():
 
 def test_command_corona():
     actual = tools.get_command(cluster='corona', **d)
-    expected = 'flux mini alloc --nodes=20 --partition=pdebug --time=30 srun --mpibind=off --time=30 --ntasks=40 exe --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_fraction=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 --print_affinity > output_file 2> error_file'
+    expected = 'flux alloc --nodes=20 --partition=pdebug --time=30 srun --mpibind=off --time=30 --ntasks=40 exe --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_fraction=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 --print_affinity > output_file 2> error_file'
     assert actual == expected
 
 
