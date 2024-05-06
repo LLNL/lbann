@@ -106,8 +106,6 @@ lbann_sb_add_packages(
 # {Conduit, OpenCV, Hydrogen}, so I'm just going to let you do that).
 
 # Add the TPL subdirectories
-set(_GIT_REPOSITORY_TAG "GIT_REPOSITORY")
-set(_GIT_TAG_TAG "GIT_TAG")
 foreach (pkg ${LBANN_SB_BUILD_PKGS})
   if (LBANN_SB_BUILD_${pkg})
     string(TOLOWER "${pkg}" pkg_lower)
