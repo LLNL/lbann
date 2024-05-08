@@ -92,6 +92,11 @@ bool python_dataset_reader::fetch_data_block(
   // Acquire Python GIL on first IO thread
   python::global_interpreter_lock gil;
 
+  // If not enough samples were queued when the epoch began, queue the rest
+  if (m_queued_samples < mb_size) {
+    queue_samples(mb_size - m_queued_samples);
+  }
+
   // Check that shared memory array is large enough
   uint64_t num_io_partitions = 1;
 #ifdef LBANN_HAS_DISTCONV
@@ -154,6 +159,9 @@ bool python_dataset_reader::fetch_data_block(
     CPUMat& Y = *(input_buffers[INPUT_DATA_TYPE_RESPONSES]);
     El::Copy(response_shared_memory_matrix, Y);
   }
+
+  // Prefetch the next minibatch asynchronously
+  this->queue_samples(mb_size);
 
   return true;
 }
@@ -247,6 +255,7 @@ void python_dataset_reader::setup(int num_io_threads,
                                   observer_ptr<thread_pool> io_thread_pool)
 {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
+  m_num_io_threads = num_io_threads;
 
   // Acquire Python GIL
   python::global_interpreter_lock gil;
@@ -275,32 +284,63 @@ void python_dataset_reader::setup(int num_io_threads,
   queue_epoch();
 }
 
-void python_dataset_reader::queue_epoch()
+void python_dataset_reader::queue_samples(uint64_t samples_to_queue)
 {
-  // Acquire Python GIL
-  python::global_interpreter_lock gil;
-
+  // NOTE: ASSUMES GIL IS ALREADY TAKEN
   execution_mode mode = exec_mode_from_string(get_role());
   dataset& ds = get_trainer().get_data_coordinator().get_dataset(mode);
 
   // Get shuffled indices to be fetched by worker processes
   python::object inds_list = PyList_New(0);
   uint64_t num_samples = m_num_samples;
-  uint64_t base_offset = ds.get_base_offset();
   uint64_t sample_stride = ds.get_sample_stride();
   uint64_t mini_batch_stride = ds.get_stride_to_next_mini_batch();
-  for (uint64_t i = base_offset; i < num_samples; i += mini_batch_stride) {
-    for (uint64_t j = i;
-         j < std::min(num_samples, i - base_offset + mini_batch_stride);
-         j += sample_stride) {
-      PyList_Append(inds_list,
-                    python::object(PyLong_FromLong(m_shuffled_indices[j])));
+  uint64_t base_offset = ds.get_base_offset();
+
+  for (uint64_t i = 0; i < samples_to_queue; ++i) {
+    uint64_t sample_ind = base_offset +
+                          m_dataset_minibatch_offset * mini_batch_stride +
+                          m_dataset_sample_offset * sample_stride;
+
+    // We went over the entire epoch
+    if (sample_ind >= num_samples)
+      break;
+
+    PyList_Append(
+      inds_list,
+      python::object(PyLong_FromLong(m_shuffled_indices[sample_ind])));
+
+    ++m_dataset_sample_offset;
+    ++m_queued_samples;
+
+    // Cycle minibatch offset
+    if (m_dataset_sample_offset * sample_stride + base_offset >=
+        mini_batch_stride) {
+      m_dataset_sample_offset = 0;
+      ++m_dataset_minibatch_offset;
     }
   }
 
-  python::object(
-    PyObject_CallMethod(m_data_reader, "queue_epoch", "(O)", inds_list.get()));
+  python::object(PyObject_CallMethod(m_data_reader,
+                                     "queue_samples",
+                                     "(O)",
+                                     inds_list.get()));
   python::check_error();
+}
+
+void python_dataset_reader::queue_epoch()
+{
+  // Acquire Python GIL
+  python::global_interpreter_lock gil;
+
+  // Resets the sample offset to the beginning of the epoch
+  m_dataset_minibatch_offset = 0;
+  m_dataset_sample_offset = 0;
+  m_queued_samples = 0;
+
+  // Prefetch the first set of samples (if less than minibatch size, the first
+  // minibatch read will take care of the rest)
+  queue_samples(m_prefetch_factor * m_num_io_threads);
 }
 
 void python_dataset_reader::load()

@@ -87,13 +87,22 @@ protected:
 
 private:
   void queue_epoch();
+  void queue_samples(uint64_t samples_to_queue);
 
   /** @brief Path to the pickled dataset object. */
   std::string m_dataset_path;
   /** @brief Optional directory containing module with dataset definition. */
   std::string m_module_dir;
   /** @brief Number of samples to prefetch per worker. */
-  uint64_t m_prefetch_factor;
+  int m_prefetch_factor;
+  /** @brief Number of I/O threads. */
+  int m_num_io_threads;
+  /** @brief The current dataset shuffled minibatch offset. */
+  uint64_t m_dataset_minibatch_offset;
+  /** @brief The current dataset shuffled sample offset. */
+  uint64_t m_dataset_sample_offset;
+  /** @brief Number of samples requested this epoch. */
+  uint64_t m_queued_samples;
   /** @brief Dimensions of data sample tensor. */
   std::vector<El::Int> m_sample_dims;
   /** @brief Size of label tensor. */
