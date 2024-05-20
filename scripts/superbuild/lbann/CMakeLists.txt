@@ -49,6 +49,7 @@ lbann_sb_add_cmake_extern_pkg(
   CNPY
   Conduit HDF5
   hipTT
+  hwloc
   OpenCV JPEG-TURBO
   OpenBLAS
   cereal

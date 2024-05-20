@@ -68,7 +68,8 @@ set(LBANN_SB_DEFAULT_INSTALL_PATH_STRATEGY "COMMON"
 # FIXME: Address the above node so that the packages are known before
 # descending into subdirectories.
 lbann_sb_add_packages(
-  # Ack, a "third-order" dependency
+  # Ack, some "third-order" dependencies.
+  hwloc
   NCCL
   RCCL
 
