@@ -31,7 +31,7 @@ of the following:
   not explicitly needed if a blank line is inserted between the
   :code:`@brief` and the body of the :code:`@details` section.
 
-+ :code:`@param <name>` Decribe a parameter to the function. It may be
++ :code:`@param <name>` Describe a parameter to the function. It may be
   helpful to annotate with :code:`@param[in]`, :code:`@param[out]`, or
   :code:`@param[in,out]` if not clear from the types. Repeat this
   directive for each applicable parameter.

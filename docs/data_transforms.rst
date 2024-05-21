@@ -21,7 +21,7 @@ Sample Normalize
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Entries in the sample are scaled to a mean of 0 and standard deviation
-of 1. This tranformation takes no parameters.
+of 1. This transformation takes no parameters.
 
 .. math::
 
@@ -173,7 +173,7 @@ TODO
 Resize
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-OpenCV is required to use this tranformation. Each sample is resized
+OpenCV is required to use this transformation. Each sample is resized
 up or down to the given size. An example usage is:
 
 .. code-block:: none

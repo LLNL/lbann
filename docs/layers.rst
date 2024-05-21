@@ -9,7 +9,7 @@ Layers
 
 Layers in a neural network are arranged as a directed acyclic
 graph. They take one input tensor from each parent layer and send
-an output tensor to each child layer. Some layers may recieve
+an output tensor to each child layer. Some layers may receive
 tensors from weights objects (trainable parameters).
 
 LBANN performs implicit mini-batching. If the user specifies a

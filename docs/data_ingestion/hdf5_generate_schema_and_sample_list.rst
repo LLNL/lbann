@@ -127,12 +127,12 @@ that are used to train the model), "label", and "response". Uncommenting and
 adding the appropriate labels is the minimum required modification. If
 there are data fields that are not to be used, their *pack*
 fields should remained commented out. Alternatively, such fields can
-simply be deleted from thefile.
+simply be deleted from the file.
 
 When LBANN is executed, metadata entries are propagated from internal
 to leaf nodes. However, existing values are not
 overridden. :numref:`transference` illustrates this concept. This
-feature allows the sepcification of multiple fields that should be
+feature allows the specification of multiple fields that should be
 used for training a model by modifying a single ``pack`` field.
 
 
