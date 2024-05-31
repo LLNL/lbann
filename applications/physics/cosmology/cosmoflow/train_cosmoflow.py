@@ -19,7 +19,7 @@ def create_python_dataset_reader(args):
 
     readers = []
     for role in ['train', 'val', 'test']:
-        role_dir = getattr(args, f'{role}_dir', None)
+        role_dir = getattr(args, f'{role}_dir')
         if not role_dir:
             continue
         if role == 'val':
@@ -39,11 +39,13 @@ def create_cosmoflow_data_reader(
         num_responses (int): The number of parameters to predict.
     """
 
-    reader_args = [
-        {"role": "train", "data_filename": train_path},
-        {"role": "validate", "data_filename": val_path},
-        # {"role": "test", "data_filename": test_path},
-    ]
+    reader_args = []
+    if train_path:
+        reader_args.append({"role": "train", "data_filename": train_path})
+    if val_path:
+        reader_args.append({"role": "validate", "data_filename": val_path})
+    if test_path:
+        reader_args.append({"role": "test", "data_filename": test_path})
 
     for reader_arg in reader_args:
         reader_arg["data_file_pattern"] = "{}/*.hdf5".format(
