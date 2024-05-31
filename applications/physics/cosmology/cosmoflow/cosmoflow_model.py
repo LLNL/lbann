@@ -11,7 +11,8 @@ def construct_cosmoflow_model(parallel_strategy,
                               learning_rate,
                               min_distconv_width,
                               mlperf,
-                              transform_input):
+                              transform_input,
+                              dropout_keep_prob=0.5):
 
     # Construct layer graph
     universes = lbann.Input(data_field='samples')
@@ -23,7 +24,8 @@ def construct_cosmoflow_model(parallel_strategy,
         use_bn=use_batchnorm,
         bn_statistics_group_size=statistics_group_size,
         mlperf=mlperf,
-        transform_input=transform_input)(universes)
+        transform_input=transform_input,
+        dropout_keep_prob=dropout_keep_prob)(universes)
     mse = lbann.MeanSquaredError([preds, secrets])
     mae = lbann.MeanAbsoluteError([preds, secrets])
     obj = lbann.ObjectiveFunction([mse])
@@ -71,7 +73,7 @@ def construct_cosmoflow_model(parallel_strategy,
         #     initial_warmup_learning_rate=0,
         #     warmup_steps=100
         # ),
-        lbann.CallbackProgressBar(newline_interval=1)
+        lbann.CallbackProgressBar(newline_interval=1, print_mem_usage=True)
     ]
     return lbann.Model(
         epochs=num_epochs,
