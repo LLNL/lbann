@@ -20,6 +20,10 @@ def create_python_dataset_reader(args):
     readers = []
     for role in ['train', 'val', 'test']:
         role_dir = getattr(args, f'{role}_dir')
+        if not role_dir:
+            continue
+        if role == 'val':
+            role = 'validate'
         dataset = CosmoFlowDataset(role_dir, args.input_width, args.num_secrets)
         reader = lbann.util.data.construct_python_dataset_reader(dataset, role=role)
         readers.append(reader)
@@ -35,11 +39,13 @@ def create_cosmoflow_data_reader(
         num_responses (int): The number of parameters to predict.
     """
 
-    reader_args = [
-        {"role": "train", "data_filename": train_path},
-        {"role": "validate", "data_filename": val_path},
-        # {"role": "test", "data_filename": test_path},
-    ]
+    reader_args = []
+    if train_path:
+        reader_args.append({"role": "train", "data_filename": train_path})
+    if val_path:
+        reader_args.append({"role": "validate", "data_filename": val_path})
+    if test_path:
+        reader_args.append({"role": "test", "data_filename": test_path})
 
     for reader_arg in reader_args:
         reader_arg["data_file_pattern"] = "{}/*.hdf5".format(
@@ -142,7 +148,7 @@ if __name__ == "__main__":
         default_dir = '{}/{}'.format(default_lc_dataset, role)
         parser.add_argument(
             '--{}-dir'.format(role), action='store', type=str,
-            default=default_dir,
+            default=default_dir if role == 'train' else None,
             help='the directory of the {} dataset'.format(role))
     parser.add_argument(
         '--synthetic', action='store_true',
@@ -156,6 +162,9 @@ if __name__ == "__main__":
     parser.add_argument(
         '--transform-input', action='store_true',
         help='Apply log1p transformation to model inputs')
+    parser.add_argument(
+        '--dropout-keep-prob', action='store', type=float, default=0.5,
+        help='Probability of keeping activations in dropout layers (default: 0.5). Set to 1 to disable dropout')
 
     # Parallelism arguments
     parser.add_argument(
@@ -227,7 +236,8 @@ if __name__ == "__main__":
                                                       learning_rate=args.optimizer_learning_rate,
                                                       min_distconv_width=args.min_distconv_width,
                                                       mlperf=args.mlperf,
-                                                      transform_input=args.transform_input)
+                                                      transform_input=args.transform_input,
+                                                      dropout_keep_prob=args.dropout_keep_prob)
 
     # Add profiling callbacks if needed.
     model.callbacks.extend(lbann.contrib.args.create_profile_callbacks(args))
@@ -274,7 +284,7 @@ if __name__ == "__main__":
         environment['DISTCONV_JIT_CACHEPATH'] = f'{application_path}/DaCe_kernels/.dacecache'
 
     if args.synthetic or args.no_datastore:
-        lbann_args = []
+        lbann_args = ['--num_io_threads=8']
     else:
         lbann_args = ['--use_data_store']
     lbann_args += lbann.contrib.args.get_profile_args(args)

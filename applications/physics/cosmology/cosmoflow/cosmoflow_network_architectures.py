@@ -28,7 +28,8 @@ class CosmoFlow(lm.Module):
                  use_bn=False,
                  bn_statistics_group_size=None,
                  mlperf=False,
-                 transform_input=False):
+                 transform_input=False,
+                 dropout_keep_prob=0.5):
         """Initialize CosmFlow.
 
         Args:
@@ -43,6 +44,8 @@ class CosmoFlow(lm.Module):
                 model.
             transform_input (bool): Whether or not to apply log1p
                 transformation to model inputs.
+            dropout_keep_prob (float): Probability of not zeroing out
+                activations in dropout layers. Setting to 1 disables dropout.
         """
 
         CosmoFlow.global_count += 1
@@ -53,6 +56,7 @@ class CosmoFlow(lm.Module):
         self.use_bn = use_bn
         self.mlperf = mlperf
         self.transform_input = transform_input
+        self.dropout_keep_prob = dropout_keep_prob
 
         if self.mlperf:
             base_channels = 32
@@ -144,8 +148,11 @@ class CosmoFlow(lm.Module):
                     self.name, i, self.instance))
 
         def create_dropout(x, i):
+            if self.dropout_keep_prob == 1:
+                return x
+            
             return lbann.Dropout(
-                x, keep_prob=0.5,
+                x, keep_prob=self.dropout_keep_prob,
                 name='{0}_fc_drop{1}_instance{2}'.format(
                     self.name, i, self.instance))
 
