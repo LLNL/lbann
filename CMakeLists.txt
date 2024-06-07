@@ -802,11 +802,18 @@ if (LBANN_HAS_CUDA)
     CUDA_STANDARD 17)
 
   # Enable device lambdas with nvcc
-  check_compiler_flag(CUDA "--expt-extended-lambda"
+  check_compiler_flag(CUDA "--extended-lambda"
     CUDA_COMPILER_SUPPORTS_EXTENDED_LAMBDA)
   if (CUDA_COMPILER_SUPPORTS_EXTENDED_LAMBDA)
     target_compile_options(lbann PRIVATE
-      $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+      $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
+  else ()
+    check_compiler_flag(CUDA "--expt-extended-lambda"
+      CUDA_COMPILER_SUPPORTS_EXTENDED_LAMBDA)
+    if (CUDA_COMPILER_SUPPORTS_EXTENDED_LAMBDA)
+      target_compile_options(lbann PRIVATE
+        $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+    endif ()
   endif ()
 endif (LBANN_HAS_CUDA)
 
