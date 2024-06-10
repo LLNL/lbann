@@ -53,17 +53,6 @@
 #include "p2p/p2p.hpp"
 #endif // DISTCONV_HAS_P2P
 
-#include "lbann/layers/learning/distconv/distconv_layers.hpp"
-#include "lbann/layers/math/distconv/distconv_matmul.hpp"
-
-#ifdef LBANN_HAS_NVSHMEM
-#include "lbann/layers/transform/distconv/distconv_scatter.hpp"
-#include "lbann/layers/transform/distconv/distconv_gather.hpp"
-#include "lbann/layers/transform/distconv/distconv_nvshmem_vector_addressing.hpp"
-#endif // LBANN_HAS_NVSHMEM
-
-#include "lbann/layers/misc/distconv/distconv_channelwise_softmax.hpp"
-
 namespace lbann {
 
 inline auto default_hydrogen_stream()
@@ -137,23 +126,8 @@ using MPIRootPrintStreamWaning = ::distconv::util::MPIRootPrintStreamWarning;
 
 // Distconv layer classes
 using Backend = ::distconv::BackendDNNLib;
-using ReLU = ::distconv::ReLU<Backend>;
-using LeakyReLU = ::distconv::LeakyReLU<Backend>;
-template <typename TensorDataType>
-using Convolution = ::distconv::Convolution<Backend, TensorDataType>;
-template <typename TensorDataType>
-using ChannelwiseFullyConnected = ::distconv::ChannelwiseFullyConnected<Backend, TensorDataType>;
-template <typename TensorDataType>
-using Pooling = ::distconv::Pooling<Backend, TensorDataType>;
-template <typename TensorDataType>
-using BatchNormalization = ::distconv::BatchNormalization<Backend, TensorDataType>;
-template <typename TensorDataType>
-using MatMul = ::distconv::MatMul<Backend, TensorDataType>;
-template <typename TensorDataType>
-using ChannelwiseSoftmax = ::distconv::ChannelwiseSoftmax<Backend, TensorDataType>;
-using Softmax = ::distconv::Softmax<Backend>;
-using CrossEntropy = ::distconv::CrossEntropy<Backend>;
-using MeanSquaredError = ::distconv::MeanSquaredError<Backend>;
+using AlCommType = typename decltype(std::declval<Backend>()
+                                       .get_al_mpi_cuda_comm())::element_type;
 
 using ::distconv::get_channel_dim;
 using ::distconv::get_sample_dim;
