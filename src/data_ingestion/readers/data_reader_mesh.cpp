@@ -140,9 +140,9 @@ std::string mesh_reader::construct_filename(std::string channel,
                                             uint64_t data_id)
 {
   std::string filename = get_file_dir() + channel + m_suffix + "/" + channel;
-  char idx[m_index_length + 1];
-  std::snprintf(idx, m_index_length + 1, m_index_format_str.c_str(), data_id);
-  return filename + std::string(idx) + ".bin";
+  std::vector<char> idx(m_index_length + 1, '\0');
+  std::snprintf(idx.data(), m_index_length + 1, m_index_format_str.c_str(), data_id);
+  return filename + std::string(idx.data()) + ".bin";
 }
 
 void mesh_reader::horizontal_flip(CPUMat& mat)

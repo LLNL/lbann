@@ -67,11 +67,11 @@ void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute()
 
           // Find input pixels near interpolation point
           const auto input_col = static_cast<El::Int>(std::floor(x - half));
-          const auto& input_col0 = std::max(input_col, El::Int(0));
-          const auto& input_col1 = std::min(input_col + 1, input_width - 1);
+          const auto input_col0 = std::max(input_col, El::Int(0));
+          const auto input_col1 = std::min(input_col + 1, input_width - 1);
           const auto input_row = static_cast<El::Int>(std::floor(y - half));
-          const auto& input_row0 = std::max(input_row, El::Int(0));
-          const auto& input_row1 = std::min(input_row + 1, input_height - 1);
+          const auto input_row0 = std::max(input_row, El::Int(0));
+          const auto input_row1 = std::min(input_row + 1, input_height - 1);
 
           // Interpolation point relative to input pixel centers
           const auto& unit_x = x - (input_col + half);
