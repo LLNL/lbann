@@ -819,20 +819,33 @@ endif (LBANN_HAS_CUDA)
 
 # Fix the -g issue with Clang on OSX
 if (APPLE)
+  message("** CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}")
+  message("** CMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}")
+
   # Remove -g from the options
-  string(REPLACE  "-g" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-  string(REPLACE  "-g" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+  string(REGEX REPLACE
+    " ?-g[gdb0-9]*"
+    ""
+    CMAKE_CXX_FLAGS
+    "${CMAKE_CXX_FLAGS}")
+  string(REGEX REPLACE
+    " ?-g[gdb0-9]*"
+    ""
+    CMAKE_CXX_FLAGS_DEBUG
+    "${CMAKE_CXX_FLAGS_DEBUG}")
 
   # Get all the sources and add "-g" to all of them.
   get_target_property(_LBANN_SRCS lbann SOURCES)
-  set_source_files_properties(${_LBANN_SRCS}
-    PROPERTIES COMPILE_OPTIONS "-g")
 
   # Cleanup source files
   foreach (bad_file IN LISTS _LBANN_SRCS)
     get_source_file_property(
       _SRC_COMPILE_OPTS "${bad_file}" COMPILE_OPTIONS)
-    string(REPLACE "-g" "" _SRC_COMPILE_OPTS "${COMPILE_OPTIONS}")
+    string(REGEX REPLACE
+      " ?-g[gdb0-9]*"
+      ""
+      _SRC_COMPILE_OPTS
+      "${COMPILE_OPTIONS}")
     set_source_files_properties(
       "${bad_file}" PROPERTIES COMPILE_OPTIONS "${_SRC_COMPILE_OPTS}")
   endforeach ()
