@@ -6,7 +6,7 @@ import sys
 import numpy as np
 import lbann.contrib.args
 
-# Bamboo utilities
+# CI utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), "common_python"))
