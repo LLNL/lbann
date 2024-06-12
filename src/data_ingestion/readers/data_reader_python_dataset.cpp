@@ -162,6 +162,8 @@ bool python_dataset_reader::fetch_data_block(
 
   // Prefetch the next minibatch asynchronously
   this->queue_samples(mb_size);
+  
+  m_current_mini_batch_index++;
 
   return true;
 }
@@ -186,7 +188,12 @@ void python_dataset_reader::shuffle_responses(DataType* responses_ptr)
 
   execution_mode mode = exec_mode_from_string(get_role());
   dataset& ds = get_trainer().get_data_coordinator().get_dataset(mode);
-  uint64_t global_mb_size = ds.get_current_mini_batch_size();
+  uint64_t global_mb_size{};
+  if (m_current_mini_batch_index < (ds.get_num_iterations_per_epoch() - 1)) {
+    global_mb_size = ds.get_mini_batch_size();
+  }else if (m_current_mini_batch_index == (ds.get_num_iterations_per_epoch() - 1)){
+    global_mb_size = ds.get_last_mini_batch_size();
+  }
 
   uint64_t local_mb_size = global_mb_size / nprocs;
   uint64_t extra_samples = global_mb_size % nprocs;
@@ -427,8 +434,10 @@ void python_dataset_reader::update(bool epoch_complete)
 {
   generic_data_reader::update(epoch_complete);
 
-  if (epoch_complete)
+  if (epoch_complete) {
     queue_epoch();
+    m_current_mini_batch_index = 0;
+  }
 }
 
 } // namespace lbann

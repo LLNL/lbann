@@ -111,6 +111,8 @@ private:
   El::Int m_num_responses;
   /** @brief Number of data samples in data set. */
   El::Int m_num_samples;
+  /** @brief Current mini batch index in the data set. */
+  uint64_t m_current_mini_batch_index{0};
 
   /** @brief User-provided Python dataset object.
    *
