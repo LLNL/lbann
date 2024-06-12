@@ -54,6 +54,8 @@ ALUMINUM_VER="@master"
 DIHYDROGEN_VER="@develop"
 # Default variants for Conduit to minimize dependencies
 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis"
+# User specified location for externals built with the superbuild
+LBANN_SUPERBUILD_EXTERNAL_DIR=""
 
 ################################################################
 # Help message
@@ -98,6 +100,7 @@ Options:
   ${C}--tmp-build-dir${N}            Put the build directory in tmp space
   ${C}--spec-only${N}                Stop after a spack spec command
   ${C}-s | --stable${N}              Use the latest stable defaults not the head of Hydrogen, DiHydrogen and Aluminum repos
+  ${C}--superbuild-prefix${N}        Use the latest stable defaults not the head of Hydrogen, DiHydrogen and Aluminum repos
   ${C}--hydrogen-repo <PATH>${N}     Use a local repository for the Hydrogen library
   ${C}--dihydrogen-repo <PATH>${N}   Use a local repository for the DiHydrogen library
   ${C}--aluminum-repo <PATH>${N}     Use a local repository for the Aluminum library
@@ -232,6 +235,15 @@ while :; do
             HYDROGEN_VER=
             ALUMINUM_VER="@1.0.0-lbann"
             DIHYDROGEN_VER=
+            ;;
+        --superbuild-prefix)
+            if [ -n "${2}" ]; then
+                LBANN_SUPERBUILD_EXTERNAL_DIR=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
             ;;
         --hydrogen-repo)
             if [ -n "${2}" ]; then
@@ -777,7 +789,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
 
         # See if there are any center-specific externals
         SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
-        CMD="set_center_specific_externals ${CENTER} ${SPACK_ARCH_TARGET} ${SPACK_ARCH} ${SPACK_ENV_YAML_FILE} ${LBANN_MODFILES_DIR}"
+        CMD="set_center_specific_externals ${CENTER} ${SPACK_ARCH_TARGET} ${SPACK_ARCH} ${SPACK_ENV_YAML_FILE} ${LBANN_MODFILES_DIR} ${LBANN_SUPERBUILD_EXTERNAL_DIR}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 

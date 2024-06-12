@@ -114,7 +114,8 @@ set_center_specific_modules()
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
 
-                MODULE_CMD_GCC="module load jobutils/1.0 StdEnv gcc/10.3.1-magic ninja/1.11.1 openmpi/4.1.2 cuda/11.8.0 python/3.9.12"
+                MODULE_CMD_GCC="module load jobutils/1.0 StdEnv gcc/11.2.1-magic ninja/1.11.1 openmpi/4.1.2 cuda/11.8.0 python/3.9.12"
+#                MODULE_CMD_GCC="module load jobutils/1.0 StdEnv gcc/10.3.1-magic ninja/1.11.1 openmpi/4.1.2 cuda/11.8.0 python/3.9.12"
                 # Note that clang is installed in /usr/workspace/brain/tom/pascal/llvm/latest/ and it is version 17.0.0
                 MODULE_CMD_CLANG="module load gcc/10.3.1 cuda/11.8.0 mvapich2/2.3.7 python/3.9.12"
                 ;;
@@ -199,7 +200,7 @@ set_center_specific_spack_dependencies()
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_COMPILER_PATHS="/usr/tce/packages/gcc/gcc-10.3.1-magic /usr/workspace/brain/tom/pascal/llvm/latest/"
+                CENTER_COMPILER_PATHS="/usr/tce/packages/gcc/gcc-11.2.1-magic /usr/workspace/brain/tom/pascal/llvm/latest/"
                 CENTER_COMPILER="%gcc"
 #                CENTER_COMPILER="%clang"
 #                DEPENDENTS_CENTER_COMPILER="%gcc@10.3.1"
@@ -301,9 +302,12 @@ set_center_specific_externals()
     local spack_arch="$3"
     local yaml="$4"
     local module_dir="$5"
+    local prefix="$6"
 
     if [[ ${center} = "llnl_lc" ]]; then
-        prefix="/p/vast1/lbann/stable_dependencies"
+        if [[ -z ${prefix} ]]; then
+            prefix="/p/vast1/lbann/stable_dependencies"
+        fi
         host=$(host_basename)
         case ${spack_arch_target} in
             "broadwell" | "haswell" | "sandybridge" | "ivybridge")
@@ -385,8 +389,10 @@ EOF
                 ;;
             "zen3" | "zen4")
                 if [[ ${host} == "rzvernal" || ${host} =~ "rzadams" ]]; then
-                    # Override the prefix path for this system
-                    prefix="/usr/workspace/lbann/stable_dependencies"
+                    if [[ -z ${prefix} ]]; then
+                        # Override the prefix path for this system
+                        prefix="/usr/workspace/lbann/stable_dependencies"
+                    fi
                 fi
 cat <<EOF  >> ${yaml}
   compilers:
