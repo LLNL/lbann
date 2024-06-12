@@ -1181,3 +1181,14 @@ install(FILES "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
 install(FILES "${CMAKE_BINARY_DIR}/lbann_module.tcl.install"
   RENAME "${LBANN_VERSION}"
   DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")
+install(CODE [===[
+	message("\n********************************************************************************")
+	message("LBANN is installed into ${CMAKE_INSTALL_PREFIX} - to load the LBANN module:")
+	message("  module use ${CMAKE_INSTALL_PREFIX}/etc/modulefiles")
+	message("  module load lbann")
+	message("********************************************************************************")
+]===])
+
+
+
+
