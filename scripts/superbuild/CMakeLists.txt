@@ -142,6 +142,8 @@ message("Note that these assume a Bourne-compatible shell.")
 message("\n-----------------------------------------------------------------\n")
 file(WRITE "${CMAKE_BINARY_DIR}/lbann_sb_suggested_cmake_prefix_path.sh"
   "export CMAKE_PREFIX_PATH=${LBANN_SB_SUGG_CMAKE_PREFIX_PATH}\n")
+file(WRITE "${CMAKE_INSTALL_PREFIX}/logs/lbann_sb_suggested_cmake_prefix_path.sh"
+  "export CMAKE_PREFIX_PATH=${LBANN_SB_SUGG_CMAKE_PREFIX_PATH}\n")
 
 if (LBANN_SB_BUILD_AWS_OFI_RCCL)
   message("-----------------------------------------------------------------\n")
