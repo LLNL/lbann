@@ -34,7 +34,7 @@
 
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/layers/data_type_distconv_adapter.hpp"
-namespace dc_backend = ::distconv::backend;
+using dc_backend = ::distconv::GPUDNNBackend;
 #endif // LBANN_HAS_DISTCONV
 
 #include "lbann/proto/layers.pb.h"
