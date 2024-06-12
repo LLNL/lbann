@@ -115,7 +115,7 @@ foreach (pkg ${LBANN_SB_BUILD_PKGS})
 endforeach ()
 
 # Print a helpful(?) message
-set(LBANN_SB_SUGG_CMAKE_PREFIX_PATH_TMP "\$\{CMAKE_PREFIX_PATH\}")
+set(LBANN_SB_SUGG_CMAKE_PREFIX_PATH_TMP "${CMAKE_PREFIX_PATH}" "\$\{CMAKE_PREFIX_PATH\}")
 message("\n-----------------------------------------------------------------\n")
 message("LBANN SuperBuild will build the following packages:\n")
 foreach (pkg ${LBANN_SB_BUILD_PKGS})
