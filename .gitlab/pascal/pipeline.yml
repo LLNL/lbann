@@ -185,8 +185,7 @@ release allocation:
 
     # These are system-specific specs that should be forwarded to the
     # build script
-    SPACK_SPECS: "+cuda +fft"
-#    SPACK_SPECS: "+cuda +half +fft"
+    SPACK_SPECS: "+cuda +half +fft"
 
   tags:
     - pascal
