@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2024, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -52,13 +52,7 @@ void transform_tensor(ScalarParameterType const& alpha_in,
   auto alpha = static_cast<LibScalingParamT>(alpha_in);
   auto beta = static_cast<LibScalingParamT>(beta_in);
   CHECK_MIOPEN(
-    miopenTransformTensor(handle,
-                          &alpha,
-                          xDesc,
-                          x,
-                          &beta,
-                          yDesc,
-                          y));
+    miopenTransformTensor(handle, &alpha, xDesc, x, &beta, yDesc, y));
 }
 
 } // namespace dnn_lib
