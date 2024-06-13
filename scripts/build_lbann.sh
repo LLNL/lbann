@@ -507,6 +507,22 @@ if [[ "${LBANN_VARIANTS}" =~ (.*)(%[0-9a-zA-Z:\.@]+)(.*) ]]; then
     LBANN_VARIANTS="${BASH_REMATCH[1]} ${BASH_REMATCH[3]}"
 fi
 
+# Here is a fairly brittle way to find the DiHydrogen, Hydrogen, and Aluminum superbuilds
+LBANN_SUPERBUILD_EXTERNAL_DHA_DIR="dha"
+if [[ "${LBANN_VARIANTS}" =~ .*"+distconv".* ]]; then
+    # If the user didn't supply a specific version of Hydrogen on the command line add one
+    LBANN_SUPERBUILD_EXTERNAL_DHA_DIR="${LBANN_SUPERBUILD_EXTERNAL_DHA_DIR}_with_distconv"
+fi
+if [[ "${LBANN_VARIANTS}" =~ .*"+half".* ]]; then
+    # If the user didn't supply a specific version of Hydrogen on the command line add one
+    LBANN_SUPERBUILD_EXTERNAL_DHA_DIR="${LBANN_SUPERBUILD_EXTERNAL_DHA_DIR}_with_half"
+fi
+if [[ "${LBANN_VARIANTS}" =~ .*"+nvshmem".* ]]; then
+    # If the user didn't supply a specific version of Hydrogen on the command line add one
+    LBANN_SUPERBUILD_EXTERNAL_DHA_DIR="${LBANN_SUPERBUILD_EXTERNAL_DHA_DIR}_with_nvshmem"
+fi
+
+
 if [[ "${CENTER_COMPILER}" =~ .*"%clang".* ]]; then
     # If the compiler is clang use the LLD fast linker
     CENTER_LINKER_FLAGS="+lld"
@@ -789,7 +805,7 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
 
         # See if there are any center-specific externals
         SPACK_ENV_YAML_FILE="${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/spack.yaml"
-        CMD="set_center_specific_externals ${CENTER} ${SPACK_ARCH_TARGET} ${SPACK_ARCH} ${SPACK_ENV_YAML_FILE} ${LBANN_MODFILES_DIR} ${LBANN_SUPERBUILD_EXTERNAL_DIR}"
+        CMD="set_center_specific_externals ${CENTER} ${SPACK_ARCH_TARGET} ${SPACK_ARCH} ${SPACK_ENV_YAML_FILE} ${LBANN_MODFILES_DIR} ${LBANN_SUPERBUILD_EXTERNAL_DIR} ${LBANN_SUPERBUILD_EXTERNAL_DHA_DIR}"
         echo ${CMD} | tee -a ${LOG}
         [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
 

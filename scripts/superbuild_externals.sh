@@ -161,7 +161,8 @@ set_superbuild_DHA_externals()
     local mpi="$3"
     local yaml="$4"
     local prefix="$5"
-    local gpu_arch="$6"
+    local dha_dir="$6"
+    local gpu_arch="$7"
 
     if [ -n "${gpu_arch}" ]; then
         dnn_lib="${dnn_lib}/${gpu_arch}"
@@ -176,21 +177,21 @@ cat <<EOF  >> ${yaml}
       - 'master'
       externals:
       - spec: aluminum@master arch=${spack_arch}
-        prefix: ${prefix}/${system}/${dnn_lib}/${mpi}/aluminum
+        prefix: ${prefix}/${system}/${dnn_lib}/${mpi}/${dha_dir}/aluminum
     hydrogen:
       buildable: false
       version:
       - 'develop'
       externals:
       - spec: hydrogen@develop arch=${spack_arch}
-        prefix: ${prefix}/${system}/${dnn_lib}/${mpi}/hydrogen
+        prefix: ${prefix}/${system}/${dnn_lib}/${mpi}/${dha_dir}/hydrogen
     dihydrogen:
       buildable: false
       version:
       - 'develop'
       externals:
       - spec: dihydrogen@develop arch=${spack_arch}
-        prefix: ${prefix}/${system}/${dnn_lib}/${mpi}/dihydrogen
+        prefix: ${prefix}/${system}/${dnn_lib}/${mpi}/${dha_dir}/dihydrogen
 EOF
 }
 

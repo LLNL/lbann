@@ -303,6 +303,7 @@ set_center_specific_externals()
     local yaml="$4"
     local module_dir="$5"
     local prefix="$6"
+    local dha_dir="$7"
 
     if [[ ${center} = "llnl_lc" ]]; then
         if [[ -z ${prefix} ]]; then
@@ -330,7 +331,7 @@ cat <<EOF  >> ${yaml}
         - mvapich2/2.3.7
 EOF
         set_superbuild_externals ${host} "cuda-11.8.0" "openmpi-4.1.2" "$yaml" "${LOG}" "${prefix}"
-        set_superbuild_DHA_externals ${host} "cuda-11.8.0" "openmpi-4.1.2" "$yaml" "${prefix}"
+        set_superbuild_DHA_externals ${host} "cuda-11.8.0" "openmpi-4.1.2" "$yaml" "${prefix}" "${dha_dir}"
                 ;;
             "power9le" | "power8le")
 cat <<EOF  >> ${yaml}
@@ -344,7 +345,7 @@ cat <<EOF  >> ${yaml}
         prefix: /usr
 EOF
         set_superbuild_externals ${host} "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${LOG}" "${prefix}"
-        set_superbuild_DHA_externals ${host} "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${prefix}"
+        set_superbuild_DHA_externals ${host} "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${prefix}" "${dha_dir}"
         set_superbuild_power_externals ${host} "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${prefix}"
 
                 ;;
@@ -384,7 +385,7 @@ cat <<EOF  >> ${yaml}
 EOF
 
         set_superbuild_externals ${host} "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${LOG}" "${prefix}"
-        set_superbuild_DHA_externals ${host} "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${prefix}"
+        set_superbuild_DHA_externals ${host} "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${prefix}" "${dha_dir}"
 
                 ;;
             "zen3" | "zen4")
@@ -482,7 +483,7 @@ cat <<EOF  >> ${yaml}
 #        - cce/17.0.1 PrgEnv-cray cray-mpich/8.1.29
 EOF
         set_superbuild_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.29" "$yaml" "${LOG}" "${prefix}"
-        set_superbuild_DHA_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.29" "$yaml" "${prefix}"
+        set_superbuild_DHA_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.29" "$yaml" "${prefix}" "${dha_dir}"
         # set_superbuild_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.28" "$yaml" "${LOG}" "${prefix}" "mi300a"
         # set_superbuild_DHA_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.28" "$yaml" "${prefix}" "mi300a"
                 ;;
