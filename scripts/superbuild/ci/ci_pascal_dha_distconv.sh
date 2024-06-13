@@ -24,10 +24,6 @@
 ## permissions and limitations under the license.
 ################################################################################
 
-# Set to ON (or any CMake truthy value) to build all of the
-# dependencies of the LBANN stack
-BUILD_EXTERNAL_TPLS=ON
-
 # Set to ON to build Aluminum, Hydrogen, DiHydrogen, and LBANN
 BUILD_LBANN_STACK=ON
 
@@ -35,16 +31,9 @@ BUILD_LBANN_STACK=ON
 # LBANN stack.
 BUILD_WITH_DISTCONV=ON
 
-# Improve debugging info and remove some misguided warnings. These are
-# passed only to the LBANN stack.
-EXTRA_CXX_FLAGS="-g3 -Wno-deprecated-declarations"
-EXTRA_CUDA_FLAGS="-g3 -Wno-deprecated-declarations"
-
-# Prefer RPATH to RUNPATH (stability over flexibility)
-EXTRA_LINK_FLAGS="-Wl,--disable-new-dtags"
-
-# Set this to the CUDA GPU arch(s) to support (example set for Lassen/Sierra)
-CUDA_GPU_ARCH=60
+# Set to ON to enable Half support. Only matters if building the
+# LBANN stack.
+BUILD_WITH_HALF=OFF
 
 # Set to the directory with the top-level CMakeLists.txt file for LBANN
 LBANN_SRC_DIR=$(git rev-parse --show-toplevel)
@@ -56,20 +45,14 @@ SUPERBUILD_SRC_DIR=${LBANN_SRC_DIR}/scripts/superbuild
 source ${SUPERBUILD_SRC_DIR}/ci/ci_pascal_env.sh
 
 # Set to the preferred install directory
-#INSTALL_PREFIX=${PWD}/install-rocm-distconv
-#INSTALL_ROOT=/usr/workspace/lbann/ci_stable_dependencies/pascal/cuda-11.8.0
 INSTALL_PREFIX=${INSTALL_PREFIX_EXTERNALS}/dha_with_distconv
 
 # Set to the preferred build directory
 BUILD_DIR=${TMPDIR}/lbann-superbuild-dha-distconv
 
-
 # Update the location of external packages
 source ${INSTALL_PREFIX_EXTERNALS}/logs/lbann_sb_suggested_cmake_prefix_path.sh
-# export CMAKE_PREFIX_PATH=${INSTALL_ROOT}/cudnn-8.9.4:${INSTALL_ROOT}/nccl-2.19.4
 FWD_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
-
-#export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
 
 cmake \
     -G Ninja \
@@ -112,7 +95,7 @@ cmake \
     -D LBANN_SB_BUILD_Hydrogen=${BUILD_LBANN_STACK} \
     -D LBANN_SB_Hydrogen_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
     -D LBANN_SB_Hydrogen_CUDA_FLAGS="${EXTRA_CUDA_FLAGS}" \
-    -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_HALF=OFF \
+    -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_HALF=${BUILD_WITH_HALF} \
     -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_TESTING=ON \
     -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_UNIT_TESTS=OFF \
     -D LBANN_SB_FWD_Hydrogen_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH} \

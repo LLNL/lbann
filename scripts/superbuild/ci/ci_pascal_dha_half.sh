@@ -24,9 +24,16 @@
 ## permissions and limitations under the license.
 ################################################################################
 
-# Set to ON (or any CMake truthy value) to build all of the
-# dependencies of the LBANN stack
-BUILD_EXTERNAL_TPLS=ON
+# Set to ON to build Aluminum, Hydrogen, DiHydrogen, and LBANN
+BUILD_LBANN_STACK=ON
+
+# Set to ON to enable DistConv support. Only matters if building the
+# LBANN stack.
+BUILD_WITH_DISTCONV=OFF
+
+# Set to ON to enable Half support. Only matters if building the
+# LBANN stack.
+BUILD_WITH_HALF=ON
 
 # Set to the directory with the top-level CMakeLists.txt file for LBANN
 LBANN_SRC_DIR=$(git rev-parse --show-toplevel)
@@ -38,12 +45,15 @@ SUPERBUILD_SRC_DIR=${LBANN_SRC_DIR}/scripts/superbuild
 source ${SUPERBUILD_SRC_DIR}/ci/ci_pascal_env.sh
 
 # Set to the preferred install directory
-INSTALL_PREFIX=${INSTALL_PREFIX_EXTERNALS}
+INSTALL_PREFIX=${INSTALL_PREFIX_EXTERNALS}/dha_with_half
 
 # Set to the preferred build directory
-BUILD_DIR=${TMPDIR}/lbann-superbuild-core-dependencies
+BUILD_DIR=${TMPDIR}/lbann-superbuild-dha-half
 
-#export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
+# Update the location of external packages
+source ${INSTALL_PREFIX_EXTERNALS}/logs/lbann_sb_suggested_cmake_prefix_path.sh
+export CMAKE_PREFIX_PATH=${INSTALL_PREFIX}/half-2.1.0:${CMAKE_PREFIX_PATH}
+FWD_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
 
 cmake \
     -G Ninja \
@@ -72,22 +82,27 @@ cmake \
     -D LBANN_SB_DEFAULT_INSTALL_PATH_STRATEGY="PKG_LC" \
     -D LBANN_SB_DEFAULT_CUDA_OPTS=ON \
     \
-    -D LBANN_SB_BUILD_adiak=OFF \
-    -D LBANN_SB_BUILD_Caliper=OFF \
-    -D LBANN_SB_adiak_BUILD_SHARED_LIBS=ON \
-    -D LBANN_SB_Caliper_BUILD_SHARED_LIBS=ON \
+    -D LBANN_SB_BUILD_Aluminum=${BUILD_LBANN_STACK} \
+    -D LBANN_SB_Aluminum_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
+    -D LBANN_SB_Aluminum_CUDA_FLAGS="${EXTRA_CUDA_FLAGS}" \
+    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_CALIPER=OFF \
+    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_NCCL=ON \
+    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_HOST_TRANSFER=OFF \
+    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_TESTS=OFF \
+    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_BENCHMARKS=OFF \
+    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_THREAD_MULTIPLE=OFF \
+    -D LBANN_SB_FWD_Aluminum_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH} \
     \
-    -D LBANN_SB_BUILD_Catch2=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_cereal=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_Clara=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_CNPY=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_protobuf=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_spdlog=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_zstr=${BUILD_EXTERNAL_TPLS} \
+    -D LBANN_SB_BUILD_Hydrogen=${BUILD_LBANN_STACK} \
+    -D LBANN_SB_Hydrogen_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
+    -D LBANN_SB_Hydrogen_CUDA_FLAGS="${EXTRA_CUDA_FLAGS}" \
+    -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_HALF=${BUILD_WITH_HALF} \
+    -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_TESTING=ON \
+    -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_UNIT_TESTS=OFF \
+    -D LBANN_SB_FWD_Hydrogen_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH} \
     \
-    -D LBANN_SB_BUILD_Conduit=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_HDF5=${BUILD_EXTERNAL_TPLS} \
-    \
-    -D LBANN_SB_BUILD_JPEG-TURBO=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_OpenCV=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_OpenCV_TAG=4.x
+    -D LBANN_SB_BUILD_DiHydrogen=${BUILD_LBANN_STACK} \
+    -D LBANN_SB_DiHydrogen_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
+    -D LBANN_SB_DiHydrogen_CUDA_FLAGS="${EXTRA_CUDA_FLAGS}" \
+    -D LBANN_SB_FWD_DiHydrogen_H2_ENABLE_DISTCONV_LEGACY=${BUILD_WITH_DISTCONV} \
+    -D LBANN_SB_FWD_DiHydrogen_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH}
