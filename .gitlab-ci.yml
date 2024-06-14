@@ -93,7 +93,8 @@ pascal testing:
 pascal compiler testing:
   stage: run-all-clusters
   variables:
-    SPACK_SPECS: "%gcc@10.3.1 +cuda +half +fft"
+    SPACK_SPECS: "+cuda +half +fft"
+#    SPACK_SPECS: "%gcc@10.3.1 +cuda +half +fft"
     BUILD_SCRIPT_OPTIONS: "--no-default-mirrors"
     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
   trigger:
@@ -104,7 +105,8 @@ pascal distconv testing:
   stage: run-all-clusters
   variables:
     JOB_NAME_SUFFIX: _distconv
-    SPACK_SPECS: "%gcc@10.3.1 +cuda +distconv +fft"
+    SPACK_SPECS: "+cuda +distconv +fft"
+#    SPACK_SPECS: "%gcc@10.3.1 +cuda +distconv +fft"
     BUILD_SCRIPT_OPTIONS: "--no-default-mirrors"
     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
