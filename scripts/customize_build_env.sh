@@ -127,7 +127,7 @@ set_center_specific_modules()
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
             "zen3" | "zen4") # Tioga, RZVernal, RZAdams
-                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.12.0 amd/6.0.3 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-amd StdEnv rocm/6.0.3 cmake/3.24.2"
+                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.12.0 amd/6.1.2 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-amd StdEnv rocm/6.1.2 cmake/3.24.2"
 #                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.12.0 cce/17.0.1 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-cray StdEnv rocm/6.0.3 cmake/3.24.2"
                 ;;
             *)
@@ -221,8 +221,8 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen3" | "zen4") # Tioga, RZVernal
 #                CENTER_COMPILER="%cce@17.0.1"
-                CENTER_COMPILER="%rocmcc@6.0.3"
-                CENTER_DEPENDENCIES="^cray-mpich@8.1.29 ^hip@6.0.3 ^python@3.9.12"
+                CENTER_COMPILER="%rocmcc@6.1.2"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.29 ^hip@6.1.2 ^python@3.9.12"
                 CENTER_BLAS_LIBRARY="blas=libsci"
                 # Override the conduit variants for the cray compilers
                 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis"
@@ -398,7 +398,7 @@ EOF
 cat <<EOF  >> ${yaml}
   compilers:
   - compiler:
-      spec: rocmcc@6.0.3
+      spec: rocmcc@6.1.2
       paths:
         cc: amdclang
         cxx: amdclang++
@@ -411,8 +411,8 @@ cat <<EOF  >> ${yaml}
       target: any
       modules:
       - PrgEnv-amd
-      - amd/6.0.3
-      - rocm/6.0.3
+      - amd/6.1.2
+      - rocm/6.1.2
       environment: {}
       # extra_rpaths:
       # - /opt/cray/pe/cce/17.0.1/cce/x86_64/lib
@@ -430,7 +430,7 @@ cat <<EOF  >> ${yaml}
       modules:
       - PrgEnv-cray
       - cce/17.0.1
-      - rocm/6.0.3
+      - rocm/6.1.2
       environment: {}
       extra_rpaths:
       - /opt/cray/pe/cce/17.0.1/cce/x86_64/lib
@@ -444,24 +444,24 @@ cat <<EOF  >> ${yaml}
     hipcub:
       buildable: false
       version:
-      - '6.0.3'
+      - '6.1.2'
       externals:
-      - spec: hipcub@6.0.3 arch=${spack_arch}
-        prefix: /opt/rocm-6.0.3/hipcub
+      - spec: hipcub@6.1.2 arch=${spack_arch}
+        prefix: /opt/rocm-6.1.2/hipcub
     rocthrust:
       buildable: false
       version:
-      - '6.0.3'
+      - '6.1.2'
       externals:
-      - spec: rocthrust@6.0.3 arch=${spack_arch}
-        prefix: /opt/rocm-6.0.3
+      - spec: rocthrust@6.1.2 arch=${spack_arch}
+        prefix: /opt/rocm-6.1.2
     llvm-amdgpu:
       buildable: false
       version:
-      - '6.0.3'
+      - '6.1.2'
       externals:
-      - spec: llvm-amdgpu@6.0.3 arch=${spack_arch}
-        prefix: /opt/rocm-6.0.3/llvm
+      - spec: llvm-amdgpu@6.1.2 arch=${spack_arch}
+        prefix: /opt/rocm-6.1.2/llvm
     cray-libsci:
       buildable: false
       version:
@@ -469,8 +469,8 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: cray-libsci@24.03.0 %rocmcc arch=${spack_arch}
         modules:
-#        - amd/6.0.3 PrgEnv-amd cray-libsci/24.03.0
-#        - amd/6.0.3 PrgEnv-amd cray-libsci/23.09.1.1
+#        - amd/6.1.2 PrgEnv-amd cray-libsci/24.03.0
+#        - amd/6.1.2 PrgEnv-amd cray-libsci/23.09.1.1
         - cce/17.0.1 PrgEnv-cray cray-libsci/24.03.0
     cray-mpich:
       buildable: false
@@ -479,11 +479,11 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: cray-mpich@8.1.29 %rocmcc arch=${spack_arch}
         modules:
-        - amd/6.0.3 PrgEnv-amd cray-mpich/8.1.29
+        - amd/6.1.2 PrgEnv-amd cray-mpich/8.1.29
 #        - cce/17.0.1 PrgEnv-cray cray-mpich/8.1.29
 EOF
-        set_superbuild_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.29" "$yaml" "${LOG}" "${prefix}"
-        set_superbuild_DHA_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.29" "$yaml" "${prefix}" "${dha_dir}"
+        set_superbuild_externals ${host} "rocm-6.1.2" "cray-mpich-8.1.29" "$yaml" "${LOG}" "${prefix}"
+        set_superbuild_DHA_externals ${host} "rocm-6.1.2" "cray-mpich-8.1.29" "$yaml" "${prefix}" "${dha_dir}"
         # set_superbuild_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.28" "$yaml" "${LOG}" "${prefix}" "mi300a"
         # set_superbuild_DHA_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.28" "$yaml" "${prefix}" "mi300a"
                 ;;
