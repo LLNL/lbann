@@ -111,7 +111,8 @@ cat <<EOF  >> ${yaml}
       version:
       - '3.21.5'
       externals:
-      - spec: protobuf@3.21.5~shared arch=${spack_arch}
+      - spec: protobuf@3.21.5+shared arch=${spack_arch}
+#      - spec: protobuf@3.21.5~shared arch=${spack_arch}
         prefix: ${prefix}/${system}/${dnn_lib}/${mpi}/protobuf
     zstr:
       buildable: false
