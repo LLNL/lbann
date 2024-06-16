@@ -123,6 +123,18 @@ cat <<EOF  >> ${yaml}
         prefix: ${prefix}/${system}/${dnn_lib}/${mpi}/zstr
 EOF
 
+    if [[ ${dnn_lib} =~ "rocm" ]]; then
+cat <<EOF  >> ${yaml}
+    hwloc:
+      buildable: false
+      version:
+      - '3.0.0'
+      externals:
+      - spec: hwloc@3.0.0 arch=${spack_arch}
+        prefix: ${prefix}/${system}/${dnn_lib}/${mpi}/hwloc
+EOF
+    fi
+
     if [[ ${dnn_lib} =~ "cuda" ]]; then
 cat <<EOF  >> ${yaml}
     nccl:
@@ -170,6 +182,9 @@ set_superbuild_DHA_externals()
     fi
 
 #    source ${prefix}/${system}/${dnn_lib}/${mpi}/logs/lbann_sb_suggested_cmake_prefix_path.sh
+    CMD="source ${prefix}/${system}/${dnn_lib}/${mpi}/${dha_dir}logs/lbann_sb_suggested_cmake_prefix_path.sh"
+    echo ${CMD} | tee -a ${LOG}
+    ${CMD}
 
 cat <<EOF  >> ${yaml}
     aluminum:
