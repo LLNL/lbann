@@ -132,6 +132,13 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: hwloc@3.0.0 arch=${spack_arch}
         prefix: ${prefix}/${system}/${dnn_lib}/${mpi}/hwloc
+    aws-ofi-rccl:
+      buildable: false
+      version:
+      - 'cxi'
+      externals:
+      - spec: aws-ofi-rccl@cxi arch=${spack_arch}
+        prefix: ${prefix}/${system}/${dnn_lib}/${mpi}/aws_ofi_rccl
 EOF
     fi
 
