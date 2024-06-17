@@ -43,7 +43,7 @@ INSTALL_PREFIX_EXTERNALS=${INSTALL_ROOT}/cray-mpich-8.1.29/
 
 # Location of external packages
 export CMAKE_PREFIX_PATH=/p/vast1/lbann/stable_dependencies/tioga/rocm-6.1.0/miopen
-FWD_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
+CMAKE_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
 
 export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
 
