@@ -344,9 +344,9 @@ cat <<EOF  >> ${yaml}
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
 EOF
-        set_superbuild_externals ${host} "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${LOG}" "${prefix}"
-        set_superbuild_DHA_externals ${host} "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${prefix}" "${dha_dir}"
-        set_superbuild_power_externals ${host} "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${prefix}"
+        # set_superbuild_externals ${host} "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${LOG}" "${prefix}"
+        # set_superbuild_DHA_externals ${host} "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${prefix}" "${dha_dir}"
+        # set_superbuild_power_externals ${host} "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${prefix}"
 
                 ;;
             "zen" | "zen2")
@@ -384,8 +384,8 @@ cat <<EOF  >> ${yaml}
         - openmpi/4.1.2
 EOF
 
-        set_superbuild_externals ${host} "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${LOG}" "${prefix}"
-        set_superbuild_DHA_externals ${host} "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${prefix}" "${dha_dir}"
+        # set_superbuild_externals ${host} "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${LOG}" "${prefix}"
+        # set_superbuild_DHA_externals ${host} "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${prefix}" "${dha_dir}"
 
                 ;;
             "zen3" | "zen4")
