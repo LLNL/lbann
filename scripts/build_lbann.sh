@@ -1092,7 +1092,6 @@ export LBANN_PYTHON_DIR=\$(dirname ${LBANN_PYTHON})
 # Postpend the paths to the build tools to avoid putting system paths up front
 export PATH=\${PATH}:\${LBANN_CMAKE_DIR}:\${LBANN_NINJA_DIR}:\${LBANN_PYTHON_DIR}
 export PYTHONPATH=\${LBANN_PYTHONPATH}:\${PYTHONPATH}
-export LD_LIBRARY_PATH=\$\{CRAY_LD_LIBRARY_PATH\}:\$\{LD_LIBRARY_PATH\}
 EOF
 
         if [[ -n "${MODULE_CMD}" ]]; then
