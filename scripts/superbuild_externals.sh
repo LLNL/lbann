@@ -189,7 +189,7 @@ set_superbuild_DHA_externals()
     fi
 
 #    source ${prefix}/${system}/${dnn_lib}/${mpi}/logs/lbann_sb_suggested_cmake_prefix_path.sh
-    CMD="source ${prefix}/${system}/${dnn_lib}/${mpi}/${dha_dir}logs/lbann_sb_suggested_cmake_prefix_path.sh"
+    CMD="source ${prefix}/${system}/${dnn_lib}/${mpi}/${dha_dir}/logs/lbann_sb_suggested_cmake_prefix_path.sh"
     echo ${CMD} | tee -a ${LOG}
     ${CMD}
 
