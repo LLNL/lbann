@@ -427,6 +427,22 @@ if (LBANN_HAS_ROCM)
   endif ()
   message(STATUS "Using LBANN_ROCM_PATH: ${LBANN_ROCM_PATH}")
 
+  if (CMAKE_INSTALL_RPATH)
+    # The first of these actually matters; the last 4 are just good
+    # measure.
+    list(REMOVE_ITEM CMAKE_INSTALL_RPATH
+      "${LBANN_ROCM_PATH}/lib"
+      "/usr/lib64"
+      "/usr/lib"
+      "/usr/local/lib64"
+      "/usr/local/lib"
+    )
+    # Write the value out to the cache
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}"
+      CACHE STRING "The install rpath to use"
+      FORCE)
+  endif ()
+
   find_package(hip CONFIG REQUIRED)
   enable_language(HIP)
   find_package(MIOpen CONFIG REQUIRED)
@@ -1188,7 +1204,3 @@ install(CODE [===[
 	message("  module load lbann")
 	message("********************************************************************************")
 ]===])
-
-
-
-
