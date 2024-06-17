@@ -142,9 +142,9 @@ cat <<EOF  >> ${yaml}
     miopen-hip:
       buildable: false
       version:
-      - '6.1.2'
+      - 'develop'
       externals:
-      - spec: miopen-hip@6.1.2 arch=${spack_arch}
+      - spec: miopen-hip@develop arch=${spack_arch}
         prefix: /p/vast1/lbann/stable_dependencies/tioga/rocm-6.1.0/miopen
 EOF
     fi
