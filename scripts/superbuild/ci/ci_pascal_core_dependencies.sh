@@ -61,6 +61,8 @@ cmake \
     -D CMAKE_CUDA_HOST_COMPILER=$(command -v g++) \
     -D CMAKE_Fortran_COMPILER=$(which gfortran) \
     \
+    -D BUILD_SHARED_LIBS=ON \
+    -D CMAKE_POSITION_INDEPENDENT_CODE=ON \
     -D CMAKE_EXE_LINKER_FLAGS=${EXTRA_LINK_FLAGS} \
     -D CMAKE_SHARED_LINKER_FLAGS=${EXTRA_LINK_FLAGS} \
     \
