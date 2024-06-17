@@ -53,14 +53,15 @@ BUILD_DIR=${TMPDIR}/lbann-superbuild-dha-half
 # Update the location of external packages
 source ${INSTALL_PREFIX_EXTERNALS}/logs/lbann_sb_suggested_cmake_prefix_path.sh
 export CMAKE_PREFIX_PATH=${INSTALL_PREFIX}/half-2.1.0:${CMAKE_PREFIX_PATH}
-FWD_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
+CMAKE_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
+FWD_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/|}
 
 cmake \
     -G Ninja \
     -S ${SUPERBUILD_SRC_DIR} \
     -B ${BUILD_DIR} \
     \
-    -D CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH} \
+    -D CMAKE_PREFIX_PATH=${CMAKE_CMAKE_PREFIX_PATH} \
     -D CMAKE_BUILD_TYPE=Release \
     -D CMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
     \
