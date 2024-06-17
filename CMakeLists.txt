@@ -427,6 +427,24 @@ if (LBANN_HAS_ROCM)
   endif ()
   message(STATUS "Using LBANN_ROCM_PATH: ${LBANN_ROCM_PATH}")
 
+  # The Catch2 tests are only ever build artifacts, so this needs to
+  # change too.
+  if (CMAKE_BUILD_RPATH)
+    # The first of these actually matters; the last 4 are just good
+    # measure.
+    list(REMOVE_ITEM CMAKE_BUILD_RPATH
+      "${LBANN_ROCM_PATH}/lib"
+      "/usr/lib64"
+      "/usr/lib"
+      "/usr/local/lib64"
+      "/usr/local/lib"
+    )
+    # Write the value out to the cache
+    set(CMAKE_BUILD_RPATH "${CMAKE_BUILD_RPATH}"
+      CACHE STRING "The build rpath to use"
+      FORCE)
+  endif ()
+
   if (CMAKE_INSTALL_RPATH)
     # The first of these actually matters; the last 4 are just good
     # measure.
