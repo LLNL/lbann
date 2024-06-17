@@ -57,10 +57,10 @@ SUPERBUILD_SRC_DIR=${LBANN_SRC_DIR}/scripts/superbuild
 source ${SUPERBUILD_SRC_DIR}/ci/ci_tioga_env.sh
 
 # Set to the preferred install directory
-INSTALL_PREFIX=${INSTALL_PREFIX_EXTERNALS}/dha
+INSTALL_PREFIX=${INSTALL_PREFIX_EXTERNALS}/dha_with_distconv
 
 # Set to the preferred build directory
-BUILD_DIR=${TMPDIR}/lbann-superbuild-dha
+BUILD_DIR=${TMPDIR}/lbann-superbuild-dha-distconv
 
 # Update the location of external packages
 source ${INSTALL_PREFIX_EXTERNALS}/logs/lbann_sb_suggested_cmake_prefix_path.sh
