@@ -4,6 +4,7 @@ import operator
 import os
 import os.path
 import sys
+import pytest
 import numpy as np
 import lbann.contrib.args
 
@@ -112,6 +113,12 @@ def construct_model(lbann):
 
     """
 
+    num_height_groups = tools.gpus_per_node(lbann)
+    if num_height_groups == 0:
+        e = 'this test requires GPUs.'
+        print('Skip - ' + e)
+        pytest.skip(e)
+
     # Input data
     # Note: Sum with a weights layer so that gradient checking will
     # verify that error signals are correct.
@@ -173,7 +180,7 @@ def construct_model(lbann):
                               dilation=dilations,
                               has_bias=False,
                               parallel_strategy=create_parallel_strategy(
-                                  4),
+                                  num_height_groups),
                               name=f'conv1_{uname}')
 
         y = lbann.Upsample(x,
@@ -181,7 +188,7 @@ def construct_model(lbann):
                            has_vectors=True,
                            scale_factors=u["scale_factors"],
                            upsample_mode=u['upsample_mode'],
-                           parallel_strategy=create_parallel_strategy(4),
+                           parallel_strategy=create_parallel_strategy(num_height_groups),
                            name=f'upsample_{uname}')
         
 
@@ -215,7 +222,7 @@ def construct_model(lbann):
                               dilation=dilations,
                               has_bias=False,
                               parallel_strategy=create_parallel_strategy(
-                                  4),
+                                  num_height_groups),
                               name=f'conv2_{uname}')
         
         y = lbann.Identity(y, name=f'out_{uname}')
