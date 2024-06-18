@@ -26,6 +26,7 @@
 #ifndef LBANN_LAYERS_MISC_CHANNELWISE_SOFTMAX_KERNELS
 #define LBANN_LAYERS_MISC_CHANNELWISE_SOFTMAX_KERNELS
 namespace lbann{
+namespace{
 using Size3 = gpu_lib::array<size_t,3>;
 
 /** @brief Max functor */
@@ -465,6 +466,6 @@ void channelwise_softmax_bp_impl(size_t num_channels,
   }
 
 }
-
+} // namespace anonymous
 } // namespace lbann
 #endif // LBANN_LAYERS_MISC_CHANNELWISE_SOFTMAX_KERNELS
