@@ -355,6 +355,6 @@ environment['LBANN_KEEP_ERROR_SIGNALS'] = 1
 # Note: Create test name by removing ".py" from file name
 _test_name = os.path.splitext(os.path.basename(current_file))[0]
 for _test_func in tools.create_tests(setup_experiment, _test_name,
-                                     skip_clusters=["catalyst"],
+                                     skip_clusters=["tioga", "corona"],
                                      environment=environment):
     globals()[_test_func.__name__] = augment_test_func(_test_func)
