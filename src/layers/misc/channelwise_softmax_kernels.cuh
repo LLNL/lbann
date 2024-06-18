@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 #ifndef LBANN_LAYERS_MISC_CHANNELWISE_SOFTMAX_KERNELS
 #define LBANN_LAYERS_MISC_CHANNELWISE_SOFTMAX_KERNELS
+#include "lbann/utils/gpu/helpers.hpp"
 namespace lbann{
 namespace{
 using Size3 = gpu_lib::array<size_t,3>;

@@ -123,26 +123,21 @@ int ChannelwiseSoftmax<Backend, DataType>::backward(
 // Explicit template instantiation
 // =========================================================
 
-#define ETI(T, Backend)                                                        \
-  template class ChannelwiseSoftmax<Backend, T>;                               \
-  template int ChannelwiseSoftmax<Backend, T>::forward<tensor::CUDAAllocator>( \
+#define PROTO(T)                                                               \
+  template class ChannelwiseSoftmax<BackendDNNLib, T>;                         \
+  template int                                                                 \
+  ChannelwiseSoftmax<BackendDNNLib, T>::forward<tensor::CUDAAllocator>(        \
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator>&         \
       input_0,                                                                 \
     tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator>& output_0);    \
   template int                                                                 \
-  ChannelwiseSoftmax<Backend, T>::backward<tensor::CUDAAllocator>(             \
+  ChannelwiseSoftmax<BackendDNNLib, T>::backward<tensor::CUDAAllocator>(       \
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator>&         \
       input_0,                                                                 \
     const tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator>&         \
       input_1,                                                                 \
     tensor::Tensor<T, tensor::LocaleMPI, tensor::CUDAAllocator>& output_grad);
 
-/// @todo: fp16
-ETI(float, BackendDNNLib)
-#ifdef LBANN_HAS_DOUBLE
-ETI(double, BackendDNNLib)
-#endif // LBANN_HAS_DOUBLE
-
-#undef ETI
+#include "lbann/macros/instantiate.hpp"
 } // namespace distconv
 #endif // LBANN_HAS_DISTCONV

@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2024, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -29,33 +29,32 @@
 #include "lbann/utils/distconv.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
-namespace distconv{
-  template <typename Backend, typename DataType>
-  class ChannelwiseSoftmax{
-    using LocaleMPI = tensor::LocaleMPI;
+namespace distconv {
+template <typename Backend, typename DataType>
+class ChannelwiseSoftmax
+{
+  using LocaleMPI = tensor::LocaleMPI;
 
-    public:
-      ChannelwiseSoftmax(Backend &backend):m_be(backend){};
-    
-    template <typename Allocator>
-    int forward(
-      const tensor::Tensor<DataType, LocaleMPI, Allocator> &input_0,
-      tensor::Tensor<DataType, LocaleMPI, Allocator> &output);
+public:
+  ChannelwiseSoftmax(Backend& backend) : m_be(backend){};
 
-    template <typename Allocator>
-    int backward(
-      const tensor::Tensor<DataType, LocaleMPI, Allocator> &input_0,
-      const tensor::Tensor<DataType, LocaleMPI, Allocator> &output_grad,
-      tensor::Tensor<DataType, LocaleMPI, Allocator> &input_grad_0);
+  template <typename Allocator>
+  int forward(const tensor::Tensor<DataType, LocaleMPI, Allocator>& input_0,
+              tensor::Tensor<DataType, LocaleMPI, Allocator>& output);
 
-    protected:
-      Backend &m_be;
+  template <typename Allocator>
+  int backward(
+    const tensor::Tensor<DataType, LocaleMPI, Allocator>& input_0,
+    const tensor::Tensor<DataType, LocaleMPI, Allocator>& output_grad,
+    tensor::Tensor<DataType, LocaleMPI, Allocator>& input_grad_0);
 
-  };
+protected:
+  Backend& m_be;
+};
 
-  extern template class ChannelwiseSoftmax<::distconv::BackendDNNLib, float>;
-  extern template class ChannelwiseSoftmax<::distconv::BackendDNNLib, double>;
-}
+extern template class ChannelwiseSoftmax<::distconv::BackendDNNLib, float>;
+extern template class ChannelwiseSoftmax<::distconv::BackendDNNLib, double>;
+} // namespace distconv
 
 #endif // LBANN_HAS_DISTCONV
 #endif // LBANN_LAYERS_MISC_DISTCONV_CHANNELWISE_SOFTMAX
