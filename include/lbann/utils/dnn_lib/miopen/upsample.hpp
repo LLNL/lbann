@@ -96,8 +96,8 @@ void upsample_nearest_backward(PoolingDescriptor const& poolingDesc,
                                TensorDescriptor const& dxDesc,
                                El::AbstractMatrix<TensorDataType>& dx)
 {
-  auto multisync = El::MakeMultiSync(gpu::get_sync_info(dx),
-                                     gpu::get_sync_info(dy));
+  auto multisync =
+    El::MakeMultiSync(gpu::get_sync_info(dx), gpu::get_sync_info(dy));
   auto handle_manager = internal::make_default_handle_manager(multisync);
   upsample_nearest_backward(poolingDesc,
                             alpha_in,

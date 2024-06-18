@@ -143,20 +143,22 @@ void upsample_layer<TensorDataType, Layout, Device>::bp_compute_dnn()
   using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
   const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
   auto& local_gradient_wrt_input = this->get_local_error_signals();
-  if (local_gradient_wrt_output.Height() > 0 && local_gradient_wrt_output.Width() > 0) {
+  if (local_gradient_wrt_output.Height() > 0 &&
+      local_gradient_wrt_output.Width() > 0) {
 
     // Useful constants
     const auto alpha = El::To<ScalingType>(get_linear_size(m_scale_factors));
     const auto zero = El::TypeTraits<ScalingType>::Zero();
 
     // Perform backprop on GPU
-    dnn_lib::upsample_nearest_backward(m_pooling_dnn_desc,
-                                       alpha,
-                                       m_tensors_dnn_desc.get_prev_error_signals(),
-                                       local_gradient_wrt_output,
-                                       zero,
-                                       m_tensors_dnn_desc.get_error_signals(),
-                                       local_gradient_wrt_input);
+    dnn_lib::upsample_nearest_backward(
+      m_pooling_dnn_desc,
+      alpha,
+      m_tensors_dnn_desc.get_prev_error_signals(),
+      local_gradient_wrt_output,
+      zero,
+      m_tensors_dnn_desc.get_error_signals(),
+      local_gradient_wrt_input);
   }
 #endif // #ifndef LBANN_HAS_DNN_LIB
 }
@@ -241,8 +243,9 @@ void upsample_layer<TensorDataType, Layout, Dev>::fp_compute_im2col()
   //       for (int j = 0; j < num_per_output_channel; ++j) {
   //         const TensorDataType* im2col_buffer =
   //           im2col_mat.LockedBuffer(channel * m_pool_size, j);
-  //         TensorDataType output_entry = El::TypeTraits<TensorDataType>::Zero();
-  //         for (int i = 0; i < m_pool_size; ++i) {
+  //         TensorDataType output_entry =
+  //         El::TypeTraits<TensorDataType>::Zero(); for (int i = 0; i <
+  //         m_pool_size; ++i) {
   //           output_entry += im2col_buffer[i];
   //         }
   //         output_entry /= m_pool_size;
@@ -266,8 +269,9 @@ void upsample_layer<TensorDataType, Layout, Dev>::bp_compute_im2col()
   // }
 
   // // Local matrices
-  // const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
-  // auto& local_gradient_wrt_input = this->get_local_error_signals();
+  // const auto& local_gradient_wrt_output =
+  // this->get_local_prev_error_signals(); auto& local_gradient_wrt_input =
+  // this->get_local_error_signals();
 
   // // Pool parameters
   // const int local_width = local_gradient_wrt_output.Width();
@@ -381,7 +385,8 @@ upsample_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-bool upsample_layer<TensorDataType, T_layout, Dev>::is_distconv_supported() const
+bool upsample_layer<TensorDataType, T_layout, Dev>::is_distconv_supported()
+  const
 {
   return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
 }
@@ -396,7 +401,8 @@ dc::Shape upsample_distconv_adapter<TensorDataType, Layout, Device>::
       this->layer());
   auto scale_factors = layer.m_scale_factors;
   std::reverse(std::begin(scale_factors), std::end(scale_factors));
-  auto output_spatial_local_shape = this->get_prev_activations(index).get_local_shape();
+  auto output_spatial_local_shape =
+    this->get_prev_activations(index).get_local_shape();
   for (size_t i = 0; i < scale_factors.size(); i++) {
     output_spatial_local_shape[i] *= scale_factors[i];
   }
@@ -412,8 +418,8 @@ void upsample_distconv_adapter<TensorDataType, Layout, Device>::setup_layer(
   m_dxdesc.create();
   m_dydesc.create();
 
-  auto& l =
-    dynamic_cast<upsample_layer<TensorDataType, Layout, Device>&>(this->layer());
+  auto& l = dynamic_cast<upsample_layer<TensorDataType, Layout, Device>&>(
+    this->layer());
 
   std::string mode;
   switch (l.m_upsample_mode) {
@@ -429,23 +435,25 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void upsample_distconv_adapter<TensorDataType, Layout, Device>::fp_compute(
   bool const training)
 {
-  auto& l =
-    dynamic_cast<upsample_layer<TensorDataType, Layout, Device>&>(this->layer());
+  auto& l = dynamic_cast<upsample_layer<TensorDataType, Layout, Device>&>(
+    this->layer());
 
   auto& prev_activations = this->get_prev_activations();
   auto& activations = this->get_activations();
 
   auto xdesc = const_cast<dnn_lib::dnnTensorDescriptor_t>(m_xdesc.get());
   auto ydesc = const_cast<dnn_lib::dnnTensorDescriptor_t>(m_ydesc.get());
-  dc_backend::setup_tensor_descriptor(xdesc, prev_activations,
+  dc_backend::setup_tensor_descriptor(xdesc,
+                                      prev_activations,
                                       prev_activations.get_local_shape());
-  dc_backend::setup_tensor_descriptor(ydesc, activations,
+  dc_backend::setup_tensor_descriptor(ydesc,
+                                      activations,
                                       activations.get_local_shape());
 
   using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
   const auto zero = El::TypeTraits<ScalingType>::Zero();
   const auto alpha = El::To<ScalingType>(get_linear_size(l.m_scale_factors));
-  
+
   dnn_lib::upsample_nearest_forward(l.m_pooling_dnn_desc,
                                     alpha,
                                     m_xdesc,
@@ -459,17 +467,19 @@ void upsample_distconv_adapter<TensorDataType, Layout, Device>::fp_compute(
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void upsample_distconv_adapter<TensorDataType, Layout, Device>::bp_compute()
 {
-  auto& l =
-    dynamic_cast<upsample_layer<TensorDataType, Layout, Device>&>(this->layer());
+  auto& l = dynamic_cast<upsample_layer<TensorDataType, Layout, Device>&>(
+    this->layer());
 
   auto& prev_error_signals = this->get_prev_error_signals();
   auto& error_signals = this->get_error_signals();
 
   auto dxdesc = const_cast<dnn_lib::dnnTensorDescriptor_t>(m_dxdesc.get());
   auto dydesc = const_cast<dnn_lib::dnnTensorDescriptor_t>(m_dydesc.get());
-  dc_backend::setup_tensor_descriptor(dxdesc, error_signals,
+  dc_backend::setup_tensor_descriptor(dxdesc,
+                                      error_signals,
                                       error_signals.get_local_shape());
-  dc_backend::setup_tensor_descriptor(dydesc, prev_error_signals,
+  dc_backend::setup_tensor_descriptor(dydesc,
+                                      prev_error_signals,
                                       prev_error_signals.get_local_shape());
 
   using ScalingType = dnn_lib::ScalingParamType<TensorDataType>;
@@ -490,7 +500,7 @@ void upsample_distconv_adapter<TensorDataType, Layout, Device>::bp_compute()
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer>
 build_upsample_layer_from_pbuf(lbann_comm* comm,
-                              lbann_data::Layer const& proto_layer)
+                               lbann_data::Layer const& proto_layer)
 {
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, upsample);
 
@@ -512,7 +522,7 @@ build_upsample_layer_from_pbuf(lbann_comm* comm,
 }
 
 #define PROTO_DEVICE(T, Device)                                                \
-  template class upsample_layer<T, data_layout::DATA_PARALLEL, Device>;         \
+  template class upsample_layer<T, data_layout::DATA_PARALLEL, Device>;        \
   LBANN_LAYER_BUILDER_ETI(upsample, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
