@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2024, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -25,32 +25,34 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_CHANNELWISE_SOFTMAX_LAYER_INSTANTIATE
+#include "channelwise_softmax_kernels.cuh"
 #include "lbann/layers/misc/channelwise_softmax_impl.hpp"
 #include "lbann/utils/gpu/helpers.hpp"
-#include "channelwise_softmax_kernels.cuh"
-
 
 namespace lbann {
 
-
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void channelwise_softmax_layer<TensorDataType,Layout,Device>::fp_compute() {
-  
-  #ifdef LBANN_HAS_DISTCONV
-  if (this->distconv_enabled()){
+void channelwise_softmax_layer<TensorDataType, Layout, Device>::fp_compute()
+{
+
+#ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()) {
     this->get_distconv_adapter().fp_compute();
-    return ;
+    return;
   }
-  #endif // LBANN_HAS_DISTCONV
+#endif // LBANN_HAS_DISTCONV
 
   // Local matrices
   const size_t num_channels = this->get_output_dims().front();
   const size_t channel_size = this->get_output_size() / num_channels;
   using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
-  const auto& local_input = dynamic_cast<const LocalMat&>(this->get_prev_activations().LockedMatrix());
-  auto& local_output = dynamic_cast<LocalMat&>(this->get_activations().Matrix());
+  const auto& local_input =
+    dynamic_cast<const LocalMat&>(this->get_prev_activations().LockedMatrix());
+  auto& local_output =
+    dynamic_cast<LocalMat&>(this->get_activations().Matrix());
 
-  // TODO: This looks wrong. Maybe wrap the implementation of this function in a namespace - SZ 
+  // TODO: This looks wrong. Maybe wrap the implementation of this function in a
+  // namespace - SZ
   channelwise_softmax_fp_impl(num_channels,
                               channel_size,
                               local_input,
@@ -62,24 +64,27 @@ void channelwise_softmax_layer<TensorDataType,Layout,Device>::fp_compute() {
 // =========================================================
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void channelwise_softmax_layer<TensorDataType,Layout,Device>::bp_compute() {
+void channelwise_softmax_layer<TensorDataType, Layout, Device>::bp_compute()
+{
 
-  #ifdef LBANN_HAS_DISTCONV
-  if (this->distconv_enabled()){
+#ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()) {
     this->get_distconv_adapter().bp_compute();
-    return ;
+    return;
   }
-  #endif // LBANN_HAS_DISTCONV
+#endif // LBANN_HAS_DISTCONV
 
   const size_t num_channels = this->get_output_dims().front();
   const size_t channel_size = this->get_output_size() / num_channels;
 
-
-    // Local matrices
+  // Local matrices
   using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
-  const auto& local_output = dynamic_cast<const LocalMat&>(this->get_activations().LockedMatrix());
-  const auto& local_output_grad = dynamic_cast<const LocalMat&>(this->get_prev_error_signals().LockedMatrix());
-  auto& local_input_grad = dynamic_cast<LocalMat&>(this->get_error_signals().Matrix());
+  const auto& local_output =
+    dynamic_cast<const LocalMat&>(this->get_activations().LockedMatrix());
+  const auto& local_output_grad = dynamic_cast<const LocalMat&>(
+    this->get_prev_error_signals().LockedMatrix());
+  auto& local_input_grad =
+    dynamic_cast<LocalMat&>(this->get_error_signals().Matrix());
 
   channelwise_softmax_bp_impl(num_channels,
                               channel_size,
