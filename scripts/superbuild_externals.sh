@@ -139,13 +139,6 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: aws-ofi-rccl@cxi arch=${spack_arch}
         prefix: ${prefix}/${system}/${dnn_lib}/${mpi}/aws_ofi_rccl
-    miopen-hip:
-      buildable: false
-      version:
-      - 'develop'
-      externals:
-      - spec: miopen-hip@develop arch=${spack_arch}
-        prefix: /p/vast1/lbann/stable_dependencies/tioga/rocm-6.1.0/miopen
 EOF
     fi
 
