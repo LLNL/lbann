@@ -154,6 +154,18 @@ if (LBANN_SB_BUILD_AWS_OFI_RCCL)
   message("-----------------------------------------------------------------\n")
 endif ()
 
+if (LBANN_SB_FWD_LBANN_LBANN_WITH_PYTHON_FRONTEND)
+  message("-----------------------------------------------------------------\n")
+  message("LBANN was built with support for the Python Front End (PFE) (If you need to install it via pip you can in the LBANN site-packages with):")
+  message("  python3 -m pip install --target \$\{LBANN_PYTHON_SITE_PACKAGES\} pytest")
+  message("  python3 -m pip install --target \$\{LBANN_PYTHON_SITE_PACKAGES\} protobuf")
+  if (LBANN_SB_FWD_LBANN_LBANN_WITH_CNPY)
+    message("\nLBANN was built with support for the NumPy (If you need to install it via pip you can in the LBANN site-packages with):")
+    message("  python3 -m pip install --target \$\{LBANN_PYTHON_SITE_PACKAGES\} numpy")
+  endif ()
+  message("\n-----------------------------------------------------------------\n")
+endif ()
+
 # Add a custom target for bundling all things up
 if (UNIX)
   find_program(__FIND_EXE find)
