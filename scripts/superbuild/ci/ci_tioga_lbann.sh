@@ -24,6 +24,33 @@
 ## permissions and limitations under the license.
 ################################################################################
 
+################################################################
+# Parse command-line arguments
+################################################################
+
+# while :; do
+#     case ${1} in
+#         -h|--help)
+#             # Help message
+#             help_message
+#             exit 1
+#             ;;
+#         --install_prefix)
+#             if [ -n "${2}" ]; then
+#                 INSTALL_PREFIX=${2}
+#                 shift
+#             else
+#                 echo "\"${1}\" option requires a non-empty option argument" >&2
+#                 exit 1
+#             fi
+#             ;;
+#         *)
+#             # Break loop if there are no more options
+#             break
+#     esac
+#     shift
+# done
+
 # Set to ON (or any CMake truthy value) to build all of the
 # dependencies of the LBANN stack
 BUILD_EXTERNAL_TPLS=ON
@@ -33,7 +60,7 @@ BUILD_LBANN_STACK=ON
 
 # Set to ON to enable DistConv support. Only matters if building the
 # LBANN stack.
-BUILD_WITH_DISTCONV=ON
+BUILD_WITH_DISTCONV=OFF
 
 # Set to ON to enable Half support. Only matters if building the
 # LBANN stack.
@@ -57,18 +84,22 @@ SUPERBUILD_SRC_DIR=${LBANN_SRC_DIR}/scripts/superbuild
 source ${SUPERBUILD_SRC_DIR}/ci/ci_tioga_env.sh
 
 # Set to the preferred install directory
-INSTALL_PREFIX=${INSTALL_PREFIX_EXTERNALS}/dha_with_distconv
+#INSTALL_PREFIX=${INSTALL_PREFIX_EXTERNALS}/dha
 
 # Set to the preferred build directory
-BUILD_DIR=${TMPDIR}/lbann-superbuild-dha-distconv-${ROCM_VER}
+BUILD_DIR=${TMPDIR}/lbann-superbuild-dha-lbann-${ROCM_VER}
+
+# Set to the preferred install directory
+INSTALL_PREFIX=${LBANN_SRC_DIR}/superbuild/install_${ROCM_VER}
 
 # Update the location of external packages
-source ${INSTALL_PREFIX_EXTERNALS}/logs/lbann_sb_suggested_cmake_prefix_path.sh
-export CMAKE_PREFIX_PATH=${INSTALL_PREFIX}/half-2.1.0:${CMAKE_PREFIX_PATH}
+#source ${INSTALL_PREFIX}/logs/lbann_sb_suggested_cmake_prefix_path.sh
+source ${INSTALL_PREFIX_EXTERNALS}/dha/logs/lbann_sb_suggested_cmake_prefix_path.sh
+#export CMAKE_PREFIX_PATH=${INSTALL_PREFIX}/half-2.1.0:${CMAKE_PREFIX_PATH}
 CMAKE_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
 FWD_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/|}
 
-export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
+#export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
 
 cmake \
     -G Ninja \
@@ -99,27 +130,23 @@ cmake \
     -D LBANN_SB_DEFAULT_INSTALL_PATH_STRATEGY="PKG_LC" \
     -D LBANN_SB_DEFAULT_ROCM_OPTS=ON \
     \
-    -D LBANN_SB_BUILD_Aluminum=${BUILD_LBANN_STACK} \
-    -D LBANN_SB_Aluminum_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
-    -D LBANN_SB_Aluminum_HIP_FLAGS="${EXTRA_HIP_FLAGS}" \
-    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_CALIPER=OFF \
-    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_NCCL=ON \
-    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_HOST_TRANSFER=OFF \
-    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_TESTS=OFF \
-    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_BENCHMARKS=OFF \
-    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_THREAD_MULTIPLE=OFF \
-    -D LBANN_SB_FWD_Aluminum_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH} \
-    \
-    -D LBANN_SB_BUILD_Hydrogen=${BUILD_LBANN_STACK} \
-    -D LBANN_SB_Hydrogen_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
-    -D LBANN_SB_Hydrogen_HIP_FLAGS="${EXTRA_HIP_FLAGS}" \
-    -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_HALF=${BUILD_WITH_HALF} \
-    -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_TESTING=ON \
-    -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_UNIT_TESTS=OFF \
-    -D LBANN_SB_FWD_Hydrogen_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH} \
-    \
-    -D LBANN_SB_BUILD_DiHydrogen=${BUILD_LBANN_STACK} \
-    -D LBANN_SB_DiHydrogen_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
-    -D LBANN_SB_DiHydrogen_HIP_FLAGS="${EXTRA_HIP_FLAGS}" \
-    -D LBANN_SB_FWD_DiHydrogen_H2_ENABLE_DISTCONV_LEGACY=${BUILD_WITH_DISTCONV} \
-    -D LBANN_SB_FWD_DiHydrogen_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH}
+    -D LBANN_SB_BUILD_LBANN=${BUILD_LBANN_STACK} \
+    -D LBANN_SB_LBANN_BUILD_SHARED_LIBS=ON \
+    -D LBANN_SB_LBANN_SOURCE_DIR=${LBANN_SRC_DIR} \
+    -D LBANN_SB_FWD_LBANN_CMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    -D LBANN_SB_LBANN_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
+    -D LBANN_SB_LBANN_HIP_FLAGS="${EXTRA_HIP_FLAGS}" \
+    -D LBANN_SB_FWD_LBANN_LBANN_DATATYPE=float \
+    -D LBANN_SB_FWD_LBANN_LBANN_WITH_CALIPER=OFF \
+    -D LBANN_SB_FWD_LBANN_LBANN_WITH_DISTCONV=${BUILD_WITH_DISTCONV} \
+    -D LBANN_SB_FWD_LBANN_LBANN_WITH_TBINF=OFF \
+    -D LBANN_SB_FWD_LBANN_LBANN_WITH_UNIT_TESTING=ON \
+    -D LBANN_SB_FWD_LBANN_LBANN_WITH_CNPY=ON \
+    -D LBANN_SB_FWD_LBANN_LBANN_DETERMINISTIC=ON \
+    -D LBANN_SB_FWD_LBANN_LBANN_WITH_ADDRESS_SANITIZER=OFF \
+    -D LBANN_SB_FWD_LBANN_LBANN_WITH_NVSHMEM=OFF \
+    -D LBANN_SB_FWD_LBANN_LBANN_WITH_FFT=OFF \
+    -D LBANN_SB_FWD_LBANN_LBANN_WITH_EMBEDDED_PYTHON=ON \
+    -D LBANN_SB_FWD_LBANN_LBANN_WITH_PYTHON_FRONTEND=ON \
+    -D LBANN_SB_FWD_LBANN_LBANN_WITH_VISION=ON \
+    -D LBANN_SB_FWD_LBANN_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH}

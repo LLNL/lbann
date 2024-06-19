@@ -60,11 +60,11 @@ source ${SUPERBUILD_SRC_DIR}/ci/ci_tioga_env.sh
 INSTALL_PREFIX=${INSTALL_PREFIX_EXTERNALS}/dha
 
 # Set to the preferred build directory
-BUILD_DIR=${TMPDIR}/lbann-superbuild-dha
+BUILD_DIR=${TMPDIR}/lbann-superbuild-dha-${ROCM_VER}
 
 # Update the location of external packages
 source ${INSTALL_PREFIX_EXTERNALS}/logs/lbann_sb_suggested_cmake_prefix_path.sh
-export CMAKE_PREFIX_PATH=${INSTALL_PREFIX}/half-2.1.0:${CMAKE_PREFIX_PATH}
+#export CMAKE_PREFIX_PATH=${INSTALL_PREFIX}/half-2.1.0:${CMAKE_PREFIX_PATH}
 CMAKE_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
 FWD_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/|}
 

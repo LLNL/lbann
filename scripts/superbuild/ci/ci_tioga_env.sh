@@ -30,7 +30,7 @@ EXTRA_CXX_FLAGS="-g3 -Wno-deprecated-declarations"
 EXTRA_HIP_FLAGS="-g3 -Wno-deprecated-declarations"
 
 # Prefer RPATH to RUNPATH (stability over flexibility)
-EXTRA_LINK_FLAGS="-Wl,--disable-new-dtags"
+EXTRA_LINK_FLAGS="-fuse-ld=lld -Wl,--disable-new-dtags"
 EXTRA_RPATHS=${CRAYLIBS_X86_64}
 
 # Set this to the AMD GPU arch(s) to support (example set for Crusher/Frontier/Tioga)
@@ -39,12 +39,17 @@ AMD_GPU_ARCH=gfx90a,gfx942
 
 # Set to the preferred install directory
 #INSTALL_PREFIX=${PWD}/install-rocm-distconv
-INSTALL_ROOT=/usr/workspace/lbann/ci_stable_dependencies/tioga/rocm-6.1.2
+ROCM_VER=$(basename ${ROCM_PATH})
+INSTALL_ROOT=/usr/workspace/lbann/ci_stable_dependencies/tioga/${ROCM_VER}
 INSTALL_PREFIX_EXTERNALS=${INSTALL_ROOT}/cray-mpich-8.1.29/
 
 # Location of external packages
-export CMAKE_PREFIX_PATH=/p/vast1/lbann/stable_dependencies/tioga/rocm-6.1.0/miopen
+#export CMAKE_PREFIX_PATH=/p/vast1/lbann/stable_dependencies/tioga/rocm-6.1.0/miopen
 CMAKE_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
+# Patch up the header while dealing with MiOpen
+#export CPLUS_INCLUDE_PATH=/p/vast1/lbann/stable_dependencies/tioga/rocm-6.1.0/miopen/include:${CPLUS_INCLUDE_PATH}
+
+#CPLUS_INCLUDE_PATH=/p/vast1/lbann/stable_dependencies/tioga/rocm-6.1.0/miopen/include:${CPLUS_INCLUDE_PATH}
 
 export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
 
