@@ -1094,7 +1094,12 @@ export PATH=\${PATH}:\${LBANN_CMAKE_DIR}:\${LBANN_NINJA_DIR}:\${LBANN_PYTHON_DIR
 export PYTHONPATH=\${LBANN_PYTHONPATH}:\${PYTHONPATH}
 EOF
 
+BUILD_MODULES=
         if [[ -n "${MODULE_CMD}" ]]; then
+            BUILD_MODULES=${MODULE_CMD//module load /}
+#            echo "BVE here is ${BUILD_MODULES}"
+            BUILD_MODULES=${BUILD_MODULES// /;}
+#            echo "2nd time BVE here is ${BUILD_MODULES}"
             cat >> ${LBANN_SETUP_FILE}<<EOF
 # Modules loaded during this installation
 ${MODULE_CMD}
@@ -1105,7 +1110,7 @@ EOF
         # Build a list of modules that LBANN should load
         LBANN_WRITE_DEPENDENT_MODULEPATH="${LBANN_MODFILES_DIR}/Core"
         LBANN_DEPENDENT_MODULES=$(spack-python $SCRIPTS_DIR/find_externals_and_lbann_top_level_dependencies.py)
-
+        LBANN_DEPENDENT_MODULES=${BUILD_MODULES};${LBANN_DEPENDENT_MODULES}
         if [[ "${CENTER_COMPILER}" =~ .*"%clang".* ]]; then
             # If the compiler is clang use the LLD fast linker
             CENTER_LINKER_FLAGS="+lld"
