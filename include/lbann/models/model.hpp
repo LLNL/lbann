@@ -49,6 +49,10 @@
 #include <unordered_map>
 #include <vector>
 
+#ifdef LBANN_HAS_DYAD
+#include "dyad_stream_api.hpp"
+#endif // LBANN_HAS_DYAD
+
 // Forward-declare protobuf class
 namespace lbann_data {
 class Model;
@@ -242,6 +246,11 @@ public:
   /** @brief Restore model by reading checkpoint from given file descriptor,
    * return number of bytes read */
   bool load_from_checkpoint_shared(persist& p);
+
+#ifdef LBANN_HAS_DYAD
+  bool save_to_checkpoint_dyad(persist& p, dyad::dyad_stream_core& dyad);
+  bool load_from_checkpoint_dyad(persist& p, dyad::dyad_stream_core& dyad);
+#endif // LBANN_HAS_DYAD
 
   bool save_to_checkpoint_distributed(persist& p);
   bool load_from_checkpoint_distributed(persist& p);

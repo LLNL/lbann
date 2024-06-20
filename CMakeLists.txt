@@ -114,6 +114,8 @@ option(LBANN_WITH_CONDUIT "Enable Conduit library" ON)
 
 option(LBANN_WITH_CUDNN "Include Nvidia cuDNN" ON)
 
+option(LBANN_WITH_DYAD "Enable DYAD (depends on flux-core)" OFF)
+
 # For now, we just assert CPU support.
 option(LBANN_WITH_ONEDNN "Include OneDNN API support" OFF)
 
@@ -602,6 +604,11 @@ if (LBANN_WITH_CNPY)
   set(LBANN_HAS_CNPY ${CNPY_FOUND})
 endif (LBANN_WITH_CNPY)
 
+if (LBANN_WITH_DYAD)
+  find_package(DYAD REQUIRED)
+  set(LBANN_HAS_DYAD ${DYAD_FOUND})
+endif (LBANN_WITH_DYAD)
+
 if (LBANN_WITH_HWLOC)
   find_package(HWLOC REQUIRED)
   set(LBANN_TOPO_AWARE ${HWLOC_FOUND})
@@ -781,6 +788,10 @@ get_target_property(LBANN_MPI_CXX_INCL_DIRS
 if (NOT LBANN_MPI_CXX_INCL_DIRS)
   target_include_directories(lbann PRIVATE $<$<COMPILE_LANGUAGE:HIP>:${MPI_CXX_COMPILER_INCLUDE_DIRS}>)
 endif ()
+
+if (DYAD_FOUND)
+  target_link_libraries(lbann PUBLIC DYAD::DYAD)
+endif (DYAD_FOUND)
 
 if (LBANN_FLAG_Werror_OK)
   target_compile_options(lbann
@@ -1102,6 +1113,7 @@ append_str_tf(_str
   LBANN_HAS_DISTCONV
   LBANN_HAS_DOUBLE
   LBANN_HAS_DOXYGEN
+  LBANN_HAS_DYAD
   LBANN_HAS_FFTW
   LBANN_HAS_HIPTT
   LBANN_HAS_HYDROGEN
