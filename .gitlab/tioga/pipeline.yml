@@ -52,7 +52,7 @@ allocate lc resources:
   script:
     - echo "== ACQUIRING FLUX RESOURCES =="
     - echo "${WITH_WEEKLY:+Running with --weekly}"
-    - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "150m" || echo "60m")
+    - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "150m" || echo "40m")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
     - export FLUX_F58_FORCE_ASCII=t
     - export JOB_ID="UNALLOCATED"
