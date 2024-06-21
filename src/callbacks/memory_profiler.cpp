@@ -126,9 +126,11 @@ size_t get_activation_and_error_signal_size(data_type_layer<T> const& dtl,
       reps << "    Activations (" << i << "): ";
 
     if (dtl.distconv_enabled()) {
+#ifdef LBANN_HAS_DISTCONV
       auto const& child = dtl.get_child_layer(i);
       auto const& dcact = dtl.get_distconv_adapter().get_activations(child);
       allocated += report_distconv_matrix(dcact, reps);
+#endif
     }
     else {
       auto const& act = dtl.get_activations(i);
