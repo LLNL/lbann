@@ -34,7 +34,9 @@ void upsample_layer<TensorDataType, Layout, Device>::serialize(ArchiveT& ar)
 {
   using DataTypeLayer = data_type_layer<TensorDataType>;
   ar(::cereal::make_nvp("DataTypeLayer",
-                        ::cereal::base_class<DataTypeLayer>(this)));
+                        ::cereal::base_class<DataTypeLayer>(this)),
+     CEREAL_NVP(m_upsample_mode),
+     CEREAL_NVP(m_scale_factors));
 }
 
 } // namespace lbann
