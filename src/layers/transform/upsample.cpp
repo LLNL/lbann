@@ -60,6 +60,7 @@ struct Builder
   }
 };
 
+#ifdef LBANN_HAS_GPU
 template <typename TensorDataType>
 struct Builder<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>
 {
@@ -72,6 +73,7 @@ struct Builder<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>
     return std::make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
+#endif // LBANN_HAS_GPU
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -110,7 +112,7 @@ void upsample_layer<TensorDataType, Layout, Device>::bp_compute()
   }
 }
 
-/// Pooling forward propagation with DNN library
+/// Upsample forward propagation with DNN library
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void upsample_layer<TensorDataType, Layout, Device>::fp_compute_dnn()
 {
@@ -134,7 +136,7 @@ void upsample_layer<TensorDataType, Layout, Device>::fp_compute_dnn()
 #endif // #ifndef LBANN_HAS_DNN_LIB
 }
 
-/// Pooling backward propagation with DNN library
+/// Upsample backward propagation with DNN library
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void upsample_layer<TensorDataType, Layout, Device>::bp_compute_dnn()
 {

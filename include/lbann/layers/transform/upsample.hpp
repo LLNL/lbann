@@ -36,7 +36,6 @@
 #include "lbann/utils/dnn_lib/upsample.hpp"
 #endif // LBANN_HAS_DNN_LIB
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/im2col.hpp"
 
 #include <utility>
 #include <vector>
@@ -261,17 +260,11 @@ protected:
   void bp_compute() override;
 
 private:
-  /// Pooling forward propagation with DNN library
+  /// Upsample forward propagation with DNN library
   void fp_compute_dnn();
 
-  /// Pooling backward propagation with DNN library
+  /// Upsample backward propagation with DNN library
   void bp_compute_dnn();
-
-  /// Pooling forward propagation with im2col
-  void fp_compute_im2col();
-
-  /// Pooling forward propagation with im2col
-  void bp_compute_im2col();
 
 #ifdef LBANN_HAS_DISTCONV
   friend class upsample_distconv_adapter<TensorDataType, T_layout, Dev>;
