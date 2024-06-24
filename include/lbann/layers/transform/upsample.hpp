@@ -93,10 +93,6 @@ private:
 };
 #endif // LBANN_HAS_DISTCONV
 
-// Forward declaration
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class unupsample_layer;
-
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
@@ -137,7 +133,7 @@ public:
                 upsample_mode mode)
     : data_type_layer<TensorDataType>(comm),
       m_upsample_mode(mode),
-      m_scale_factors(scale_factors)
+      m_scale_factors{std::move(scale_factors)}
 #ifdef LBANN_HAS_DNN_LIB
       ,
       m_tensors_dnn_desc(this)

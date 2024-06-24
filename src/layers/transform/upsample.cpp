@@ -52,20 +52,22 @@ struct Builder
     LBANN_ERROR("Attempted to instantiate layer \"upsample\" with "
                 "Layout=",
                 to_string(L),
+                ", Device=",
+                El::DeviceName<D>(),
                 ".\nThis layer is only "
-                "supported with DATA_PARALLEL data layout.");
+                "supported on GPU with DATA_PARALLEL data layout.");
     return nullptr;
   }
 };
 
-template <typename TensorDataType, El::Device Device>
-struct Builder<TensorDataType, data_layout::DATA_PARALLEL, Device>
+template <typename TensorDataType>
+struct Builder<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>
 {
   template <typename... Args>
   static std::unique_ptr<Layer> Build(Args&&... args)
   {
     using LayerType =
-      upsample_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>;
+      upsample_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
     return std::make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
