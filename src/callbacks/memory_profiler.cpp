@@ -688,7 +688,7 @@ void memory_profiler::on_forward_prop_end(model* m, Layer* l)
     }
     collect_peak_usage();
 
-    std::stringstream ss;
+    std::ostringstream ss;
     m_act_sizes[l] = get_activation_and_error_signal_size(*l, ss);
     m_act_report[l] = ss.str();
   }
