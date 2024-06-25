@@ -190,7 +190,7 @@ public:
   description get_description() const override
   {
     auto desc = data_type_layer<TensorDataType>::get_description();
-    std::stringstream ss;
+    std::ostringstream ss;
 
     // Upsample mode
     ss.str(std::string{});
