@@ -37,6 +37,7 @@
 
 #include "lbann/proto/callbacks.pb.h"
 
+#include <iomanip>
 #include <set>
 #include <sstream>
 #include <string>
@@ -59,10 +60,18 @@ check_metric::check_metric(std::string metric_name,
   if (lower_bound > upper_bound) {
     std::stringstream err;
     err << "callback \"" << name() << "\" "
-        << "got an invalid range for metric values "
+        << "got an invalid range for metric values " << std::setprecision(9)
         << "(lower bound " << m_lower_bound << ", "
         << "upper bound " << m_upper_bound << ")";
     LBANN_ERROR(err.str());
+  }
+  if (lower_bound == upper_bound) {
+    std::stringstream err;
+    err << "callback \"" << name() << "\" "
+        << "got an zero range for metric values " << std::setprecision(9)
+        << "(lower bound " << m_lower_bound << " == "
+        << "upper bound " << m_upper_bound << ")";
+    LBANN_WARNING(err.str());
   }
 }
 
@@ -122,8 +131,8 @@ void check_metric::do_check_metric(const model& m) const
   if (!(m_lower_bound <= value && value <= m_upper_bound)) {
     err << "callback \"" << name() << "\" expected "
         << "metric \"" << m_metric_name << "\" "
-        << "to have a value in range "
-        << "[" << m_lower_bound << "," << m_upper_bound << "], "
+        << "to have a value in range " << std::setprecision(9) << "["
+        << m_lower_bound << "," << m_upper_bound << "], "
         << "but found a value of " << value;
     if (m_error_on_failure) {
       LBANN_ERROR(err.str());
