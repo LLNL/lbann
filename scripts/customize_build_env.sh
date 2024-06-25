@@ -127,9 +127,9 @@ set_center_specific_modules()
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
             "zen3" | "zen4") # Tioga, RZVernal, RZAdams
-                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/24.03.0 cce/17.0.1 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-cray/8.5.0 flux_wrappers/0.1 StdEnv cmake/3.24.2 rocm/5.7.1"
+#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/24.03.0 cce/17.0.1 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-cray/8.5.0 flux_wrappers/0.1 StdEnv cmake/3.24.2 rocm/5.7.1"
 
-#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.12.0 amd/5.7.1 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-amd StdEnv rocm/5.7.1 cmake/3.24.2"
+                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.12.0 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-amd StdEnv amd/5.7.1 rocm/5.7.1 cmake/3.24.2"
 #                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.12.0 amd/6.1.2 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-amd StdEnv rocm/6.1.2 cmake/3.24.2"
 #                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.12.0 cce/17.0.1 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-cray StdEnv rocm/6.0.3 cmake/3.24.2"
                 ;;
@@ -485,8 +485,9 @@ cat <<EOF  >> ${yaml}
         - amd/5.7.1 PrgEnv-amd cray-mpich/8.1.29
 #        - cce/17.0.1 PrgEnv-cray cray-mpich/8.1.29
 EOF
-        set_superbuild_externals ${host} "rocm-5.7.1" "cray-mpich-8.1.29" "$yaml" "${LOG}" "${prefix}"
-        set_superbuild_DHA_externals ${host} "rocm-5.7.1" "cray-mpich-8.1.29" "$yaml" "${prefix}" "${dha_dir}"
+        PE_ENV_lc=$(echo "${PE_ENV}" | tr '[:upper:]' '[:lower:]')
+        set_superbuild_externals ${host} "${PE_ENV_lc}/rocm-5.7.1" "cray-mpich-8.1.29" "$yaml" "${LOG}" "${prefix}"
+        set_superbuild_DHA_externals ${host} "${PE_ENV_lc}/rocm-5.7.1" "cray-mpich-8.1.29" "$yaml" "${prefix}" "${dha_dir}"
         # set_superbuild_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.28" "$yaml" "${LOG}" "${prefix}" "mi300a"
         # set_superbuild_DHA_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.28" "$yaml" "${prefix}" "mi300a"
                 ;;

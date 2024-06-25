@@ -87,7 +87,7 @@ source ${SUPERBUILD_SRC_DIR}/ci/ci_tioga_env.sh
 #INSTALL_PREFIX=${INSTALL_PREFIX_EXTERNALS}/dha
 
 # Set to the preferred build directory
-BUILD_DIR=${TMPDIR}/lbann-superbuild-dha-lbann-${ROCM_VER}
+BUILD_DIR=${TMPDIR}/lbann-superbuild-dha-lbann-${PE_ENV_lc}-${ROCM_VER}
 
 # Set to the preferred install directory
 INSTALL_PREFIX=${LBANN_SRC_DIR}/superbuild/install_${ROCM_VER}

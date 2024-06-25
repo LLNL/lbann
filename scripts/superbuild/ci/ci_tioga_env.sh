@@ -40,7 +40,8 @@ AMD_GPU_ARCH=gfx90a,gfx942
 # Set to the preferred install directory
 #INSTALL_PREFIX=${PWD}/install-rocm-distconv
 ROCM_VER=$(basename ${ROCM_PATH})
-INSTALL_ROOT=/usr/workspace/lbann/ci_stable_dependencies/tioga/${ROCM_VER}
+PE_ENV_lc=$(echo "${PE_ENV}" | tr '[:upper:]' '[:lower:]')
+INSTALL_ROOT=/usr/workspace/lbann/ci_stable_dependencies/tioga/${PE_ENV_lc}//${ROCM_VER}
 INSTALL_PREFIX_EXTERNALS=${INSTALL_ROOT}/cray-mpich-8.1.29/
 
 # Location of external packages
