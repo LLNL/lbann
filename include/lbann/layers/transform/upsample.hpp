@@ -46,7 +46,8 @@
 
 namespace lbann {
 
-enum class upsample_mode{
+enum class upsample_mode
+{
   NEAREST
 };
 
@@ -84,6 +85,7 @@ public:
   void
   fp_compute(bool training = true); // training=true for max back-compatibility.
   void bp_compute();
+
 private:
   dnn_lib::TensorDescriptor m_xdesc;
   dnn_lib::TensorDescriptor m_ydesc;
@@ -117,19 +119,19 @@ private:
 
 public:
   upsample_layer(lbann_comm* comm,
-                int num_data_dims,
-                int scale_factors,
-                upsample_mode mode)
+                 int num_data_dims,
+                 int scale_factors,
+                 upsample_mode mode)
     : upsample_layer(comm,
-                    num_data_dims,
-                    std::vector<int>(num_data_dims, scale_factors),
-                    mode)
+                     num_data_dims,
+                     std::vector<int>(num_data_dims, scale_factors),
+                     mode)
   {}
 
   upsample_layer(lbann_comm* comm,
-                int num_data_dims,
-                std::vector<int> scale_factors,
-                upsample_mode mode)
+                 int num_data_dims,
+                 std::vector<int> scale_factors,
+                 upsample_mode mode)
     : data_type_layer<TensorDataType>(comm),
       m_upsample_mode(mode),
       m_scale_factors{std::move(scale_factors)}
@@ -190,23 +192,19 @@ public:
   description get_description() const override
   {
     auto desc = data_type_layer<TensorDataType>::get_description();
-    std::ostringstream ss;
 
     // Upsample mode
-    ss.str(std::string{});
-    ss.clear();
+    std::string mode_str;
     switch (m_upsample_mode) {
     case upsample_mode::NEAREST:
-      ss << "nearest";
+      desc.add("Upsample mode", "nearest");
       break;
     default:
-      ss << "invalid";
+      desc.add("Upsample mode", "invalid");
     }
-    desc.add("Upsample mode", ss.str());
 
     // Upsample scale factors
-    ss.str(std::string{});
-    ss.clear();
+    std::ostringstream ss;
     for (size_t i = 0; i < m_scale_factors.size(); ++i) {
       ss << (i > 0 ? ", " : "") << m_scale_factors[i];
     }
@@ -273,9 +271,8 @@ protected:
   bool is_distconv_supported() const override;
   void setup_distconv_adapter() override
   {
-    this->get_distconv_adapter_ptr() =
-      std::make_unique<upsample_distconv_adapter<TensorDataType, T_layout, Dev>>(
-        *this);
+    this->get_distconv_adapter_ptr() = std::make_unique<
+      upsample_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
   }
   upsample_distconv_adapter<TensorDataType, T_layout, Dev>&
   get_distconv_adapter() override;

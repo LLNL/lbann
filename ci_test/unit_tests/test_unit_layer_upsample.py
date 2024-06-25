@@ -10,7 +10,7 @@ import lbann.contrib.args
 # Bamboo utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
-sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
+sys.path.insert(0, os.path.join(os.path.dirname(current_dir), "common_python"))
 import tools
 
 # ==============================================
@@ -18,6 +18,7 @@ import tools
 # ==============================================
 # Note: The Python data reader imports this file as a module and calls
 # the functions below to ingest data.
+
 
 def make_random_array(shape, seed):
     """Hacked function to generate a random array.
@@ -40,24 +41,32 @@ def make_random_array(shape, seed):
     x = (seed / np.linspace(math.sqrt(eps), 0.1, size)) % 1 - 0.5
     return x.reshape(shape).astype(np.float32)
 
+
 # Data
 _num_samples = 64
-_sample_dims = [6,11,7]
-_sample_dims_3d = [2,3,11,7]
+_sample_dims = [6, 11, 7]
+_sample_dims_3d = [2, 3, 11, 7]
 _sample_size = functools.reduce(operator.mul, _sample_dims)
 _samples = make_random_array([_num_samples] + _sample_dims, 7)
 
+
 # Sample access functions
 def get_sample(index):
-    return _samples[index,:].reshape(-1)
+    return _samples[index, :].reshape(-1)
+
+
 def num_samples():
     return _num_samples
+
+
 def sample_dims():
     return (_sample_size,)
+
 
 # ==============================================
 # Setup LBANN experiment
 # ==============================================
+
 
 def setup_experiment(lbann, weekly):
     """Construct LBANN experiment.
@@ -71,35 +80,47 @@ def setup_experiment(lbann, weekly):
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
-    return trainer, model, data_reader, optimizer, None # Don't request any specific number of nodes
-
+    return (
+        trainer,
+        model,
+        data_reader,
+        optimizer,
+        None,
+    )  # Don't request any specific number of nodes
 
 
 upsample_configs = []
 
 # 3x3 upsampling
-for mode in ['nearest']:
-    upsample_configs.append({
-        "name": "3x3 {} upsample".format(mode),
-        "scale_factors": (3, 3),
-        "upsample_mode": mode
-    })
+for mode in ["nearest"]:
+    upsample_configs.append(
+        {
+            "name": "3x3 {} upsample".format(mode),
+            "scale_factors": (3, 3),
+            "upsample_mode": mode,
+        }
+    )
 
 # 2x4 upsampling
-for mode in ['nearest']:
-    upsample_configs.append({
-        "name": "2x4 {} upsample".format(mode),
-        "scale_factors": (2, 4),
-        "upsample_mode": mode
-    })
+for mode in ["nearest"]:
+    upsample_configs.append(
+        {
+            "name": "2x4 {} upsample".format(mode),
+            "scale_factors": (2, 4),
+            "upsample_mode": mode,
+        }
+    )
 
 # 2x2x2 3D upsampling
-for mode in ['nearest']:
-    upsample_configs.append({
-        "name": "2x2x2 {} upsample".format(mode),
-        "scale_factors": (2, 2, 2),
-        "upsample_mode": mode
-    })
+for mode in ["nearest"]:
+    upsample_configs.append(
+        {
+            "name": "2x2x2 {} upsample".format(mode),
+            "scale_factors": (2, 2, 2),
+            "upsample_mode": mode,
+        }
+    )
+
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -112,13 +133,15 @@ def construct_model(lbann):
     # Input data
     # Note: Sum with a weights layer so that gradient checking will
     # verify that error signals are correct.
-    x_weights = lbann.Weights(optimizer=lbann.SGD(),
-                              initializer=lbann.ConstantInitializer(value=0.0),
-                              name='input_weights')
-    x = lbann.Sum(lbann.Reshape(lbann.Input(data_field='samples'),
-                                dims=_sample_dims),
-                  lbann.WeightsLayer(weights=x_weights,
-                                     dims=_sample_dims))
+    x_weights = lbann.Weights(
+        optimizer=lbann.SGD(),
+        initializer=lbann.ConstantInitializer(value=0.0),
+        name="input_weights",
+    )
+    x = lbann.Sum(
+        lbann.Reshape(lbann.Input(data_field="samples"), dims=_sample_dims),
+        lbann.WeightsLayer(weights=x_weights, dims=_sample_dims),
+    )
     x_lbann = x
 
     # Objects for LBANN model
@@ -137,20 +160,26 @@ def construct_model(lbann):
         x = x_lbann
         if len(u["scale_factors"]) == 3:
             x = lbann.Reshape(x, dims=_sample_dims_3d)
-        x = lbann.Identity(x, name=f'in_{uname}')
+        x = lbann.Identity(x, name=f"in_{uname}")
 
-        y = lbann.Upsample(x,
-                           num_dims=len(u["scale_factors"]),
-                           has_vectors=True,
-                           scale_factors=u["scale_factors"],
-                           upsample_mode=u['upsample_mode'])
-        y = lbann.Identity(y, name=f'out_{uname}')
+        y = lbann.Upsample(
+            x,
+            num_dims=len(u["scale_factors"]),
+            has_vectors=True,
+            scale_factors=u["scale_factors"],
+            upsample_mode=u["upsample_mode"],
+        )
+        y = lbann.Identity(y, name=f"out_{uname}")
         z = lbann.L2Norm2(y)
 
         obj.append(z)
 
         # Save the inputs and outputs to check later.
-        callbacks.append(lbann.CallbackDumpOutputs(layers=f'in_{uname} out_{uname}', directory='outputs'))
+        callbacks.append(
+            lbann.CallbackDumpOutputs(
+                layers=f"in_{uname} out_{uname}", directory="outputs"
+            )
+        )
 
     # ------------------------------------------
     # Gradient checking
@@ -163,11 +192,14 @@ def construct_model(lbann):
     # ------------------------------------------
 
     num_epochs = 0
-    return lbann.Model(num_epochs,
-                       layers=lbann.traverse_layer_graph(x_lbann),
-                       objective_function=obj,
-                       metrics=metrics,
-                       callbacks=callbacks)
+    return lbann.Model(
+        num_epochs,
+        layers=lbann.traverse_layer_graph(x_lbann),
+        objective_function=obj,
+        metrics=metrics,
+        callbacks=callbacks,
+    )
+
 
 def construct_data_reader(lbann):
     """Construct Protobuf message for Python data reader.
@@ -183,102 +215,74 @@ def construct_data_reader(lbann):
     # Note: The training data reader should be removed when
     # https://github.com/LLNL/lbann/issues/1098 is resolved.
     message = lbann.reader_pb2.DataReader()
-    message.reader.extend([
-        tools.create_python_data_reader(
-            lbann,
-            current_file,
-            'get_sample',
-            'num_samples',
-            'sample_dims',
-            'train'
-        )
-    ])
-    message.reader.extend([
-        tools.create_python_data_reader(
-            lbann,
-            current_file,
-            'get_sample',
-            'num_samples',
-            'sample_dims',
-            'test'
-        )
-    ])
+    message.reader.extend(
+        [
+            tools.create_python_data_reader(
+                lbann, current_file, "get_sample", "num_samples", "sample_dims", "train"
+            )
+        ]
+    )
+    message.reader.extend(
+        [
+            tools.create_python_data_reader(
+                lbann, current_file, "get_sample", "num_samples", "sample_dims", "test"
+            )
+        ]
+    )
     return message
+
 
 # ==============================================
 # Setup PyTest
 # ==============================================
 
-def augment_test_func(test_func):
-    """Augment test function to parse log files.
 
-    `tools.create_tests` creates functions that run an LBANN
-    experiment. This function creates augmented functions that parse
-    the log files after LBANN finishes running, e.g. to check metrics
-    or runtimes.
+def check_output(lbann, weekly, **kwargs):
+    for u in upsample_configs:
+        uname = u["name"].split(" ")[0]
+        in_data = np.loadtxt(
+            os.path.join(
+                kwargs["work_dir"],
+                "outputs",
+                "trainer0",
+                "model0",
+                f"sgd.testing.epoch.0.step.0_in_{uname}_output0.csv",
+            ),
+            delimiter=",",
+        )
+        out_data = np.loadtxt(
+            os.path.join(
+                kwargs["work_dir"],
+                "outputs",
+                "trainer0",
+                "model0",
+                f"sgd.testing.epoch.0.step.0_out_{uname}_output0.csv",
+            ),
+            delimiter=",",
+        )
 
-    Note: The naive approach is to define the augmented test functions
-    in a loop. However, Python closures are late binding. In other
-    words, the function would be overwritten every time we define it.
-    We get around this overwriting problem by defining the augmented
-    function in the local scope of another function.
+        ndims = len(u["scale_factors"])
+        upsampled_data = in_data.copy().reshape(
+            [-1] + (_sample_dims if ndims == 2 else _sample_dims_3d)
+        )
+        for i, scale_fac in enumerate(u["scale_factors"]):
+            if u["upsample_mode"] == "nearest":
+                upsampled_data = upsampled_data.repeat(scale_fac, axis=i + 2)
 
-    Args:
-        test_func (function): Test function created by
-            `tools.create_tests`.
+        assert np.allclose(upsampled_data.ravel(), out_data.ravel())
 
-    Returns:
-        function: Test that can interact with PyTest.
-
-    """
-    test_name = test_func.__name__
-
-    # Define test function
-    def func(cluster, dirname, weekly):
-
-        # Run LBANN experiment
-        experiment_output = test_func(cluster, dirname, weekly)
-
-        # Check that the output values are close to the input values.
-        for u in upsample_configs:
-            uname = u["name"].split(" ")[0]
-            in_data = np.loadtxt(
-                os.path.join(
-                    experiment_output['work_dir'],
-                    'outputs', 'trainer0', 'model0',
-                    f'sgd.testing.epoch.0.step.0_in_{uname}_output0.csv'
-                ),
-                delimiter=','
-            )
-            out_data = np.loadtxt(
-                os.path.join(
-                    experiment_output['work_dir'],
-                    'outputs', 'trainer0', 'model0',
-                    f'sgd.testing.epoch.0.step.0_out_{uname}_output0.csv'
-                ),
-                delimiter=','
-            )
-            
-            ndims = len(u['scale_factors'])
-            upsampled_data = in_data.copy().reshape(
-                [-1] + (_sample_dims if ndims == 2 else _sample_dims_3d)
-            )
-            for i, scale_fac in enumerate(u['scale_factors']):
-                if u['upsample_mode'] == 'nearest':
-                    upsampled_data = upsampled_data.repeat(scale_fac, axis=i+2)
-
-            assert np.allclose(upsampled_data.ravel(), out_data.ravel())
-
-    # Return test function from factory function
-    func.__name__ = test_name
-    return func
 
 # Runtime parameters/arguments
 environment = lbann.contrib.args.get_distconv_environment()
-environment['LBANN_KEEP_ERROR_SIGNALS'] = 1
+environment["LBANN_KEEP_ERROR_SIGNALS"] = 1
 
 # Create test functions that can interact with PyTest
 # Note: Create test name by removing ".py" from file name
 _test_name = os.path.splitext(os.path.basename(current_file))[0]
-for _test_func in tools.create_tests(setup_experiment, _test_name, skip_clusters=["tioga", "corona"]):
-    globals()[_test_func.__name__] = augment_test_func(_test_func)
+for _test_func in tools.create_tests(
+    setup_experiment,
+    _test_name,
+    post_test_func=check_output,
+    skip_clusters=["tioga", "corona"],
+):
+    globals()[_test_func.__name__] = _test_func

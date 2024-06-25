@@ -835,7 +835,7 @@ def create_tests(setup_func,
         )
         assert_success(return_code, stderr_log_file)
         if post_test_func is not None:
-            post_test_func(lbann, weekly)
+            post_test_func(lbann, weekly, **_kwargs)
         return {
             'return_code': return_code,
             'work_dir': work_dir,
