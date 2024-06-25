@@ -48,7 +48,7 @@ endmacro ()
 
 lbann_sb_init_extern_pkg(
   NAME NCCL
-  LANGUAGES C CXX # CUDA <- can't set explicitly; inferred from ${CUDA_HOME}
+  LANGUAGES C CXX CUDA
   GITHUB_URL NVIDIA/nccl
   GIT_TAG "master")
 
@@ -105,8 +105,8 @@ if (LBANN_SB_FWD_NCCL_NVCC_GENCODE)
 elseif (DEFINED $ENV{NVCC_GENCODE})
   set(_nccl_nvcc_gencode_opt
     "NVCC_GENCODE=$ENV{NVCC_GENCODE}")
-elseif (LBANN_NCCL_CUDA_ARCHITECTURES)
-  set(_cuda_arch ${LBANN_NCCL_CUDA_ARCHITECTURES})
+elseif (LBANN_SB_NCCL_CUDA_ARCHITECTURES)
+  set(_cuda_arch ${LBANN_SB_NCCL_CUDA_ARCHITECTURES})
   set(_nccl_nvcc_gencode_opt
     "NVCC_GENCODE=-gencode=arch=compute_${_cuda_arch},code=sm_${_cuda_arch}")
 else ()
