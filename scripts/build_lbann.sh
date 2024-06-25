@@ -1044,9 +1044,9 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         for p in ${PIP_EXTRAS}
         do
             if [[ -e "${p}" ]]; then
-                CMD="python3 -m pip install -i https://pypi.org/simple --prefix ${LBANN_INSTALL_DIR} -r ${p}"
+                CMD="python3 -m pip install --force-reinstall -i https://pypi.org/simple --prefix ${LBANN_INSTALL_DIR} -r ${p}"
             else
-                CMD="python3 -m pip install -i https://pypi.org/simple --prefix ${LBANN_INSTALL_DIR} ${p}"
+                CMD="python3 -m pip install --force-reinstall -i https://pypi.org/simple --prefix ${LBANN_INSTALL_DIR} ${p}"
             fi
             echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
@@ -1278,7 +1278,7 @@ echo "To manipulate the version of python used it is:" | tee -a ${LOG}
 echo "  ${LBANN_PYTHON}" | tee -a ${LOG}
 echo "Additional Python packages for working with LBANN can be added either via PIP or by concretizing them together in spack., activate the spack environment then" | tee -a ${LOG}
 echo "To install them via PIP: 1) the spack environment (see above) and 2) issue the following command" | tee -a ${LOG}
-echo "  python3 -m pip install --force-reinstall -r <requirements file>" | tee -a ${LOG}
+echo "  python3 -m pip install -r <requirements file>" | tee -a ${LOG}
 echo "To install them via Spack: include them on the build_lbann.sh script command line argument via -e <path to text file of packages> or -p <spack package name>" | tee -a ${LOG}
 echo "##########################################################################################" | tee -a ${LOG}
 echo "All details of the run are logged to ${LOG}"
