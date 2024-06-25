@@ -51,8 +51,6 @@ void channelwise_softmax_layer<TensorDataType, Layout, Device>::fp_compute()
   auto& local_output =
     dynamic_cast<LocalMat&>(this->get_activations().Matrix());
 
-  // TODO: This looks wrong. Maybe wrap the implementation of this function in a
-  // namespace - SZ
   channelwise_softmax_fp_impl(num_channels,
                               channel_size,
                               local_input,
