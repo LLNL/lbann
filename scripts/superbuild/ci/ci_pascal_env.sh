@@ -32,7 +32,8 @@ EXTRA_CXX_FLAGS="-O2 -g3 -Wno-deprecated-declarations"
 EXTRA_CUDA_FLAGS="-O2 -g3 -Wno-deprecated-declarations"
 
 # Prefer RPATH to RUNPATH (stability over flexibility)
-EXTRA_LINK_FLAGS="-fuse-ld=gold -Wl,--disable-new-dtags"
+EXTRA_LINK_FLAGS_CORE="-Wl,--disable-new-dtags"
+EXTRA_LINK_FLAGS="-fuse-ld=gold ${EXTRA_LINK_FLAGS_CORE}"
 
 # Set this to the CUDA GPU arch(s) to support (example set for Lassen/Sierra)
 CUDA_GPU_ARCH=60
