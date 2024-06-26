@@ -4,7 +4,7 @@ set_superbuild_externals()
     local dnn_lib="$2"
     local compiler_ver="$3"
     local mpi="$4"
-    local yaml="54"
+    local yaml="$5"
     local LOG="$6"
     local prefix="$7"
     local gpu_arch="$8"
