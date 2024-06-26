@@ -1110,7 +1110,7 @@ EOF
         # Build a list of modules that LBANN should load
         LBANN_WRITE_DEPENDENT_MODULEPATH="${LBANN_MODFILES_DIR}/Core"
         LBANN_DEPENDENT_MODULES=$(spack-python $SCRIPTS_DIR/find_externals_and_lbann_top_level_dependencies.py)
-        LBANN_DEPENDENT_MODULES="${BUILD_MODULES};${LBANN_DEPENDENT_MODULES}"
+#        LBANN_DEPENDENT_MODULES="${BUILD_MODULES};${LBANN_DEPENDENT_MODULES}"
         if [[ "${CENTER_COMPILER}" =~ .*"%clang".* ]]; then
             # If the compiler is clang use the LLD fast linker
             CENTER_LINKER_FLAGS="+lld"
