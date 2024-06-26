@@ -36,16 +36,15 @@ EXTRA_RPATHS="${CRAYLIBS_X86_64};${ROCM_PATH}/lib"
 # Set this to the AMD GPU arch(s) to support (example set for Crusher/Frontier/Tioga)
 AMD_GPU_ARCH=gfx90a,gfx942
 
-
 # Set to the preferred install directory
 #INSTALL_PREFIX=${PWD}/install-rocm-distconv
 ROCM_VER=$(basename ${ROCM_PATH})
 PE_ENV_lc=$(echo "${PE_ENV}" | tr '[:upper:]' '[:lower:]')
-INSTALL_ROOT=/usr/workspace/lbann/ci_stable_dependencies/tioga/${PE_ENV_lc}/${ROCM_VER}
+INSTALL_ROOT=/usr/workspace/lbann/ci_stable_dependencies/tioga/${ROCM_VER}/${PE_ENV_lc}
 INSTALL_PREFIX_EXTERNALS=${INSTALL_ROOT}/cray-mpich-8.1.29/
 
 # Use an accessible build directory so that the source files are preserved for debuggin
-BUILD_ROOT=/usr/workspace/lbann/ci_stable_dependencies/.build/tioga/${PE_ENV_lc}/${ROCM_VER}
+BUILD_ROOT=/usr/workspace/lbann/ci_stable_dependencies/.build/tioga/${ROCM_VER}/${PE_ENV_lc}
 
 # Location of external packages
 #export CMAKE_PREFIX_PATH=/p/vast1/lbann/stable_dependencies/tioga/rocm-6.1.0/miopen

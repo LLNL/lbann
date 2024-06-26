@@ -117,7 +117,8 @@ set_center_specific_modules()
 #                MODULE_CMD_GCC="module load jobutils/1.0 StdEnv gcc/11.2.1-magic ninja/1.11.1 openmpi/4.1.2 cuda/11.8.0 python/3.9.12"
                 MODULE_CMD_GCC="module load jobutils/1.0 StdEnv gcc/10.3.1-magic ninja/1.11.1 openmpi/4.1.2 cuda/11.8.0 python/3.9.12"
                 # Note that clang is installed in /usr/workspace/brain/tom/pascal/llvm/latest/ and it is version 17.0.0
-                MODULE_CMD_CLANG="module load gcc/10.3.1 cuda/11.8.0 mvapich2/2.3.7 python/3.9.12"
+#                MODULE_CMD_CLANG="module load gcc/10.3.1 cuda/11.8.0 mvapich2/2.3.7 python/3.9.12"
+                MODULE_CMD_CLANG="module load jobutils/1.0 StdEnv clang/14.0.6-magic ninja/1.11.1 openmpi/4.1.2 cuda/11.8.0 python/3.9.12"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
                 MODULE_CMD="module load gcc/10.2.1 mvapich2/2.3.6 python/3.7.2"
@@ -204,8 +205,8 @@ set_center_specific_spack_dependencies()
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 # On LC the mvapich2 being used is built against HWLOC v1
                 CENTER_COMPILER_PATHS="/usr/tce/packages/gcc/gcc-11.2.1-magic /usr/workspace/brain/tom/pascal/llvm/latest/"
-                CENTER_COMPILER="%gcc"
-#                CENTER_COMPILER="%clang"
+#                CENTER_COMPILER="%gcc"
+                CENTER_COMPILER="%clang"
 #                DEPENDENTS_CENTER_COMPILER="%gcc@10.3.1"
                 # There is something weird about the python@3.9.13 on Pascal right now 5/31/2023
                 CENTER_DEPENDENCIES="^openmpi@4.1.2"
@@ -333,8 +334,8 @@ cat <<EOF  >> ${yaml}
         modules:
         - mvapich2/2.3.7
 EOF
-        set_superbuild_externals ${host} "cuda-11.8.0" "openmpi-4.1.2" "$yaml" "${LOG}" "${prefix}"
-        set_superbuild_DHA_externals ${host} "cuda-11.8.0" "openmpi-4.1.2" "$yaml" "${prefix}" "${dha_dir}"
+        set_superbuild_externals ${host} "cuda-11.8.0" "clang-14.0.6-magic" "openmpi-4.1.2" "$yaml" "${LOG}" "${prefix}"
+        set_superbuild_DHA_externals ${host} "cuda-11.8.0" "clang-14.0.6-magic" "openmpi-4.1.2" "$yaml" "${LOG}" "${prefix}" "${dha_dir}"
                 ;;
             "power9le" | "power8le")
 cat <<EOF  >> ${yaml}
@@ -487,8 +488,8 @@ cat <<EOF  >> ${yaml}
 EOF
         PE_ENV_lc=$(echo "${PE_ENV}" | tr '[:upper:]' '[:lower:]')
         echo "BVE Using the Cray programming environment ${PE_ENV_lc}"
-        set_superbuild_externals ${host} "${PE_ENV_lc}/rocm-5.7.1" "cray-mpich-8.1.29" "$yaml" "${LOG}" "${prefix}"
-        set_superbuild_DHA_externals ${host} "${PE_ENV_lc}/rocm-5.7.1" "cray-mpich-8.1.29" "$yaml" "${prefix}" "${dha_dir}"
+        set_superbuild_externals ${host} "rocm-5.7.1" "${PE_ENV_lc}""cray-mpich-8.1.29" "$yaml" "${LOG}" "${prefix}"
+        set_superbuild_DHA_externals ${host} "rocm-5.7.1" "${PE_ENV_lc}" "cray-mpich-8.1.29" "$yaml" "${LOG}" "${prefix}" "${dha_dir}"
         # set_superbuild_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.28" "$yaml" "${LOG}" "${prefix}" "mi300a"
         # set_superbuild_DHA_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.28" "$yaml" "${prefix}" "mi300a"
                 ;;

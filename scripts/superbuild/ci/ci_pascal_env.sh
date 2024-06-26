@@ -33,17 +33,20 @@ EXTRA_CUDA_FLAGS="-O2 -g3 -Wno-deprecated-declarations"
 
 # Prefer RPATH to RUNPATH (stability over flexibility)
 EXTRA_LINK_FLAGS_CORE="-Wl,--disable-new-dtags"
-EXTRA_LINK_FLAGS="-fuse-ld=gold ${EXTRA_LINK_FLAGS_CORE}"
+EXTRA_LINK_FLAGS="-fuse-ld=lld ${EXTRA_LINK_FLAGS_CORE}"
 
 # Set this to the CUDA GPU arch(s) to support (example set for Lassen/Sierra)
 CUDA_GPU_ARCH=60
 
+CUDA_VER=cuda-11.8.0
+COMPILER_VER=clang-14.0.6-magic
 # Set to the preferred install directory
-INSTALL_ROOT=/usr/workspace/lbann/ci_stable_dependencies/pascal/cuda-11.8.0
-INSTALL_PREFIX_EXTERNALS=${INSTALL_ROOT}/openmpi-4.1.2
+CI_STABLE_DEPENDENCIES_ROOT=/usr/workspace/lbann/ci_stable_dependencies
+INSTALL_ROOT=${CI_STABLE_DEPENDENCIES_ROOT}/pascal/${CUDA_VER}
+INSTALL_PREFIX_EXTERNALS=${INSTALL_ROOT}/${COMPILER_VER}/openmpi-4.1.2
 
 # Use an accessible build directory so that the source files are preserved for debuggin
-BUILD_ROOT=/usr/workspace/lbann/ci_stable_dependencies/.build/pascal/cuda-11.8.0
+BUILD_ROOT=/usr/workspace/lbann/ci_stable_dependencies/.build/pascal/${CUDA_VER}/${COMPILER_VER}
 
 # Location of external packages
 export CMAKE_PREFIX_PATH=${INSTALL_ROOT}/cudnn-8.9.4:${INSTALL_ROOT}/nccl-2.19.4:${INSTALL_ROOT}/../../cutensor-2.0.1.2/libcutensor-linux-x86_64-2.0.1.2-archive

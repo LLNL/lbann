@@ -52,7 +52,7 @@ BUILD_DIR=${BUILD_ROOT}/lbann-superbuild-dha-half
 
 # Update the location of external packages
 source ${INSTALL_PREFIX_EXTERNALS}/logs/lbann_sb_suggested_cmake_prefix_path.sh
-export CMAKE_PREFIX_PATH=${INSTALL_PREFIX}/half-2.2.0:${CMAKE_PREFIX_PATH}
+export CMAKE_PREFIX_PATH=${CI_STABLE_DEPENDENCIES_ROOT}/half-2.2.0:${CMAKE_PREFIX_PATH}
 CMAKE_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
 FWD_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/|}
 
@@ -66,10 +66,10 @@ cmake \
     -D CMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
     -D CMAKE_INSTALL_RPATH_USE_LINK_PATH=ON \
     \
-    -D CMAKE_C_COMPILER=$(which gcc) \
-    -D CMAKE_CXX_COMPILER=$(which g++) \
+    -D CMAKE_C_COMPILER=$(which clang) \
+    -D CMAKE_CXX_COMPILER=$(which clang++) \
     -D CMAKE_CUDA_COMPILER=$(command -v nvcc) \
-    -D CMAKE_CUDA_HOST_COMPILER=$(command -v g++) \
+    -D CMAKE_CUDA_HOST_COMPILER=$(command -v clang++) \
     -D CMAKE_Fortran_COMPILER=$(which gfortran) \
     \
     -D CMAKE_EXE_LINKER_FLAGS="${EXTRA_LINK_FLAGS}" \

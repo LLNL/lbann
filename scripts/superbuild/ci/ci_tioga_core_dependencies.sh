@@ -56,7 +56,7 @@ source ${SUPERBUILD_SRC_DIR}/ci/ci_tioga_env.sh
 INSTALL_PREFIX=${INSTALL_PREFIX_EXTERNALS}
 
 # Set to the preferred build directory
-BUILD_DIR=${BUILD_ROOT}/lbann-superbuild-core-dependencies-${PE_ENV_lc}-${ROCM_VER}
+BUILD_DIR=${BUILD_ROOT}/lbann-superbuild-core-dependencies
 
 cmake \
     -G Ninja \

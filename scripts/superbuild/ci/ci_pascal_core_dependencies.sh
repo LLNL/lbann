@@ -55,10 +55,10 @@ cmake \
     -D CMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
     -D CMAKE_INSTALL_RPATH_USE_LINK_PATH=ON \
     \
-    -D CMAKE_C_COMPILER=$(which gcc) \
-    -D CMAKE_CXX_COMPILER=$(which g++) \
+    -D CMAKE_C_COMPILER=$(which clang) \
+    -D CMAKE_CXX_COMPILER=$(which clang++) \
     -D CMAKE_CUDA_COMPILER=$(command -v nvcc) \
-    -D CMAKE_CUDA_HOST_COMPILER=$(command -v g++) \
+    -D CMAKE_CUDA_HOST_COMPILER=$(command -v clang++) \
     -D CMAKE_Fortran_COMPILER=$(which gfortran) \
     \
     -D BUILD_SHARED_LIBS=ON \
