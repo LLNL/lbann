@@ -246,7 +246,7 @@ void check_gradients::do_check_gradients(model& m) const
   auto& c = static_cast<SGDExecutionContext&>(m.get_execution_context());
   auto& comm = *m.get_comm();
   const auto mode = c.get_execution_mode();
-  const auto& layers = m.get_layers();
+  // const auto& layers = m.get_layers();
 
   // Return immediately if gradient check isn't currently needed
   if (!m_modes.empty() && m_modes.count(mode) == 0) {
