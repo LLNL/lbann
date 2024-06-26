@@ -48,7 +48,7 @@ source ${SUPERBUILD_SRC_DIR}/ci/ci_pascal_env.sh
 INSTALL_PREFIX=${INSTALL_PREFIX_EXTERNALS}/dha_with_half
 
 # Set to the preferred build directory
-BUILD_DIR=${TMPDIR}/lbann-superbuild-dha-half
+BUILD_DIR=${BUILD_ROOT}/lbann-superbuild-dha-half
 
 # Update the location of external packages
 source ${INSTALL_PREFIX_EXTERNALS}/logs/lbann_sb_suggested_cmake_prefix_path.sh
