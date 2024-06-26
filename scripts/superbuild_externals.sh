@@ -5,16 +5,15 @@ set_superbuild_externals()
     local compiler_ver="$3"
     local mpi="$4"
     local yaml="$5"
-    local LOG="$6"
-    local prefix="$7"
-    local gpu_arch="$8"
-    
+    local prefix="$6"
+    local gpu_arch="$7"
+
     if [ -n "${gpu_arch}" ]; then
         dnn_lib="${dnn_lib}/${gpu_arch}"
     fi
 
     #/usr/workspace/lbann/stable_dependencies/rzvernal/rocm-5.7.1/mi300a/cray-mpich-8.1.27
-    
+
     #/usr/workspace/lbann/lbann-superbuild/
 
     local sb_extra_prefix="${system}/${dnn_lib}/${compiler_ver}/${mpi}"
@@ -183,10 +182,9 @@ set_superbuild_DHA_externals()
     local compiler_ver="$3"
     local mpi="$4"
     local yaml="$5"
-    local LOG="$6"
-    local prefix="$7"
-    local dha_dir="$8"
-    local gpu_arch="$9"
+    local prefix="$6"
+    local dha_dir="$7"
+    local gpu_arch="$8"
 
     if [ -n "${gpu_arch}" ]; then
         dnn_lib="${dnn_lib}/${gpu_arch}"

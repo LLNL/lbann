@@ -368,6 +368,13 @@ fi
 # Detect system parameters
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 
+LOG="spack-build-${LBANN_ENV}.log"
+if [[ -f ${LOG} ]]; then
+    CMD="rm ${LOG}"
+    echo ${CMD}
+    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
+fi
+
 # Identify the center that we are running at
 CENTER=
 # Customize the build based on the center
@@ -394,13 +401,6 @@ if [[ -n "${LBANN_LABEL:-}" ]]; then
     AT_LBANN_LABEL="@${LBANN_LABEL}"
 else
     AT_LBANN_LABEL=""
-fi
-
-LOG="spack-build-${LBANN_ENV}.log"
-if [[ -f ${LOG} ]]; then
-    CMD="rm ${LOG}"
-    echo ${CMD}
-    [[ -z "${DRY_RUN:-}" ]] && ${CMD}
 fi
 
 LBANN_BUILD_LABEL="lbann_${CLUSTER}_${LBANN_LABEL}"
