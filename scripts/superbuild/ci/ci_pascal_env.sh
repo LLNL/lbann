@@ -42,7 +42,7 @@ INSTALL_ROOT=/usr/workspace/lbann/ci_stable_dependencies/pascal/cuda-11.8.0
 INSTALL_PREFIX_EXTERNALS=${INSTALL_ROOT}/openmpi-4.1.2
 
 # Use an accessible build directory so that the source files are preserved for debuggin
-BUILD_ROOT=/usr/workspace/lbann/ci_stable_dependencies/.build/tioga/${PE_ENV_lc}/${ROCM_VER}
+BUILD_ROOT=/usr/workspace/lbann/ci_stable_dependencies/.build/pascal/cuda-11.8.0
 
 # Location of external packages
 export CMAKE_PREFIX_PATH=${INSTALL_ROOT}/cudnn-8.9.4:${INSTALL_ROOT}/nccl-2.19.4:${INSTALL_ROOT}/../../cutensor-2.0.1.2/libcutensor-linux-x86_64-2.0.1.2-archive
