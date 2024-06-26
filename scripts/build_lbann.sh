@@ -1044,9 +1044,9 @@ if [[ -z "${CONFIG_FILE_NAME}" ]]; then
         for p in ${PIP_EXTRAS}
         do
             if [[ -e "${p}" ]]; then
-                CMD="python3 -m pip install --force-reinstall -i https://pypi.org/simple --prefix ${LBANN_INSTALL_DIR} -r ${p}"
+                CMD="python3 -m pip install -i https://pypi.org/simple --prefix ${LBANN_INSTALL_DIR} -r ${p}"
             else
-                CMD="python3 -m pip install --force-reinstall -i https://pypi.org/simple --prefix ${LBANN_INSTALL_DIR} ${p}"
+                CMD="python3 -m pip install -i https://pypi.org/simple --prefix ${LBANN_INSTALL_DIR} ${p}"
             fi
             echo ${CMD} | tee -a ${LOG}
             [[ -z "${DRY_RUN:-}" ]] && { ${CMD} || exit_on_failure "${CMD}"; }
