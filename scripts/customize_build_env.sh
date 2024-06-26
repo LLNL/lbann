@@ -114,8 +114,8 @@ set_center_specific_modules()
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
 
-                MODULE_CMD_GCC="module load jobutils/1.0 StdEnv gcc/11.2.1-magic ninja/1.11.1 openmpi/4.1.2 cuda/11.8.0 python/3.9.12"
-#                MODULE_CMD_GCC="module load jobutils/1.0 StdEnv gcc/10.3.1-magic ninja/1.11.1 openmpi/4.1.2 cuda/11.8.0 python/3.9.12"
+#                MODULE_CMD_GCC="module load jobutils/1.0 StdEnv gcc/11.2.1-magic ninja/1.11.1 openmpi/4.1.2 cuda/11.8.0 python/3.9.12"
+                MODULE_CMD_GCC="module load jobutils/1.0 StdEnv gcc/10.3.1-magic ninja/1.11.1 openmpi/4.1.2 cuda/11.8.0 python/3.9.12"
                 # Note that clang is installed in /usr/workspace/brain/tom/pascal/llvm/latest/ and it is version 17.0.0
                 MODULE_CMD_CLANG="module load gcc/10.3.1 cuda/11.8.0 mvapich2/2.3.7 python/3.9.12"
                 ;;
@@ -486,6 +486,7 @@ cat <<EOF  >> ${yaml}
 #        - cce/17.0.1 PrgEnv-cray cray-mpich/8.1.29
 EOF
         PE_ENV_lc=$(echo "${PE_ENV}" | tr '[:upper:]' '[:lower:]')
+        echo "BVE Using the Cray programming environment ${PE_ENV_lc}"
         set_superbuild_externals ${host} "${PE_ENV_lc}/rocm-5.7.1" "cray-mpich-8.1.29" "$yaml" "${LOG}" "${prefix}"
         set_superbuild_DHA_externals ${host} "${PE_ENV_lc}/rocm-5.7.1" "cray-mpich-8.1.29" "$yaml" "${prefix}" "${dha_dir}"
         # set_superbuild_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.28" "$yaml" "${LOG}" "${prefix}" "mi300a"
