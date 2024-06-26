@@ -179,8 +179,8 @@ EOF
 set_superbuild_DHA_externals()
 {
     local system="$1"
+    local dnn_lib="$2"
     local compiler_ver="$3"
-    local dnn_lib="$3"
     local mpi="$4"
     local yaml="$5"
     local LOG="$6"
