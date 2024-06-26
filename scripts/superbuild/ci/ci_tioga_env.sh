@@ -26,8 +26,8 @@
 
 # Improve debugging info and remove some misguided warnings. These are
 # passed only to the LBANN stack.
-EXTRA_CXX_FLAGS="-O2 -g -Wno-deprecated-declarations"
-EXTRA_HIP_FLAGS="-O2 -g -Wno-deprecated-declarations"
+EXTRA_CXX_FLAGS="-O2 -g3 -Wno-deprecated-declarations"
+EXTRA_HIP_FLAGS="-O2 -g3 -Wno-deprecated-declarations"
 
 # Prefer RPATH to RUNPATH (stability over flexibility)
 EXTRA_LINK_FLAGS="-fuse-ld=lld -Wl,--disable-new-dtags"
@@ -41,8 +41,11 @@ AMD_GPU_ARCH=gfx90a,gfx942
 #INSTALL_PREFIX=${PWD}/install-rocm-distconv
 ROCM_VER=$(basename ${ROCM_PATH})
 PE_ENV_lc=$(echo "${PE_ENV}" | tr '[:upper:]' '[:lower:]')
-INSTALL_ROOT=/usr/workspace/lbann/ci_stable_dependencies/tioga/${PE_ENV_lc}//${ROCM_VER}
+INSTALL_ROOT=/usr/workspace/lbann/ci_stable_dependencies/tioga/${PE_ENV_lc}/${ROCM_VER}
 INSTALL_PREFIX_EXTERNALS=${INSTALL_ROOT}/cray-mpich-8.1.29/
+
+# Use an accessible build directory so that the source files are preserved for debuggin
+BUILD_ROOT=/usr/workspace/lbann/ci_stable_dependencies/.build/tioga/${PE_ENV_lc}/${ROCM_VER}
 
 # Location of external packages
 #export CMAKE_PREFIX_PATH=/p/vast1/lbann/stable_dependencies/tioga/rocm-6.1.0/miopen
