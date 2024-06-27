@@ -150,6 +150,14 @@ void TruncationSelectionExchange::select_next(model& m,
                                               data_coordinator& dc) const
 {
   auto const& comm = *(m.get_comm());
+
+  El::mpi::EnsureComm<size_t, El::Collective::SEND>(
+    comm.get_world_comm(),
+    El::SyncInfo<El::Device::CPU>{});
+  El::mpi::EnsureComm<size_t, El::Collective::RECV>(
+    comm.get_world_comm(),
+    El::SyncInfo<El::Device::CPU>{});
+
   const unsigned int num_trainers = comm.get_num_trainers();
   const unsigned int trainer_id = comm.get_trainer_rank();
   auto const step = ctxt.get_step();
