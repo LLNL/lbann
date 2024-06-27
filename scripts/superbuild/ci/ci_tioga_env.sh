@@ -32,7 +32,7 @@ EXTRA_HIP_FLAGS="-O2 -g3 -Wno-deprecated-declarations"
 # Prefer RPATH to RUNPATH (stability over flexibility)
 EXTRA_LINK_FLAGS="-fuse-ld=lld -Wl,--disable-new-dtags"
 # If using PrgEnv-cray add ${CRAYLIBS_X86_64}
-EXTRA_RPATHS="${ROCM_PATH}/lib"
+EXTRA_RPATHS="${ROCM_PATH}/lib\;${ROCM_PATH}/llvm/lib"
 
 # Set this to the AMD GPU arch(s) to support (example set for Crusher/Frontier/Tioga)
 AMD_GPU_ARCH=gfx90a,gfx942
