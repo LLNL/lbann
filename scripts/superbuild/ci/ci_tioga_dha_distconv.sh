@@ -124,3 +124,6 @@ cmake \
     -D LBANN_SB_DiHydrogen_HIP_FLAGS="${EXTRA_HIP_FLAGS}" \
     -D LBANN_SB_FWD_DiHydrogen_H2_ENABLE_DISTCONV_LEGACY=${BUILD_WITH_DISTCONV} \
     -D LBANN_SB_FWD_DiHydrogen_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH}
+
+# Save a list of the currently loaded modules
+module -t list 2> ${INSTALL_PREFIX}/logs/modules.txt

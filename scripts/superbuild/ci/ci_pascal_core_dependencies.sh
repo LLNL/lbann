@@ -94,3 +94,6 @@ cmake \
     -D LBANN_SB_BUILD_JPEG-TURBO=${BUILD_EXTERNAL_TPLS} \
     -D LBANN_SB_BUILD_OpenCV=${BUILD_EXTERNAL_TPLS} \
     -D LBANN_SB_OpenCV_TAG=4.x
+
+# Save a list of the currently loaded modules
+module -t list 2> ${INSTALL_PREFIX}/logs/modules.txt

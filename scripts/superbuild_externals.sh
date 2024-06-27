@@ -44,6 +44,13 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: catch2@2.9.2 arch=${spack_arch}
         prefix: ${prefix}/${sb_extra_prefix}/catch2
+    half:
+      buildable: false
+      version:
+      - '2.1.0'
+      externals:
+      - spec: half@2.1.0 arch=${spack_arch}
+        prefix: ${prefix}/half-2.1.0
     hdf5:
       buildable: false
       version:

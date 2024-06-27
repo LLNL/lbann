@@ -52,7 +52,7 @@ BUILD_DIR=${BUILD_ROOT}/lbann-superbuild-dha-half
 
 # Update the location of external packages
 source ${INSTALL_PREFIX_EXTERNALS}/logs/lbann_sb_suggested_cmake_prefix_path.sh
-export CMAKE_PREFIX_PATH=${CI_STABLE_DEPENDENCIES_ROOT}/half-2.2.0:${CMAKE_PREFIX_PATH}
+export CMAKE_PREFIX_PATH=${CI_STABLE_DEPENDENCIES_ROOT}/half-2.1.0:${CMAKE_PREFIX_PATH}
 CMAKE_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
 FWD_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/|}
 
@@ -108,3 +108,6 @@ cmake \
     -D LBANN_SB_DiHydrogen_CUDA_FLAGS="${EXTRA_CUDA_FLAGS}" \
     -D LBANN_SB_FWD_DiHydrogen_H2_ENABLE_DISTCONV_LEGACY=${BUILD_WITH_DISTCONV} \
     -D LBANN_SB_FWD_DiHydrogen_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH}
+
+# Save a list of the currently loaded modules
+module -t list 2> ${INSTALL_PREFIX}/logs/modules.txt

@@ -110,3 +110,6 @@ cmake \
     -D LBANN_SB_OpenCV_TAG=4.x \
     \
     -D LBANN_SB_BUILD_AWS_OFI_RCCL=${BUILD_AWS_OFI_RCCL_PLUGIN}}
+
+# Save a list of the currently loaded modules
+module -t list 2> ${INSTALL_PREFIX}/logs/modules.txt
