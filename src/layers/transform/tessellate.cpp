@@ -134,6 +134,18 @@ void tessellate_layer<TensorDataType, T_layout, Dev>::bp_compute_3d(
   }
 }
 
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void tessellate_layer<TensorDataType, T_layout, Dev>::bp_compute_cutensor(
+  const std::vector<int>& input_dims,
+  const std::vector<int>& output_dims,
+  const El::AbstractDistMatrix<TensorDataType>& output_grad,
+  El::AbstractMatrix<TensorDataType>& input_grad)
+{
+  // Multi-dimensional reduction for CPU Tessellate backprop is the same as the
+  // regular backprop
+  bp_compute_3d(input_dims, output_dims, output_grad, input_grad);
+}
+
 // Explicit template instantiation
 #define PROTO(T)                                                               \
   template class tessellate_layer<T,                                           \

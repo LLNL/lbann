@@ -148,8 +148,7 @@ void multidim_reduction_layer<TensorDataType, Layout, Device>::fp_compute()
   // No model parallelism nor CPU
   LBANN_ASSERT(Layout == data_layout::DATA_PARALLEL);
   LBANN_ASSERT(Device == El::Device::GPU);
-  if constexpr (Device == El::Device::GPU)
-  {
+  if constexpr (Device == El::Device::GPU) {
     // Constants
     const auto one = El::TypeTraits<TensorDataType>::One();
     const auto zero = El::TypeTraits<TensorDataType>::Zero();
@@ -193,19 +192,20 @@ void multidim_reduction_layer<TensorDataType, Layout, Device>::fp_compute()
     workspace.SetMemoryMode(1);
     auto handle = get_handle_ptr();
     uint64_t wspsize = 0;
-    CHECK_CUTENSOR(cutensorReductionGetWorkspaceSize(handle,
-                                                     input.LockedBuffer(),
-                                                     &input_desc,
-                                                     input_modes.data(),
-                                                     output.LockedBuffer(),
-                                                     &output_desc,
-                                                     output_modes.data(),
-                                                     output.LockedBuffer(),
-                                                     &output_desc,
-                                                     output_modes.data(),
-                                                     cutensor_reduce_op,
-                                                     CUTENSOR_COMPUTE_32F,
-                                                     &wspsize));
+    CHECK_CUTENSOR(
+      cutensorReductionGetWorkspaceSize(handle,
+                                        input.LockedBuffer(),
+                                        &input_desc,
+                                        input_modes.data(),
+                                        output.LockedBuffer(),
+                                        &output_desc,
+                                        output_modes.data(),
+                                        output.LockedBuffer(),
+                                        &output_desc,
+                                        output_modes.data(),
+                                        cutensor_reduce_op,
+                                        CUDATypeT<TensorDataType>::compute_type,
+                                        &wspsize));
     workspace.Resize(wspsize, 1);
 
     auto multisync = El::MakeMultiSync(El::SyncInfoFromMatrix(output),
@@ -213,23 +213,23 @@ void multidim_reduction_layer<TensorDataType, Layout, Device>::fp_compute()
 
     // Compute reduction locally
     CHECK_CUTENSOR(cutensorReduction(
-                     handle,
-                     &one,
-                     input.LockedBuffer(),
-                     &input_desc,
-                     input_modes.data(),
-                     &zero,
-                     output.LockedBuffer(),
-                     &output_desc,
-                     output_modes.data(),
-                     output.Buffer(),
-                     &output_desc,
-                     output_modes.data(),
-                     cutensor_reduce_op,
-                     CUTENSOR_COMPUTE_32F,
-                     workspace.Buffer(),
-                     wspsize,
-                     static_cast<El::SyncInfo<El::Device::GPU>>(multisync).Stream()));
+      handle,
+      &one,
+      input.LockedBuffer(),
+      &input_desc,
+      input_modes.data(),
+      &zero,
+      output.LockedBuffer(),
+      &output_desc,
+      output_modes.data(),
+      output.Buffer(),
+      &output_desc,
+      output_modes.data(),
+      cutensor_reduce_op,
+      CUDATypeT<TensorDataType>::compute_type,
+      workspace.Buffer(),
+      wspsize,
+      static_cast<El::SyncInfo<El::Device::GPU>>(multisync).Stream()));
   }
 #endif
 }
@@ -238,17 +238,17 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void multidim_reduction_layer<TensorDataType, Layout, Device>::bp_compute()
 {
 #ifdef LBANN_HAS_CUTENSOR
-  if constexpr (Device == El::Device::GPU)
-  {
+  if constexpr (Device == El::Device::GPU) {
     // Constants
     const auto one = El::TypeTraits<TensorDataType>::One();
     const auto zero = El::TypeTraits<TensorDataType>::Zero();
 
     // Data matrices
     using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
-    LocalMat const& input =
-      static_cast<LocalMat const&>(this->get_prev_error_signals().LockedMatrix());
-    LocalMat& output = static_cast<LocalMat&>(this->get_error_signals().Matrix());
+    LocalMat const& input = static_cast<LocalMat const&>(
+      this->get_prev_error_signals().LockedMatrix());
+    LocalMat& output =
+      static_cast<LocalMat&>(this->get_error_signals().Matrix());
 
     RowMajorDims<int64_t> input_dims(this->get_output_dims());
     RowMajorDims<int64_t> output_dims(this->get_input_dims());
@@ -266,21 +266,21 @@ void multidim_reduction_layer<TensorDataType, Layout, Device>::bp_compute()
       auto input_desc = get_descriptor(input, input_dims);
       auto output_desc = get_descriptor(output, output_dims);
       CHECK_CUTENSOR(cutensorElementwiseBinary(
-                       handle,
-                       &one,
-                       input.LockedBuffer(),
-                       &input_desc,
-                       input_modes.data(),
-                       &zero,
-                       output.LockedBuffer(),
-                       &output_desc,
-                       output_modes.data(),
-                       output.Buffer(),
-                       &output_desc,
-                       output_modes.data(),
-                       CUTENSOR_OP_ADD,
-                       CUDATypeT<TensorDataType>::value,
-                       static_cast<El::SyncInfo<El::Device::GPU>>(multisync).Stream()));
+        handle,
+        &one,
+        input.LockedBuffer(),
+        &input_desc,
+        input_modes.data(),
+        &zero,
+        output.LockedBuffer(),
+        &output_desc,
+        output_modes.data(),
+        output.Buffer(),
+        &output_desc,
+        output_modes.data(),
+        CUTENSOR_OP_ADD,
+        CUDATypeT<TensorDataType>::value,
+        static_cast<El::SyncInfo<El::Device::GPU>>(multisync).Stream()));
       break;
     }
     default:
