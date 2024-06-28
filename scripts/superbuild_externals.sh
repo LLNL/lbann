@@ -147,6 +147,13 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: aws-ofi-rccl@cxi arch=${spack_arch}
         prefix: ${prefix}/${sb_extra_prefix}/aws_ofi_rccl
+    hiptt:
+      buildable: false
+      version:
+      - 'master'
+      externals:
+      - spec: hiptt@master arch=${spack_arch}
+        prefix: ${prefix}/${sb_extra_prefix}/hiptt
 EOF
     fi
 

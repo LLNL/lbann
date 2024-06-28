@@ -35,14 +35,6 @@ BUILD_LBANN_STACK=ON
 # LBANN stack.
 BUILD_WITH_DISTCONV=ON
 
-# Set to ON if you're on a Cray machine that doesn't provide the AWS
-# plugin as part of its default RCCL installation.
-#
-# It might also be advisable to build this if you build a custom RCCL.
-# The configuration script takes a RCCL path as a parameter, so it
-# could matter, but it's not clear how much.
-BUILD_AWS_OFI_RCCL_PLUGIN=ON
-
 # Set to the directory with the top-level CMakeLists.txt file for LBANN
 LBANN_SRC_DIR=$(git rev-parse --show-toplevel)
 
@@ -50,7 +42,7 @@ LBANN_SRC_DIR=$(git rev-parse --show-toplevel)
 SUPERBUILD_SRC_DIR=${LBANN_SRC_DIR}/scripts/superbuild
 
 # Setup the common environment
-source ${SUPERBUILD_SRC_DIR}/ci/ci_tioga_env.sh
+source ${SUPERBUILD_SRC_DIR}/ci/ci_corona_env.sh
 
 # Set to the preferred install directory
 INSTALL_PREFIX=${INSTALL_PREFIX_EXTERNALS}
@@ -108,9 +100,7 @@ cmake \
     \
     -D LBANN_SB_BUILD_JPEG-TURBO=${BUILD_EXTERNAL_TPLS} \
     -D LBANN_SB_BUILD_OpenCV=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_OpenCV_TAG=4.x \
-    \
-    -D LBANN_SB_BUILD_AWS_OFI_RCCL=${BUILD_AWS_OFI_RCCL_PLUGIN}}
+    -D LBANN_SB_OpenCV_TAG=4.x
 
 # Save a list of the currently loaded modules
 module -t list 2> ${INSTALL_PREFIX}/logs/modules.txt

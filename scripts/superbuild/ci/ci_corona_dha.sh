@@ -33,15 +33,11 @@ BUILD_LBANN_STACK=ON
 
 # Set to ON to enable DistConv support. Only matters if building the
 # LBANN stack.
-BUILD_WITH_DISTCONV=ON
+BUILD_WITH_DISTCONV=OFF
 
-# Set to ON if you're on a Cray machine that doesn't provide the AWS
-# plugin as part of its default RCCL installation.
-#
-# It might also be advisable to build this if you build a custom RCCL.
-# The configuration script takes a RCCL path as a parameter, so it
-# could matter, but it's not clear how much.
-BUILD_AWS_OFI_RCCL_PLUGIN=ON
+# Set to ON to enable Half support. Only matters if building the
+# LBANN stack.
+BUILD_WITH_HALF=OFF
 
 # Set to the directory with the top-level CMakeLists.txt file for LBANN
 LBANN_SRC_DIR=$(git rev-parse --show-toplevel)
@@ -50,13 +46,19 @@ LBANN_SRC_DIR=$(git rev-parse --show-toplevel)
 SUPERBUILD_SRC_DIR=${LBANN_SRC_DIR}/scripts/superbuild
 
 # Setup the common environment
-source ${SUPERBUILD_SRC_DIR}/ci/ci_tioga_env.sh
+source ${SUPERBUILD_SRC_DIR}/ci/ci_corona_env.sh
 
 # Set to the preferred install directory
-INSTALL_PREFIX=${INSTALL_PREFIX_EXTERNALS}
+INSTALL_PREFIX=${INSTALL_PREFIX_EXTERNALS}/dha
 
 # Set to the preferred build directory
-BUILD_DIR=${BUILD_ROOT}/lbann-superbuild-core-dependencies
+BUILD_DIR=${BUILD_ROOT}/lbann-superbuild-dha
+
+# Update the location of external packages
+source ${INSTALL_PREFIX_EXTERNALS}/logs/lbann_sb_suggested_cmake_prefix_path.sh
+#export CMAKE_PREFIX_PATH=${INSTALL_PREFIX}/half-2.1.0:${CMAKE_PREFIX_PATH}
+CMAKE_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
+FWD_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/|}
 
 cmake \
     -G Ninja \
@@ -88,29 +90,30 @@ cmake \
     -D LBANN_SB_DEFAULT_INSTALL_PATH_STRATEGY="PKG_LC" \
     -D LBANN_SB_DEFAULT_ROCM_OPTS=ON \
     \
-    -D LBANN_SB_BUILD_adiak=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_Caliper=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_adiak_BUILD_SHARED_LIBS=ON \
-    -D LBANN_SB_Caliper_BUILD_SHARED_LIBS=ON \
+    -D LBANN_SB_BUILD_Aluminum=${BUILD_LBANN_STACK} \
+    -D LBANN_SB_Aluminum_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
+    -D LBANN_SB_Aluminum_HIP_FLAGS="${EXTRA_HIP_FLAGS}" \
+    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_CALIPER=OFF \
+    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_NCCL=ON \
+    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_HOST_TRANSFER=OFF \
+    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_TESTS=OFF \
+    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_BENCHMARKS=OFF \
+    -D LBANN_SB_FWD_Aluminum_ALUMINUM_ENABLE_THREAD_MULTIPLE=OFF \
+    -D LBANN_SB_FWD_Aluminum_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH} \
     \
-    -D LBANN_SB_BUILD_Catch2=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_cereal=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_Clara=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_CNPY=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_hiptt=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_protobuf=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_spdlog=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_zstr=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_hwloc=${BUILD_EXTERNAL_TPLS} \
+    -D LBANN_SB_BUILD_Hydrogen=${BUILD_LBANN_STACK} \
+    -D LBANN_SB_Hydrogen_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
+    -D LBANN_SB_Hydrogen_HIP_FLAGS="${EXTRA_HIP_FLAGS}" \
+    -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_HALF=${BUILD_WITH_HALF} \
+    -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_TESTING=ON \
+    -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_UNIT_TESTS=OFF \
+    -D LBANN_SB_FWD_Hydrogen_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH} \
     \
-    -D LBANN_SB_BUILD_Conduit=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_HDF5=${BUILD_EXTERNAL_TPLS} \
-    \
-    -D LBANN_SB_BUILD_JPEG-TURBO=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_OpenCV=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_OpenCV_TAG=4.x \
-    \
-    -D LBANN_SB_BUILD_AWS_OFI_RCCL=${BUILD_AWS_OFI_RCCL_PLUGIN}}
+    -D LBANN_SB_BUILD_DiHydrogen=${BUILD_LBANN_STACK} \
+    -D LBANN_SB_DiHydrogen_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
+    -D LBANN_SB_DiHydrogen_HIP_FLAGS="${EXTRA_HIP_FLAGS}" \
+    -D LBANN_SB_FWD_DiHydrogen_H2_ENABLE_DISTCONV_LEGACY=${BUILD_WITH_DISTCONV} \
+    -D LBANN_SB_FWD_DiHydrogen_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH}
 
 # Save a list of the currently loaded modules
 module -t list 2> ${INSTALL_PREFIX}/logs/modules.txt

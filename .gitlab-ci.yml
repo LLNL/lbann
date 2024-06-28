@@ -36,27 +36,27 @@ variables:
 stages:
   - run-all-clusters
 
-# corona testing:
-#   stage: run-all-clusters
-#   variables:
-#     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-#     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
-#   trigger:
-#     strategy: depend
-#     include: .gitlab/corona/pipeline.yml
+corona testing:
+  stage: run-all-clusters
+  variables:
+    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
+    WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
+  trigger:
+    strategy: depend
+    include: .gitlab/corona/pipeline.yml
 
-# corona distconv testing:
-#   stage: run-all-clusters
-#   variables:
-#     JOB_NAME_SUFFIX: _distconv
-#     SPACK_ENV_BASE_NAME_MODIFIER: "-distconv"
-#     SPACK_SPECS: "+rocm +distconv"
-#     WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
-#     WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
-#     TEST_FLAG: "test_*_distconv.py"
-#   trigger:
-#     strategy: depend
-#     include: .gitlab/corona/pipeline.yml
+corona distconv testing:
+  stage: run-all-clusters
+  variables:
+    JOB_NAME_SUFFIX: _distconv
+    SPACK_ENV_BASE_NAME_MODIFIER: "-distconv"
+    SPACK_SPECS: "+rocm +distconv"
+    WITH_WEEKLY: "${LBANN_CI_RUN_WEEKLY}"
+    WITH_CLEAN_BUILD: "${LBANN_CI_CLEAN_BUILD}"
+    TEST_FLAG: "test_*_distconv.py"
+  trigger:
+    strategy: depend
+    include: .gitlab/corona/pipeline.yml
 
 # lassen testing:
 #   stage: run-all-clusters
