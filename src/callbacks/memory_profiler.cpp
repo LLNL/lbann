@@ -36,6 +36,10 @@
 
 #include "lbann/proto/callbacks.pb.h"
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/distconv_adapter.hpp"
+#endif
+
 #include "h2/patterns/multimethods/SwitchDispatcher.hpp"
 
 #include <algorithm>
@@ -82,19 +86,62 @@ size_t report_dist_matrix(El::AbstractDistMatrix<T> const& m,
   return allocated;
 }
 
+#ifdef LBANN_HAS_DISTCONV
+template <typename T>
+size_t report_distconv_matrix(::lbann::dc::TensorDev<T> const& m,
+                              std::ostream& stream)
+{
+  size_t const allocated = m.get_local_real_size() * sizeof(T);
+  auto const& shp = m.get_shape();
+  auto const& lshp = m.get_local_real_shape();
+  stream << shp[0];
+  for (int i = 1; i < shp.num_dims(); ++i) {
+    stream << " x " << shp[i];
+  }
+  stream << " (local shape (with halo): " << lshp[0];
+  for (int i = 1; i < lshp.num_dims(); ++i) {
+    stream << " x " << lshp[i];
+  }
+  stream << "). Size: " << allocated / 1048576.0 << " MiB" << std::endl;
+  return allocated;
+}
+#else
+template <typename T>
+size_t report_distconv_matrix(T const& m, std::ostream& stream)
+{
+  stream << "Distconv is disabled" << std::endl;
+  return 0;
+}
+#endif
+
 template <typename T>
 size_t get_activation_and_error_signal_size(data_type_layer<T> const& dtl,
                                             std::ostream& reps)
 {
   size_t allocated = 0;
   for (int i = 0; i < dtl.get_num_children(); ++i) {
-    auto const& act = dtl.get_activations(i);
     if (dtl.get_num_children() == 1)
       reps << "    Activations: ";
     else
       reps << "    Activations (" << i << "): ";
 
-    allocated += report_dist_matrix(act, reps);
+    if (dtl.distconv_enabled()) {
+#ifdef LBANN_HAS_DISTCONV
+      auto const& child = dtl.get_child_layer(i);
+      auto const& dcact = dtl.get_distconv_adapter().get_activations(child);
+      allocated += report_distconv_matrix(dcact, reps);
+      // Add activations if child layer is not distconv-enabled
+      if (!child.distconv_enabled()) {
+        auto const& act = dtl.get_activations(i);
+        reps << "      + non-distconv adapter: ";
+        allocated += report_dist_matrix(act, reps);
+      }
+#endif
+    }
+    else {
+      auto const& act = dtl.get_activations(i);
+      allocated += report_dist_matrix(act, reps);
+    }
   }
   return allocated;
 }
@@ -290,8 +337,8 @@ void memory_profiler::report_mem_usage(model* m)
 
     // Get maximal activation/error signal size (suboptimal approximation)
     {
-      size_t const allocated =
-        get_activation_and_error_signal_size(*layer, reps);
+      size_t const allocated = m_act_sizes[layer];
+      reps << m_act_report[layer];
       layer_total_acts += allocated;
       layer_total += allocated;
     }
@@ -426,13 +473,6 @@ void memory_profiler::on_setup_end(model* m)
   auto comm = m->get_comm();
   bool should_print = comm->am_trainer_master();
 
-  // Post-setup printout of layer accounting
-  if (should_print) {
-    std::cout << "MEM: Expected memory usage by layer (in descending order):"
-              << std::endl;
-    report_mem_usage(m);
-  }
-
   // Print total used memory
   m_step0_usage = m_setup_end_usage = get_used_gpu_memory();
   if (m_setup_end_usage > m_initial_memory_usage && should_print) {
@@ -531,11 +571,18 @@ void memory_profiler::on_batch_end(model* m)
     break;
   }
 
-  // Check for and print leak report
-  if (m_current_step == 2) {
-    auto comm = m->get_comm();
-    bool should_print = comm->am_trainer_master();
+  auto comm = m->get_comm();
+  bool should_print = comm->am_trainer_master();
 
+  // Print collected activation and weight size
+  if (should_print && m_current_step == 0) {
+    std::cout << "MEM: Memory usage by layer (in descending order):"
+              << std::endl;
+    report_mem_usage(m);
+  }
+
+  // Check for and print leak report
+  if (should_print && m_current_step == 2) {
     double third_step = m_step2_usage > m_step1_usage
                           ? (m_step2_usage - m_step1_usage) / 1048576.0
                           : 0.0;
@@ -646,6 +693,10 @@ void memory_profiler::on_forward_prop_end(model* m, Layer* l)
       m_unaccounted_fp_layer[l] = 0;
     }
     collect_peak_usage();
+
+    std::ostringstream ss;
+    m_act_sizes[l] = get_activation_and_error_signal_size(*l, ss);
+    m_act_report[l] = ss.str();
   }
 }
 void memory_profiler::on_backward_prop_begin(model* m, Layer* l)

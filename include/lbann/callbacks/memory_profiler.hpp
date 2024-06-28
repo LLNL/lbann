@@ -116,6 +116,12 @@ private:
   /** Unaccounted memory in bytes during backpropagation */
   std::map<Layer*, size_t> m_unaccounted_bp_layer;
 
+  /** Activation sizes in bytes per layer */
+  std::map<Layer*, size_t> m_act_sizes;
+
+  /** Activation shape report per layer */
+  std::map<Layer*, std::string> m_act_report;
+
   /** Current step, used for tracking memory usage. */
   int m_current_step;
 
