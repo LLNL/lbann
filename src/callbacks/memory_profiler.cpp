@@ -130,6 +130,12 @@ size_t get_activation_and_error_signal_size(data_type_layer<T> const& dtl,
       auto const& child = dtl.get_child_layer(i);
       auto const& dcact = dtl.get_distconv_adapter().get_activations(child);
       allocated += report_distconv_matrix(dcact, reps);
+      // Add activations if child layer is not distconv-enabled
+      if (!child.distconv_enabled()) {
+        auto const& act = dtl.get_activations(i);
+        reps << "      + non-distconv adapter: ";
+        allocated += report_dist_matrix(act, reps);
+      }
 #endif
     }
     else {
