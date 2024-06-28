@@ -88,6 +88,7 @@ lbann_sb_add_packages(
   Clara
   CNPY
   Conduit
+  hiptt
   Hydrogen     # DiHydrogen depends on H.
   DiHydrogen
   OpenCV

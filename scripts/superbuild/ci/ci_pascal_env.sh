@@ -26,10 +26,8 @@
 
 # Improve debugging info and remove some misguided warnings. These are
 # passed only to the LBANN stack.
-EXTRA_CXX_FLAGS="-O2 -g3 -Wno-deprecated-declarations"
-#EXTRA_CXX_FLAGS="-g3 -Wno-deprecated-declarations"
-#EXTRA_CUDA_FLAGS="-g3 -Wno-deprecated-declarations"
-EXTRA_CUDA_FLAGS="-O2 -g3 -Wno-deprecated-declarations"
+EXTRA_CXX_FLAGS="-g3 -Wno-deprecated-declarations"
+EXTRA_CUDA_FLAGS="-g3 -Wno-deprecated-declarations"
 
 # Prefer RPATH to RUNPATH (stability over flexibility)
 EXTRA_LINK_FLAGS_CORE="-Wl,--disable-new-dtags"
