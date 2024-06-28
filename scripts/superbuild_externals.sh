@@ -100,13 +100,6 @@ cat <<EOF  >> ${yaml}
       externals:
       - spec: conduit@develop arch=${spack_arch}
         prefix: ${prefix}/${sb_extra_prefix}/conduit
-    hiptt:
-      buildable: false
-      version:
-      - 'master'
-      externals:
-      - spec: hiptt@master arch=${spack_arch}
-        prefix: ${prefix}/${sb_extra_prefix}/hiptt
     opencv:
       buildable: false
       version:
