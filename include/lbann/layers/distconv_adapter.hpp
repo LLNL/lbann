@@ -57,6 +57,7 @@ public:
   void mark_equivalent(dc::Dist& d1, dc::Dist& d2);
   void mark_updated(const dc::Dist& d);
   void mark_invariant(const dc::Dist& d);
+  void update_name(const dc::Dist& d, std::string name);
 
   void find_valid_overlap();
 
@@ -64,6 +65,7 @@ private:
   std::unordered_map<const dc::Dist*, dist_set> m_equivalents;
   const_dist_set m_updated;
   const_dist_set m_invariants;
+  std::unordered_map<const dc::Dist*, std::string> m_names;
 };
 
 class distconv_adapter

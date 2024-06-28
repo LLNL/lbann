@@ -386,6 +386,15 @@ void distconv_adapter::setup_distributions(
   m_activations_dists.emplace_back(activations_dist);
   m_prev_error_signals_dists.emplace_back(prev_error_signals_dist);
   m_error_signals_dists.emplace_back(error_signals_dist);
+
+  std::string layer_name = layer().get_name();
+  constraints.update_name(get_prev_activations_dist(),
+                          layer_name + " prev_activations ");
+  constraints.update_name(get_activations_dist(), layer_name + " activations ");
+  constraints.update_name(get_prev_error_signals_dist(),
+                          layer_name + " prev_error_signals ");
+  constraints.update_name(get_error_signals_dist(),
+                          layer_name + " error_signals ");
 }
 
 void distconv_adapter::impose_adjacent_overlap_constraints(
@@ -470,6 +479,12 @@ void tensor_overlap_constraints::mark_invariant(const dc::Dist& d)
   m_invariants.insert(&d);
 }
 
+void tensor_overlap_constraints::update_name(const dc::Dist& d,
+                                             std::string name)
+{
+  m_names[&d] = name;
+}
+
 void tensor_overlap_constraints::find_valid_overlap()
 {
   while (m_updated.size() > 0) {
@@ -483,7 +498,12 @@ void tensor_overlap_constraints::find_valid_overlap()
           // p must have equal dist as d but is different.
           if (m_invariants.find(p) != m_invariants.end()) {
             // p can't be changed, so we can't solve the constraint.
-            LBANN_ERROR("Incompatible overlap: ", *d, " <=> ", *p);
+            LBANN_ERROR("Incompatible overlap: ",
+                        m_names[d],
+                        *d,
+                        " <=> ",
+                        m_names[p],
+                        *p);
           }
           p->set_overlap(d->get_overlap());
           updated_new.insert(p);

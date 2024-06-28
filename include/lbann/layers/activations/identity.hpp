@@ -29,10 +29,16 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/distconv.hpp"
+#ifdef LBANN_HAS_DNN_LIB
+#include "lbann/utils/dnn_lib/helpers.hpp"
+#include "lbann/utils/dnn_lib/transform_tensor.hpp"
+#endif // LBANN_HAS_DNN_LIB
 
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
+using dc_backend = ::distconv::GPUDNNBackend;
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class identity_distconv_adapter
   : public data_type_distconv_adapter<TensorDataType>
@@ -44,7 +50,6 @@ public:
     : data_type_distconv_adapter<TensorDataType>(layer)
   {}
   virtual ~identity_distconv_adapter() = default;
-  void setup_distributions(tensor_overlap_constraints& constraints) override;
   std::unique_ptr<TensorDevType> setup_activations_i(int index) const override;
   std::unique_ptr<TensorDevType>
   setup_error_signals_i(int index) const override;
@@ -115,8 +120,8 @@ protected:
 #endif // LBANN_HAS_DISTCONV
     El::LockedView(this->get_error_signals(), this->get_prev_error_signals());
   }
-  void fp_compute() override {}
-  void bp_compute() override {}
+  void fp_compute() override;
+  void bp_compute() override;
 #ifdef LBANN_HAS_DISTCONV
 protected:
   bool is_distconv_supported() const override
@@ -128,6 +133,12 @@ protected:
     this->get_distconv_adapter_ptr() = std::make_unique<
       identity_distconv_adapter<TensorDataType, Layout, Device>>(*this);
   }
+  dnn_lib::TensorDescriptor m_xdesc;
+  dnn_lib::TensorDescriptor m_ydesc;
+  dnn_lib::TensorDescriptor m_dxdesc;
+  dnn_lib::TensorDescriptor m_dydesc;
+  bool m_equal_overlap;
+  bool m_equal_overlap_set = false;
 #endif // LBANN_HAS_DISTCONV
 };
 
