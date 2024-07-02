@@ -124,7 +124,8 @@ set_center_specific_modules()
                 MODULE_CMD="module load gcc/10.2.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                MODULE_CMD="module load StdEnv clang/14.0.6-magic openmpi/4.1.2 git/2.36.1 cmake/3.26.3 emacs/28.2 rocm/6.0.2"
+                CI_ROCM_VER="5.7.1"
+                MODULE_CMD="module load StdEnv clang/14.0.6-magic openmpi/4.1.2 git/2.36.1 cmake/3.26.3 emacs/28.2 rocm/${CI_ROCM_VER}"
 #                MODULE_CMD="module load StdEnv gcc/10.3.1-magic openmpi/4.1.2 git/2.36.1 cmake/3.26.3 emacs/28.2 rocm/5.7.0"
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
@@ -221,8 +222,8 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_COMPILER="%rocmcc@6.0.2"
-                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@6.0.2 ^python@3.9.12 ^py-protobuf@4.21.5"
+                CENTER_COMPILER="%rocmcc@${CI_ROCM_VER}"
+                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@${CI_ROCM_VER} ^python@3.9.12 ^py-protobuf@4.21.5"
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
             "zen3" | "zen4") # Tioga, RZVernal
@@ -361,25 +362,25 @@ cat <<EOF  >> ${yaml}
     hipcub:
       buildable: false
       version:
-      - '6.0.2'
+      - '${CI_ROCM_VER}'
       externals:
-      - spec: hipcub@6.0.2 arch=${spack_arch}
-        prefix: /opt/rocm-6.0.2/hipcub
+      - spec: hipcub@${CI_ROCM_VER} arch=${spack_arch}
+        prefix: /opt/rocm-${CI_ROCM_VER}/hipcub
         extra_attributes:
           compilers:
-            c: /opt/rocm-6.0.2/llvm/bin/clang
-            c++: /opt/rocm-6.0.2/llvm/bin/clang++
+            c: /opt/rocm-${CI_ROCM_VER}/llvm/bin/clang
+            c++: /opt/rocm-${CI_ROCM_VER}/llvm/bin/clang++
     llvm-amdgpu:
       buildable: false
       version:
-      - '6.0.2'
+      - '${CI_ROCM_VER}'
       externals:
-      - spec: llvm-amdgpu@6.0.2 arch=${spack_arch}
-        prefix: /opt/rocm-6.0.2/llvm
+      - spec: llvm-amdgpu@${CI_ROCM_VER} arch=${spack_arch}
+        prefix: /opt/rocm-${CI_ROCM_VER}/llvm
         extra_attributes:
           compilers:
-            c: /opt/rocm-6.0.2/llvm/bin/clang
-            c++: /opt/rocm-6.0.2/llvm/bin/clang++
+            c: /opt/rocm-${CI_ROCM_VER}/llvm/bin/clang
+            c++: /opt/rocm-${CI_ROCM_VER}/llvm/bin/clang++
     openmpi:
       buildable: false
       version:
@@ -390,8 +391,8 @@ cat <<EOF  >> ${yaml}
         - openmpi/4.1.2
 EOF
 
-        set_superbuild_externals ${host} "rocm-6.0.2" "clang-14.0.6-magic" "openmpi-4.1.2" "$yaml" "${prefix}"
-        set_superbuild_DHA_externals ${host} "rocm-6.0.2" "clang-14.0.6-magic" "openmpi-4.1.2" "$yaml" "${prefix}" "${dha_dir}"
+        set_superbuild_externals ${host} "rocm-${CI_ROCM_VER}" "clang-14.0.6-magic" "openmpi-4.1.2" "$yaml" "${prefix}"
+        set_superbuild_DHA_externals ${host} "rocm-${CI_ROCM_VER}" "clang-14.0.6-magic" "openmpi-4.1.2" "$yaml" "${prefix}" "${dha_dir}"
 
                 ;;
             "zen3" | "zen4")
