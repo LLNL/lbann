@@ -124,7 +124,7 @@ set_center_specific_modules()
                 MODULE_CMD="module load gcc/10.2.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                CI_ROCM_VER="5.7.1"
+                export CI_ROCM_VER="5.7.1"
                 MODULE_CMD="module load StdEnv clang/14.0.6-magic openmpi/4.1.2 git/2.36.1 cmake/3.26.3 emacs/28.2 rocm/${CI_ROCM_VER}"
 #                MODULE_CMD="module load StdEnv gcc/10.3.1-magic openmpi/4.1.2 git/2.36.1 cmake/3.26.3 emacs/28.2 rocm/5.7.0"
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
