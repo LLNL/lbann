@@ -187,13 +187,14 @@ void python_dataset_reader::shuffle_responses(DataType* responses_ptr)
   execution_mode mode = exec_mode_from_string(get_role());
   dataset& ds = get_trainer().get_data_coordinator().get_dataset(mode);
   uint64_t global_mb_size{};
-  if (m_dataset_minibatch_offset < (ds.get_num_iterations_per_epoch() - 1)) {
+  if (m_fetched_minibatch_count < (ds.get_num_iterations_per_epoch() - 1)) {
     global_mb_size = ds.get_mini_batch_size();
   }
-  else if (m_dataset_minibatch_offset ==
+  else if (m_fetched_minibatch_count ==
            (ds.get_num_iterations_per_epoch() - 1)) {
     global_mb_size = ds.get_last_mini_batch_size();
   }
+  m_fetched_minibatch_count++;
 
   uint64_t local_mb_size = global_mb_size / nprocs;
   uint64_t extra_samples = global_mb_size % nprocs;
@@ -344,6 +345,9 @@ void python_dataset_reader::queue_epoch()
   m_dataset_minibatch_offset = 0;
   m_dataset_sample_offset = 0;
   m_queued_samples = 0;
+#ifdef LBANN_HAS_DISTCONV
+  m_fetched_minibatch_count = 0;
+#endif // LBANN_HAS_DISTCONV
 
   // Prefetch the first set of samples (if less than minibatch size, the first
   // minibatch read will take care of the rest)

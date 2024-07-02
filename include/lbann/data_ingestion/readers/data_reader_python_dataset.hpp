@@ -127,6 +127,9 @@ private:
 #ifdef LBANN_HAS_DISTCONV
   /** @brief Whether or not tensor needs shuffling for distconv. */
   bool m_tensor_shuffle_required = true;
+  /** @brief The current number of minibatches in the epoch that have been
+   * fetched and returned by fetch_data_block. */
+  uint64_t m_fetched_minibatch_count;
 #endif // LBANN_HAS_DISTCONV
 };
 
