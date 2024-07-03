@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2024, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -38,7 +38,6 @@ set_full_path(THIS_DIR_SOURCES
   rowwise_weights_norms.cpp
   uniform_hash.cpp
   variance.cpp
-
   misc_builders.cpp
   )
 
@@ -57,14 +56,20 @@ if (LBANN_HAS_GPU)
     rowwise_weights_norms.cu
     uniform_hash.cu
     variance.cu
+    channelwise_softmax_kernels.cuh
     )
   if (LBANN_HAS_FFTW)
     list(APPEND THIS_DIR_CU_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/dft_abs.cu")
   endif ()
 endif ()
 
+if (LBANN_HAS_DISTCONV)
+    add_subdirectory(distconv)
+endif()
+
 # Add the subdirectories
 add_subdirectory(cereal_registration)
+
 
 # Propagate the files up the tree
 set(SOURCES "${SOURCES}" "${THIS_DIR_SOURCES}" PARENT_SCOPE)

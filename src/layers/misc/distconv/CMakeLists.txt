@@ -23,25 +23,9 @@
 ## implied. See the License for the specific language governing
 ## permissions and limitations under the license.
 ################################################################################
-# Add the headers for this directory
-set_full_path(THIS_DIR_HEADERS
-  argmax.hpp
-  argmin.hpp
-  channelwise_mean.hpp
-  covariance.hpp
-  dft_abs.hpp
-  dft_abs_builder.hpp
-  external.hpp
-  mini_batch_index.hpp
-  mini_batch_size.hpp
-  one_hot.hpp
-  rowwise_weights_norms.hpp
-  uniform_hash.hpp
-  variance.hpp
-  )
+set_full_path(THIS_DIR_CU_SOURCES
+    distconv_channelwise_softmax.cu
+    )
 
-if (LBANN_HAS_DISTCONV)
-    add_subdirectory(distconv)
-endif()
 # Propagate the files up the tree
-set(HEADERS "${HEADERS}" "${THIS_DIR_HEADERS}" PARENT_SCOPE)
+set(GPU_SOURCES "${GPU_SOURCES}" "${THIS_DIR_CU_SOURCES}" PARENT_SCOPE)

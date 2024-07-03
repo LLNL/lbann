@@ -263,9 +263,10 @@ void distconv_adapter::adjust_parallel_strategy()
     }
   }
 
-  else if (layer_type == "channel-wise fully-connected" ||
-           layer_type == "matmul") {
-    if (c != f) {
+  else if (layer_type == "channel-wise fully-connected" 
+           || layer_type == "matmul"
+           || layer_type == "channel-wise softmax"){
+    if (c != f){
       if (layer().get_comm()->am_trainer_master()) {
         LBANN_WARNING("The number of channel and filter decomposition should "
                       "be the same. Setting",
