@@ -126,7 +126,7 @@ The following options are exposed in the CMake build system.
 
 + :code:`LBANN_WITH_TOPO_AWARE` (Default: :code:`ON`): Use HWLOC for topology-aware choices.
 
-+ :code:`LBANN_WITH_TBINF` (Default: :code:`ON`): Enable the Tensorboard interace.
++ :code:`LBANN_WITH_TBINF` (Default: :code:`ON`): Enable the Tensorboard interface.
 
 + :code:`LBANN_WITH_VTUNE` (Default: :code:`OFF`): Build with extra annotations for VTune.
 

@@ -243,7 +243,7 @@ endif ()
 
 # DiHydrogen and Distconv
 if (LBANN_WITH_DISTCONV)
-  find_package(DiHydrogen 0.3.0 CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
+  find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
   set(LBANN_HAS_DISTCONV TRUE)
   set(LBANN_H2_LIBS
     H2::H2Meta
@@ -802,30 +802,50 @@ if (LBANN_HAS_CUDA)
     CUDA_STANDARD 17)
 
   # Enable device lambdas with nvcc
-  check_compiler_flag(CUDA "--expt-extended-lambda"
+  check_compiler_flag(CUDA "--extended-lambda"
     CUDA_COMPILER_SUPPORTS_EXTENDED_LAMBDA)
   if (CUDA_COMPILER_SUPPORTS_EXTENDED_LAMBDA)
     target_compile_options(lbann PRIVATE
-      $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+      $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
+  else ()
+    check_compiler_flag(CUDA "--expt-extended-lambda"
+      CUDA_COMPILER_SUPPORTS_EXTENDED_LAMBDA)
+    if (CUDA_COMPILER_SUPPORTS_EXTENDED_LAMBDA)
+      target_compile_options(lbann PRIVATE
+        $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+    endif ()
   endif ()
 endif (LBANN_HAS_CUDA)
 
 # Fix the -g issue with Clang on OSX
 if (APPLE)
+  message("** CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}")
+  message("** CMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}")
+
   # Remove -g from the options
-  string(REPLACE  "-g" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-  string(REPLACE  "-g" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+  string(REGEX REPLACE
+    " ?-g[gdb0-9]*"
+    ""
+    CMAKE_CXX_FLAGS
+    "${CMAKE_CXX_FLAGS}")
+  string(REGEX REPLACE
+    " ?-g[gdb0-9]*"
+    ""
+    CMAKE_CXX_FLAGS_DEBUG
+    "${CMAKE_CXX_FLAGS_DEBUG}")
 
   # Get all the sources and add "-g" to all of them.
   get_target_property(_LBANN_SRCS lbann SOURCES)
-  set_source_files_properties(${_LBANN_SRCS}
-    PROPERTIES COMPILE_OPTIONS "-g")
 
   # Cleanup source files
   foreach (bad_file IN LISTS _LBANN_SRCS)
     get_source_file_property(
       _SRC_COMPILE_OPTS "${bad_file}" COMPILE_OPTIONS)
-    string(REPLACE "-g" "" _SRC_COMPILE_OPTS "${COMPILE_OPTIONS}")
+    string(REGEX REPLACE
+      " ?-g[gdb0-9]*"
+      ""
+      _SRC_COMPILE_OPTS
+      "${COMPILE_OPTIONS}")
     set_source_files_properties(
       "${bad_file}" PROPERTIES COMPILE_OPTIONS "${_SRC_COMPILE_OPTS}")
   endforeach ()
@@ -1161,3 +1181,14 @@ install(FILES "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
 install(FILES "${CMAKE_BINARY_DIR}/lbann_module.tcl.install"
   RENAME "${LBANN_VERSION}"
   DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")
+install(CODE [===[
+	message("\n********************************************************************************")
+	message("LBANN is installed into ${CMAKE_INSTALL_PREFIX} - to load the LBANN module:")
+	message("  module use ${CMAKE_INSTALL_PREFIX}/etc/modulefiles")
+	message("  module load lbann")
+	message("********************************************************************************")
+]===])
+
+
+
+

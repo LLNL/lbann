@@ -7,7 +7,7 @@ Kronecker-Factored Approximate Curvature (KFAC)
 
 The Kronecker-Factored Approximate Curvature (KFAC) algorithm is an
 approach that uses a second-order optimization method. It shows similar
-capabilies to first-order methods, but converges faster and can handle
+capabilities to first-order methods, but converges faster and can handle
 larger mini-batches. See `Large-Scale Distributed Second-Order Optimization Using Kronecker-Factored Approximate Curvature for Deep Convolutional Neural Networks <https://arxiv.org/pdf/1811.12019.pdf>`_.
 
 ----------------------------------------

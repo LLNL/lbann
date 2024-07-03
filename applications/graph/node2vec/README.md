@@ -7,13 +7,14 @@ to achieve strong scaling and to handle very large graphs.
 
 - NVSHMEM: One-sided communication on Nvidia GPUs.
 
-- HavoqGT: Distributed graph algorithms.
+- HavoqGT: Distributed graph algorithms. https://github.com/KIwabuchi/havoqgt
 
 - largescale_node2vec: Experimental implementation of distributed
   node2vec random walks. This is not yet publicly available.
+  https://lc.llnl.gov/bitbucket/scm/havoq/largescale_node2vec.git
 
 - (optional) SNAP: Baseline implementation of node2vec algorithm. Used
-  for offline generation of random walks.
+  for offline generation of random walks. https://github.com/snap-stanford/snap
 
 Prior to building LBANN, download and install the dependencies:
 

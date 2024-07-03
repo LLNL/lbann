@@ -66,11 +66,15 @@ void dist_embedding_layer<TensorDataType, Layout, Device>::serialize(
 
 #ifdef LBANN_HAS_SHMEM
 PROTO_DEVICE(float, lbann::data_layout::DATA_PARALLEL, El::Device::CPU)
+#ifdef LBANN_HAS_DOUBLE
 PROTO_DEVICE(double, lbann::data_layout::DATA_PARALLEL, El::Device::CPU)
+#endif // LBANN_HAS_DOUBLE
 #endif // LBANN_HAS_SHMEM
 #ifdef LBANN_HAS_NVSHMEM
 PROTO_DEVICE(float, lbann::data_layout::DATA_PARALLEL, El::Device::GPU)
+#ifdef LBANN_HAS_DOUBLE
 PROTO_DEVICE(double, lbann::data_layout::DATA_PARALLEL, El::Device::GPU)
+#endif // LBANN_HAS_DOUBLE
 #endif // LBANN_HAS_NVSHMEM
 
 LBANN_REGISTER_DYNAMIC_INIT(dist_embedding_layer);

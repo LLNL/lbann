@@ -95,6 +95,7 @@
 #include "lbann/layers/transform/tessellate.hpp"
 #include "lbann/layers/transform/uniform.hpp"
 #include "lbann/layers/transform/unpooling.hpp"
+#include "lbann/layers/transform/upsample.hpp"
 #include "lbann/layers/transform/weighted_sum.hpp"
 #include "lbann/layers/transform/weights.hpp"
 

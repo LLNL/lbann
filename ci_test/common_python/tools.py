@@ -288,7 +288,7 @@ def get_command(cluster,
         # Allocate nodes only if we don't already have an allocation.
         if os.getenv('FLUX_JOB_ID') is None and flux_depth == 0:
             print('Allocating flux nodes.')
-            command_allocate = 'flux mini alloc'
+            command_allocate = 'flux alloc'
             option_num_nodes = ''
             option_partition = ''
             option_time_limit = ''
@@ -318,7 +318,7 @@ def get_command(cluster,
             space = ''
         else:
             space = ' '
-        command_run = '{s}flux mini run --time={t}'.format(
+        command_run = '{s}flux run --time={t}'.format(
             s=space, t=time_limit)
         option_num_nodes = ''
         if num_nodes is not None:
@@ -835,7 +835,7 @@ def create_tests(setup_func,
         )
         assert_success(return_code, stderr_log_file)
         if post_test_func is not None:
-            post_test_func(lbann, weekly)
+            post_test_func(lbann, weekly, **_kwargs)
         return {
             'return_code': return_code,
             'work_dir': work_dir,

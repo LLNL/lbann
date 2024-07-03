@@ -219,12 +219,33 @@ protected:
     }
     auto& local_gradient_wrt_input = m_input_v->Matrix();
 
-    // Apply back prop with local data
-    /// @todo Support >3 dimensions
-    bp_compute_3d(input_dims,
-                  output_dims,
-                  gradient_wrt_output,
-                  local_gradient_wrt_input);
+    // Check if multi-dimensional reduction tessellate backprop is supported
+#ifdef LBANN_HAS_CUTENSOR
+    bool multidim_reduce = true;
+    for (size_t i = 0; i < output_dims.size(); ++i) {
+      if (input_dims[i] != 1 && output_dims[i] != input_dims[i]) {
+        multidim_reduce = false;
+        break;
+      }
+    }
+    if (multidim_reduce) {
+      // Sizes either match or are broadcast from dimension-1:
+      // compute tessellate backprop via multi-dimensional reduction
+      bp_compute_cutensor(input_dims,
+                          output_dims,
+                          gradient_wrt_output,
+                          local_gradient_wrt_input);
+    }
+    else
+#endif
+    {
+      // Apply back prop with local data
+      /// @todo Support >3 dimensions
+      bp_compute_3d(input_dims,
+                    output_dims,
+                    gradient_wrt_output,
+                    local_gradient_wrt_input);
+    }
 
     // Accumulate local error signals, if needed
     if (m_input_v->DistData() != gradient_wrt_input.DistData()) {
@@ -254,6 +275,13 @@ private:
                      const std::vector<int>& output_dims,
                      const AbsDistMatrixType& gradient_wrt_output,
                      AbsMatrixType& gradient_wrt_input);
+
+#ifdef LBANN_HAS_CUTENSOR
+  void bp_compute_cutensor(const std::vector<int>& input_dims,
+                           const std::vector<int>& output_dims,
+                           const AbsDistMatrixType& gradient_wrt_output,
+                           AbsMatrixType& gradient_wrt_input);
+#endif
 };
 
 template <typename T, data_layout L, El::Device D>

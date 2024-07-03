@@ -72,7 +72,7 @@ Building & Installing LBANN as a user at a known HPC Center
 With Spack setup and installed into your path, it can be used to
 install the LBANN executables. This approach is appropriate for users
 that want to train new or existing models using the Python front-end
-and are working at know HPC Computing Centers (e.g. LLNL LC, OLCF,
+and are working at known HPC Computing Centers (e.g. LLNL LC, OLCF,
 ALCF, RIKEN).  The scripts that are invoked load known modules to tie
 into system install packages (e.g. MPI).
 
@@ -88,7 +88,7 @@ into system install packages (e.g. MPI).
       override the default:
         - version of LBANN being installed (LBANN_VERSION),
         - the variants enabled (LBANN_VARIANTS),
-        - and extra packages to build in the same enviroment (LBANN_VARIANTS).
+        - and extra packages to build in the same environment (LBANN_EXTRAS).
       The following is an example of Using the variables:
 
       .. code-block:: bash
@@ -107,7 +107,7 @@ into system install packages (e.g. MPI).
 .. _install_lbann_as_user:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Building & Installing LBANN as a user (with maximum flexiblity)
+Building & Installing LBANN as a user (with maximum flexibility)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 With Spack setup and installed into your path, it can be used to
@@ -175,7 +175,7 @@ software.
 
 .. code-block:: bash
 
-   spack install lbann <variants and dependencies>
+   spack install --add lbann <variants and dependencies>
    spack load lbann@develop
 
 .. note::
@@ -190,7 +190,7 @@ software.
       module --force unload StdEnv; module load gcc/8.3.1 cuda/11.1.0 mvapich2/2.3 python/3.7.2
       spack compiler find --scope env:lbann
       spack external find --scope env:lbann
-      spack install lbann@develop cuda_arch=60 +cuda ^hydrogen@develop+al ^aluminum@master ^mvapich2
+      spack install --add lbann@develop cuda_arch=60 +cuda ^hydrogen@develop+al ^aluminum@master ^mvapich2
       spack load lbann@develop
 
 Please note that when getting LBANN to build as a user will encounter
@@ -340,7 +340,7 @@ or
                     -p py-numpy
                     -- <variants>
 
-2.  A second option is to install additonal Python packages via Pip.
+2.  A second option is to install additional Python packages via Pip.
     To ensure that this is done with the correct version of Python
     that LBANN was built with, activate the spack environment:
 

@@ -642,7 +642,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>::reorder()
 {
   // Interleaving was done over files (all samples in a file are consecutive
   if (this->m_stride > 1ul) { // undo interleaving
-    samples_t tmp_sample_list[this->m_stride];
+    std::vector<samples_t> tmp_sample_list(this->m_stride);
     sample_file_id_t last_index = 0;
     size_t interleave_idx = 0;
     for (const auto& s : this->m_sample_list) {

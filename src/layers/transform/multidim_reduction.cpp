@@ -148,120 +148,71 @@ void multidim_reduction_layer<TensorDataType, Layout, Device>::fp_compute()
   // No model parallelism nor CPU
   LBANN_ASSERT(Layout == data_layout::DATA_PARALLEL);
   LBANN_ASSERT(Device == El::Device::GPU);
+  if constexpr (Device == El::Device::GPU) {
+    // Constants
+    const auto one = El::TypeTraits<TensorDataType>::One();
+    const auto zero = El::TypeTraits<TensorDataType>::Zero();
 
-  // Constants
-  const auto one = El::TypeTraits<TensorDataType>::One();
-  const auto zero = El::TypeTraits<TensorDataType>::Zero();
+    // Data matrices
+    using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
+    LocalMat const& input =
+      static_cast<LocalMat const&>(this->get_prev_activations().LockedMatrix());
+    LocalMat& output = static_cast<LocalMat&>(this->get_activations().Matrix());
 
-  // Data matrices
-  using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
-  LocalMat const& input =
-    static_cast<LocalMat const&>(this->get_prev_activations().LockedMatrix());
-  LocalMat& output = static_cast<LocalMat&>(this->get_activations().Matrix());
+    // Determine reduction operator
+    cutensorOperator_t cutensor_reduce_op;
+    switch (m_mode) {
+    case multidim_reduction_mode::SUM:
+      cutensor_reduce_op = CUTENSOR_OP_ADD;
+      break;
+      // The following reduction modes are enabled only in forward prop
+    case multidim_reduction_mode::PRODUCT:
+      cutensor_reduce_op = CUTENSOR_OP_MUL;
+      break;
+    case multidim_reduction_mode::MAX:
+      cutensor_reduce_op = CUTENSOR_OP_MAX;
+      break;
+    case multidim_reduction_mode::MIN:
+      cutensor_reduce_op = CUTENSOR_OP_MIN;
+      break;
+    default:
+      LBANN_ERROR("invalid reduction mode");
+    }
 
-  // Determine reduction operator
-  cutensorOperator_t cutensor_reduce_op;
-  switch (m_mode) {
-  case multidim_reduction_mode::SUM:
-    cutensor_reduce_op = CUTENSOR_OP_ADD;
-    break;
-  // The following reduction modes are enabled only in forward prop
-  case multidim_reduction_mode::PRODUCT:
-    cutensor_reduce_op = CUTENSOR_OP_MUL;
-    break;
-  case multidim_reduction_mode::MAX:
-    cutensor_reduce_op = CUTENSOR_OP_MAX;
-    break;
-  case multidim_reduction_mode::MIN:
-    cutensor_reduce_op = CUTENSOR_OP_MIN;
-    break;
-  default:
-    LBANN_ERROR("invalid reduction mode");
-  }
+    RowMajorDims<int64_t> input_dims(this->get_input_dims());
+    RowMajorDims<int64_t> output_dims(this->get_output_dims());
+    auto const& input_modes = m_input_modes;
+    auto const& output_modes = m_output_modes;
 
-  RowMajorDims<int64_t> input_dims(this->get_input_dims());
-  RowMajorDims<int64_t> output_dims(this->get_output_dims());
-  auto const& input_modes = m_input_modes;
-  auto const& output_modes = m_output_modes;
-
-  auto input_desc = get_descriptor(input, input_dims);
-  auto output_desc = get_descriptor(output, output_dims);
-
-  // Create workspace buffers
-  LocalMat workspace;
-  workspace.SetMemoryMode(1);
-  auto handle = get_handle_ptr();
-  uint64_t wspsize = 0;
-  CHECK_CUTENSOR(cutensorReductionGetWorkspaceSize(handle,
-                                                   input.LockedBuffer(),
-                                                   &input_desc,
-                                                   input_modes.data(),
-                                                   output.LockedBuffer(),
-                                                   &output_desc,
-                                                   output_modes.data(),
-                                                   output.LockedBuffer(),
-                                                   &output_desc,
-                                                   output_modes.data(),
-                                                   cutensor_reduce_op,
-                                                   CUTENSOR_COMPUTE_32F,
-                                                   &wspsize));
-  workspace.Resize(wspsize, 1);
-
-  auto multisync = El::MakeMultiSync(El::SyncInfoFromMatrix(output),
-                                     El::SyncInfoFromMatrix(input));
-
-  // Compute reduction locally
-  CHECK_CUTENSOR(cutensorReduction(
-    handle,
-    &one,
-    input.LockedBuffer(),
-    &input_desc,
-    input_modes.data(),
-    &zero,
-    output.LockedBuffer(),
-    &output_desc,
-    output_modes.data(),
-    output.Buffer(),
-    &output_desc,
-    output_modes.data(),
-    cutensor_reduce_op,
-    CUTENSOR_COMPUTE_32F,
-    workspace.Buffer(),
-    wspsize,
-    static_cast<El::SyncInfo<El::Device::GPU>>(multisync).Stream()));
-#endif
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void multidim_reduction_layer<TensorDataType, Layout, Device>::bp_compute()
-{
-#ifdef LBANN_HAS_CUTENSOR
-  // Constants
-  const auto one = El::TypeTraits<TensorDataType>::One();
-  const auto zero = El::TypeTraits<TensorDataType>::Zero();
-
-  // Data matrices
-  using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
-  LocalMat const& input =
-    static_cast<LocalMat const&>(this->get_prev_error_signals().LockedMatrix());
-  LocalMat& output = static_cast<LocalMat&>(this->get_error_signals().Matrix());
-
-  RowMajorDims<int64_t> input_dims(this->get_output_dims());
-  RowMajorDims<int64_t> output_dims(this->get_input_dims());
-  auto const& input_modes = m_output_modes;
-  auto const& output_modes = m_input_modes;
-
-  auto multisync = El::MakeMultiSync(El::SyncInfoFromMatrix(output),
-                                     El::SyncInfoFromMatrix(input));
-  auto handle = get_handle_ptr();
-
-  // Determine reduction operator
-  switch (m_mode) {
-  case multidim_reduction_mode::SUM: {
-    // Broadcast dimensions
     auto input_desc = get_descriptor(input, input_dims);
     auto output_desc = get_descriptor(output, output_dims);
-    CHECK_CUTENSOR(cutensorElementwiseBinary(
+
+    // Create workspace buffers
+    LocalMat workspace;
+    workspace.SetMemoryMode(1);
+    auto handle = get_handle_ptr();
+    uint64_t wspsize = 0;
+    CHECK_CUTENSOR(
+      cutensorReductionGetWorkspaceSize(handle,
+                                        input.LockedBuffer(),
+                                        &input_desc,
+                                        input_modes.data(),
+                                        output.LockedBuffer(),
+                                        &output_desc,
+                                        output_modes.data(),
+                                        output.LockedBuffer(),
+                                        &output_desc,
+                                        output_modes.data(),
+                                        cutensor_reduce_op,
+                                        CUDATypeT<TensorDataType>::compute_type,
+                                        &wspsize));
+    workspace.Resize(wspsize, 1);
+
+    auto multisync = El::MakeMultiSync(El::SyncInfoFromMatrix(output),
+                                       El::SyncInfoFromMatrix(input));
+
+    // Compute reduction locally
+    CHECK_CUTENSOR(cutensorReduction(
       handle,
       &one,
       input.LockedBuffer(),
@@ -274,13 +225,67 @@ void multidim_reduction_layer<TensorDataType, Layout, Device>::bp_compute()
       output.Buffer(),
       &output_desc,
       output_modes.data(),
-      CUTENSOR_OP_ADD,
-      CUDATypeT<TensorDataType>::value,
+      cutensor_reduce_op,
+      CUDATypeT<TensorDataType>::compute_type,
+      workspace.Buffer(),
+      wspsize,
       static_cast<El::SyncInfo<El::Device::GPU>>(multisync).Stream()));
-    break;
   }
-  default:
-    LBANN_ERROR("invalid reduction mode, only sum is supported for training");
+#endif
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void multidim_reduction_layer<TensorDataType, Layout, Device>::bp_compute()
+{
+#ifdef LBANN_HAS_CUTENSOR
+  if constexpr (Device == El::Device::GPU) {
+    // Constants
+    const auto one = El::TypeTraits<TensorDataType>::One();
+    const auto zero = El::TypeTraits<TensorDataType>::Zero();
+
+    // Data matrices
+    using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
+    LocalMat const& input = static_cast<LocalMat const&>(
+      this->get_prev_error_signals().LockedMatrix());
+    LocalMat& output =
+      static_cast<LocalMat&>(this->get_error_signals().Matrix());
+
+    RowMajorDims<int64_t> input_dims(this->get_output_dims());
+    RowMajorDims<int64_t> output_dims(this->get_input_dims());
+    auto const& input_modes = m_output_modes;
+    auto const& output_modes = m_input_modes;
+
+    auto multisync = El::MakeMultiSync(El::SyncInfoFromMatrix(output),
+                                       El::SyncInfoFromMatrix(input));
+    auto handle = get_handle_ptr();
+
+    // Determine reduction operator
+    switch (m_mode) {
+    case multidim_reduction_mode::SUM: {
+      // Broadcast dimensions
+      auto input_desc = get_descriptor(input, input_dims);
+      auto output_desc = get_descriptor(output, output_dims);
+      CHECK_CUTENSOR(cutensorElementwiseBinary(
+        handle,
+        &one,
+        input.LockedBuffer(),
+        &input_desc,
+        input_modes.data(),
+        &zero,
+        output.LockedBuffer(),
+        &output_desc,
+        output_modes.data(),
+        output.Buffer(),
+        &output_desc,
+        output_modes.data(),
+        CUTENSOR_OP_ADD,
+        CUDATypeT<TensorDataType>::value,
+        static_cast<El::SyncInfo<El::Device::GPU>>(multisync).Stream()));
+      break;
+    }
+    default:
+      LBANN_ERROR("invalid reduction mode, only sum is supported for training");
+    }
   }
 #endif
 }

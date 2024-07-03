@@ -1215,6 +1215,11 @@ void data_type_layer<InputTensorDataType,
   // Initialize output tensors
   for (int i = 0; i < get_num_children(); ++i) {
     if (m_runs_inplace && i < get_num_parents() && !distconv_enabled()) {
+      model* m = this->get_model();
+      if (m != nullptr) {
+        auto& refcnt = m->get_activation_reference_counter();
+        modify_reference_counter(refcnt, get_activations(i), true);
+      }
       continue;
     }
 

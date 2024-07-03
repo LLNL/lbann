@@ -720,9 +720,11 @@ void dist_embedding_layer<TensorDataType, Layout, Device>::
 template class dist_embedding_layer<float,
                                     data_layout::DATA_PARALLEL,
                                     El::Device::GPU>;
+#ifdef LBANN_HAS_DOUBLE
 template class dist_embedding_layer<double,
                                     data_layout::DATA_PARALLEL,
                                     El::Device::GPU>;
+#endif
 
 } // namespace lbann
 #endif // LBANN_HAS_NVSHMEM

@@ -47,7 +47,7 @@ jobs:
         source /usr/share/lmod/lmod/init/bash
         git clone -c feature.manyFiles=true https://github.com/spack/spack.git
         cd spack
-        git checkout 73858df14dc3f0e701814c84bb8bd6b72f80a806 # Use a tried and true version of Spack
+        git checkout 82a932c078495b3e6364e6efdb5c63ed996a794f # Use a tried and true version of Spack
         cd ..
         source spack/share/spack/setup-env.sh
         scripts/build_lbann.sh -d --dependencies-only -l ci -- +numpy +unit_tests %${{ matrix.compiler }}

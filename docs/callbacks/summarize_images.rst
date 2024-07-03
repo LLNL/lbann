@@ -67,7 +67,7 @@ Python Front-End
 Track Sample IDs Strategy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. note:: There is currenly no built-in way to print the
+.. note:: There is currently no built-in way to print the
           original images using a single callback instance. As a
           work-around, if the original image is desired, add a
           second instance of the :python:`CallbackSummarizeImages`

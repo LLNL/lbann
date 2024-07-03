@@ -60,6 +60,9 @@ The following packages are known by the SuperBuild framework:
 - [Aluminum](https://github.com/LLNL/Aluminum) - High-performance
   communication library that provides a stream-aware interface and
   semantics.
+- [AWS\_OFI\_RCCL](https://github.com/ROCm/aws-ofi-rccl) - A plugin
+  that should be provided by vendors or supercomputing centers to
+  allow RCCL to use libfabric in place of IB.
 - [Catch2](https://github.com/catchorg/catch2) - A unit-testing
   framework for C++ packages. (Mostly for developers; also used by
   H2 and Hydrogen, if enabled.)
@@ -81,6 +84,8 @@ The following packages are known by the SuperBuild framework:
   algebra library.
 - [JPEG-TURBO](https://github.com/libjpeg-turbo/libjpeg-turbo) - JPEG
   but in turbo mode. Zoom zoom zoom.
+- [NCCL](https://github.com/NVIDIA/nccl) - The NVIDIA Collective
+  Communications Library.
 - [OpenBLAS](https://github.com/xianyi/OpenBLAS.git) - BLAS library
   for when your vendor doesn't do a good job.
 - [OpenCV](https://github.com/opencv/opencv) - Computer vision
@@ -88,6 +93,8 @@ The following packages are known by the SuperBuild framework:
 - [protobuf](https://github.com/protocolbuffers/protobuf.git) - And
   yet *another* serialization format that LBANN (and others) (ab)use
   for model topology description and configuration.
+- [RCCL](https://github.com/ROCm/rccl) - The ROCm Communication
+  Collectives Library.
 - [spdlog](https://github.com/gabime/spdlog) - Fast C++ logging
   library.
 - [zstr](https://github.com/mateidavid/zstr) - C++ ZLib wrapper.
