@@ -179,6 +179,14 @@ void python_dataset_reader::shuffle_responses(DataType* responses_ptr)
   // in a batch that can't be split evenly will be split evenly across the
   // first n ranks (or subsets of ranks in the distconv case).
 
+#ifndef LBANN_BUILT_WITH_SPECTRUM
+  auto syncInfo = El::SyncInfo<El::Device::CPU>{};
+  El::mpi::EnsureComm<DataType, El::Collective::SEND>(m_comm->get_world_comm(),
+                                                      syncInfo);
+  El::mpi::EnsureComm<DataType, El::Collective::RECV>(m_comm->get_world_comm(),
+                                                      syncInfo);
+#endif
+
   uint64_t rank = m_comm->get_rank_in_trainer();
   uint64_t nprocs = m_comm->get_procs_per_trainer();
   uint64_t trainer_rank = m_comm->get_trainer_rank();
@@ -235,10 +243,21 @@ void python_dataset_reader::shuffle_responses(DataType* responses_ptr)
       }
     }
     else if (rank == recv_rank) {
+#ifdef LBANN_BUILT_WITH_SPECTRUM
+      EL_CHECK_MPI_CALL(
+        MPI_Recv(&responses_ptr[recv_rank_count * m_num_responses],
+                 m_num_responses * sizeof(DataType),
+                 MPI_BYTE,
+                 m_comm->get_world_rank(trainer_rank, send_rank),
+                 0,
+                 m_comm->get_world_comm().GetMPIComm(),
+                 nullptr));
+#else
       m_comm->recv(&responses_ptr[recv_rank_count * m_num_responses],
                    m_num_responses,
                    trainer_rank,
                    send_rank);
+#endif
     }
 
     send_rank_count += 1;
