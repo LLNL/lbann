@@ -43,8 +43,8 @@ EXTRA_CUDA_FLAGS="-g3 -Wno-deprecated-declarations"
 # Prefer RPATH to RUNPATH (stability over flexibility)
 EXTRA_LINK_FLAGS="-Wl,--disable-new-dtags"
 
-# Set this to the CUDA GPU arch(s) to support (example set for Lassen/Sierra)
-CUDA_GPU_ARCH=70
+# Set this to the GPU architecture(s) to support (example set for Lassen/Sierra)
+GPU_ARCH=70
 
 # Set to the directory with the top-level CMakeLists.txt file for LBANN
 LBANN_SRC_DIR=$(git rev-parse --show-toplevel)
@@ -85,6 +85,7 @@ cmake \
     -D LBANN_SB_Catch2_TAG="devel" \
     \
     -D LBANN_SB_BUILD_adiak=${BUILD_EXTERNAL_TPLS} \
+    -D LBANN_SB_BUILD_hwloc=${BUILD_EXTERNAL_TPLS} \
     -D LBANN_SB_BUILD_Caliper=${BUILD_EXTERNAL_TPLS} \
     -D LBANN_SB_adiak_BUILD_SHARED_LIBS=ON \
     -D LBANN_SB_Caliper_BUILD_SHARED_LIBS=ON \
