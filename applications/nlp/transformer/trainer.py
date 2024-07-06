@@ -4,29 +4,34 @@ Constructs the LBANN distributed training script for transformers.
 import argparse
 import datetime
 import os.path
+from typing import Optional, Union
 
 import lbann
 import lbann.models
 import lbann.contrib.args
 import lbann.contrib.launcher
 from lbann.launcher.batch_script import BatchScript
+from lbann.util.data import Dataset, construct_python_dataset_reader
 
 import utils.paths
 import parallelism
 
 
-def construct_training_task(model: lbann.Model,
-                            args: argparse.Namespace,
-                            learning_rate: float = 0.0001,
-                            beta1: float = 0.9,
-                            beta2: float = 0.98,
-                            eps: float = 1e-9,
-                            clip_gradient: float = 0.0,
-                            lr_decay: str = 'fixed',
-                            lr_decay_steps: int = 0,
-                            end_learning_rate: float = 1e-5,
-                            warmup_steps: int = 0,
-                            adamw_decay: float = 0.1) -> BatchScript:
+def construct_training_task(
+        model: lbann.Model,
+        args: argparse.Namespace,
+        learning_rate: float = 0.0001,
+        beta1: float = 0.9,
+        beta2: float = 0.98,
+        eps: float = 1e-9,
+        clip_gradient: float = 0.0,
+        lr_decay: str = 'fixed',
+        lr_decay_steps: int = 0,
+        end_learning_rate: float = 1e-5,
+        warmup_steps: int = 0,
+        adamw_decay: float = 0.1,
+        dataset: Optional[Dataset] = None,
+        validation_dataset: Optional[Dataset] = None) -> BatchScript:
     """
     Construct an LBANN trainer batch script for training transformers.
 
@@ -43,6 +48,10 @@ def construct_training_task(model: lbann.Model,
     :param end_learning_rate: Learning rate after decay.
     :param warmup_steps: Learning rate warmup steps.
     :param adamw_decay: Weight decay if using the AdamW optimizer.
+    :param dataset: An optional Dataset object to use in training. If not given,
+                    uses the ``--dataset`` argument string.
+    :param validation_dataset: An optional Dataset object to use in validation.
+                               Requires the ``dataset`` kwarg to be used.
     :return: A batch script object that will run distributed training.
     """
 
@@ -53,11 +62,23 @@ def construct_training_task(model: lbann.Model,
     os.makedirs(work_dir, exist_ok=True)
 
     # Create batch script
-    train_script = make_batch_script(model, args.dataset, work_dir, args,
-                                     learning_rate, beta1, beta2, eps,
-                                     clip_gradient, lr_decay, lr_decay_steps,
-                                     end_learning_rate, warmup_steps,
-                                     adamw_decay)
+    train_script = make_batch_script(
+        model,
+        dataset or args.dataset,
+        work_dir,
+        args,
+        learning_rate,
+        beta1,
+        beta2,
+        eps,
+        clip_gradient,
+        lr_decay,
+        lr_decay_steps,
+        end_learning_rate,
+        warmup_steps,
+        adamw_decay,
+        validation_dataset=validation_dataset,
+    )
 
     return train_script
 
@@ -103,7 +124,7 @@ def make_data_reader(dataset_name: str, fraction: float, validate: bool,
 # Batch script
 # ----------------------------------------------
 def make_batch_script(model: lbann.Model,
-                      dataset_name: str,
+                      dataset_or_dataset_name: Union[Dataset, str],
                       work_dir: str,
                       args: argparse.Namespace,
                       learning_rate: float = 0.0001,
@@ -115,7 +136,8 @@ def make_batch_script(model: lbann.Model,
                       lr_decay_steps: int = 0,
                       end_learning_rate: float = 1e-5,
                       warmup_steps: int = 0,
-                      adamw_decay: float = 0.1):
+                      adamw_decay: float = 0.1,
+                      validation_dataset: Optional[Dataset] = None):
     # Setup training algorithm
     algo = lbann.BatchedIterativeOptimizer("sgd", epoch_count=args.num_epochs)
     if hasattr(args, 'kfac') and args.kfac:
@@ -125,10 +147,33 @@ def make_batch_script(model: lbann.Model,
     trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size,
                             training_algo=algo,
                             random_seed=args.random_seed)
-    reader = make_data_reader(dataset_name, args.dataset_fraction,
-                              not args.skip_validation,
-                              args.validation_set_fraction,
-                              args.always_shuffle)
+
+    if isinstance(dataset_or_dataset_name, str):
+        assert validation_dataset is None
+        reader = make_data_reader(dataset_or_dataset_name,
+                                  args.dataset_fraction,
+                                  not args.skip_validation,
+                                  args.validation_set_fraction,
+                                  args.always_shuffle)
+    else:
+        readers = [
+            construct_python_dataset_reader(
+                dataset_or_dataset_name,
+                role='train',
+                shuffle=args.always_shuffle,
+                fraction_of_data_to_use=args.dataset_fraction,
+                prefetch_factor=args.dataset_prefetch_factor),
+        ]
+        if validation_dataset is not None:
+            readers.append(
+                construct_python_dataset_reader(
+                    validation_dataset,
+                    role='validate',
+                    shuffle=False,
+                    validation_fraction=args.validation_set_fraction,
+                    fraction_of_data_to_use=args.validation_set_fraction))
+
+        reader = lbann.reader_pb2.DataReader(reader=readers)
 
     # Optimizer with learning rate schedule
     if args.optimizer.lower() == 'adamw':
@@ -218,7 +263,8 @@ def make_batch_script(model: lbann.Model,
 
     # Set FSDP ranks, if given, by changing the trainer grid height
     if args.fsdp_ranks > 0:
-        script_params['environment']['LBANN_TRAINER_GRID_HEIGHT'] = args.fsdp_ranks
+        script_params['environment'][
+            'LBANN_TRAINER_GRID_HEIGHT'] = args.fsdp_ranks
 
     save_text = args.save_prototext
     filename = 'experiment.prototext' if save_text else 'experiment.protobin'
