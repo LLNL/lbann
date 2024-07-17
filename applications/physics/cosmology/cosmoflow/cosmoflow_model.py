@@ -12,7 +12,8 @@ def construct_cosmoflow_model(parallel_strategy,
                               min_distconv_width,
                               mlperf,
                               transform_input,
-                              dropout_keep_prob=0.5):
+                              dropout_keep_prob=0.5,
+                              cosine_schedule=None):
 
     # Construct layer graph
     universes = lbann.Input(data_field='samples')
@@ -66,15 +67,20 @@ def construct_cosmoflow_model(parallel_strategy,
         # lbann.CallbackLinearGrowthLearningRate(target=learning_rate, num_epochs=5),
         # lbann.CallbackSetLearningRate(step=32, val=0.25 * learning_rate),
         # lbann.CallbackSetLearningRate(step=64, val=0.125 * learning_rate),
-        # lbann.CallbackCosineDecayLearningRate(
-        #     lr_max=1e-3,
-        #     lr_min=1e-5,
-        #     decay_steps=10000,
-        #     initial_warmup_learning_rate=0,
-        #     warmup_steps=100
-        # ),
         lbann.CallbackProgressBar(newline_interval=1, print_mem_usage=True)
     ]
+
+    if cosine_schedule:
+        callbacks.append(
+            lbann.CallbackCosineDecayLearningRate(
+                lr_max=learning_rate,
+                lr_min=cosine_schedule['lr_min'],
+                decay_steps=cosine_schedule['decay_steps'],
+                initial_warmup_learning_rate=cosine_schedule['init_warmup_lr'],
+                warmup_steps=cosine_schedule['warmup_steps']
+            )
+        )
+
     return lbann.Model(
         epochs=num_epochs,
         layers=layers,
