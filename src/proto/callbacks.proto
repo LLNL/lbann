@@ -55,7 +55,6 @@ message Callback {
     CallbackProfiler profiler = 21;
     CallbackStepMinibatch step_minibatch = 22;
     CallbackCheckGradients check_gradients = 23;
-    CallbackLTFB ltfb = 24;
     CallbackDebugIO debug_io = 25;
     CallbackMinibatchSchedule minibatch_schedule = 26;
     CallbackOptimizerwiseAdaptiveLearningRate
@@ -90,16 +89,6 @@ message Callback {
     CallbackMemoryProfiler memory_profiler = 58;
     CallbackClipGradientNorm clip_gradient_norm = 59;
     CallbackEvaluateProgress evaluate_progress = 60;
-  }
-
-  message CallbackLTFB {
-    int64 batch_interval = 1;
-    string metric = 2;
-    string weights = 3;  // default: all weights
-    bool low_score_wins = 4;
-    string communication_algorithm = 5;  // default: "sendrecv_weights"
-    bool exchange_hyperparameters = 6;
-    string checkpoint_basedir = 7;
   }
 
   message CallbackStepLearningRate {

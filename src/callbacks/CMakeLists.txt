@@ -51,7 +51,6 @@ set_full_path(THIS_DIR_SOURCES
   hang.cpp
   learning_rate.cpp
   load_model.cpp
-  ltfb.cpp
   memory_profiler.cpp
   mixup.cpp
   monitor_io.cpp
