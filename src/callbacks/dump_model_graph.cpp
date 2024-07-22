@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/dump_model_graph.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann_config.hpp"
 
