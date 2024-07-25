@@ -179,6 +179,14 @@ void python_dataset_reader::shuffle_responses(DataType* responses_ptr)
   // in a batch that can't be split evenly will be split evenly across the
   // first n ranks (or subsets of ranks in the distconv case).
 
+#ifndef LBANN_BUILT_WITH_SPECTRUM
+  auto syncInfo = El::SyncInfo<El::Device::CPU>{};
+  El::mpi::EnsureComm<DataType, El::Collective::SEND>(m_comm->get_world_comm(),
+                                                      syncInfo);
+  El::mpi::EnsureComm<DataType, El::Collective::RECV>(m_comm->get_world_comm(),
+                                                      syncInfo);
+#endif
+
   uint64_t rank = m_comm->get_rank_in_trainer();
   uint64_t nprocs = m_comm->get_procs_per_trainer();
   uint64_t trainer_rank = m_comm->get_trainer_rank();
@@ -187,13 +195,14 @@ void python_dataset_reader::shuffle_responses(DataType* responses_ptr)
   execution_mode mode = exec_mode_from_string(get_role());
   dataset& ds = get_trainer().get_data_coordinator().get_dataset(mode);
   uint64_t global_mb_size{};
-  if (m_dataset_minibatch_offset < (ds.get_num_iterations_per_epoch() - 1)) {
+  if (m_fetched_minibatch_count < (ds.get_num_iterations_per_epoch() - 1)) {
     global_mb_size = ds.get_mini_batch_size();
   }
-  else if (m_dataset_minibatch_offset ==
+  else if (m_fetched_minibatch_count ==
            (ds.get_num_iterations_per_epoch() - 1)) {
     global_mb_size = ds.get_last_mini_batch_size();
   }
+  m_fetched_minibatch_count++;
 
   uint64_t local_mb_size = global_mb_size / nprocs;
   uint64_t extra_samples = global_mb_size % nprocs;
@@ -234,10 +243,21 @@ void python_dataset_reader::shuffle_responses(DataType* responses_ptr)
       }
     }
     else if (rank == recv_rank) {
+#ifdef LBANN_BUILT_WITH_SPECTRUM
+      EL_CHECK_MPI_CALL(
+        MPI_Recv(&responses_ptr[recv_rank_count * m_num_responses],
+                 m_num_responses * sizeof(DataType),
+                 MPI_BYTE,
+                 m_comm->get_world_rank(trainer_rank, send_rank),
+                 0,
+                 m_comm->get_world_comm().GetMPIComm(),
+                 nullptr));
+#else
       m_comm->recv(&responses_ptr[recv_rank_count * m_num_responses],
                    m_num_responses,
                    trainer_rank,
                    send_rank);
+#endif
     }
 
     send_rank_count += 1;
@@ -344,6 +364,9 @@ void python_dataset_reader::queue_epoch()
   m_dataset_minibatch_offset = 0;
   m_dataset_sample_offset = 0;
   m_queued_samples = 0;
+#ifdef LBANN_HAS_DISTCONV
+  m_fetched_minibatch_count = 0;
+#endif // LBANN_HAS_DISTCONV
 
   // Prefetch the first set of samples (if less than minibatch size, the first
   // minibatch read will take care of the rest)

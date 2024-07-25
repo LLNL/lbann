@@ -165,6 +165,21 @@ if __name__ == "__main__":
     parser.add_argument(
         '--dropout-keep-prob', action='store', type=float, default=0.5,
         help='Probability of keeping activations in dropout layers (default: 0.5). Set to 1 to disable dropout')
+    parser.add_argument(
+        '--cosine-schedule', action='store_true',
+        help='Use cosine learning rate scheduler')
+    parser.add_argument(
+        '--lr-min', action='store', type=float, default=0.,
+        help='Minimum leaning rate for cosine scheduler')
+    parser.add_argument(
+        '--decay-steps', action='store', type=int, default=50000,
+        help='Steps to decay learning rate over for cosine scheduler')
+    parser.add_argument(
+        '--init-warmup-lr', action='store', type=float, default=0.,
+        help='Initial warmup learning rate for cosine scheduler')
+    parser.add_argument(
+        '--warmup-steps', action='store', type=int, default=1000,
+        help='Number of steps to warmup learnign rate over with cosine scheduler')
 
     # Parallelism arguments
     parser.add_argument(
@@ -226,6 +241,15 @@ if __name__ == "__main__":
             channel_groups=args.channel_groups,
             filter_groups=args.filter_groups,
             depth_groups=args.depth_groups)
+        
+    cosine_scheduler_args = None
+    if args.cosine_schedule:
+        cosine_scheduler_args = {
+            'lr_min': args.lr_min,
+            'decay_steps': args.decay_steps,
+            'init_warmup_lr': args.init_warmup_lr,
+            'warmup_steps': args.warmup_steps
+        }
 
     model = cosmoflow_model.construct_cosmoflow_model(parallel_strategy=parallel_strategy,
                                                       local_batchnorm=args.local_batchnorm,
@@ -237,14 +261,14 @@ if __name__ == "__main__":
                                                       min_distconv_width=args.min_distconv_width,
                                                       mlperf=args.mlperf,
                                                       transform_input=args.transform_input,
-                                                      dropout_keep_prob=args.dropout_keep_prob)
+                                                      dropout_keep_prob=args.dropout_keep_prob,
+                                                      cosine_schedule=cosine_scheduler_args)
 
     # Add profiling callbacks if needed.
     model.callbacks.extend(lbann.contrib.args.create_profile_callbacks(args))
 
     # Setup optimizer
     optimizer = lbann.contrib.args.create_optimizer(args)
-    # optimizer.learn_rate *= 1e-2
 
     # Setup data reader
     serialize_io = False
