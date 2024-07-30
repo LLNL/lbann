@@ -223,7 +223,7 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
     LBANN_OMP_PARALLEL_FOR
     for (size_t i = 0; i < local_size; ++i) {
       auto& x = values_buffer[i];
-      const auto& g = gradient_buffer[i] + m_eps; // Avoid denormalized floats
+      const auto& g = gradient_buffer[i];
       if (!isfinite(g)) {
         continue;
       }
@@ -246,8 +246,7 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
     for (size_t col = 0; col < local_width; ++col) {
       for (size_t row = 0; row < local_height; ++row) {
         auto& x = values_buffer[row + col * values_ldim];
-        const auto& g = gradient_buffer[row + col * gradient_ldim] +
-                        m_eps; // Avoid denormalized floats
+        const auto& g = gradient_buffer[row + col * gradient_ldim];
         if (!isfinite(g)) {
           continue;
         }
