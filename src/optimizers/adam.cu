@@ -54,7 +54,7 @@ adam_noncontiguous_kernel(size_t height,
   if (gid < height * width) {
     const auto& row = gid % height;
     const auto& col = gid / height;
-    const auto& g = gradient[row + col * gradient_ldim] + eps;
+    const auto& g = gradient[row + col * gradient_ldim];
     if (gpu_lib::isinf(g) || gpu_lib::isnan(g)) {
       return;
     }
@@ -82,7 +82,7 @@ adam_contiguous_kernel(size_t size,
 {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if (gid < size) {
-    const auto& g = gradient[gid] + eps;
+    const auto& g = gradient[gid];
     if (gpu_lib::isinf(g) || gpu_lib::isnan(g)) {
       return;
     }

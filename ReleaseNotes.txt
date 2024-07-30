@@ -25,6 +25,9 @@ I/O & data ingestion:
 Build system:
 
 Bug fixes:
+ - Fixed a bug where Adam added an extra eps to the gradients, resulting in training
+   instability for gradients approaching the scale of eps. This was previously added
+   to avoid the performance penalty of denormalized values on CPU.
 
 Retired features:
 
