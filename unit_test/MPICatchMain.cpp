@@ -97,6 +97,7 @@ int main(int argc, char* argv[])
   world_comm->global_barrier();
 
   // Manipulate output file if needed.
+  lbann::utils::SystemInfo sys_info;
   auto& config_data = session.configData();
 #ifdef LBANN_USE_CATCH2_V3
   auto& output_file = config_data.defaultOutputFilename;
@@ -104,9 +105,22 @@ int main(int argc, char* argv[])
   auto& output_file = config_data.outputFilename;
 #endif
   if (output_file.size() > 0) {
-    lbann::utils::SystemInfo sys_info;
     output_file = replace_escapes(output_file, sys_info);
   }
+
+#ifdef LBANN_USE_CATCH2_V3
+  for (auto& spec : session.configData().reporterSpecifications)
+  {
+    const auto& outfile = spec.outputFile();
+    if (outfile.some())
+    {
+      spec = Catch::ReporterSpec(spec.name(),
+                                 replace_escapes(*outfile, sys_info),
+                                 spec.colourMode(),
+                                 spec.customOptions());
+    }
+  }
+#endif
 
   // Run the catch tests, outputting to the given file.
   int num_failed = session.run();
