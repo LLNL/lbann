@@ -99,7 +99,7 @@ esac
 # for now.
 echo "Task: Integration Tests"
 cd integration_tests
-$LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml || {
+$LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=${LBANN_DIR}/integration_test_results_junit.xml || {
     echo "******************************"
     echo " >>> Integration Tests FAILED"
     echo "******************************"
@@ -109,7 +109,7 @@ cd ..
 
 echo "Task: Unit Tests"
 cd unit_tests
-$LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml || {
+$LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=${LBANN_DIR}/unit_test_results_junit.xml || {
     echo "******************************"
     echo " >>> Unit Tests FAILED"
     echo "******************************"
