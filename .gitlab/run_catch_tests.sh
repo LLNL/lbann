@@ -46,25 +46,51 @@ then
             timeout -k 1m 2m \
                     srun -N1 -n2 --ntasks-per-node=2 --mpibind=off \
                     -D ${build_dir}/build-lbann \
-                    ${build_dir}/build-lbann/unit_test/mpi-catch-tests \
-                    -r JUnit::out=${project_dir}/mpi-tests_junit.xml || {
+                    ${build_dir}/build-lbann/unit_test/mpi-catch-tests "exclude:[random]" "exclude:[filesystem]" \\
+                    -r console::out=${project_dir}/mpi-tests-console-rank=%r-size=%s.log \
+                    -r JUnit::out=${project_dir}/mpi-tests-rank=%r-size=%s_junit.xml || {
                 failed_tests=$((${failed_tests=} + $?))
                 echo "******************************"
                 echo " >>> MPICatchTests FAILED"
                 echo "******************************"
 #                    -r mpicumulative \
             }
+            timeout -k 1m 2m \
+                    srun -N1 -n2 --ntasks-per-node=2 --mpibind=off \
+                    -D ${build_dir}/build-lbann \
+                    ${build_dir}/build-lbann/unit_test/mpi-catch-tests -s "[filesystem]" \
+                    -r console::out=${project_dir}/mpi-catch-filesystem-tests-console-rank=%r-size=%s.log \
+                    -r JUnit::out=${project_dir}/mpi-catch-filesystem-tests-rank=%r-size=%s_junit.xml || {
+                failed_tests=$((${failed_tests} + $?))
+                echo "******************************"
+                echo " >>> mpi-catch-tests [filesystem] FAILED"
+                echo "******************************"
+                    # -r mpicumulative \
+            }
             ;;
         lassen)
             timeout -k 1m 2m \
                     jsrun -n1 -r1 -a4 -c40 -g4 -d packed -b packed:10 \
-                    ${build_dir}/build-lbann/unit_test/mpi-catch-tests \
-                    -r JUnit::out=${project_dir}/mpi-tests_junit.xml || {
+                    ${build_dir}/build-lbann/unit_test/mpi-catch-tests "exclude:[random]" "exclude:[filesystem]" \
+                    -r console::out=${project_dir}/mpi-tests-console-rank=%r-size=%s.log \
+                    -r JUnit::out=${project_dir}/mpi-tests-rank=%r-size=%s_junit.xml || {
                 failed_tests=$((${failed_tests} + $?))
                 echo "******************************"
                 echo " >>> mpi-catch-tests FAILED"
                 echo "******************************"
 #                    -r mpicumulative \
+            }
+            timeout -k 1m 2m \
+                    jsrun -n1 -r1 -a4 -c40 -g4 -d packed -b packed:10 \
+                    -h ${build_dir}/build-lbann \
+                    ${build_dir}/build-lbann/unit_test/mpi-catch-tests -s "[filesystem]" \
+                    -r console::out=${project_dir}/mpi-catch-filesystem-tests-console-rank=%r-size=%s.log \
+                    -r JUnit::out=${project_dir}/mpi-catch-filesystem-tests-rank=%r-size=%s_junit.xml || {
+                failed_tests=$((${failed_tests} + $?))
+                echo "******************************"
+                echo " >>> mpi-catch-tests [filesystem] FAILED"
+                echo "******************************"
+                    # -r mpicumulative \
             }
             ;;
         corona|tioga)
@@ -73,7 +99,8 @@ then
                     flux run -N1 -n8 -g1 --exclusive \
                     --cwd=${build_dir}/build-lbann \
                     ${build_dir}/build-lbann/unit_test/mpi-catch-tests "exclude:[random]" "exclude:[filesystem]" \
-                    -r JUnit::out=${project_dir}/mpi-tests_junit.xml || {
+                    -r console::out=${project_dir}/mpi-tests-console-rank=%r-size=%s.log \
+                    -r JUnit::out=${project_dir}/mpi-tests-rank=%r-size=%s_junit.xml || {
                 failed_tests=$((${failed_tests} + $?))
                 echo "******************************"
                 echo " >>> mpi-catch-tests FAILED"
@@ -86,7 +113,8 @@ then
                     flux run -N1 -n8 -g1 --exclusive \
                     --cwd=${build_dir}/build-lbann \
                     ${build_dir}/build-lbann/unit_test/mpi-catch-tests -s "[filesystem]" \
-                    -r JUnit::out=${project_dir}/mpi-catch-filesystem-tests_junit.xml || {
+                    -r console::out=${project_dir}/mpi-catch-filesystem-tests-console-rank=%r-size=%s.log \
+                    -r JUnit::out=${project_dir}/mpi-catch-filesystem-tests-rank=%r-size=%s_junit.xml || {
                 failed_tests=$((${failed_tests} + $?))
                 echo "******************************"
                 echo " >>> mpi-catch-tests [filesystem] FAILED"

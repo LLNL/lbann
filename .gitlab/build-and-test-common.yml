@@ -27,9 +27,9 @@
 .build-and-test-base:
   variables:
     LLNL_SERVICE_USER: lbannusr
-    LLNL_SLURM_SCHEDULER_PARAMETERS: "-N1 -t 90"
-    LLNL_FLUX_SCHEDULER_PARAMETERS: "-N1 -t 120m"
-    LLNL_LSF_SCHEDULER_PARAMETERS: "-q pbatch -nnodes 1 -W 60"
+    LLNL_SLURM_SCHEDULER_PARAMETERS: "-N2 -t 90"
+    LLNL_FLUX_SCHEDULER_PARAMETERS: "-N2 -t 120m"
+    LLNL_LSF_SCHEDULER_PARAMETERS: "-q pbatch -nnodes 2 -W 60"
     GIT_SUBMODULE_STRATEGY: none
     GIT_DEPTH: 5
   script:

@@ -45,5 +45,5 @@ rocm-5-7-1-tioga:
   stage: build
   tags: [tioga, batch]
   variables:
-    LLNL_FLUX_SCHEDULER_PARAMETERS: "-N1 -t 20 -q pci"
+    LLNL_FLUX_SCHEDULER_PARAMETERS: "-N2 -t 120 -q pci"
   extends: .build-and-test

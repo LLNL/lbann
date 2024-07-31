@@ -99,13 +99,21 @@ esac
 # for now.
 echo "Task: Integration Tests"
 cd integration_tests
-$LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+$LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml || {
+    echo "******************************"
+    echo " >>> Integration Tests FAILED"
+    echo "******************************"
+}
 status=$?
 cd ..
 
 echo "Task: Unit Tests"
 cd unit_tests
-$LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+$LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml || {
+    echo "******************************"
+    echo " >>> Unit Tests FAILED"
+    echo "******************************"
+}
 status=$(($status + $?))
 cd ..
 
