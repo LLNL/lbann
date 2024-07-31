@@ -45,6 +45,7 @@ then
             export OMPI_MCA_mpi_warn_on_fork=0
             timeout -k 1m 2m \
                     srun -N1 -n2 --ntasks-per-node=2 --mpibind=off \
+                    -D ${build_dir}/build-lbann \
                     ${build_dir}/build-lbann/unit_test/mpi-catch-tests \
                     -r JUnit::out=${project_dir}/mpi-tests_junit.xml || {
                 failed_tests=$((${failed_tests=} + $?))

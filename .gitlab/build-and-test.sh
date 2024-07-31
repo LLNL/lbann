@@ -191,15 +191,24 @@ else
 fi
 
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-echo "~~~~~ Testing LBANN"
+echo "~~~~~ Installing Python Packages with PIP"
 echo "~~~~~ $(date)"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
+CMD="python3 -m pip install -i https://pypi.org/simple --prefix ${prefix}/lbann protobuf tqdm"
+echo ${CMD}
+${CMD}
+
 LBANN_MODFILES_DIR=${build_dir}/install/lbann/etc/modulefiles
-echo "I think that the module is in ${LBANN_MODFILES_DIR}"
+#echo "I think that the module is in ${LBANN_MODFILES_DIR}"
 ml use ${LBANN_MODFILES_DIR}
 ml load lbann
-echo "$(which lbann)"
+#echo "$(which lbann)"
+
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+echo "~~~~~ Testing LBANN: $(which lbann)"
+echo "~~~~~ $(date)"
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
 failed_tests=0
 source ${project_dir}/.gitlab/run_catch_tests.sh
@@ -210,30 +219,6 @@ echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo "~~~~~ LBANN Tests Complete"
 echo "~~~~~ $(date)"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-
-if [[ "${run_coverage}" == "1" ]]
-then
-
-    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo "~~~~~ Generating code coverage reports"
-    echo "~~~~~ $(date)"
-    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-
-    # This is beyond obnoxious
-    gcovr_prefix=$(dirname $(dirname $(command -v gcovr)))
-    python_path=$(ls --color=no -1 -d ${gcovr_prefix}/lib/python*/site-packages)
-    echo "python_path=${python_path}"
-    PYTHONPATH=${python_path}:${PYTHONPATH} cmake --build build-h2 -t coverage
-    if [[ -e ${build_dir}/build-h2/coverage-gcovr.xml ]]
-    then
-        cp ${build_dir}/build-h2/coverage-gcovr.xml ${project_dir}
-    fi
-
-    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo "~~~~~ Generated code coverage reports"
-    echo "~~~~~ $(date)"
-    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-fi
 
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo "~~~~~ Build and test completed"

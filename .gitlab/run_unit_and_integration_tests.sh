@@ -77,30 +77,35 @@ LBANN_PYTHON=lbann_pfe.sh
 # ml use ${LBANN_MODFILES_DIR}
 # ml load lbann
 
-echo "Testing $(which lbann) from $(pwd)
-cd unit_tests"
-#cd ..
+# cd unit_tests
+# echo "Testing $(which lbann) from $(pwd)"
 
-flux run -N1 -n8 -g1 --exclusive lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml
+case "${cluster}" in
+    pascal)
+        export OMPI_MCA_mpi_warn_on_fork=0
+        ;;
+    lassen)
+        ;;
+    corona|tioga)
+        export H2_SELECT_DEVICE_0=1
+        ;;
+    *)
+        echo "Unknown cluster: ${cluster}"
+        ;;
+esac
 
-exit 0
 # These tests are "allowed" to fail inside the script. That is, the
 # unit tests should be run even if these fail. The status is cached
 # for now.
 echo "Task: Integration Tests"
 cd integration_tests
-if [ ${WEEKLY} -ne 0 ]; then
-    $LBANN_PYTHON -m pytest -s -vv --durations=0 --weekly --junitxml=results.xml
-    status=$?
-else
-    $LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
-    status=$?
-fi
+$LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+status=$?
 cd ..
 
 echo "Task: Unit Tests"
 cd unit_tests
-OMP_NUM_THREADS=10 $LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+$LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
 status=$(($status + $?))
 cd ..
 
