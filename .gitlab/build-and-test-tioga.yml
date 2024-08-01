@@ -41,6 +41,13 @@ rocm-5-7-1-tioga:
     MODULES: "PrgEnv-amd amd/5.7.1 rocm/5.7.1 cray-mpich cray-libsci"
   extends: .build-and-test-on-tioga
 
+rocm-5-7-1-distconv-tioga:
+  variables:
+    COMPILER_FAMILY: amdclang
+    MODULES: "PrgEnv-amd amd/5.7.1 rocm/5.7.1 cray-mpich cray-libsci"
+    WITH_DISTCONV: "1"
+  extends: .build-and-test-on-tioga
+
 .build-and-test-on-tioga:
   stage: build
   tags: [tioga, batch]

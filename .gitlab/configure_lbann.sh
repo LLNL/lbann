@@ -35,7 +35,7 @@ cmake -G Ninja \
       -D CMAKE_HIP_FLAGS="${EXTRA_HIP_FLAGS}" \
       -D LBANN_DATATYPE=float \
       -D LBANN_WITH_CALIPER=OFF \
-      -D LBANN_WITH_DISTCONV=${BUILD_WITH_DISTCONV} \
+      -D LBANN_WITH_DISTCONV=${build_distconv:-OFF} \
       -D LBANN_WITH_TBINF=OFF \
       -D LBANN_WITH_UNIT_TESTING=ON \
       -D LBANN_WITH_CNPY=ON \

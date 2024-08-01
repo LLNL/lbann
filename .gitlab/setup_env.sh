@@ -85,6 +85,9 @@ case "${cluster}" in
         rocm_platform=ON
         gpu_arch=gfx906
         launcher=flux
+        ROCM_VER=$(basename ${ROCM_PATH})
+        COMPILER_VER=clang-14.0.6-magic
+        SYSTEM_INSTALL_PREFIX_EXTERNALS=${ROCM_VER}/${COMPILER_VER}/openmpi-4.1.2
         ;;
     *)
         ;;
