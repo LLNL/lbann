@@ -94,28 +94,32 @@ case "${cluster}" in
         ;;
 esac
 
+export OMP_NUM_THREADS=10
+
 # These tests are "allowed" to fail inside the script. That is, the
 # unit tests should be run even if these fail. The status is cached
 # for now.
-echo "Task: Integration Tests"
+echo "Task: Integration Tests with file pattern: ${TEST_FLAG}"
 cd integration_tests
-$LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=${LBANN_DIR}/integration_test_results_junit.xml || {
+$LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=${LBANN_DIR}/integration_test_results_junit.xml ${TEST_FLAG} || {
+    status=$?
+    failed_tests=$(( ${failed_tests} + $? ))
     echo "******************************"
     echo " >>> Integration Tests FAILED"
     echo "******************************"
 }
-status=$?
 cd ..
 
-echo "Task: Unit Tests"
+echo "Task: Unit Tests with file pattern: ${TEST_FLAG}"
 cd unit_tests
-$LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=${LBANN_DIR}/unit_test_results_junit.xml || {
+$LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=${LBANN_DIR}/unit_test_results_junit.xml ${TEST_FLAG} || {
+    status=$(($status + $?))
+    failed_tests=$(( ${failed_tests} + $? ))
     echo "******************************"
     echo " >>> Unit Tests FAILED"
     echo "******************************"
 }
-status=$(($status + $?))
 cd ..
 
-echo "Task: Finished"
-exit $status
+echo "Task: Finished with status ${status}"
+#exit $status

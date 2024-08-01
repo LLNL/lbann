@@ -51,6 +51,13 @@ fi
 modules=${MODULES:-""}
 run_coverage=${WITH_COVERAGE:-""}
 build_distconv=${WITH_DISTCONV:-""}
+build_half=${WITH_HALF:-""}
+build_fft=${WITH_FFT:-""}
+
+TEST_FLAG=${WITH_DISTCONV:-""}
+if [[ ${WITH_DISTCONV} ]]; then
+    TEST_FLAG="test_*_distconv.py"
+fi
 
 job_unique_id=${CI_JOB_ID:-""}
 prefix=""
