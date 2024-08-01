@@ -123,5 +123,5 @@ $LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=${LBANN_DIR}/unit_test_r
 }
 cd ..
 
-echo "Task: Finished with status ${status}"
+echo "Task: Finished with ${failed_tests} failed tests"
 #exit $status
