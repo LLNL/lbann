@@ -45,7 +45,8 @@ common_linker_flags="-Wl,--disable-new-dtags"
 extra_rpaths=${extra_rpaths:-""}
 
 # Set to the preferred install directory for the external dependencies
-INSTALL_EXTERNALS_ROOT=/usr/workspace/lbann/ci_stable_dependencies/${cluster}
+CI_STABLE_DEPENDENCIES_ROOT=/usr/workspace/lbann/ci_stable_dependencies
+INSTALL_EXTERNALS_ROOT=${CI_STABLE_DEPENDENCIES_ROOT}/${cluster}
 
 case "${cluster}" in
     pascal)
@@ -94,6 +95,7 @@ case "${cluster}" in
 esac
 
 source ${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}/logs/lbann_sb_suggested_cmake_prefix_path.sh
+export CMAKE_PREFIX_PATH=${CI_STABLE_DEPENDENCIES_ROOT}/half-2.1.0:${CMAKE_PREFIX_PATH}
 #CMAKE_PREFIX_PATH=${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}
 CMAKE_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
 
