@@ -1,10 +1,3 @@
-if [[ "$cluster" == "lassen" ]]
-then
-    lapack_opt="-D BLA_VENDOR=Generic"
-else
-    lapack_opt=""
-fi
-
 cmake -G Ninja \
       -S ${project_dir} \
       -B ${build_dir}/build-lbann \
@@ -45,18 +38,3 @@ cmake -G Ninja \
       -D LBANN_WITH_EMBEDDED_PYTHON=ON \
       -D LBANN_WITH_PYTHON_FRONTEND=ON \
       -D LBANN_WITH_VISION=ON
-
-
-#      -D LBANN_WITH_CUTENSOR=OFF \
-
-# \
-#       -D CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH}
-
-#      -D LBANN_SB_LBANN_SOURCE_DIR=${LBANN_SRC_DIR} \
-
-      # -D LBANN_SB_DEFAULT_CUDA_OPTS=${cuda_platform} \
-      # -D LBANN_SB_DEFAULT_ROCM_OPTS=${rocm_platform} \
-      # -D LBANN_WITH_NVSHMEM=OFF \
-
-      # \
-      # -D LBANN_SB_DEFAULT_INSTALL_PATH_STRATEGY="PKG_LC" \

@@ -1,8 +1,10 @@
 if [[ "$cluster" == "lassen" ]]
 then
-    lapack_opt="-D LBANN_SB_FWD_Hydrogen_BLA_VENDOR=Generic"
+    hydrogen_lapack_opt="-D LBANN_SB_FWD_Hydrogen_BLA_VENDOR=Generic"
+    dihydrogen_lapack_opt="-D LBANN_SB_FWD_DiHydrogen_BLA_VENDOR=Generic"
 else
-    lapack_opt=""
+    hydrogen_lapack_opt=""
+    dihydrogen_lapack_opt=""
 fi
 
 cmake \
@@ -52,7 +54,7 @@ cmake \
     -D LBANN_SB_FWD_Aluminum_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH} \
     \
     -D LBANN_SB_BUILD_Hydrogen=ON \
-    ${lapack_opt} \
+    ${hydrogen_lapack_opt} \
     -D LBANN_SB_Hydrogen_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
     -D LBANN_SB_Hydrogen_HIP_FLAGS="${EXTRA_HIP_FLAGS}" \
     -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_HALF=${build_half:-OFF} \
@@ -61,16 +63,8 @@ cmake \
     -D LBANN_SB_FWD_Hydrogen_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH} \
     \
     -D LBANN_SB_BUILD_DiHydrogen=ON \
+    ${dihydrogen_lapack_opt} \
     -D LBANN_SB_DiHydrogen_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
     -D LBANN_SB_DiHydrogen_HIP_FLAGS="${EXTRA_HIP_FLAGS}" \
     -D LBANN_SB_FWD_DiHydrogen_H2_ENABLE_DISTCONV_LEGACY=${build_distconv:-OFF} \
     -D LBANN_SB_FWD_DiHydrogen_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH}
-
-
-    # -D LBANN_SB_BUILD_Catch2=ON \
-    # -D LBANN_SB_Catch2_TAG="devel" \
-    # \
-    # -D LBANN_SB_BUILD_hwloc=${rocm_platform} \
-    # -D LBANN_SB_BUILD_NCCL=${cuda_platform} \
-    # -D LBANN_SB_BUILD_spdlog=ON  \
-    # \
