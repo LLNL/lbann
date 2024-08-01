@@ -102,8 +102,9 @@ export OMP_NUM_THREADS=10
 echo "Task: Integration Tests with file pattern: ${TEST_FLAG}"
 cd integration_tests
 $LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=${LBANN_DIR}/integration_test_results_junit.xml ${TEST_FLAG} || {
-    status=$?
-    failed_tests=$(( ${failed_tests} + $? ))
+    this_status=$?
+    status=$(( $status + $this_status ))
+    failed_tests=$(( $failed_tests + $this_status ))
     echo "******************************"
     echo " >>> Integration Tests FAILED"
     echo "******************************"
@@ -113,8 +114,9 @@ cd ..
 echo "Task: Unit Tests with file pattern: ${TEST_FLAG}"
 cd unit_tests
 $LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=${LBANN_DIR}/unit_test_results_junit.xml ${TEST_FLAG} || {
-    status=$(($status + $?))
-    failed_tests=$(( ${failed_tests} + $? ))
+    this_status=$?
+    status=$(( $status + $this_status ))
+    failed_tests=$(( $failed_tests + $this_status ))
     echo "******************************"
     echo " >>> Unit Tests FAILED"
     echo "******************************"
