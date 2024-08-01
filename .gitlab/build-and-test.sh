@@ -55,7 +55,7 @@ build_half=${WITH_HALF:-""}
 build_fft=${WITH_FFT:-""}
 
 TEST_FLAG=${WITH_DISTCONV:-""}
-if [[ ${WITH_DISTCONV} ]]; then
+if [[ ${build_distconv} ]]; then
     TEST_FLAG="test_*_distconv.py"
 fi
 
