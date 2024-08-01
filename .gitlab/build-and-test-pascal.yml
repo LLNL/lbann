@@ -35,15 +35,12 @@ stages:
 include:
   local: "/.gitlab/build-and-test-common.yml"
 
-rocm-5-7-1-tioga:
+clang-14-0-6-cuda-11-8-0-pascal:
   variables:
-    COMPILER_FAMILY: amdclang
-    MODULES: "PrgEnv-amd amd/5.7.1 rocm/5.7.1 cray-mpich cray-libsci"
-  extends: .build-and-test-on-tioga
+    COMPILER_FAMILY: clang
+    MODULES: "clang/14.0.6-magic openmpi/4.1.2 cuda/11.8.0 ninja/1.11.1"
+  extends: [.build-and-test-on-pascal, .build-and-test]
 
-.build-and-test-on-tioga:
+.build-and-test-on-pascal:
   stage: build
-  tags: [tioga, batch]
-  variables:
-    LLNL_FLUX_SCHEDULER_PARAMETERS: "-N2 -t 120 -q pdebug"
-  extends: .build-and-test
+  tags: [pascal, batch]

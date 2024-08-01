@@ -150,3 +150,11 @@ tioga testing:
     include: '.gitlab/build-and-test-tioga.yml'
     forward:
       pipeline_variables: true
+
+pascal testing:
+  stage: run-all-clusters
+  trigger:
+    strategy: depend
+    include: '.gitlab/build-and-test-pascal.yml'
+    forward:
+      pipeline_variables: true
