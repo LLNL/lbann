@@ -43,6 +43,15 @@ clang-14-0-6-cuda-11-8-0-pascal:
     WITH_FFT: "1"
   extends: [.build-and-test-on-pascal, .build-and-test]
 
+clang-14-0-6-cuda-11-8-0-distconv-pascal:
+  variables:
+    COMPILER_FAMILY: clang
+    MODULES: "clang/14.0.6-magic openmpi/4.1.2 cuda/11.8.0 ninja/1.11.1"
+    WITH_HALF: "1"
+    WITH_FFT: "1"
+    WITH_DISTCONV: "1"
+  extends: [.build-and-test-on-pascal, .build-and-test]
+
 .build-and-test-on-pascal:
   stage: build
   tags: [pascal, batch]
