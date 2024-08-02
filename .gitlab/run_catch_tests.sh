@@ -46,7 +46,7 @@ then
             timeout -k 1m 10m \
                     srun -N1 -n2 --ntasks-per-node=2 --mpibind=off \
                     -D ${build_dir}/build-lbann \
-                    ${build_dir}/build-lbann/unit_test/mpi-catch-tests "exclude:[random]" "exclude:[filesystem]" \\
+                    ${build_dir}/build-lbann/unit_test/mpi-catch-tests "exclude:[random]" "exclude:[filesystem]" \
                     -r console::out=${project_dir}/mpi-tests-console-rank=%r-size=%s.log \
                     -r JUnit::out=${project_dir}/mpi-tests-rank=%r-size=%s_junit.xml || {
                 failed_tests=$((${failed_tests=} + $?))
