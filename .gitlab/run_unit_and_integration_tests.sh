@@ -99,6 +99,7 @@ export OMP_NUM_THREADS=10
 # These tests are "allowed" to fail inside the script. That is, the
 # unit tests should be run even if these fail. The status is cached
 # for now.
+status=0
 echo "Task: Integration Tests with file pattern: ${TEST_FLAG}"
 cd integration_tests
 $LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=${LBANN_DIR}/integration_test_results_junit.xml ${TEST_FLAG} || {
@@ -123,5 +124,5 @@ $LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=${LBANN_DIR}/unit_test_r
 }
 cd ..
 
-echo "Task: Finished with ${failed_tests} failed tests"
+echo "Task: Finished with status ${status} and ${failed_tests} failed tests"
 #exit $status

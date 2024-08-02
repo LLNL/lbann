@@ -106,8 +106,8 @@ LDFLAGS="${common_linker_flags} ${LDFLAGS}"
 
 # Improve debugging info and remove some misguided warnings. These are
 # passed only to the LBANN stack.
-EXTRA_CXX_FLAGS="-g3 -Wno-deprecated-declarations"
-EXTRA_HIP_FLAGS="-g3 -Wno-deprecated-declarations"
+EXTRA_CXX_FLAGS="-O2 -g3 -Wno-deprecated-declarations"
+EXTRA_HIP_FLAGS="-O2 -g3 -Wno-deprecated-declarations"
 # Prefer RPATH to RUNPATH (stability over flexibility)
 EXTRA_LINK_FLAGS="-fuse-ld=lld -Wl,--disable-new-dtags"
 
