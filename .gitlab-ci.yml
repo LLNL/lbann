@@ -158,3 +158,11 @@ pascal testing:
     include: '.gitlab/build-and-test-pascal.yml'
     forward:
       pipeline_variables: true
+
+corona testing:
+  stage: run-all-clusters
+  trigger:
+    strategy: depend
+    include: '.gitlab/build-and-test-corona.yml'
+    forward:
+      pipeline_variables: true
