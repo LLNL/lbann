@@ -5,6 +5,11 @@ then
 else
     lbann_lapack_opt=""
 fi
+
+# Just for good measure...
+extra_rpaths=${dha_prefix}/aluminum/lib64:${dha_prefix}/hydrogen/lib:${dha_prefix}/dihydrogen/lib64:${extra_rpaths:-""}
+
+
 cmake -G Ninja \
       -S ${project_dir} \
       -B ${build_dir}/build-lbann \
