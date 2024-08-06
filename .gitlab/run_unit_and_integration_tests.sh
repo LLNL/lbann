@@ -5,7 +5,10 @@ LBANN_DIR=$(git rev-parse --show-toplevel)
 
 cd ${LBANN_DIR}/ci_test
 
-echo "${PWD}/run.sh CLUSTER=${CLUSTER}"
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+echo "~~~~~ Running Integration and Unit tests"
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+#echo "${PWD}/run.sh CLUSTER=${CLUSTER}"
 
 PYTHON=python3
 LBANN_PYTHON=lbann_pfe.sh
@@ -100,9 +103,11 @@ export OMP_NUM_THREADS=10
 # unit tests should be run even if these fail. The status is cached
 # for now.
 status=0
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo "Task: Integration Tests with file pattern: ${TEST_FLAG}"
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 cd integration_tests
-$LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=${LBANN_DIR}/integration_test_results_junit.xml ${TEST_FLAG} || {
+$LBANN_PYTHON -m pytest -vv --durations=0 --junitxml=${LBANN_DIR}/integration_test_results_junit.xml ${TEST_FLAG} || {
     this_status=$?
     status=$(( $status + $this_status ))
     failed_tests=$(( $failed_tests + $this_status ))
@@ -112,9 +117,11 @@ $LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=${LBANN_DIR}/integration
 }
 cd ..
 
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo "Task: Unit Tests with file pattern: ${TEST_FLAG}"
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 cd unit_tests
-$LBANN_PYTHON -m pytest -s -vv --durations=0 --junitxml=${LBANN_DIR}/unit_test_results_junit.xml ${TEST_FLAG} || {
+$LBANN_PYTHON -m pytest -vv --durations=0 --junitxml=${LBANN_DIR}/unit_test_results_junit.xml ${TEST_FLAG} || {
     this_status=$?
     status=$(( $status + $this_status ))
     failed_tests=$(( $failed_tests + $this_status ))
