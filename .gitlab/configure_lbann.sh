@@ -1,3 +1,10 @@
+if [[ "$cluster" == "lassen" ]]
+then
+    # lbann_lapack_opt="-D LBANN_BLA_VENDOR=IBMESSL"
+    lbann_lapack_opt="-D LBANN_BLA_VENDOR=Generic"
+else
+    lbann_lapack_opt=""
+fi
 cmake -G Ninja \
       -S ${project_dir} \
       -B ${build_dir}/build-lbann \
@@ -26,6 +33,7 @@ cmake -G Ninja \
       -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
       -D CMAKE_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
       -D CMAKE_HIP_FLAGS="${EXTRA_HIP_FLAGS}" \
+      ${lbann_lapack_opt} \
       -D LBANN_DATATYPE=float \
       -D LBANN_WITH_CALIPER=OFF \
       -D LBANN_WITH_DISTCONV=${build_distconv:-OFF} \

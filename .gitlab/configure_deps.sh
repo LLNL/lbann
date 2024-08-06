@@ -1,9 +1,9 @@
 if [[ "$cluster" == "lassen" ]]
 then
-    hydrogen_lapack_opt="-D LBANN_SB_FWD_Hydrogen_BLA_VENDOR=IBMESSL"
-    dihydrogen_lapack_opt="-D LBANN_SB_FWD_DiHydrogen_BLA_VENDOR=IBMESSL"
-    # hydrogen_lapack_opt="-D LBANN_SB_FWD_Hydrogen_BLA_VENDOR=Generic"
-    # dihydrogen_lapack_opt="-D LBANN_SB_FWD_DiHydrogen_BLA_VENDOR=Generic"
+    # hydrogen_lapack_opt="-D LBANN_SB_FWD_Hydrogen_BLA_VENDOR=IBMESSL"
+    # dihydrogen_lapack_opt="-D LBANN_SB_FWD_DiHydrogen_BLA_VENDOR=IBMESSL"
+    hydrogen_lapack_opt="-D LBANN_SB_FWD_Hydrogen_BLA_VENDOR=Generic"
+    dihydrogen_lapack_opt="-D LBANN_SB_FWD_DiHydrogen_BLA_VENDOR=Generic"
 else
     hydrogen_lapack_opt=""
     dihydrogen_lapack_opt=""
@@ -57,6 +57,7 @@ cmake \
     -D LBANN_SB_FWD_Aluminum_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH} \
     \
     -D LBANN_SB_BUILD_Hydrogen=ON \
+    ${hydrogen_lapack_opt} \
     -D LBANN_SB_Hydrogen_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
     -D LBANN_SB_Hydrogen_HIP_FLAGS="${EXTRA_HIP_FLAGS}" \
     -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_HALF=${build_half:-OFF} \
