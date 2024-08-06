@@ -65,6 +65,10 @@ case "${cluster}" in
         cuda_platform=ON
         gpu_arch=70
         launcher=lsf
+        CUDA_VER=cuda-12.2.2
+        COMPILER_VER=clang-16.0.6
+        SYSTEM_INSTALL_PREFIX_EXTERNALS=${CUDA_VER}/${COMPILER_VER}/spectrum-mpi-rolling-release
+        export CMAKE_PREFIX_PATH="${CI_STABLE_DEPENDENCIES_ROOT}/${cluster}/${CUDA_VER}/nccl_2.20.3-1+cuda12.2_ppc64le:${CI_STABLE_DEPENDENCIES_ROOT}/${cluster}/${CUDA_VER}/cudnn-linux-ppc64le-8.9.7.29_cuda12-archive:${CMAKE_PREFIX_PATH:-""}"
         ;;
     tioga)
         cray_libs_dir=${CRAYLIBS_X86_64:-""}
@@ -94,6 +98,7 @@ case "${cluster}" in
         ;;
 esac
 
+export CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH:-""}
 source ${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}/logs/lbann_sb_suggested_cmake_prefix_path.sh
 export CMAKE_PREFIX_PATH=${CI_STABLE_DEPENDENCIES_ROOT}/half-2.1.0:${CMAKE_PREFIX_PATH}
 #CMAKE_PREFIX_PATH=${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}

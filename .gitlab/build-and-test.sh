@@ -97,7 +97,8 @@ echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 prefix="${project_dir}/install-deps-${CI_JOB_NAME_SLUG:-${job_unique_id}}"
 
 # Just for good measure...
-export CMAKE_PREFIX_PATH=${prefix}/aluminum:${prefix}/hydrogen:${prefix}/dihydrogen:${prefix}/nccl:${CMAKE_PREFIX_PATH}
+export CMAKE_PREFIX_PATH=${prefix}/aluminum:${prefix}/hydrogen:${prefix}/dihydrogen::${CMAKE_PREFIX_PATH}
+#export CMAKE_PREFIX_PATH=${prefix}/aluminum:${prefix}/hydrogen:${prefix}/dihydrogen:${prefix}/nccl:${CMAKE_PREFIX_PATH}
 #export CMAKE_PREFIX_PATH=${prefix}/aluminum:${prefix}/catch2:${prefix}/hwloc:${prefix}/hydrogen:${prefix}/dihydrogen:${prefix}/nccl:${prefix}/spdlog:${CMAKE_PREFIX_PATH}
 CMAKE_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
 
