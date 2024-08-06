@@ -1,7 +1,7 @@
 if [[ "$cluster" == "lassen" ]]
 then
     # lbann_lapack_opt="-D LBANN_BLA_VENDOR=IBMESSL"
-    lbann_lapack_opt="-D LBANN_BLA_VENDOR=Generic"
+    lbann_lapack_opt="-D BLA_VENDOR=Generic"
 else
     lbann_lapack_opt=""
 fi
