@@ -49,5 +49,5 @@ INSTALL_PREFIX_EXTERNALS=${INSTALL_ROOT}/${COMPILER_VER}/spectrum-mpi-rolling-re
 BUILD_ROOT=/usr/workspace/lbann/ci_stable_dependencies/.build/lassen/${CUDA_VER}/${COMPILER_VER}
 
 # Location of external packages
-export CMAKE_PREFIX_PATH=${INSTALL_ROOT}/cudnn-8.9.4:${INSTALL_ROOT}/nccl-2.19.4:${INSTALL_ROOT}/../../cutensor-1.7.0.1/libcutensor-linux-x86_64-1.7.0.1-archive
+export CMAKE_PREFIX_PATH=${INSTALL_ROOT}/cudnn-8.9.4:${INSTALL_ROOT}/nccl-2.19.4:${INSTALL_ROOT}/../../cutensor-1.7.0.1/libcutensor-linux-ppc64le-1.7.0.1-archive
 CMAKE_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}

@@ -166,3 +166,11 @@ corona testing:
     include: '.gitlab/build-and-test-corona.yml'
     forward:
       pipeline_variables: true
+
+lassen testing:
+  stage: run-all-clusters
+  trigger:
+    strategy: depend
+    include: '.gitlab/build-and-test-lassen.yml'
+    forward:
+      pipeline_variables: true
