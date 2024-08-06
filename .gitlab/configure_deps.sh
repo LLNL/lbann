@@ -1,7 +1,5 @@
 if [[ "$cluster" == "lassen" ]]
 then
-    # hydrogen_lapack_opt="-D LBANN_SB_FWD_Hydrogen_BLA_VENDOR=IBMESSL"
-    # dihydrogen_lapack_opt="-D LBANN_SB_FWD_DiHydrogen_BLA_VENDOR=IBMESSL"
     hydrogen_lapack_opt="-D LBANN_SB_FWD_Hydrogen_BLA_VENDOR=Generic"
     dihydrogen_lapack_opt="-D LBANN_SB_FWD_DiHydrogen_BLA_VENDOR=Generic"
 else

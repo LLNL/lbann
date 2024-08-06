@@ -74,9 +74,9 @@ case "${cluster}" in
         cray_libs_dir=${CRAYLIBS_X86_64:-""}
         if [[ -n "${cray_libs_dir}" ]]
         then
-            extra_rpaths="${cray_libs_dir}:${ROCM_PATH}/lib:${extra_rpaths}"
+            extra_rpaths="${cray_libs_dir}:${ROCM_PATH}/lib:${ROCM_PATH}/llvm/lib:${extra_rpaths}"
         else
-            extra_rpaths="${ROCM_PATH}/lib:${extra_rpaths}"
+            extra_rpaths="${ROCM_PATH}/lib:${ROCM_PATH}/llvm/lib:${extra_rpaths}"
         fi
         rocm_platform=ON
         gpu_arch=gfx90a
@@ -86,7 +86,7 @@ case "${cluster}" in
         SYSTEM_INSTALL_PREFIX_EXTERNALS=${ROCM_VER}/${PE_ENV_lc}/cray-mpich-8.1.29
         ;;
     corona)
-        extra_rpaths="${ROCM_PATH}/lib:${extra_rpaths}"
+        extra_rpaths="${ROCM_PATH}/lib:${ROCM_PATH}/llvm/lib:${extra_rpaths}"
         rocm_platform=ON
         gpu_arch=gfx906
         launcher=flux
@@ -111,8 +111,8 @@ LDFLAGS="${common_linker_flags} ${LDFLAGS}"
 
 # Improve debugging info and remove some misguided warnings. These are
 # passed only to the LBANN stack.
-EXTRA_CXX_FLAGS="-O2 -g3 -Wno-deprecated-declarations"
-EXTRA_HIP_FLAGS="-O2 -g3 -Wno-deprecated-declarations"
+EXTRA_CXX_FLAGS="-g3 -Wno-deprecated-declarations"
+EXTRA_HIP_FLAGS="-g3 -Wno-deprecated-declarations"
 # Prefer RPATH to RUNPATH (stability over flexibility)
 EXTRA_LINK_FLAGS="-fuse-ld=lld -Wl,--disable-new-dtags"
 
