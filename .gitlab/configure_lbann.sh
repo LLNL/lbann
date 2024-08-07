@@ -7,8 +7,15 @@ else
 fi
 
 # Just for good measure...
-extra_rpaths=${dha_prefix}/aluminum/lib64:${dha_prefix}/hydrogen/lib:${dha_prefix}/dihydrogen/lib64:${extra_rpaths:-""}
+if [ -z "${extra_rpaths}" ]; then
+    extra_rpaths=${dha_prefix}/aluminum/lib64:${dha_prefix}/hydrogen/lib:${dha_prefix}/dihydrogen/lib64
+else
+    extra_rpaths=${dha_prefix}/aluminum/lib64:${dha_prefix}/hydrogen/lib:${dha_prefix}/dihydrogen/lib64:${extra_rpaths:-""}
+fi
 
+echo "I have modified the extra rpaths to be ${extra_rpaths}"
+      # -D CMAKE_BUILD_RPATH="${extra_rpaths//:/\;}" \
+      # -D CMAKE_INSTALL_RPATH="${extra_rpaths//:/\;}" \
 
 cmake -G Ninja \
       -S ${project_dir} \
@@ -18,8 +25,8 @@ cmake -G Ninja \
       -D CMAKE_BUILD_TYPE=Release \
       -D CMAKE_INSTALL_PREFIX=${prefix}/lbann \
       \
-      -D CMAKE_BUILD_RPATH="${extra_rpaths//:/\;}" \
-      -D CMAKE_INSTALL_RPATH="${extra_rpaths//:/\;}" \
+      -D CMAKE_BUILD_RPATH="${extra_rpaths}" \
+      -D CMAKE_INSTALL_RPATH="${extra_rpaths}" \
       -D CMAKE_INSTALL_RPATH_USE_LINK_PATH=ON \
       \
       -D CMAKE_CXX_STANDARD=17 \
