@@ -39,6 +39,7 @@ case "${cluster}" in
     lassen)
         timeout -k 1m 10m \
                 jsrun -n1 -r1 -a4 -c40 -g4 -d packed -b packed:10 \
+                -h ${build_dir}/build-lbann \
                 ${build_dir}/build-lbann/unit_test/mpi-catch-tests \
                 -r console::out=${project_dir}/mpi-catch-tests-console-rank=%r-size=%s.log \
                 -r JUnit::out=${project_dir}/mpi-catch-tests-rank=%r-size=%s_junit.xml \
