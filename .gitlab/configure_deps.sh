@@ -19,8 +19,8 @@ cmake \
     -D CMAKE_EXE_LINKER_FLAGS=${common_linker_flags} \
     -D CMAKE_SHARED_LINKER_FLAGS=${common_linker_flags} \
     \
-    -D CMAKE_BUILD_RPATH=${extra_rpaths//:/|} \
-    -D CMAKE_INSTALL_RPATH=${extra_rpaths//:/|} \
+    -D CMAKE_BUILD_RPATH="${extra_rpaths//:/|}" \
+    -D CMAKE_INSTALL_RPATH="${extra_rpaths//:/|}" \
     \
     -D BUILD_SHARED_LIBS=ON \
     -D CMAKE_BUILD_RPATH_USE_ORIGIN=OFF \

@@ -25,8 +25,8 @@ cmake -G Ninja \
       -D CMAKE_BUILD_TYPE=Release \
       -D CMAKE_INSTALL_PREFIX=${prefix}/lbann \
       \
-      -D CMAKE_BUILD_RPATH="${extra_rpaths}" \
-      -D CMAKE_INSTALL_RPATH="${extra_rpaths}" \
+      -D CMAKE_BUILD_RPATH="${extra_rpaths//:/;}" \
+      -D CMAKE_INSTALL_RPATH="${extra_rpaths//:/;}" \
       -D CMAKE_INSTALL_RPATH_USE_LINK_PATH=ON \
       \
       -D CMAKE_CXX_STANDARD=17 \
