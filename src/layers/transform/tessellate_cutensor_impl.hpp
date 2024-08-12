@@ -49,6 +49,8 @@ void tessellate_layer<TensorDataType, T_layout, Dev>::bp_compute_cutensor(
   LocalMat const& input =
     static_cast<LocalMat const&>(output_grad.LockedMatrix());
   LocalMat& output = static_cast<LocalMat&>(input_grad);
+  if (input.IsEmpty() || output.IsEmpty())
+    return;
 
   // Make dimensions and modes
   int dims = static_cast<int>(output_dims.size());
