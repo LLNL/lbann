@@ -48,6 +48,20 @@ rocm-5-7-1-distconv-tioga:
     WITH_DISTCONV: "1"
   extends: .build-and-test-on-tioga
 
+
+rocm-6-2-0-tioga:
+  variables:
+    COMPILER_FAMILY: amdclang
+    MODULES: "PrgEnv-cray rocm/6.2.0 cray-mpich/8.1.30 cray-libsci"
+  extends: .build-and-test-on-tioga
+
+rocm-6-2-0-distconv-tioga:
+  variables:
+    COMPILER_FAMILY: amdclang
+    MODULES: "PrgEnv-cray rocm/6.2.0 cray-mpich/8.1.30 cray-libsci"
+    WITH_DISTCONV: "1"
+  extends: .build-and-test-on-tioga
+
 .build-and-test-on-tioga:
   stage: build
   tags: [tioga, batch]
