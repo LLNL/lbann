@@ -1,21 +1,22 @@
 if [[ "$cluster" == "lassen" ]]
 then
-    # lbann_lapack_opt="-D LBANN_BLA_VENDOR=IBMESSL"
     lbann_lapack_opt="-D BLA_VENDOR=Generic"
+    build_fft=ON
 else
     lbann_lapack_opt=""
 fi
 
-# Just for good measure...
+if [[ "$cluster" == "tioga" ]]
+then
+    build_fft=OFF
+fi
+
+# Default RPATH rules will not include in-source libraries from the prefix path... add them here.
 if [ -z "${extra_rpaths}" ]; then
     extra_rpaths=${dha_prefix}/aluminum/lib64:${dha_prefix}/hydrogen/lib:${dha_prefix}/dihydrogen/lib64
 else
     extra_rpaths=${dha_prefix}/aluminum/lib64:${dha_prefix}/hydrogen/lib:${dha_prefix}/dihydrogen/lib64:${extra_rpaths:-""}
 fi
-
-echo "I have modified the extra rpaths to be ${extra_rpaths}"
-      # -D CMAKE_BUILD_RPATH="${extra_rpaths//:/\;}" \
-      # -D CMAKE_INSTALL_RPATH="${extra_rpaths//:/\;}" \
 
 cmake -G Ninja \
       -S ${project_dir} \
@@ -57,9 +58,3 @@ cmake -G Ninja \
       -D LBANN_WITH_EMBEDDED_PYTHON=ON \
       -D LBANN_WITH_PYTHON_FRONTEND=ON \
       -D LBANN_WITH_VISION=ON
-
-      # -D CMAKE_BUILD_RPATH_USE_ORIGIN=OFF \
-      # -D CMAKE_BUILD_WITH_INSTALL_RPATH=OFF \
-      # -D CMAKE_SKIP_BUILD_RPATH=OFF \
-      # -D CMAKE_SKIP_INSTALL_RPATH=OFF \
-      # -D CMAKE_SKIP_RPATH=OFF \

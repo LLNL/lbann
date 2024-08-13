@@ -78,6 +78,7 @@ case "${cluster}" in
         else
             extra_rpaths="${ROCM_PATH}/lib:${ROCM_PATH}/llvm/lib:${extra_rpaths}"
         fi
+        extra_rpaths="/usr/workspace/lbann/ci_stable_dependencies/tioga/rocm-5.7.1/cray/cray-mpich-8.1.30/aws_ofi_rccl/lib:${extra_rpaths}"
         rocm_platform=ON
         gpu_arch=gfx90a,gfx942
         launcher=flux
@@ -103,6 +104,7 @@ source ${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}/logs/lbann_s
 export CMAKE_PREFIX_PATH=${CI_STABLE_DEPENDENCIES_ROOT}/half-2.1.0:${CMAKE_PREFIX_PATH}
 #CMAKE_PREFIX_PATH=${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}
 CMAKE_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
+echo "BVE HERE I think that AWS_OFI_RCCL_LIBRARY=${AWS_OFI_RCCL_LIBRARY}"
 
 CFLAGS=${CFLAGS:-""}
 CXXFLAGS=${CXXFLAGS:-""}

@@ -44,9 +44,10 @@ PE_ENV_lc=$(echo "${PE_ENV}" | tr '[:upper:]' '[:lower:]')
 INSTALL_ROOT=/usr/workspace/lbann/ci_stable_dependencies/tioga/${ROCM_VER}/${PE_ENV_lc}
 INSTALL_PREFIX_EXTERNALS=${INSTALL_ROOT}/cray-mpich-${CRAY_MPICH_VERSION}
 
-if [[ "${PE_ENV_lc}" == "cray" ]]; then
+if [[ "${PE_ENV_lc}" = "cray" ]]; then
     # If using PrgEnv-cray add ${CRAYLIBS_X86_64}
     EXTRA_RPATHS="${CRAYLIBS_X86_64}|${EXTRA_RPATHS}"
+    export LD_LIBRARY_PATH=${CRAY_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}
 fi
 
 # Use an accessible build directory so that the source files are preserved for debuggin

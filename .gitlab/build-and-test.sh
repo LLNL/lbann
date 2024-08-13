@@ -95,20 +95,25 @@ echo "~~~~~   Project dir: ${project_dir}"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
 prefix="${project_dir}/install-deps-${CI_JOB_NAME_SLUG:-${job_unique_id}}"
+#dha_prefix=${INSTALL_EXTERNALS_ROOT}/rocm-5.7.1/amd/cray-mpich-8.1.29/dha_with_distconv
 dha_prefix=${prefix}
 
 # Just for good measure...
-export CMAKE_PREFIX_PATH=${prefix}/aluminum:${prefix}/hydrogen:${prefix}/dihydrogen:${CMAKE_PREFIX_PATH}
+export CMAKE_PREFIX_PATH=${dha_prefix}/aluminum:${dha_prefix}/hydrogen:${dha_prefix}/dihydrogen:${CMAKE_PREFIX_PATH}
+#export CMAKE_PREFIX_PATH=${prefix}/aluminum:${prefix}/hydrogen:${prefix}/dihydrogen:${CMAKE_PREFIX_PATH}
 CMAKE_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
 
 # Allow a user to force this
 rebuild_deps=${REBUILD_DEPS:-""}
+#rebuild_deps=0
 
 # Rebuild if the prefix doesn't exist.
-if [[ ! -d "${prefix}" ]]
+#if [[ ! -d "${prefix}" ]]
+if [[ ! -d "${dha_prefix}" ]]
 then
     rebuild_deps=1
 fi
+#rebuild_deps=0
 
 # Rebuild if latest hashes don't match
 if [[ -z "${rebuild_deps}" ]]
@@ -220,9 +225,20 @@ echo "~~~~~ Installing Python Packages with PIP"
 echo "~~~~~ $(date)"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
-CMD="python3 -m pip install -i https://pypi.org/simple --prefix ${prefix}/lbann protobuf tqdm numpy scipy"
+CMD="python3 -m pip install -i https://pypi.org/simple -U --force-reinstall --prefix ${prefix}/lbann protobuf tqdm numpy scipy"
 echo ${CMD}
 ${CMD}
+
+case "${cluster}" in
+    pascal)
+        CMD="python3 -m pip install -i https://pypi.org/simple -U --force-reinstall --prefix ${prefix}/lbann torch"
+        echo ${CMD}
+        ${CMD}
+        ;;
+    *)
+        echo "Unable to install torch via pip on ${cluster}"
+        ;;
+esac
 
 LBANN_MODFILES_DIR=${build_dir}/install/lbann/etc/modulefiles
 #echo "I think that the module is in ${LBANN_MODFILES_DIR}"
