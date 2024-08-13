@@ -25,4 +25,6 @@
 ################################################################################
 #!/bin/sh
 export PYTHONPATH=@LBANN_PFE_PYTHONPATH@:${PYTHONPATH}
+export AWS_OFI_RCCL_LIBRARY=@AWS_OFI_RCCL_LIBRARY@
+export LD_LIBRARY_PATH=@AWS_OFI_RCCL_LIBRARY@:${LD_LIBRARY_PATH}
 @LBANN_PFE_PYTHON_EXECUTABLE@ "$@"

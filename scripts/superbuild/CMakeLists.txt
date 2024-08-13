@@ -154,6 +154,14 @@ if (LBANN_SB_BUILD_AWS_OFI_RCCL)
   message("export LD_LIBRARY_PATH=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib:\$\{LD_LIBARY_PATH\}\n")
   message("-----------------------------------------------------------------\n")
 endif ()
+file(APPEND "${CMAKE_BINARY_DIR}/lbann_sb_suggested_cmake_prefix_path.sh"
+  "export AWS_OFI_RCCL_LIBRARY=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib\n")
+file(APPEND "${CMAKE_BINARY_DIR}/lbann_sb_suggested_cmake_prefix_path.sh"
+  "export LD_LIBRARY_PATH=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib:\$\{LD_LIBRARY_PATH\}\n")
+file(APPEND "${CMAKE_INSTALL_PREFIX}/logs/lbann_sb_suggested_cmake_prefix_path.sh"
+  "export AWS_OFI_RCCL_LIBRARY=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib\n")
+file(APPEND "${CMAKE_INSTALL_PREFIX}/logs/lbann_sb_suggested_cmake_prefix_path.sh"
+  "export LD_LIBRARY_PATH=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib:\$\{LD_LIBRARY_PATH\}\n")
 
 if (LBANN_SB_FWD_LBANN_LBANN_WITH_PYTHON_FRONTEND)
   message("-----------------------------------------------------------------\n")
