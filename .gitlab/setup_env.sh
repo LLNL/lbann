@@ -83,7 +83,7 @@ case "${cluster}" in
         launcher=flux
         ROCM_VER=$(basename ${ROCM_PATH})
         PE_ENV_lc=$(echo "${PE_ENV}" | tr '[:upper:]' '[:lower:]')
-        SYSTEM_INSTALL_PREFIX_EXTERNALS=${ROCM_VER}/${PE_ENV_lc}/cray-mpich-8.1.29
+        SYSTEM_INSTALL_PREFIX_EXTERNALS=${ROCM_VER}/${PE_ENV_lc}/cray-mpich-${CRAY_MPICH_VERSION}
         ;;
     corona)
         extra_rpaths="${ROCM_PATH}/lib:${ROCM_PATH}/llvm/lib:${extra_rpaths}"
