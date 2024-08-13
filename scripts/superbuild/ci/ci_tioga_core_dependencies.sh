@@ -24,6 +24,13 @@
 ## permissions and limitations under the license.
 ################################################################################
 
+python_pkgs="ninja"
+export PYTHONUSERBASE=${TMPDIR}/${USER}/python/${cluster}
+export PATH=${PYTHONUSERBASE}/bin:${PATH}
+python3 -m pip install --user ${python_pkgs}
+# Make sure the PYTHONPATH is all good.
+export PYTHONPATH=$(ls --color=no -1 -d ${PYTHONUSERBASE}/lib/python*/site-packages | paste -sd ":" - ):${PYTHONPATH:-""}
+
 # Set to ON (or any CMake truthy value) to build all of the
 # dependencies of the LBANN stack
 BUILD_EXTERNAL_TPLS=ON
@@ -54,6 +61,10 @@ source ${SUPERBUILD_SRC_DIR}/ci/ci_tioga_env.sh
 
 # Set to the preferred install directory
 INSTALL_PREFIX=${INSTALL_PREFIX_EXTERNALS}
+
+if [ ! -e ${INSTALL_PREFIX} ]; then
+    mkdir -p ${INSTALL_PREFIX}
+fi
 
 # Set to the preferred build directory
 BUILD_DIR=${BUILD_ROOT}/lbann-superbuild-core-dependencies
@@ -113,4 +124,7 @@ cmake \
     -D LBANN_SB_BUILD_AWS_OFI_RCCL=${BUILD_AWS_OFI_RCCL_PLUGIN}}
 
 # Save a list of the currently loaded modules
+if [ ! -e ${INSTALL_PREFIX}/logs ]; then
+    mkdir -p ${INSTALL_PREFIX}/logs
+fi
 module -t list 2> ${INSTALL_PREFIX}/logs/modules.txt
