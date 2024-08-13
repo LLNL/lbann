@@ -38,13 +38,13 @@ include:
 rocm-5-7-1-tioga:
   variables:
     COMPILER_FAMILY: amdclang
-    MODULES: "PrgEnv-amd amd/5.7.1 rocm/5.7.1 cray-mpich cray-libsci"
+    MODULES: "PrgEnv-cray rocm/5.7.1 cray-mpich/8.1.30 cray-libsci"
   extends: .build-and-test-on-tioga
 
 rocm-5-7-1-distconv-tioga:
   variables:
     COMPILER_FAMILY: amdclang
-    MODULES: "PrgEnv-amd amd/5.7.1 rocm/5.7.1 cray-mpich cray-libsci"
+    MODULES: "PrgEnv-cray rocm/5.7.1 cray-mpich/8.1.30 cray-libsci"
     WITH_DISTCONV: "1"
   extends: .build-and-test-on-tioga
 
