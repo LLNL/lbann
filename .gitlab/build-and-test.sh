@@ -134,6 +134,13 @@ then
         h_prebuilt=$(cat ${prefix}/h-prebuilt-hash.txt)
     fi
 
+    h2_head=$(fetch-sha dihydrogen develop)
+    h2_prebuilt="<not found>"
+    if [[ -f "${prefix}/h2-prebuilt-hash.txt" ]]
+    then
+        h2_prebuilt=$(cat ${prefix}/h2-prebuilt-hash.txt)
+    fi
+
     if [[ "${al_head}" != "${al_prebuilt}" ]]
     then
         echo "Prebuilt Aluminum hash does not match latest head; rebuilding."
@@ -144,6 +151,12 @@ then
     then
         echo "Prebuilt Hydrogen hash does not match latest head; rebuilding."
         echo "  (prebuilt: ${h_prebuilt}; head: ${h_head})"
+        rebuild_deps=1
+    fi
+    if [[ "${h2_head}" != "${h2_prebuilt}" ]]
+    then
+        echo "Prebuilt DiHydrogen hash does not match latest head; rebuilding."
+        echo "  (prebuilt: ${h2_prebuilt}; head: ${h2_head})"
         rebuild_deps=1
     fi
 fi
@@ -157,19 +170,8 @@ then
     echo "~~~~~   Install dir: ${prefix}"
     echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
-    # Get the superbuild because why not.
-    lbann_sb_top_dir=${build_dir}/sb
-    lbann_sb_dir=${lbann_sb_top_dir}/scripts/superbuild
-    mkdir -p ${lbann_sb_top_dir}
-    cd ${lbann_sb_top_dir}
-
-    # Sparse checkout of the SuperBuild
-    git init
-    git remote add origin https://github.com/llnl/lbann
-    git fetch --depth=1 origin develop
-    git config core.sparseCheckout true
-    echo "scripts/superbuild" >> .git/info/sparse-checkout
-    git pull --ff-only origin develop
+    # Set the superbuild dir
+    lbann_sb_dir=${project_dir}/scripts/superbuild
 
     cd ${build_dir}
     # Uses "${cluster}", "${prefix}", and "${lbann_sb_dir}"

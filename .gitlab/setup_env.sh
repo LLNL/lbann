@@ -25,6 +25,10 @@ case "${compiler_family,,}" in
         CC=${CC:-$(command -v cc)}
         CXX=${CXX:-$(command -v CC)}
         ;;
+    craycc)
+        CC=${CC:-$(command -v craycc)}
+        CXX=${CXX:-$(command -v craycxx)}
+        ;;
     *)
         echo "Unknown compiler family: ${compiler_family}. Using gnu."
         CC=${CC:-$(command -v gcc)}
@@ -79,10 +83,18 @@ case "${cluster}" in
             extra_rpaths="${ROCM_PATH}/lib:${ROCM_PATH}/llvm/lib:${extra_rpaths}"
         fi
         rocm_platform=ON
-        gpu_arch=gfx90a,gfx942
+        gpu_arch=gfx90a
+#        gpu_arch=gfx90a,gfx942
         launcher=flux
         ROCM_VER=$(basename ${ROCM_PATH})
         PE_ENV_lc=$(echo "${PE_ENV}" | tr '[:upper:]' '[:lower:]')
+        case "${compiler_family,,}" in
+            craycc)
+                PE_ENV_lc=${PE_ENV_lc}cc
+                ;;
+            *)
+                ;;
+        esac
         SYSTEM_INSTALL_PREFIX_EXTERNALS=${ROCM_VER}/${PE_ENV_lc}/cray-mpich-${CRAY_MPICH_VERSION}
         ;;
     corona)
@@ -100,7 +112,9 @@ esac
 
 export CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH:-""}
 source ${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}/logs/lbann_sb_suggested_cmake_prefix_path.sh
-export CMAKE_PREFIX_PATH=${CI_STABLE_DEPENDENCIES_ROOT}/half-2.1.0:${CMAKE_PREFIX_PATH}
+if [[ "${build_half}" = "ON" ]]; then
+    export CMAKE_PREFIX_PATH=${CI_STABLE_DEPENDENCIES_ROOT}/half-2.1.0:${CMAKE_PREFIX_PATH}
+fi
 #CMAKE_PREFIX_PATH=${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}
 case "${cluster}" in
     tioga)
