@@ -36,6 +36,8 @@ cmake -G Ninja \
       \
       -D CMAKE_CUDA_ARCHITECTURES=${gpu_arch} \
       -D CMAKE_HIP_ARCHITECTURES=${gpu_arch} \
+      -D AMDGPU_TARGETS=${gpu_arch} \
+      -D GPU_TARGETS=${gpu_arch} \
       \
       -D BUILD_SHARED_LIBS=ON \
       -D CMAKE_POSITION_INDEPENDENT_CODE=ON \
