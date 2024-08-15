@@ -181,6 +181,7 @@ then
     # Stamp these commits
     cd ${build_dir}/build-deps/aluminum/src && git rev-parse HEAD > ${prefix}/al-prebuilt-hash.txt
     cd ${build_dir}/build-deps/hydrogen/src && git rev-parse HEAD > ${prefix}/h-prebuilt-hash.txt
+    cd ${build_dir}/build-deps/dihydrogen/src && git rev-parse HEAD > ${prefix}/h2-prebuilt-hash.txt
 
     echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     echo "~~~~~ Dependencies Built"
