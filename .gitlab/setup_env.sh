@@ -83,8 +83,7 @@ case "${cluster}" in
             extra_rpaths="${ROCM_PATH}/lib:${ROCM_PATH}/llvm/lib:${extra_rpaths}"
         fi
         rocm_platform=ON
-        gpu_arch=gfx90a
-#        gpu_arch=gfx90a,gfx942
+        gpu_arch=gfx90a,gfx942
         launcher=flux
         ROCM_VER=$(basename ${ROCM_PATH})
         PE_ENV_lc=$(echo "${PE_ENV}" | tr '[:upper:]' '[:lower:]')
