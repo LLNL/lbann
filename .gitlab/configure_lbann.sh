@@ -1,7 +1,7 @@
 if [[ "$cluster" == "lassen" ]]
 then
     lbann_lapack_opt="-D BLA_VENDOR=Generic"
-    build_fft=ON
+    build_fft=OFF
 else
     lbann_lapack_opt=""
 fi
@@ -23,7 +23,7 @@ cmake -G Ninja \
       -B ${build_dir}/build-lbann \
       \
       -D CMAKE_PREFIX_PATH=${CMAKE_CMAKE_PREFIX_PATH} \
-      -D CMAKE_BUILD_TYPE=Release \
+      -D CMAKE_BUILD_TYPE=RelWithDebInfo \
       -D CMAKE_INSTALL_PREFIX=${prefix}/lbann \
       \
       -D CMAKE_BUILD_RPATH="${extra_rpaths//:/;}" \
