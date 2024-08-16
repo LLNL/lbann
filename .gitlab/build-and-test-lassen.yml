@@ -35,16 +35,17 @@ stages:
 include:
   local: "/.gitlab/build-and-test-common.yml"
 
+#  fftw/3.3.10-gcc-11.2.1
 clang-16-0-6-gcc-11-2-1-cuda-12-2-2-lassen:
   variables:
     COMPILER_FAMILY: clang
-    MODULES: "clang/16.0.6-gcc-11.2.1 spectrum-mpi/rolling-release cuda/12.2.2 cmake/3.29.2 python/3.11.5 fftw/3.3.10-gcc-11.2.1"
+    MODULES: "clang/16.0.6-gcc-11.2.1 spectrum-mpi/rolling-release cuda/12.2.2 cmake/3.29.2 python/3.11.5"
   extends: .build-and-test-on-lassen
 
 clang-16-0-6-gcc-11-2-1-cuda-12-2-2-distconv-lassen:
   variables:
     COMPILER_FAMILY: clang
-    MODULES: "clang/16.0.6-gcc-11.2.1 spectrum-mpi/rolling-release cuda/12.2.2 cmake/3.29.2 python/3.11.5 fftw/3.3.10-gcc-11.2.1"
+    MODULES: "clang/16.0.6-gcc-11.2.1 spectrum-mpi/rolling-release cuda/12.2.2 cmake/3.29.2 python/3.11.5"
     WITH_DISTCONV: "1"
   extends: .build-and-test-on-lassen
 
