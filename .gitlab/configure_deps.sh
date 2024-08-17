@@ -59,12 +59,15 @@ cmake \
     -D LBANN_SB_Hydrogen_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
     -D LBANN_SB_Hydrogen_HIP_FLAGS="${EXTRA_HIP_FLAGS}" \
     -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_HALF=${build_half:-OFF} \
+    -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_GPU_FP16=${build_half:-OFF} \
     -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_TESTING=ON \
     -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_UNIT_TESTS=OFF \
     -D LBANN_SB_FWD_Hydrogen_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH} \
     \
     -D LBANN_SB_BUILD_DiHydrogen=ON \
     ${dihydrogen_lapack_opt} \
+    -D LBANN_SB_DiHydrogen_TAG=fix-rocm-6-2-0-build \
+    -D LBANN_SB_DiHydrogen_URL=https://github.com/benson31/dihydrogen \
     -D LBANN_SB_DiHydrogen_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
     -D LBANN_SB_DiHydrogen_HIP_FLAGS="${EXTRA_HIP_FLAGS}" \
     -D LBANN_SB_FWD_DiHydrogen_H2_ENABLE_DISTCONV_LEGACY=${build_distconv:-OFF} \
