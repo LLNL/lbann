@@ -40,15 +40,15 @@ clang-14-0-6-cuda-11-8-0-pascal:
     COMPILER_FAMILY: clang
     MODULES: "clang/14.0.6-magic openmpi/4.1.2 cuda/11.8.0 ninja/1.11.1"
     WITH_HALF: "1"
-    WITH_FFT: "0"
+    WITH_FFT: ""
   extends: [.build-and-test-on-pascal, .build-and-test]
 
 clang-14-0-6-cuda-11-8-0-distconv-pascal:
   variables:
     COMPILER_FAMILY: clang
     MODULES: "clang/14.0.6-magic openmpi/4.1.2 cuda/11.8.0 ninja/1.11.1"
-    WITH_HALF: "1"
-    WITH_FFT: "0"
+    WITH_HALF: ""
+    WITH_FFT: ""
     WITH_DISTCONV: "1"
   extends: [.build-and-test-on-pascal, .build-and-test]
 
