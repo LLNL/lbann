@@ -52,4 +52,6 @@ clang-16-0-6-gcc-11-2-1-cuda-12-2-2-distconv-lassen:
 .build-and-test-on-lassen:
   stage: build
   tags: [lassen, batch]
+  variables:
+    WITH_HALF: "1"
   extends: .build-and-test
