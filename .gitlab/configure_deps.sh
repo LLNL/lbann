@@ -7,6 +7,14 @@ else
     dihydrogen_lapack_opt=""
 fi
 
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+echo "-----  BVE Dependency Flags:"
+echo "-----  HALF: ${build_half}"
+echo "-----  DISTCONV: ${build_distconv}"
+echo "-----  FFT: ${build_fft}"
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+
+#    -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_GPU_FP16=${build_half:-OFF} \
 cmake \
     -G Ninja \
     -S ${lbann_sb_dir} \
@@ -59,7 +67,6 @@ cmake \
     -D LBANN_SB_Hydrogen_CXX_FLAGS="${EXTRA_CXX_FLAGS}" \
     -D LBANN_SB_Hydrogen_HIP_FLAGS="${EXTRA_HIP_FLAGS}" \
     -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_HALF=${build_half:-OFF} \
-    -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_GPU_FP16=${build_half:-OFF} \
     -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_TESTING=ON \
     -D LBANN_SB_FWD_Hydrogen_Hydrogen_ENABLE_UNIT_TESTS=OFF \
     -D LBANN_SB_FWD_Hydrogen_CMAKE_PREFIX_PATH=${FWD_CMAKE_PREFIX_PATH} \

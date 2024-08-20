@@ -83,7 +83,8 @@ case "${cluster}" in
             extra_rpaths="${ROCM_PATH}/lib:${ROCM_PATH}/llvm/lib:${extra_rpaths}"
         fi
         rocm_platform=ON
-        gpu_arch=gfx90a,gfx942
+#        gpu_arch=gfx90a,gfx942
+        gpu_arch=gfx90a
         launcher=flux
         ROCM_VER=$(basename ${ROCM_PATH})
         PE_ENV_lc=$(echo "${PE_ENV}" | tr '[:upper:]' '[:lower:]')
@@ -133,16 +134,18 @@ LDFLAGS="${common_linker_flags} ${LDFLAGS}"
 # passed only to the LBANN stack.
 EXTRA_CXX_FLAGS="-g3 -Wno-deprecated-declarations"
 EXTRA_HIP_FLAGS="-g3 -Wno-deprecated-declarations"
+# EXTRA_CXX_FLAGS="-v -g3 -Wno-deprecated-declarations"
+# EXTRA_HIP_FLAGS="-v -g3 -Wno-deprecated-declarations"
 # Prefer RPATH to RUNPATH (stability over flexibility)
 EXTRA_LINK_FLAGS="-fuse-ld=lld -Wl,--disable-new-dtags"
 
 # Update the location of external packages
 FWD_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/|}
 
-# Set to ON to enable Half support. Only matters if building the
-# LBANN stack.
-BUILD_WITH_HALF=${BUILD_WITH_HALF:-OFF}
-BUILD_WITH_DISTCONV=${BUILD_WITH_DISTCONV:-OFF}
+# # Set to ON to enable Half support. Only matters if building the
+# # LBANN stack.
+# BUILD_WITH_HALF=${BUILD_WITH_HALF:-OFF}
+# BUILD_WITH_DISTCONV=${BUILD_WITH_DISTCONV:-OFF}
 
 # Make sure the compilers and flags are exported
 export CC CXX CUDACXX CUDAHOSTCXX CFLAGS CXXFLAGS LDFLAGS
@@ -166,6 +169,11 @@ echo "~~~~~  CXXFLAGS: ${CXXFLAGS}"
 echo "~~~~~  LDFLAGS: ${LDFLAGS}"
 echo "~~~~~  Extra rpaths: ${extra_rpaths}"
 echo "~~~~~  CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}"
+echo "-----"
+echo "-----  Dependency Flags:"
+echo "-----  HALF: \"${build_half}\""
+echo "-----  DISTCONV: \"${build_distconv}\""
+echo "-----  FFT: \"${build_fft}\""
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
 # Handle cuDNN
