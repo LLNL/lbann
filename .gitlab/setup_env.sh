@@ -118,7 +118,10 @@ fi
 #CMAKE_PREFIX_PATH=${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}
 case "${cluster}" in
     tioga)
-        CMAKE_PREFIX_PATH=/p/vast1/lbann/stable_dependencies/tioga/rocm-6.2.0/miopen:${CMAKE_PREFIX_PATH}
+        ROCM_VER=$(basename ${ROCM_PATH})
+        if [[ "${ROCM_VER}" = "6.2.0" ]]; then
+            CMAKE_PREFIX_PATH=/p/vast1/lbann/stable_dependencies/tioga/rocm-6.2.0/miopen:${CMAKE_PREFIX_PATH}
+        fi
         ;;
     *)
         ;;
