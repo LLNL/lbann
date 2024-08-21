@@ -36,6 +36,9 @@ case "${compiler_family,,}" in
         ;;
 esac
 
+# Set the compiler version based on the path of the compiler
+COMPILER_VER=$(basename $(dirname $(dirname $(which ${CC}))))
+
 # HIP/CUDA configuration and launcher are platform-specific
 CUDACXX=${CUDACXX:=""}
 CUDAHOSTCXX=${CUDAHOSTCXX:=${CXX}}
@@ -59,8 +62,7 @@ case "${cluster}" in
         cuda_platform=ON
         gpu_arch=60
         launcher=slurm
-        CUDA_VER=cuda-11.8.0
-        COMPILER_VER=clang-14.0.6-magic
+        CUDA_VER=$(basename ${CUDA_HOME})
         SYSTEM_INSTALL_PREFIX_EXTERNALS=${CUDA_VER}/${COMPILER_VER}/openmpi-4.1.2
         ;;
     lassen)
@@ -69,8 +71,7 @@ case "${cluster}" in
         cuda_platform=ON
         gpu_arch=70
         launcher=lsf
-        CUDA_VER=cuda-12.2.2
-        COMPILER_VER=clang-16.0.6
+        CUDA_VER=$(basename ${CUDA_HOME})
         SYSTEM_INSTALL_PREFIX_EXTERNALS=${CUDA_VER}/${COMPILER_VER}/spectrum-mpi-rolling-release
         export CMAKE_PREFIX_PATH="${CI_STABLE_DEPENDENCIES_ROOT}/${cluster}/${CUDA_VER}/nccl_2.20.3-1+cuda12.2_ppc64le:${CI_STABLE_DEPENDENCIES_ROOT}/${cluster}/${CUDA_VER}/cudnn-linux-ppc64le-8.9.7.29_cuda12-archive:${CMAKE_PREFIX_PATH:-""}"
         ;;
@@ -103,7 +104,6 @@ case "${cluster}" in
         gpu_arch=gfx906
         launcher=flux
         ROCM_VER=$(basename ${ROCM_PATH})
-        COMPILER_VER=clang-14.0.6-magic
         SYSTEM_INSTALL_PREFIX_EXTERNALS=${ROCM_VER}/${COMPILER_VER}/openmpi-4.1.2
         ;;
     *)
@@ -162,6 +162,7 @@ echo "~~~~~  GPU arch: ${gpu_arch}"
 echo "~~~~~  Launcher: ${launcher}"
 echo "~~~~~"
 echo "~~~~~  Compiler family: ${compiler_family}"
+echo "~~~~~  Compiler version: ${COMPILER_VER}"
 echo "~~~~~  CC: ${CC}"
 echo "~~~~~  CXX: ${CXX}"
 echo "~~~~~  CUDACXX: ${CUDACXX}"
@@ -179,19 +180,20 @@ echo "-----  DISTCONV: \"${build_distconv}\""
 echo "-----  FFT: \"${build_fft}\""
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
+# BVE disable this for now, but look to add it later
 # Handle cuDNN
-if [[ "${cuda_platform}" == "ON" ]]
-then
-    cuda_maj_version=$(basename ${CUDA_HOME} | grep -E --color=no -o "[0-9]+\.[0-9]+\.[0-9]+" | cut -d '.' -f 1)
-    arch=$(uname -m)
-    cudnn_root=$(ls -1 -d /usr/workspace/brain/cudnn/cudnn-*/cuda_${cuda_maj_version}_${arch} | tail -1)
-    if [[ -z "${cudnn_root}" ]]
-    then
-        echo "WARNING: No suitable cuDNN found."
-    else
-        CMAKE_PREFIX_PATH=${cudnn_root}:${CMAKE_PREFIX_PATH:-""}
-    fi
-fi
+# if [[ "${cuda_platform}" == "ON" ]]
+# then
+#     cuda_maj_version=$(basename ${CUDA_HOME} | grep -E --color=no -o "[0-9]+\.[0-9]+\.[0-9]+" | cut -d '.' -f 1)
+#     arch=$(uname -m)
+#     cudnn_root=$(ls -1 -d /usr/workspace/brain/cudnn/cudnn-*/cuda_${cuda_maj_version}_${arch} | tail -1)
+#     if [[ -z "${cudnn_root}" ]]
+#     then
+#         echo "WARNING: No suitable cuDNN found."
+#     else
+#         CMAKE_PREFIX_PATH=${cudnn_root}:${CMAKE_PREFIX_PATH:-""}
+#     fi
+# fi
 
 # Get Breathe, gcovr, and Ninja. Putting this off to the side because
 # I don't want to tweak "the real" python environment, but it's just
