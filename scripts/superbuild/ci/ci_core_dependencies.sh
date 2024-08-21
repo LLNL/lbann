@@ -58,9 +58,17 @@ case "${cluster}" in
         # The configuration script takes a RCCL path as a parameter, so it
         # could matter, but it's not clear how much.
         aws_ofi_plugin="-D LBANN_SB_BUILD_AWS_OFI_RCCL=ON"
+        BUILD_ROCM_TPLS="ON"
+        ;;
+    corona)
+        BUILD_ROCM_TPLS="ON"
+        ;;
+    lassen)
+        power9_flags="-D LBANN_SB_OpenCV_C_COMPILER=/usr/tce/packages/gcc/gcc-11.2.1/bin/gcc \
+                      -D LBANN_SB_OpenCV_CXX_COMPILER=/usr/tce/packages/gcc/gcc-11.2.1/bin/g++ \
+                      -D LBANN_SB_FWD_OpenCV_WITH_IPP=OFF"
         ;;
     *)
-        aws_ofi_plugin=""
         ;;
 esac
 
@@ -126,7 +134,7 @@ cmake \
     -D LBANN_SB_BUILD_cereal=${BUILD_EXTERNAL_TPLS} \
     -D LBANN_SB_BUILD_Clara=${BUILD_EXTERNAL_TPLS} \
     -D LBANN_SB_BUILD_CNPY=${BUILD_EXTERNAL_TPLS} \
-    -D LBANN_SB_BUILD_hiptt=${BUILD_EXTERNAL_TPLS} \
+    -D LBANN_SB_BUILD_hiptt=${BUILD_ROCM_TPLS:-"OFF"} \
     -D LBANN_SB_BUILD_protobuf=${BUILD_EXTERNAL_TPLS} \
     -D LBANN_SB_BUILD_spdlog=${BUILD_EXTERNAL_TPLS} \
     -D LBANN_SB_BUILD_zstr=${BUILD_EXTERNAL_TPLS} \
@@ -135,10 +143,11 @@ cmake \
     -D LBANN_SB_BUILD_Conduit=${BUILD_EXTERNAL_TPLS} \
     -D LBANN_SB_BUILD_HDF5=${BUILD_EXTERNAL_TPLS} \
     \
-    ${aws_ofi_plugin} \
+    ${aws_ofi_plugin:-""} \
     \
     -D LBANN_SB_BUILD_JPEG-TURBO=${BUILD_EXTERNAL_TPLS} \
     -D LBANN_SB_BUILD_OpenCV=${BUILD_EXTERNAL_TPLS} \
+    ${power9_flags:=""} \
     -D LBANN_SB_OpenCV_TAG=4.x
 
 # Save a list of the currently loaded modules
