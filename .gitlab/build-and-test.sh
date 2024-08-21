@@ -96,12 +96,9 @@ echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
 prefix="${project_dir}/install-deps-${CI_JOB_NAME_SLUG:-${job_unique_id}}"
 dha_prefix=${prefix}
-#dha_prefix=${project_dir}/install-deps-tioga_craycc5_distconv_testing
-#dha_prefix=${project_dir}/install-deps-tioga_cray5_hip_only_distconv_testing
 
 # Just for good measure...
 export CMAKE_PREFIX_PATH=${dha_prefix}/aluminum:${dha_prefix}/hydrogen:${dha_prefix}/dihydrogen:${CMAKE_PREFIX_PATH}
-#export CMAKE_PREFIX_PATH=${prefix}/aluminum:${prefix}/hydrogen:${prefix}/dihydrogen:${CMAKE_PREFIX_PATH}
 CMAKE_CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH//:/;}
 
 # Allow a user to force this
@@ -227,26 +224,12 @@ echo "~~~~~ $(date)"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
 CMD="python3 -m pip install -i https://pypi.org/simple --prefix ${prefix}/lbann protobuf tqdm numpy scipy"
-#CMD="python3 -m pip install -i https://pypi.org/simple -U --force-reinstall --prefix ${prefix}/lbann protobuf tqdm numpy scipy"
 echo ${CMD}
 ${CMD}
 
-# case "${cluster}" in
-#     pascal)
-#         CMD="python3 -m pip install -i https://pypi.org/simple -U --force-reinstall --prefix ${prefix}/lbann torch"
-#         echo ${CMD}
-#         ${CMD}
-#         ;;
-#     *)
-#         echo "Unable to install torch via pip on ${cluster}"
-#         ;;
-# esac
-
 LBANN_MODFILES_DIR=${build_dir}/install/lbann/etc/modulefiles
-#echo "I think that the module is in ${LBANN_MODFILES_DIR}"
 ml use ${LBANN_MODFILES_DIR}
 ml load lbann
-#echo "$(which lbann)"
 
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo "~~~~~ Testing LBANN: $(which lbann)"
