@@ -96,8 +96,7 @@ def make_batch_script(
     # Optimizations for Tioga
     if system in ('tioga', 'rzvernal'):
         #set_environment('NCCL_SOCKET_IFNAME', 'hsi')
-        set_environment('NCCL_NET_GDR_LEVEL', '2') # From HPE to avoid hangs
-#        set_environment('FI_CXI_ATS', '0') # From Adam Moody Dist PyTorch on Tioga
+        set_environment('NCCL_NET_GDR_LEVEL', '3') # From HPE to avoid hangs
         set_environment('MIOPEN_DEBUG_DISABLE_FIND_DB', '0')
         set_environment('MIOPEN_DISABLE_CACHE', '0')
         tmpdir = os.environ.get('TMPDIR')
