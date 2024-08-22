@@ -42,6 +42,7 @@ if [[ $? -eq 1 ]]
 then
     project_dir="$(pwd)"
 fi
+
 # Finish setting up the environment
 source ${project_dir}/.gitlab/setup_env.sh
 
@@ -66,6 +67,7 @@ case "${cluster}" in
     lassen)
         power9_flags="-D LBANN_SB_OpenCV_C_COMPILER=/usr/tce/packages/gcc/gcc-11.2.1/bin/gcc \
                       -D LBANN_SB_OpenCV_CXX_COMPILER=/usr/tce/packages/gcc/gcc-11.2.1/bin/g++ \
+                      -D LBANN_SB_FWD_OpenCV_WITH_OPENJPEG=OFF \
                       -D LBANN_SB_FWD_OpenCV_WITH_IPP=OFF"
         ;;
     *)

@@ -194,9 +194,19 @@ else
     python_pkgs="ninja"
 fi
 
+VENV_DIR="${TMPDIR}/${USER}/lbann_venv"
+CMD="python3 -m venv ${VENV_DIR}"
+echo "${CMD}"
+${CMD}
+CMD="source ${VENV_DIR}/bin/activate"
+echo "${CMD}"
+${CMD}
+
 export PYTHONUSERBASE=${TMPDIR}/${USER}/python/${cluster}
 export PATH=${PYTHONUSERBASE}/bin:${PATH}
-python3 -m pip install --user ${python_pkgs}
+CMD="python3 -m pip install --prefix ${PYTHONUSERBASE} ${python_pkgs}"
+echo "${CMD}"
+${CMD}
 
 # Make sure the PYTHONPATH is all good.
 export PYTHONPATH=$(ls --color=no -1 -d ${PYTHONUSERBASE}/lib/python*/site-packages | paste -sd ":" - ):${PYTHONPATH:-""}
