@@ -223,7 +223,8 @@ echo "~~~~~ Installing Python Packages with PIP"
 echo "~~~~~ $(date)"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
-CMD="python3 -m pip install -i https://pypi.org/simple --prefix ${prefix}/lbann protobuf tqdm numpy scipy"
+#CMD="python3 -m pip install -i https://pypi.org/simple --prefix ${prefix}/lbann protobuf tqdm numpy scipy"
+CMD="python3 -m pip install -i https://pypi.org/simple --prefix ${prefix}/lbann pytest protobuf tqdm numpy"
 echo ${CMD}
 ${CMD}
 

@@ -105,13 +105,13 @@ case "${cluster}" in
         launcher=flux
         ROCM_VER=$(basename ${ROCM_PATH})
         PE_ENV_lc=$(echo "${PE_ENV}" | tr '[:upper:]' '[:lower:]')
-        # case "${compiler_family,,}" in
-        #     craycc)
-        #         PE_ENV_lc=${PE_ENV_lc}cc
-        #         ;;
-        #     *)
-        #         ;;
-        # esac
+        case "${compiler_family,,}" in
+            craycc)
+                PE_ENV_lc=${PE_ENV_lc}cc
+                ;;
+            *)
+                ;;
+        esac
         SYSTEM_INSTALL_PREFIX_EXTERNALS=${ROCM_VER}/${PE_ENV_lc}/cray-mpich-${CRAY_MPICH_VERSION}
         ;;
     corona)

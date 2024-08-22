@@ -45,7 +45,7 @@ rocm-5-7-1-distconv-corona:
   variables:
     COMPILER_FAMILY: amdclang
     MODULES: "rocm/5.7.1 clang/14.0.6-magic openmpi/4.1.2"
-    WITH_DISTCONV: "1"
+    WITH_DISTCONV: "ON"
   extends: .build-and-test-on-corona
 
 .build-and-test-on-corona:

@@ -46,7 +46,7 @@ clang-16-0-6-gcc-11-2-1-cuda-12-2-2-distconv-lassen:
   variables:
     COMPILER_FAMILY: clang
     MODULES: "clang/16.0.6-gcc-11.2.1 spectrum-mpi/rolling-release cuda/12.2.2 cmake/3.29.2 python/3.11.5"
-    WITH_DISTCONV: "1"
+    WITH_DISTCONV: "ON"
   extends: .build-and-test-on-lassen
 
 .build-and-test-on-lassen:
