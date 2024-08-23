@@ -1097,9 +1097,7 @@ EOF
 BUILD_MODULES=
         if [[ -n "${MODULE_CMD}" ]]; then
             BUILD_MODULES=${MODULE_CMD//module load /}
-#            echo "BVE here is ${BUILD_MODULES}"
             BUILD_MODULES=${BUILD_MODULES// /;}
-#            echo "2nd time BVE here is ${BUILD_MODULES}"
             cat >> ${LBANN_SETUP_FILE}<<EOF
 # Modules loaded during this installation
 ${MODULE_CMD}

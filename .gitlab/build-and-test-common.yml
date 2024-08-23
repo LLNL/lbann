@@ -49,18 +49,7 @@
       - "${CI_PROJECT_DIR}/*junit.*xml"
       - "${CI_PROJECT_DIR}/ci_environment.log"
       - "${CI_PROJECT_DIR}/build-${CI_JOB_ID}/build-lbann/build.ninja"
-    reports:
-      junit: "${CI_PROJECT_DIR}/*junit.*xml"
-  extends: .build-and-test-base
-
-.build-and-test-coverage:
-  artifacts:
-    when: always
-    paths:
-      - "${CI_PROJECT_DIR}/*junit.*xml"
-      - "${CI_PROJECT_DIR}/ci_environment.log"
-      - "${CI_PROJECT_DIR}/build-${CI_JOB_ID}/build-lbann/build.ninja"
-      - "${CI_PROJECT_DIR}/build-${CI_JOB_ID}/build-lbann/coverage/"
+      - "${CI_PROJECT_DIR}/build-${CI_JOB_ID}/build-lbann/CMakeFiles/rules.ninja"
     reports:
       junit: "${CI_PROJECT_DIR}/*junit.*xml"
   extends: .build-and-test-base

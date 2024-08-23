@@ -12,13 +12,8 @@ set_superbuild_externals()
         dnn_lib="${dnn_lib}/${gpu_arch}"
     fi
 
-    #/usr/workspace/lbann/stable_dependencies/rzvernal/rocm-5.7.1/mi300a/cray-mpich-8.1.27
-
-    #/usr/workspace/lbann/lbann-superbuild/
-
     local sb_extra_prefix="${system}/${dnn_lib}/${compiler_ver}/${mpi}"
     CMD="source ${prefix}/${sb_extra_prefix}/logs/lbann_sb_suggested_cmake_prefix_path.sh"
-#    CMD="source /p/vast1/lbann/stable_dependencies/${system}/${dnn_lib}/${mpi}/logs/lbann_sb_suggested_cmake_prefix_path.sh"
     echo ${CMD} | tee -a ${LOG}
     ${CMD}
 
@@ -198,7 +193,6 @@ set_superbuild_DHA_externals()
     fi
 
     local sb_extra_prefix="${system}/${dnn_lib}/${compiler_ver}/${mpi}"
-#    source ${prefix}/${system}/${dnn_lib}/${mpi}/logs/lbann_sb_suggested_cmake_prefix_path.sh
     CMD="source ${prefix}/${sb_extra_prefix}/${dha_dir}/logs/lbann_sb_suggested_cmake_prefix_path.sh"
     echo ${CMD} | tee -a ${LOG}
     ${CMD}
@@ -243,7 +237,6 @@ set_superbuild_power_externals()
     fi
 
     local sb_extra_prefix="${system}/${dnn_lib}/${compiler_ver}/${mpi}"
-#    source ${prefix}/${sb_extra_prefix}/logs/lbann_sb_suggested_cmake_prefix_path.sh
 
 cat <<EOF  >> ${yaml}
     openblas:
