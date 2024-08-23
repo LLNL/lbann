@@ -184,16 +184,6 @@ echo "-----  DISTCONV: \"${build_distconv:-""}\""
 echo "-----  FFT: \"${build_fft:-""}\""
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
-# Get Breathe, gcovr, and Ninja. Putting this off to the side because
-# I don't want to tweak "the real" python environment, but it's just
-# these one or two things so it's not worth a venv.
-if [[ -n "${run_coverage:-""}" ]]
-then
-    python_pkgs="ninja gcovr"
-else
-    python_pkgs="ninja"
-fi
-
 VENV_DIR="${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}/venv"
 if [[ ! -e "${VENV_DIR}/pyvenv.cfg" ]]; then
    CMD="python3 -m venv ${VENV_DIR}"
@@ -204,11 +194,8 @@ CMD="source ${VENV_DIR}/bin/activate"
 echo "${CMD}"
 ${CMD}
 
-export PYTHONUSERBASE="${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}/python"
-export PATH=${PYTHONUSERBASE}/bin:${PATH}
-CMD="python3 -m pip install --prefix ${PYTHONUSERBASE} ${python_pkgs}"
-echo "${CMD}"
-${CMD}
-
-# Make sure the PYTHONPATH is all good.
-export PYTHONPATH=$(ls --color=no -1 -d ${PYTHONUSERBASE}/lib/python*/site-packages | paste -sd ":" - ):${PYTHONPATH:-""}
+if ! pip3 show ninja 1>/dev/null; then
+    CMD="python3 -m pip install ninja"
+    echo "${CMD}"
+    ${CMD}
+fi

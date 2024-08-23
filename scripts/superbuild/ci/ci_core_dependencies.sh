@@ -172,6 +172,11 @@ echo "~~~~~ Installing Python Packages with PIP"
 echo "~~~~~ $(date)"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
-CMD="python3 -m pip install -i https://pypi.org/simple --prefix ${PYTHONUSERBASE} pytest protobuf tqdm numpy scipy"
-echo ${CMD}
-${CMD}
+for p in pytest protobuf tqdm numpy scipy;
+do
+    if ! pip3 show ${p} 1>/dev/null; then
+        CMD="python3 -m pip install -i https://pypi.org/simple ${p}"
+        echo ${CMD}
+        ${CMD}
+    fi
+done
