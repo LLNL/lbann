@@ -195,7 +195,7 @@ else
 fi
 
 VENV_DIR="${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}/venv"
-if [[ ! -e "${VENV_DIR}/pyvenv.cfg" ]];
+if [[ ! -e "${VENV_DIR}/pyvenv.cfg" ]]; then
    CMD="python3 -m venv ${VENV_DIR}"
    echo "${CMD}"
    ${CMD}
