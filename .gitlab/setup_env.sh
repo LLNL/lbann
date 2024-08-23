@@ -194,7 +194,7 @@ else
     python_pkgs="ninja"
 fi
 
-VENV_DIR="${TMPDIR}/${USER}/lbann_venv"
+VENV_DIR="${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}/venv"
 CMD="python3 -m venv ${VENV_DIR}"
 echo "${CMD}"
 ${CMD}
@@ -202,7 +202,7 @@ CMD="source ${VENV_DIR}/bin/activate"
 echo "${CMD}"
 ${CMD}
 
-export PYTHONUSERBASE=${TMPDIR}/${USER}/python/${cluster}
+export PYTHONUSERBASE="${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}/python"
 export PATH=${PYTHONUSERBASE}/bin:${PATH}
 CMD="python3 -m pip install --prefix ${PYTHONUSERBASE} ${python_pkgs}"
 echo "${CMD}"

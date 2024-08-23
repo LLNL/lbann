@@ -68,7 +68,12 @@ case "${cluster}" in
         power9_flags="-D LBANN_SB_OpenCV_C_COMPILER=/usr/tce/packages/gcc/gcc-11.2.1/bin/gcc \
                       -D LBANN_SB_OpenCV_CXX_COMPILER=/usr/tce/packages/gcc/gcc-11.2.1/bin/g++ \
                       -D LBANN_SB_FWD_OpenCV_WITH_OPENJPEG=OFF \
-                      -D LBANN_SB_FWD_OpenCV_WITH_IPP=OFF"
+                      -D LBANN_SB_FWD_OpenCV_WITH_IPP=OFF \
+                      \
+                      -D LBANN_SB_BUILD_OpenBLAS=${BUILD_EXTERNAL_TPLS} \
+                      -D LBANN_SB_OpenBLAS_C_COMPILER=/usr/tce/packages/gcc/gcc-11.2.1/bin/gcc \
+                      -D LBANN_SB_OpenBLAS_CXX_COMPILER=/usr/tce/packages/gcc/gcc-11.2.1/bin/g++ \
+                      -D LBANN_SB_OpenBLAS_Fortran_COMPILER=/usr/tce/packages/gcc/gcc-11.2.1/bin/gfortran"
         ;;
     *)
         ;;
@@ -161,3 +166,12 @@ module -t list 2> ${INSTALL_PREFIX}/logs/modules.txt
 pushd ${BUILD_DIR}
 ninja
 popd
+
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+echo "~~~~~ Installing Python Packages with PIP"
+echo "~~~~~ $(date)"
+echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+
+CMD="python3 -m pip install -i https://pypi.org/simple --prefix ${PYTHONUSERBASE} pytest protobuf tqdm numpy scipy"
+echo ${CMD}
+${CMD}
