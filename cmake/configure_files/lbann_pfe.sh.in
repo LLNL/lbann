@@ -25,8 +25,8 @@
 ################################################################################
 #!/bin/sh
 export PYTHONPATH=@LBANN_PFE_PYTHONPATH@:${PYTHONPATH}
-if [[ -e "@AWS_OFI_RCCL_LIBRARY@" ]]; then
-    export AWS_OFI_RCCL_LIBRARY=@AWS_OFI_RCCL_LIBRARY@
-    export LD_LIBRARY_PATH=@AWS_OFI_RCCL_LIBRARY@:${LD_LIBRARY_PATH}
+if [[ -e "@AWS_OFI_RCCL_LIBDIR@" ]]; then
+    export AWS_OFI_RCCL_LIBDIR=@AWS_OFI_RCCL_LIBDIR@
+    export LD_LIBRARY_PATH=@AWS_OFI_RCCL_LIBDIR@:${LD_LIBRARY_PATH}
 fi
 @LBANN_PFE_PYTHON_EXECUTABLE@ "$@"

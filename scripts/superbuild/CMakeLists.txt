@@ -154,11 +154,11 @@ if (LBANN_SB_BUILD_AWS_OFI_RCCL)
   message("export LD_LIBRARY_PATH=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib:\$\{LD_LIBARY_PATH\}\n")
   message("-----------------------------------------------------------------\n")
   file(APPEND "${CMAKE_BINARY_DIR}/lbann_sb_suggested_cmake_prefix_path.sh"
-    "export AWS_OFI_RCCL_LIBRARY=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib\n")
+    "export AWS_OFI_RCCL_LIBDIR=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib\n")
   file(APPEND "${CMAKE_BINARY_DIR}/lbann_sb_suggested_cmake_prefix_path.sh"
     "export LD_LIBRARY_PATH=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib:\$\{LD_LIBRARY_PATH\}\n")
   file(APPEND "${CMAKE_INSTALL_PREFIX}/logs/lbann_sb_suggested_cmake_prefix_path.sh"
-    "export AWS_OFI_RCCL_LIBRARY=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib\n")
+    "export AWS_OFI_RCCL_LIBDIR=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib\n")
   file(APPEND "${CMAKE_INSTALL_PREFIX}/logs/lbann_sb_suggested_cmake_prefix_path.sh"
     "export LD_LIBRARY_PATH=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib:\$\{LD_LIBRARY_PATH\}\n")
 endif ()
