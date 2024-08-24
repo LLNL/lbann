@@ -50,6 +50,8 @@
       - "${CI_PROJECT_DIR}/ci_environment.log"
       - "${CI_PROJECT_DIR}/build-${CI_JOB_ID}/build-lbann/build.ninja"
       - "${CI_PROJECT_DIR}/build-${CI_JOB_ID}/build-lbann/CMakeFiles/rules.ninja"
+      - "${CI_PROJECT_DIR}/build-${CI_JOB_ID}/build-deps/all_build_files.tar.gz"
+      - "${CI_PROJECT_DIR}/build-${CI_JOB_ID}/build-deps/all_output_logs.tar.gz"
     reports:
       junit: "${CI_PROJECT_DIR}/*junit.*xml"
   extends: .build-and-test-base

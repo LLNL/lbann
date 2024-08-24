@@ -177,6 +177,7 @@ then
     # Uses "${cluster}", "${prefix}", and "${lbann_sb_dir}"
     source ${project_dir}/.gitlab/configure_deps.sh
     cmake --build build-deps
+    ninja -C build-deps gather-all
 
     # Stamp these commits
     cd ${build_dir}/build-deps/aluminum/src && git rev-parse HEAD > ${prefix}/al-prebuilt-hash.txt
