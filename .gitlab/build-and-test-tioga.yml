@@ -67,5 +67,4 @@ rocm-6-2-0-distconv-tioga:
   tags: [tioga, batch]
   variables:
     LLNL_FLUX_SCHEDULER_PARAMETERS: "-N2 -t 120 -q pdebug"
-    WITH_HALF: ""
   extends: .build-and-test

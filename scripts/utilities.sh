@@ -17,7 +17,7 @@ osx_realpath() {
     [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
 }
 
-host_basename() {
+function host_basename() {
     HOST=$(hostname)
     HOST=${HOST//[[:digit:]]/}
     HOST=${HOST//\-/}

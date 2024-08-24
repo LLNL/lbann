@@ -134,7 +134,6 @@ set_center_specific_modules()
 
                 MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.12.0 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-amd StdEnv amd/5.7.1 rocm/5.7.1 cmake/3.24.2"
 #                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.12.0 amd/6.1.2 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-amd StdEnv rocm/6.1.2 cmake/3.24.2"
-#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.12.0 cce/17.0.1 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-cray StdEnv rocm/6.0.3 cmake/3.24.2"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -228,7 +227,6 @@ set_center_specific_spack_dependencies()
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
             "zen3" | "zen4") # Tioga, RZVernal
-#                CENTER_COMPILER="%cce@17.0.1"
                 CENTER_COMPILER="%rocmcc@5.7.1"
                 CENTER_DEPENDENCIES="^cray-mpich@8.1.29 ^hip@5.7.1 ^python@3.9.12 ^hwloc@3.0.0"
                 CENTER_BLAS_LIBRARY="blas=libsci"
