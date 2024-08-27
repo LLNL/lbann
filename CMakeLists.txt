@@ -1207,31 +1207,26 @@ if (DEFINED ENV{LBANN_PYTHON_VENV_DIR})
 else ()
   set(LBANN_PYTHON_VENV_DIR "" CACHE STRING "")
 endif()
-message("BVE I have found a variable >${LBANN_PYTHON_VENV_DIR}<")
 
 configure_file(
   "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_module.lua.in"
   "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
   @ONLY)
-configure_file(
-  "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_module.tcl.in"
-  "${CMAKE_BINARY_DIR}/lbann_module.tcl.install")
 
 install(FILES "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
   RENAME "${LBANN_MODULEFILE_NAME}"
   DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")
-install(FILES "${CMAKE_BINARY_DIR}/lbann_module.tcl.install"
-  RENAME "${LBANN_VERSION}"
-  DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")
-message("BVE ready to install with VENV variable >${LBANN_PYTHON_VENV_DIR}<")
-message("BVE ready to install with VENV variable >$ENV{LBANN_PYTHON_VENV_DIR}<")
-install(CODE [===[
-	message("\n********************************************************************************")
-	message("LBANN is installed into ${CMAKE_INSTALL_PREFIX} - to load the LBANN module:")
-	message("  module use ${CMAKE_INSTALL_PREFIX}/etc/modulefiles")
-	message("  module load lbann")
-	message("  source ${LBANN_PYTHON_VENV_DIR}/bin/activate")
-	message("  source $ENV{LBANN_PYTHON_VENV_DIR}/bin/activate")
-	message("  source \${LBANN_PYTHON_VENV_DIR}/bin/activate")
-	message("********************************************************************************")
-]===])
+
+if (DEFINED ENV{LBANN_PYTHON_VENV_DIR})
+set(_PYTHON_VENV_INSTALL_MSG
+"\nA Python virtual environment was used to build and install LBANN.
+  Loading the module will activate the environment in: ${LBANN_PYTHON_VENV_DIR}")
+endif ()
+
+install(CODE "
+	message(\"\n********************************************************************************\")
+	message(\"LBANN is installed into ${CMAKE_INSTALL_PREFIX} - to load the LBANN module:\")
+	message(\"  module use ${CMAKE_INSTALL_PREFIX}/etc/modulefiles\")
+	message(\"  module load lbann ${_PYTHON_VENV_INSTALL_MSG}\")
+	message(\"********************************************************************************\")
+")

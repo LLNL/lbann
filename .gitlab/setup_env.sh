@@ -186,7 +186,7 @@ echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
 export LBANN_PYTHON_VENV_DIR="${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}/venv"
 if [[ ! -e "${LBANN_PYTHON_VENV_DIR}/pyvenv.cfg" ]]; then
-   CMD="python3 -m venv ${LBANN_PYTHON_VENV_DIR}"
+   CMD="python3 -m venv --prompt lbann-venv ${LBANN_PYTHON_VENV_DIR}"
    echo "${CMD}"
    ${CMD}
 fi
