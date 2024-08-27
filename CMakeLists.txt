@@ -1202,6 +1202,13 @@ else ()
   set(LBANN_EXTRA_MODULE_LOADS "")
 endif ()
 
+if (DEFINED ENV{LBANN_PYTHON_VENV_DIR})
+  set(LBANN_PYTHON_VENV_DIR "$ENV{LBANN_PYTHON_VENV_DIR}" CACHE STRING "")
+else ()
+  set(LBANN_PYTHON_VENV_DIR "" CACHE STRING "")
+endif()
+message("BVE I have found a variable >${LBANN_PYTHON_VENV_DIR}<")
+
 configure_file(
   "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_module.lua.in"
   "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
@@ -1216,10 +1223,15 @@ install(FILES "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
 install(FILES "${CMAKE_BINARY_DIR}/lbann_module.tcl.install"
   RENAME "${LBANN_VERSION}"
   DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")
+message("BVE ready to install with VENV variable >${LBANN_PYTHON_VENV_DIR}<")
+message("BVE ready to install with VENV variable >$ENV{LBANN_PYTHON_VENV_DIR}<")
 install(CODE [===[
 	message("\n********************************************************************************")
 	message("LBANN is installed into ${CMAKE_INSTALL_PREFIX} - to load the LBANN module:")
 	message("  module use ${CMAKE_INSTALL_PREFIX}/etc/modulefiles")
 	message("  module load lbann")
+	message("  source ${LBANN_PYTHON_VENV_DIR}/bin/activate")
+	message("  source $ENV{LBANN_PYTHON_VENV_DIR}/bin/activate")
+	message("  source \${LBANN_PYTHON_VENV_DIR}/bin/activate")
 	message("********************************************************************************")
 ]===])

@@ -184,13 +184,13 @@ echo "-----  DISTCONV: \"${build_distconv:-""}\""
 echo "-----  FFT: \"${build_fft:-""}\""
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
-VENV_DIR="${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}/venv"
-if [[ ! -e "${VENV_DIR}/pyvenv.cfg" ]]; then
-   CMD="python3 -m venv ${VENV_DIR}"
+export LBANN_PYTHON_VENV_DIR="${INSTALL_EXTERNALS_ROOT}/${SYSTEM_INSTALL_PREFIX_EXTERNALS}/venv"
+if [[ ! -e "${LBANN_PYTHON_VENV_DIR}/pyvenv.cfg" ]]; then
+   CMD="python3 -m venv ${LBANN_PYTHON_VENV_DIR}"
    echo "${CMD}"
    ${CMD}
 fi
-CMD="source ${VENV_DIR}/bin/activate"
+CMD="source ${LBANN_PYTHON_VENV_DIR}/bin/activate"
 echo "${CMD}"
 ${CMD}
 

@@ -218,7 +218,7 @@ then
 else
     ninja -C build-lbann install
 fi
-
+exit
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo "~~~~~ Installing Python Packages with PIP"
 echo "~~~~~ $(date)"
