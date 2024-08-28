@@ -229,6 +229,22 @@ CMD="python3 -m pip install -i https://pypi.org/simple --prefix ${prefix}/lbann 
 echo ${CMD}
 ${CMD}
 
+if [[ $(env | grep VIRTUAL_ENV) ]]; then
+    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    echo "~~~~~ Build Script is currently in a Python virtual environment"
+    echo "~~~~~ Deactivate it before loading the LBANN module"
+    echo "~~~~~ $(date)"
+    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    deactivate
+fi
+if [[ $(env | grep VIRTUAL_ENV) ]]; then
+    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    echo "~~~~~ Build Script is currently in a Python virtual environment - deactivate it before loading"
+    echo "~~~~~ Deactivate it before loading the LBANN module"
+    echo "~~~~~ $(date)"
+    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+fi
+
 LBANN_MODFILES_DIR=${build_dir}/install/lbann/etc/modulefiles
 CMD="ml use ${LBANN_MODFILES_DIR}"
 echo ${CMD}

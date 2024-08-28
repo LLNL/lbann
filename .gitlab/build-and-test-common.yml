@@ -32,7 +32,6 @@
     LLNL_LSF_SCHEDULER_PARAMETERS: "-q pbatch -nnodes 2 -W 60"
     GIT_SUBMODULE_STRATEGY: none
     GIT_DEPTH: 5
-    REBUILD_DEPS: 1
   script:
     - printenv > ${CI_PROJECT_DIR}/ci_environment.log
     - ${CI_PROJECT_DIR}/.gitlab/build-and-test.sh
