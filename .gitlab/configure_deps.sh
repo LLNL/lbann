@@ -7,13 +7,6 @@ else
     dihydrogen_lapack_opt=""
 fi
 
-echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-echo "-----  BVE Dependency Flags:"
-echo "-----  HALF: ${build_half}"
-echo "-----  DISTCONV: ${build_distconv}"
-echo "-----  FFT: ${build_fft}"
-echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-
 cmake \
     -G Ninja \
     -S ${lbann_sb_dir} \

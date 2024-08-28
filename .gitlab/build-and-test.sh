@@ -224,8 +224,7 @@ echo "~~~~~ Installing Python Packages with PIP"
 echo "~~~~~ $(date)"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
-#CMD="python3 -m pip install -i https://pypi.org/simple --prefix ${prefix}/lbann protobuf tqdm numpy scipy"
-CMD="python3 -m pip install -i https://pypi.org/simple --prefix ${prefix}/lbann pytest protobuf tqdm numpy"
+CMD="python3 -m pip install -i https://pypi.org/simple --prefix ${prefix}/lbann pytest protobuf tqdm numpy scipy"
 echo ${CMD}
 ${CMD}
 
@@ -237,32 +236,16 @@ if [[ $(env | grep VIRTUAL_ENV) ]]; then
     echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
     deactivate
 fi
-if [[ $(env | grep VIRTUAL_ENV) ]]; then
-    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-    echo "~~~~~ Build Script is currently in a Python virtual environment - deactivate it before loading"
-    echo "~~~~~ Deactivate it before loading the LBANN module"
-    echo "~~~~~ $(date)"
-    echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-fi
 
 LBANN_MODFILES_DIR=${build_dir}/install/lbann/etc/modulefiles
 CMD="ml use ${LBANN_MODFILES_DIR}"
 echo ${CMD}
 ${CMD}
 ml load lbann
-ml show lbann
-CMD="ml list"
-echo ${CMD}
-${CMD}
-
-echo "LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"
-echo "LBANN_DIR: ${LBANN_DIR}"
 
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo "~~~~~ Testing LBANN: $(which lbann)"
 echo "~~~~~ $(date)"
-echo "----- PATH: ${PATH}"
-echo "----- lbann_pfe.sh: $(which lbann_pfe.sh)"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
 failed_tests=0
