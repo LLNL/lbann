@@ -232,10 +232,13 @@ ${CMD}
 LBANN_MODFILES_DIR=${build_dir}/install/lbann/etc/modulefiles
 ml use ${LBANN_MODFILES_DIR}
 ml load lbann
+ml show lbann
 
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo "~~~~~ Testing LBANN: $(which lbann)"
 echo "~~~~~ $(date)"
+echo "----- PATH: ${PATH}"
+echo "----- lbann_pfe.sh: $(which lbann_pfe.sh)"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
 failed_tests=0

@@ -7,11 +7,14 @@ cd ${LBANN_DIR}/ci_test
 
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo "~~~~~ Running Integration and Unit tests"
+echo "~~~~~ lbann: $(which lbann)"
+echo "~~~~~ $(date)"
+echo "----- PATH: ${PATH}"
+echo "----- lbann_pfe.sh: $(which lbann_pfe.sh)"
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 
 PYTHON=python3
 LBANN_PYTHON=lbann_pfe.sh
-
 
 case "${cluster}" in
     pascal)
