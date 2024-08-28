@@ -230,9 +230,17 @@ echo ${CMD}
 ${CMD}
 
 LBANN_MODFILES_DIR=${build_dir}/install/lbann/etc/modulefiles
-ml use ${LBANN_MODFILES_DIR}
+CMD="ml use ${LBANN_MODFILES_DIR}"
+echo ${CMD}
+${CMD}
 ml load lbann
 ml show lbann
+CMD="ml list"
+echo ${CMD}
+${CMD}
+
+echo "LD_LIBRARY_PATH: ${LD_LIBRARY_PATH}"
+echo "LBANN_DIR: ${LBANN_DIR}"
 
 echo "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
 echo "~~~~~ Testing LBANN: $(which lbann)"
