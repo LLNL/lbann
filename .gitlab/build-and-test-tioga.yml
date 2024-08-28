@@ -35,30 +35,29 @@ stages:
 include:
   local: "/.gitlab/build-and-test-common.yml"
 
-# rocm-5-7-1-tioga:
-#   variables:
-#     COMPILER_FAMILY: amdclang
-#     MODULES: "PrgEnv-cray rocm/5.7.1 cray-mpich/8.1.30 cray-libsci"
-#   extends: .build-and-test-on-tioga
-
-# rocm-5-7-1-distconv-tioga:
-#   variables:
-#     COMPILER_FAMILY: amdclang
-#     MODULES: "PrgEnv-cray rocm/5.7.1 cray-mpich/8.1.30 cray-libsci"
-#     WITH_DISTCONV: "ON"
-#   extends: .build-and-test-on-tioga
-
-
-rocm-6-2-1beta1-tioga:
+rocm-5-7-1-tioga:
   variables:
-    COMPILER_FAMILY: craycc
-    MODULES: "PrgEnv-cray rocm/6.2.1beta1 cray-mpich/8.1.30 cray-libsci"
+    COMPILER_FAMILY: amdclang
+    MODULES: "PrgEnv-cray rocm/5.7.1 cray-mpich/8.1.30 cray-libsci"
   extends: .build-and-test-on-tioga
 
-rocm-6-2-1beta1-distconv-tioga:
+rocm-5-7-1-distconv-tioga:
   variables:
-    COMPILER_FAMILY: craycc
-    MODULES: "PrgEnv-cray rocm/6.2.1beta1 cray-mpich/8.1.30 cray-libsci"
+    COMPILER_FAMILY: amdclang
+    MODULES: "PrgEnv-cray rocm/5.7.1 cray-mpich/8.1.30 cray-libsci"
+    WITH_DISTCONV: "ON"
+  extends: .build-and-test-on-tioga
+
+rocm-6-2-0-tioga:
+  variables:
+    COMPILER_FAMILY: amdclang
+    MODULES: "PrgEnv-cray rocm/6.2.0 cray-mpich/8.1.30 cray-libsci"
+  extends: .build-and-test-on-tioga
+
+rocm-6-2-0-distconv-tioga:
+  variables:
+    COMPILER_FAMILY: amdclang
+    MODULES: "PrgEnv-cray rocm/6.2.0 cray-mpich/8.1.30 cray-libsci"
     WITH_DISTCONV: "ON"
   extends: .build-and-test-on-tioga
 
