@@ -162,6 +162,7 @@ if [ ! -e ${INSTALL_PREFIX}/logs ]; then
     mkdir -p ${INSTALL_PREFIX}/logs
 fi
 module -t list 2> ${INSTALL_PREFIX}/logs/modules.txt
+cp ${BUILD_DIR}/lbann_sb_suggested_cmake_prefix_path.sh ${INSTALL_PREFIX}/logs
 
 pushd ${BUILD_DIR}
 ninja
