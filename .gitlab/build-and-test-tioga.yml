@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2024, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,45 +24,46 @@
 ## permissions and limitations under the license.
 ################################################################################
 
-# Note: This configuration is specifically for LLNL compute
-# clusters. To run testing locally, consult the README in the ci_test
-# directory.
-
-include:
-  - project: 'lc-templates/id_tokens'
-    file: 'id_tokens.yml'
+default:
+  id_tokens:
+     SITE_ID_TOKEN:
+        aud: https://lc.llnl.gov/gitlab
 
 stages:
-  - run-all-clusters
+  - build
 
-tioga testing:
-  stage: run-all-clusters
-  trigger:
-    strategy: depend
-    include: '.gitlab/build-and-test-tioga.yml'
-    forward:
-      pipeline_variables: true
+include:
+  local: "/.gitlab/build-and-test-common.yml"
 
-pascal testing:
-  stage: run-all-clusters
-  trigger:
-    strategy: depend
-    include: '.gitlab/build-and-test-pascal.yml'
-    forward:
-      pipeline_variables: true
+rocm-5-7-1-tioga:
+  variables:
+    COMPILER_FAMILY: amdclang
+    MODULES: "PrgEnv-cray rocm/5.7.1 cray-mpich/8.1.30 cray-libsci"
+  extends: .build-and-test-on-tioga
 
-corona testing:
-  stage: run-all-clusters
-  trigger:
-    strategy: depend
-    include: '.gitlab/build-and-test-corona.yml'
-    forward:
-      pipeline_variables: true
+rocm-5-7-1-distconv-tioga:
+  variables:
+    COMPILER_FAMILY: amdclang
+    MODULES: "PrgEnv-cray rocm/5.7.1 cray-mpich/8.1.30 cray-libsci"
+    WITH_DISTCONV: "ON"
+  extends: .build-and-test-on-tioga
 
-lassen testing:
-  stage: run-all-clusters
-  trigger:
-    strategy: depend
-    include: '.gitlab/build-and-test-lassen.yml'
-    forward:
-      pipeline_variables: true
+rocm-6-2-0-tioga:
+  variables:
+    COMPILER_FAMILY: amdclang
+    MODULES: "PrgEnv-cray rocm/6.2.0 cray-mpich/8.1.30 cray-libsci"
+  extends: .build-and-test-on-tioga
+
+rocm-6-2-0-distconv-tioga:
+  variables:
+    COMPILER_FAMILY: amdclang
+    MODULES: "PrgEnv-cray rocm/6.2.0 cray-mpich/8.1.30 cray-libsci"
+    WITH_DISTCONV: "ON"
+  extends: .build-and-test-on-tioga
+
+.build-and-test-on-tioga:
+  stage: build
+  tags: [tioga, batch]
+  variables:
+    LLNL_FLUX_SCHEDULER_PARAMETERS: "-N2 -t 120 -q pdebug"
+  extends: .build-and-test

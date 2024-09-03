@@ -26,9 +26,7 @@
 
 # This module configures MPI and ensures the library is setup properly
 
-if (NOT MPI_CXX_FOUND)
-  find_package(MPI REQUIRED COMPONENTS CXX)
-endif ()
+find_package(MPI REQUIRED COMPONENTS C CXX)
 
 if (NOT TARGET MPI::MPI_CXX)
   add_library(MPI::MPI_CXX INTERFACE IMPORTED)

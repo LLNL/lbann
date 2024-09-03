@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2024, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,45 +24,33 @@
 ## permissions and limitations under the license.
 ################################################################################
 
-# Note: This configuration is specifically for LLNL compute
-# clusters. To run testing locally, consult the README in the ci_test
-# directory.
+.build-and-test-base:
+  variables:
+    LLNL_SERVICE_USER: lbannusr
+    LLNL_SLURM_SCHEDULER_PARAMETERS: "-N2 -t 90"
+    LLNL_FLUX_SCHEDULER_PARAMETERS: "-N2 -t 120m"
+    LLNL_LSF_SCHEDULER_PARAMETERS: "-q pbatch -nnodes 2 -W 60"
+    GIT_SUBMODULE_STRATEGY: none
+    GIT_DEPTH: 5
+  script:
+    - printenv > ${CI_PROJECT_DIR}/ci_environment.log
+    - ${CI_PROJECT_DIR}/.gitlab/build-and-test.sh
+  cache:
+    key: $CI_JOB_NAME_SLUG
+    paths:
+      - install-deps-${CI_JOB_NAME_SLUG}
+  timeout: 6h
 
-include:
-  - project: 'lc-templates/id_tokens'
-    file: 'id_tokens.yml'
-
-stages:
-  - run-all-clusters
-
-tioga testing:
-  stage: run-all-clusters
-  trigger:
-    strategy: depend
-    include: '.gitlab/build-and-test-tioga.yml'
-    forward:
-      pipeline_variables: true
-
-pascal testing:
-  stage: run-all-clusters
-  trigger:
-    strategy: depend
-    include: '.gitlab/build-and-test-pascal.yml'
-    forward:
-      pipeline_variables: true
-
-corona testing:
-  stage: run-all-clusters
-  trigger:
-    strategy: depend
-    include: '.gitlab/build-and-test-corona.yml'
-    forward:
-      pipeline_variables: true
-
-lassen testing:
-  stage: run-all-clusters
-  trigger:
-    strategy: depend
-    include: '.gitlab/build-and-test-lassen.yml'
-    forward:
-      pipeline_variables: true
+.build-and-test:
+  artifacts:
+    when: always
+    paths:
+      - "${CI_PROJECT_DIR}/*junit.*xml"
+      - "${CI_PROJECT_DIR}/ci_environment.log"
+      - "${CI_PROJECT_DIR}/build-${CI_JOB_ID}/build-lbann/build.ninja"
+      - "${CI_PROJECT_DIR}/build-${CI_JOB_ID}/build-lbann/CMakeFiles/rules.ninja"
+      - "${CI_PROJECT_DIR}/build-${CI_JOB_ID}/build-deps/all_build_files.tar.gz"
+      - "${CI_PROJECT_DIR}/build-${CI_JOB_ID}/build-deps/all_output_logs.tar.gz"
+    reports:
+      junit: "${CI_PROJECT_DIR}/*junit.*xml"
+  extends: .build-and-test-base

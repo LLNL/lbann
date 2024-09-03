@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2024, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -427,6 +427,40 @@ if (LBANN_HAS_ROCM)
   endif ()
   message(STATUS "Using LBANN_ROCM_PATH: ${LBANN_ROCM_PATH}")
 
+  # The Catch2 tests are only ever build artifacts, so this needs to
+  # change too.
+  if (CMAKE_BUILD_RPATH)
+    # The first of these actually matters; the last 4 are just good
+    # measure.
+    list(REMOVE_ITEM CMAKE_BUILD_RPATH
+      "${LBANN_ROCM_PATH}/lib"
+      "/usr/lib64"
+      "/usr/lib"
+      "/usr/local/lib64"
+      "/usr/local/lib"
+    )
+    # Write the value out to the cache
+    set(CMAKE_BUILD_RPATH "${CMAKE_BUILD_RPATH}"
+      CACHE STRING "The build rpath to use"
+      FORCE)
+  endif ()
+
+  if (CMAKE_INSTALL_RPATH)
+    # The first of these actually matters; the last 4 are just good
+    # measure.
+    list(REMOVE_ITEM CMAKE_INSTALL_RPATH
+      "${LBANN_ROCM_PATH}/lib"
+      "/usr/lib64"
+      "/usr/lib"
+      "/usr/local/lib64"
+      "/usr/local/lib"
+    )
+    # Write the value out to the cache
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}"
+      CACHE STRING "The install rpath to use"
+      FORCE)
+  endif ()
+
   find_package(hip CONFIG REQUIRED)
   enable_language(HIP)
   find_package(MIOpen CONFIG REQUIRED)
@@ -554,7 +588,8 @@ endif (LBANN_WITH_PYTHON_FRONTEND OR LBANN_WITH_EMBEDDED_PYTHON)
 
 if (LBANN_WITH_PYTHON_FRONTEND)
   set(LBANN_PFE_PYTHON_EXECUTABLE "${Python_EXECUTABLE}" CACHE FILEPATH "")
-  set(LBANN_PFE_PYTHONPATH "" CACHE STRING "")
+  set(LBANN_PFE_PYTHONPATH "${PYTHON_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR}" CACHE STRING "")
+  set(AWS_OFI_RCCL_LIBDIR "$ENV{AWS_OFI_RCCL_LIBDIR}" CACHE STRING "")
   configure_file(
     "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_pfe.sh.in"
     "${CMAKE_BINARY_DIR}/lbann_pfe.sh"
@@ -1167,28 +1202,31 @@ else ()
   set(LBANN_EXTRA_MODULE_LOADS "")
 endif ()
 
+if (DEFINED ENV{LBANN_PYTHON_VENV_DIR})
+  set(LBANN_PYTHON_VENV_DIR "$ENV{LBANN_PYTHON_VENV_DIR}" CACHE STRING "")
+else ()
+  set(LBANN_PYTHON_VENV_DIR "" CACHE STRING "")
+endif()
+
 configure_file(
   "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_module.lua.in"
   "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
   @ONLY)
-configure_file(
-  "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_module.tcl.in"
-  "${CMAKE_BINARY_DIR}/lbann_module.tcl.install")
 
 install(FILES "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
   RENAME "${LBANN_MODULEFILE_NAME}"
   DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")
-install(FILES "${CMAKE_BINARY_DIR}/lbann_module.tcl.install"
-  RENAME "${LBANN_VERSION}"
-  DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")
-install(CODE [===[
-	message("\n********************************************************************************")
-	message("LBANN is installed into ${CMAKE_INSTALL_PREFIX} - to load the LBANN module:")
-	message("  module use ${CMAKE_INSTALL_PREFIX}/etc/modulefiles")
-	message("  module load lbann")
-	message("********************************************************************************")
-]===])
 
+if (DEFINED ENV{LBANN_PYTHON_VENV_DIR})
+set(_PYTHON_VENV_INSTALL_MSG
+"\nA Python virtual environment was used to build and install LBANN.
+  Loading the module will activate the environment in: ${LBANN_PYTHON_VENV_DIR}")
+endif ()
 
-
-
+install(CODE "
+	message(\"\n********************************************************************************\")
+	message(\"LBANN is installed into ${CMAKE_INSTALL_PREFIX} - to load the LBANN module:\")
+	message(\"  module use ${CMAKE_INSTALL_PREFIX}/etc/modulefiles\")
+	message(\"  module load lbann ${_PYTHON_VENV_INSTALL_MSG}\")
+	message(\"********************************************************************************\")
+")

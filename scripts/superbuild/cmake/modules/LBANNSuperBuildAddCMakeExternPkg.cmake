@@ -228,6 +228,7 @@ macro(lbann_sb_add_cmake_extern_pkg)
     set(LBANN_SB_DEPENDS_TAG "DEPENDS")
     string(REPLACE ";" "|"
       LBANN_SB_FWD_${PKG_NAME}_CMAKE_PREFIX_PATH
+      "${LBANN_SB_FWD_${PKG_NAME}_CMAKE_PREFIX_PATH};"
       "${LBANN_SB_${PKG_NAME}_DEPENDS_PATHS}")
     message(STATUS "${PKG_NAME} depends on: ${LBANN_SB_${PKG_NAME}_DEPENDS}")
   endif ()

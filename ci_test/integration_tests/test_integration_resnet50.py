@@ -54,6 +54,8 @@ nightly_options_and_targets = {
     'mini_batch_size': 256,
     'expected_train_accuracy_range': (2.75, 4.25), # Decreased lower limit from 3.0 to 2.75 due to variance
     'expected_test_accuracy_range': (1.5, 2.11), # BVE increased upper limit from 2.1 10/28
+# 2.144 - Pascal
+    # 1.446 - Corona
     'fraction_of_data_to_use': imagenet_fraction * 0.01,
     'expected_mini_batch_times': {
         'pascal': 0.43,

@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2022, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2024, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,7 +24,7 @@
 ## permissions and limitations under the license.
 ################################################################################
 
-# This is the testing pipeline for the Corona cluster at LLNL. This
+# This is the testing pipeline for the Pascal cluster at LLNL. This
 # cluster builds the LBANN applications and libraries using a single
 # compiler toolchain and then runs a collection of tests. Testing
 # output is in JUnit format and parsed by the pipeline for web
@@ -45,120 +45,86 @@ stages:
 allocate lc resources:
   stage: allocate
   extends:
-    - .corona common
+    - .pascal common
     - .lbann-base-vars
   variables:
     GIT_STRATEGY: none
   script:
-    - echo "== ACQUIRING FLUX RESOURCES =="
+    - echo "== ACQUIRING SLURM RESOURCES =="
     - echo "${WITH_WEEKLY:+Running with --weekly}"
-    - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "150m" || echo "120m")
+    - export TEST_TIME=$([[ -n "${WITH_WEEKLY}" ]] && echo "120" || echo "90")
     - export LBANN_NNODES=$([[ -n "${WITH_WEEKLY}" ]] && echo "4" || echo "2")
-    - export FLUX_F58_FORCE_ASCII=t
-    - jobid=$(flux --parent alloc -N ${LBANN_NNODES} --exclusive -t ${TEST_TIME} --job-name=${JOB_NAME} --bg)
-    - export JOB_ID=$jobid
+    - salloc --exclusive -N ${LBANN_NNODES} -p pbatch -t ${TEST_TIME} --no-shell -J ${JOB_NAME}
   timeout: 6h
 
 # Build LBANN and establish the Spack environment for this pipeline.
 build and install:
   extends:
-    - .corona common
+    - .pascal common
     - .lbann-base-vars
     - .lbann-artifacts
   stage: build
   script:
     - echo "== BUILDING LBANN =="
-    - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
-    - "export LBANN_NNODES=$(flux jobs -no {id}:{name}:{nnodes} | grep ${JOB_NAME} | awk -F: '{print $3}')"
+    - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
     - !reference [.setup_spack, script]
-    - flux proxy ${JOB_ID} flux run -N 1 -t 30m ./scripts/build_lbann.sh --ci ${SPACK_DEPS_FLAG}
+    - srun --jobid=${JOB_ID} -N 1 -t 30 ./scripts/build_lbann.sh --ci ${SPACK_DEPS_FLAG}
       -l ${SPACK_ENV_NAME} -j ${BUILD_TASKS} ${CLEAN_BUILD_FLAG}
       --superbuild-prefix /usr/workspace/lbann/ci_stable_dependencies
       --ci-pip --
       +deterministic +vision +numpy +unit_tests ${SPACK_SPECS} ^zlib
-    - export TEST_TASKS_PER_NODE=4
+    - export TEST_TASKS_PER_NODE=2
     - export TEST_MPIBIND_FLAG="--mpibind=off"
-    - export SPACK_ARCH=$(flux proxy ${JOB_ID} flux run -N 1 spack arch)
-    - export SPACK_ARCH_TARGET=$(flux proxy ${JOB_ID} flux run -N 1 spack arch -t)
-    - export EXTRA_FLUX_ARGS="-o pmi=pmix"
+    - export SPACK_ARCH=$(spack arch)
+    - export SPACK_ARCH_TARGET=$(spack arch -t)
     - !reference [.setup_lbann, script]
-    - flux proxy ${JOB_ID} .gitlab/common/run-catch-tests-flux.sh
-
-# Run the Python-based unit tests.
-unit tests:
-  extends:
-    - .corona common
-    - .lbann-base-vars
-    - .uses spack environment
-  stage: test
-  dependencies:
-    - build and install
-  script:
+    - .gitlab/common/run-catch-tests.sh
+#
+    - echo "== SETUP SPACK ENVIRONMENT =="
+    - export SPACK_USER_CACHE_PATH=${SPACK_USER_CACHE_PATH}
+    - source ${HOME}/${SPACK_REPO}/share/spack/setup-env.sh
+    - source spack-ci-env-name.sh
+    - ml use ${LBANN_MODFILES_DIR}
+    - ml load lbann
+    - echo "$(which lbann)"
+#
+    - ([[ $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
+#
     - echo "== RUNNING PYTHON-BASED UNIT TESTS =="
     - echo "Testing $(which lbann)"
     - export OMP_NUM_THREADS=10
-    - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
-    - cd ci_test/unit_tests
+    - export SLURM_JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
+    - pushd ci_test/unit_tests
     # - echo "Running unit tests with file pattern: ${TEST_FLAG}"
-    - flux proxy ${FLUX_JOB_ID} python3 -m pytest -s -vv --durations=0 --junitxml=results.xml ${TEST_FLAG}
+    - lbann_pfe.sh -m pytest -s -vv --durations=0 --junitxml=results.xml ${TEST_FLAG}
+    - popd
+#
+    - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
+    - echo "Testing $(which lbann)"
+    - export OMP_NUM_THREADS=10
+    # - export SLURM_JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
+    - pushd ci_test/integration_tests
+    - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
+    # - echo "Running integration tests with file pattern: ${TEST_FLAG}"
+    # - echo "lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}"
+    - lbann_pfe.sh -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}
+    - popd
   artifacts:
     when: always
     paths:
       - ci_test/unit_tests/results.xml
-    reports:
-      junit: ci_test/unit_tests/results.xml
-
-# Run the Python-based integration tests.
-integration tests:
-  extends:
-    - .corona common
-    - .lbann-base-vars
-    - .uses spack environment
-  stage: test
-  dependencies:
-    - build and install
-  # rules:
-  #   - !reference [.lbann-test-rules, rules]
-  script:
-    - echo "== RUNNING PYTHON-BASED INTEGRATION TESTS =="
-    - echo "Testing $(which lbann)"
-    - export OMP_NUM_THREADS=10
-    - "export FLUX_JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
-    - cd ci_test/integration_tests
-    - export WEEKLY_FLAG=${WITH_WEEKLY:+--weekly}
-    # - echo "Running integration tests with file pattern: ${TEST_FLAG}"
-    # - echo "python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}"
-    - flux proxy ${FLUX_JOB_ID} python3 -m pytest -s -vv --durations=0 ${WEEKLY_FLAG} --junitxml=results.xml ${TEST_FLAG}
-  artifacts:
-    when: always
-    paths:
       - ci_test/integration_tests/results.xml
     reports:
-      junit: ci_test/integration_tests/results.xml
-
-# This is a dummy job that checks the Catch2 testing.
-check catch2 tests:
-  variables:
-    GIT_STRATEGY: none
-  extends:
-    - .corona common
-    - .lbann-base-vars
-  stage: test
-  dependencies:
-    - build and install
-  script:
-    - find ${RESULTS_DIR} -name "catch-tests-failed.txt" | xargs cat
-    - ([[ $(find ${RESULTS_DIR} -name "catch-tests-failed.txt" | wc -l) -eq 0 ]])
-  artifacts:
-    reports:
       junit: ${RESULTS_DIR}/*.xml
+      junit: ci_test/unit_tests/results.xml
+      junit: ci_test/integration_tests/results.xml
 
 # Cleanup the pipeline's Spack environment.
 # Switching over to reusing Spack environments for each feature branch so don't remove them immediately
 # Cleanup any build directories and spack environments older than 5 days since last use
 remove spack environment:
   extends:
-    - .corona common
+    - .pascal common
     - .lbann-base-vars
     - .cleanup old spack environment
   stage: deallocate
@@ -170,30 +136,30 @@ remove spack environment:
 release allocation:
   stage: deallocate
   extends:
-    - .corona common
+    - .pascal common
     - .lbann-base-vars
   variables:
     GIT_STRATEGY: none
   when: always
   script:
     - echo "== RELEASING RESOURCES =="
-    - "export JOB_ID=$(flux jobs -no {id}:{name} | grep ${JOB_NAME} | awk -F: '{print $1}')"
-    - ([[ -n "${JOB_ID}" ]] && flux job cancel ${JOB_ID})
+    - export JOB_ID=$(squeue -h -n "${JOB_NAME}" -o "%A")
+    - ([[ -n "${JOB_ID}" ]] && scancel ${JOB_ID})
 
-# Variables for Corona.
-.corona common:
+# Variables for Pascal.
+.pascal common:
   variables:
     # Just the obvious identifier. Which specific node doesn't matter.
-    SYSTEM_NAME: corona
-    # SPACK_USER_CACHE_PATH: /g/g14/lbannusr/spack_repos/.spack_${SYSTEM_NAME}
-    # SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
-    SPACK_USER_CACHE_PATH: /g/g14/lbannusr/spack_repos/.spack_test
-    SPACK_REPO: spack_repos/spack_test.git
+    SYSTEM_NAME: pascal
+    SPACK_USER_CACHE_PATH: /g/g14/lbannusr/spack_repos/.spack_${SYSTEM_NAME}
+    SPACK_REPO: spack_repos/spack_${SYSTEM_NAME}.git
+    #SPACK_USER_CACHE_PATH: /g/g14/lbannusr/spack_repos/.spack_test
+    #SPACK_REPO: spack_repos/spack_test.git
 
     # These are system-specific specs that should be forwarded to the
     # build script
-    SPACK_SPECS: "+rocm"
+    SPACK_SPECS: "+cuda +half +fft"
 
   tags:
-    - corona
+    - pascal
     - shell

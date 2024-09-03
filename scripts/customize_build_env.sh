@@ -70,9 +70,11 @@ set_center_specific_gpu_arch()
                 # Use a HIP Clang variant
                 GPU_ARCH_VARIANTS="amdgpu_target=gfx906"
                 ;;
-            "zen3") # Tioga, RZVernal
+            "zen3" | "zen4") # Tioga, RZVernal, RZAdams
                 # Use a HIP Clang variant
-                GPU_ARCH_VARIANTS="amdgpu_target=gfx90a"
+#                GPU_ARCH_VARIANTS="amdgpu_target=gfx90a"
+                GPU_ARCH_VARIANTS="amdgpu_target=gfx90a,gfx942"
+#                GPU_ARCH_VARIANTS="amdgpu_target=gfx940"
                 ;;
             *)
                 ;;
@@ -112,19 +114,26 @@ set_center_specific_modules()
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
 
+#                MODULE_CMD_GCC="module load jobutils/1.0 StdEnv gcc/11.2.1-magic ninja/1.11.1 openmpi/4.1.2 cuda/11.8.0 python/3.9.12"
                 MODULE_CMD_GCC="module load jobutils/1.0 StdEnv gcc/10.3.1-magic ninja/1.11.1 openmpi/4.1.2 cuda/11.8.0 python/3.9.12"
                 # Note that clang is installed in /usr/workspace/brain/tom/pascal/llvm/latest/ and it is version 17.0.0
-                MODULE_CMD_CLANG="module load gcc/10.3.1 cuda/11.8.0 mvapich2/2.3.7 python/3.9.12"
+#                MODULE_CMD_CLANG="module load gcc/10.3.1 cuda/11.8.0 mvapich2/2.3.7 python/3.9.12"
+                MODULE_CMD_CLANG="module load jobutils/1.0 StdEnv clang/14.0.6-magic ninja/1.11.1 openmpi/4.1.2 cuda/11.8.0 python/3.9.12"
                 ;;
             "ivybridge" | "cascadelake") # Catalyst, Ruby
                 MODULE_CMD="module load gcc/10.2.1 mvapich2/2.3.6 python/3.7.2"
                 ;;
             "zen" | "zen2") # Corona
-                MODULE_CMD="module load StdEnv gcc/10.3.1-magic openmpi/4.1.2 git/2.36.1 cmake/3.26.3 emacs/28.2 rocm/5.7.0"
+                #export CI_ROCM_VER="5.7.1"
+                MODULE_CMD="module load StdEnv clang/14.0.6-magic openmpi/4.1.2 git/2.36.1 cmake/3.26.3 emacs/28.2 rocm/${CI_ROCM_VER}"
+#                MODULE_CMD="module load StdEnv gcc/10.3.1-magic openmpi/4.1.2 git/2.36.1 cmake/3.26.3 emacs/28.2 rocm/5.7.0"
                 # ; ml use /opt/toss/modules/modulefiles && ml openmpi-gnu/4.1
                 ;;
-            "zen3") # Tioga, RZVernal
-                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.09.0 cce/17.0.0 craype/2.7.23 cray-mpich/8.1.28 cray-libsci/23.09.1.1 PrgEnv-cray StdEnv rocm/5.7.1 cmake/3.24.2"
+            "zen3" | "zen4") # Tioga, RZVernal, RZAdams
+#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/24.03.0 cce/17.0.1 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-cray/8.5.0 flux_wrappers/0.1 StdEnv cmake/3.24.2 rocm/5.7.1"
+
+                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.12.0 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-amd StdEnv amd/5.7.1 rocm/5.7.1 cmake/3.24.2"
+#                MODULE_CMD="module load craype-x86-trento craype-network-ofi libfabric/2.1 perftools-base/23.12.0 amd/6.1.2 craype/2.7.31.11 cray-mpich/8.1.29 cray-libsci/24.03.0 PrgEnv-amd StdEnv rocm/6.1.2 cmake/3.24.2"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -196,9 +205,10 @@ set_center_specific_spack_dependencies()
                 ;;
             "broadwell" | "haswell" | "sandybridge") # Pascal, RZHasGPU, Surface
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_COMPILER_PATHS="/usr/tce/packages/gcc/gcc-10.3.1-magic /usr/workspace/brain/tom/pascal/llvm/latest/"
-                CENTER_COMPILER="%gcc"
-#                CENTER_COMPILER="%clang"
+#                CENTER_COMPILER_PATHS="/usr/tce/packages/gcc/gcc-11.2.1-magic /usr/workspace/brain/tom/pascal/llvm/latest/"
+                CENTER_COMPILER_PATHS="/usr/tce/packages/clang/clang-14.0.6-magic /usr/tce/packages/gcc/gcc-10.3.1-magic /usr/workspace/brain/tom/pascal/llvm/latest/"
+#                CENTER_COMPILER="%gcc"
+                CENTER_COMPILER="%clang"
 #                DEPENDENTS_CENTER_COMPILER="%gcc@10.3.1"
                 # There is something weird about the python@3.9.13 on Pascal right now 5/31/2023
                 CENTER_DEPENDENCIES="^openmpi@4.1.2"
@@ -211,13 +221,14 @@ set_center_specific_spack_dependencies()
                 ;;
             "zen" | "zen2") # Corona
                 # On LC the mvapich2 being used is built against HWLOC v1
-                CENTER_COMPILER="%rocmcc@5.7.0"
-                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@5.7.0 ^python@3.9.12 ^py-protobuf@4.21.5"
+                CI_ROCM_VER="6.0.2"
+                CENTER_COMPILER="%rocmcc@${CI_ROCM_VER}"
+                CENTER_DEPENDENCIES="^openmpi@4.1.2 ^hip@${CI_ROCM_VER} ^python@3.9.12 ^py-protobuf@4.21.5"
                 CENTER_PIP_PACKAGES="${LBANN_HOME}/scripts/common_python_packages/requirements.txt ${LBANN_HOME}/ci_test/requirements.txt"
                 ;;
-            "zen3") # Tioga, RZVernal
+            "zen3" | "zen4") # Tioga, RZVernal
                 CENTER_COMPILER="%rocmcc@5.7.1"
-                CENTER_DEPENDENCIES="^cray-mpich@8.1.28 ^hip@5.7.1 ^python@3.9.12"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.29 ^hip@5.7.1 ^python@3.9.12 ^hwloc@3.0.0"
                 CENTER_BLAS_LIBRARY="blas=libsci"
                 # Override the conduit variants for the cray compilers
                 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis"
@@ -297,8 +308,14 @@ set_center_specific_externals()
     local spack_arch="$3"
     local yaml="$4"
     local module_dir="$5"
+    local prefix="$6"
+    local dha_dir="$7"
 
     if [[ ${center} = "llnl_lc" ]]; then
+        if [[ -z ${prefix} ]]; then
+            prefix="/p/vast1/lbann/stable_dependencies"
+        fi
+        host=$(host_basename)
         case ${spack_arch_target} in
             "broadwell" | "haswell" | "sandybridge" | "ivybridge")
 cat <<EOF  >> ${yaml}
@@ -319,8 +336,8 @@ cat <<EOF  >> ${yaml}
         modules:
         - mvapich2/2.3.7
 EOF
-        set_superbuild_externals "pascal" "cuda-11.8.0" "openmpi-4.1.2" "$yaml" "${LOG}"
-        set_superbuild_DHA_externals "pascal" "cuda-11.8.0" "openmpi-4.1.2" "$yaml" "${LOG}"
+        set_superbuild_externals ${host} "cuda-11.8.0" "clang-14.0.6-magic" "openmpi-4.1.2" "$yaml" "${prefix}"
+        set_superbuild_DHA_externals ${host} "cuda-11.8.0" "clang-14.0.6-magic" "openmpi-4.1.2" "$yaml" "${prefix}" "${dha_dir}"
                 ;;
             "power9le" | "power8le")
 cat <<EOF  >> ${yaml}
@@ -333,9 +350,9 @@ cat <<EOF  >> ${yaml}
       - spec: rdma-core@20 arch=${spack_arch}
         prefix: /usr
 EOF
-        set_superbuild_externals "lassen" "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${LOG}"
-        set_superbuild_DHA_externals "lassen" "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${LOG}"
-        set_superbuild_power_externals "lassen" "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${LOG}"
+        # set_superbuild_externals ${host} "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${prefix}"
+        # set_superbuild_DHA_externals ${host} "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${prefix}" "${dha_dir}"
+        # set_superbuild_power_externals ${host} "cuda-11.8.0" "spectrum-mpi-rolling-release" "$yaml" "${prefix}"
 
                 ;;
             "zen" | "zen2")
@@ -344,25 +361,25 @@ cat <<EOF  >> ${yaml}
     hipcub:
       buildable: false
       version:
-      - '5.7.0'
+      - '${CI_ROCM_VER}'
       externals:
-      - spec: hipcub@5.7.0 arch=${spack_arch}
-        prefix: /opt/rocm-5.7.0/hipcub
+      - spec: hipcub@${CI_ROCM_VER} arch=${spack_arch}
+        prefix: /opt/rocm-${CI_ROCM_VER}/hipcub
         extra_attributes:
           compilers:
-            c: /opt/rocm-5.7.0/llvm/bin/clang
-            c++: /opt/rocm-5.7.0/llvm/bin/clang++
+            c: /opt/rocm-${CI_ROCM_VER}/llvm/bin/clang
+            c++: /opt/rocm-${CI_ROCM_VER}/llvm/bin/clang++
     llvm-amdgpu:
       buildable: false
       version:
-      - '5.7.0'
+      - '${CI_ROCM_VER}'
       externals:
-      - spec: llvm-amdgpu@5.7.0 arch=${spack_arch}
-        prefix: /opt/rocm-5.7.0/llvm
+      - spec: llvm-amdgpu@${CI_ROCM_VER} arch=${spack_arch}
+        prefix: /opt/rocm-${CI_ROCM_VER}/llvm
         extra_attributes:
           compilers:
-            c: /opt/rocm-5.7.0/llvm/bin/clang
-            c++: /opt/rocm-5.7.0/llvm/bin/clang++
+            c: /opt/rocm-${CI_ROCM_VER}/llvm/bin/clang
+            c++: /opt/rocm-${CI_ROCM_VER}/llvm/bin/clang++
     openmpi:
       buildable: false
       version:
@@ -373,11 +390,17 @@ cat <<EOF  >> ${yaml}
         - openmpi/4.1.2
 EOF
 
-        set_superbuild_externals "corona" "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${LOG}"
-        set_superbuild_DHA_externals "corona" "rocm-5.7.0" "openmpi-4.1.2" "$yaml" "${LOG}"
+        set_superbuild_externals ${host} "rocm-${CI_ROCM_VER}" "clang-14.0.6-magic" "openmpi-4.1.2" "$yaml" "${prefix}"
+        set_superbuild_DHA_externals ${host} "rocm-${CI_ROCM_VER}" "clang-14.0.6-magic" "openmpi-4.1.2" "$yaml" "${prefix}" "${dha_dir}"
 
                 ;;
-            "zen3")
+            "zen3" | "zen4")
+                if [[ ${host} == "rzvernal" || ${host} =~ "rzadams" ]]; then
+                    if [[ -z ${prefix} ]]; then
+                        # Override the prefix path for this system
+                        prefix="/usr/workspace/lbann/stable_dependencies"
+                    fi
+                fi
 cat <<EOF  >> ${yaml}
   compilers:
   - compiler:
@@ -393,15 +416,15 @@ cat <<EOF  >> ${yaml}
       operating_system: rhel8
       target: any
       modules:
-      - PrgEnv-cray/8.4.0
-      - cce/17.0.0
+      - PrgEnv-amd
+      - amd/5.7.1
       - rocm/5.7.1
       environment: {}
-      extra_rpaths:
-      - /opt/cray/pe/cce/17.0.0/cce/x86_64/lib
-      - /opt/cray/pe/cce/17.0.0/cce-clang/x86_64/lib/x86_64-unknown-linux-gnu
+      # extra_rpaths:
+      # - /opt/cray/pe/cce/17.0.1/cce/x86_64/lib
+      # - /opt/cray/pe/cce/17.0.1/cce-clang/x86_64/lib/x86_64-unknown-linux-gnu
   - compiler:
-      spec: cce@17.0.0
+      spec: cce@17.0.1
       paths:
         cc: craycc
         cxx: crayCC
@@ -412,12 +435,12 @@ cat <<EOF  >> ${yaml}
       target: any
       modules:
       - PrgEnv-cray
-      - cce/17.0.0
+      - cce/17.0.1
       - rocm/5.7.1
       environment: {}
       extra_rpaths:
-      - /opt/cray/pe/cce/17.0.0/cce/x86_64/lib
-      - /opt/cray/pe/cce/17.0.0/cce-clang/x86_64/lib/x86_64-unknown-linux-gnu
+      - /opt/cray/pe/cce/17.0.1/cce/x86_64/lib
+      - /opt/cray/pe/cce/17.0.1/cce-clang/x86_64/lib/x86_64-unknown-linux-gnu
   packages:
     all:
       require:
@@ -448,23 +471,29 @@ cat <<EOF  >> ${yaml}
     cray-libsci:
       buildable: false
       version:
-      - '23.09.1.1'
+      - '24.03.0'
       externals:
-      - spec: cray-libsci@23.09.1.1 %rocmcc arch=${spack_arch}
+      - spec: cray-libsci@24.03.0 %rocmcc arch=${spack_arch}
         modules:
-        - cce/17.0.0 PrgEnv-cray cray-libsci/23.09.1.1
+#        - amd/5.7.1 PrgEnv-amd cray-libsci/24.03.0
+#        - amd/5.7.1 PrgEnv-amd cray-libsci/23.09.1.1
+        - cce/17.0.1 PrgEnv-cray cray-libsci/24.03.0
     cray-mpich:
       buildable: false
       version:
-      - '8.1.28'
+      - '8.1.29'
       externals:
-      - spec: cray-mpich@8.1.28 %rocmcc arch=${spack_arch}
+      - spec: cray-mpich@8.1.29 %rocmcc arch=${spack_arch}
         modules:
-        - cce/17.0.0 PrgEnv-cray cray-mpich/8.1.28
+        - amd/5.7.1 PrgEnv-amd cray-mpich/8.1.29
+#        - cce/17.0.1 PrgEnv-cray cray-mpich/8.1.29
 EOF
-        set_superbuild_externals "tioga" "rocm-5.7.1" "cray-mpich-8.1.28" "$yaml" "${LOG}"
-        set_superbuild_DHA_externals "tioga" "rocm-5.7.1" "cray-mpich-8.1.28" "$yaml" "${LOG}"
-
+        PE_ENV_lc=$(echo "${PE_ENV}" | tr '[:upper:]' '[:lower:]')
+        echo "BVE Using the Cray programming environment ${PE_ENV_lc}"
+        set_superbuild_externals ${host} "rocm-5.7.1" "${PE_ENV_lc}" "cray-mpich-8.1.29" "$yaml" "${prefix}"
+        set_superbuild_DHA_externals ${host} "rocm-5.7.1" "${PE_ENV_lc}" "cray-mpich-8.1.29" "$yaml" "${prefix}" "${dha_dir}"
+        # set_superbuild_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.28" "$yaml" "${LOG}" "${prefix}" "mi300a"
+        # set_superbuild_DHA_externals ${host} "rocm-6.0.3" "cray-mpich-8.1.28" "$yaml" "${prefix}" "mi300a"
                 ;;
             *)
                 echo "No center-specified externals."
@@ -708,7 +737,7 @@ set_center_specific_variants()
             "ivybridge") # Catalyst
                 CENTER_USER_VARIANTS="+onednn"
                 ;;
-            "zen" | "zen2") # Corona
+            "zen" | "zen2" | "zen3" | "zen4") # Corona
                 CENTER_USER_VARIANTS="+rocm"
                 ;;
             *)

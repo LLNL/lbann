@@ -88,6 +88,7 @@ lbann_sb_add_packages(
   Clara
   CNPY
   Conduit
+  hiptt
   Hydrogen     # DiHydrogen depends on H.
   DiHydrogen
   OpenCV
@@ -115,7 +116,7 @@ foreach (pkg ${LBANN_SB_BUILD_PKGS})
 endforeach ()
 
 # Print a helpful(?) message
-set(LBANN_SB_SUGG_CMAKE_PREFIX_PATH_TMP "\$\{CMAKE_PREFIX_PATH\}")
+set(LBANN_SB_SUGG_CMAKE_PREFIX_PATH_TMP "${CMAKE_PREFIX_PATH}" "\$\{CMAKE_PREFIX_PATH\}")
 message("\n-----------------------------------------------------------------\n")
 message("LBANN SuperBuild will build the following packages:\n")
 foreach (pkg ${LBANN_SB_BUILD_PKGS})
@@ -142,6 +143,8 @@ message("Note that these assume a Bourne-compatible shell.")
 message("\n-----------------------------------------------------------------\n")
 file(WRITE "${CMAKE_BINARY_DIR}/lbann_sb_suggested_cmake_prefix_path.sh"
   "export CMAKE_PREFIX_PATH=${LBANN_SB_SUGG_CMAKE_PREFIX_PATH}\n")
+file(WRITE "${CMAKE_INSTALL_PREFIX}/logs/lbann_sb_suggested_cmake_prefix_path.sh"
+  "export CMAKE_PREFIX_PATH=${LBANN_SB_SUGG_CMAKE_PREFIX_PATH}\n")
 
 if (LBANN_SB_BUILD_AWS_OFI_RCCL)
   message("-----------------------------------------------------------------\n")
@@ -150,6 +153,26 @@ if (LBANN_SB_BUILD_AWS_OFI_RCCL)
   message("have an effect. It may be useful to do the following:\n")
   message("export LD_LIBRARY_PATH=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib:\$\{LD_LIBARY_PATH\}\n")
   message("-----------------------------------------------------------------\n")
+  file(APPEND "${CMAKE_BINARY_DIR}/lbann_sb_suggested_cmake_prefix_path.sh"
+    "export AWS_OFI_RCCL_LIBDIR=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib\n")
+  file(APPEND "${CMAKE_BINARY_DIR}/lbann_sb_suggested_cmake_prefix_path.sh"
+    "export LD_LIBRARY_PATH=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib:\$\{LD_LIBRARY_PATH\}\n")
+  file(APPEND "${CMAKE_INSTALL_PREFIX}/logs/lbann_sb_suggested_cmake_prefix_path.sh"
+    "export AWS_OFI_RCCL_LIBDIR=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib\n")
+  file(APPEND "${CMAKE_INSTALL_PREFIX}/logs/lbann_sb_suggested_cmake_prefix_path.sh"
+    "export LD_LIBRARY_PATH=${LBANN_SB_AWS_OFI_RCCL_PREFIX}/lib:\$\{LD_LIBRARY_PATH\}\n")
+endif ()
+
+if (LBANN_SB_FWD_LBANN_LBANN_WITH_PYTHON_FRONTEND)
+  message("-----------------------------------------------------------------\n")
+  message("LBANN was built with support for the Python Front End (PFE) (If you need to install it via pip you can in the LBANN site-packages with):")
+  message("  python3 -m pip install --target \$\{LBANN_PYTHON_SITE_PACKAGES\} pytest")
+  message("  python3 -m pip install --target \$\{LBANN_PYTHON_SITE_PACKAGES\} protobuf")
+  if (LBANN_SB_FWD_LBANN_LBANN_WITH_CNPY)
+    message("\nLBANN was built with support for the NumPy (If you need to install it via pip you can in the LBANN site-packages with):")
+    message("  python3 -m pip install --target \$\{LBANN_PYTHON_SITE_PACKAGES\} numpy")
+  endif ()
+  message("\n-----------------------------------------------------------------\n")
 endif ()
 
 # Add a custom target for bundling all things up

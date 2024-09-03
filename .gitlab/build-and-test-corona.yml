@@ -1,5 +1,5 @@
 ################################################################################
-## Copyright (c) 2014-2023, Lawrence Livermore National Security, LLC.
+## Copyright (c) 2014-2024, Lawrence Livermore National Security, LLC.
 ## Produced at the Lawrence Livermore National Laboratory.
 ## Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 ## the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -23,10 +23,32 @@
 ## implied. See the License for the specific language governing
 ## permissions and limitations under the license.
 ################################################################################
-#!/bin/sh
-export PYTHONPATH=@LBANN_PFE_PYTHONPATH@:${PYTHONPATH}
-if [[ -e "@AWS_OFI_RCCL_LIBDIR@" ]]; then
-    export AWS_OFI_RCCL_LIBDIR=@AWS_OFI_RCCL_LIBDIR@
-    export LD_LIBRARY_PATH=@AWS_OFI_RCCL_LIBDIR@:${LD_LIBRARY_PATH}
-fi
-@LBANN_PFE_PYTHON_EXECUTABLE@ "$@"
+
+default:
+  id_tokens:
+     SITE_ID_TOKEN:
+        aud: https://lc.llnl.gov/gitlab
+
+stages:
+  - build
+
+include:
+  local: "/.gitlab/build-and-test-common.yml"
+
+rocm-5-7-1-corona:
+  variables:
+    COMPILER_FAMILY: amdclang
+    MODULES: "rocm/5.7.1 clang/14.0.6-magic openmpi/4.1.2"
+  extends: .build-and-test-on-corona
+
+rocm-5-7-1-distconv-corona:
+  variables:
+    COMPILER_FAMILY: amdclang
+    MODULES: "rocm/5.7.1 clang/14.0.6-magic openmpi/4.1.2"
+    WITH_DISTCONV: "ON"
+  extends: .build-and-test-on-corona
+
+.build-and-test-on-corona:
+  stage: build
+  tags: [corona, batch]
+  extends: .build-and-test
