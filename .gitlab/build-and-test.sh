@@ -181,7 +181,7 @@ then
 
     # Copy the suggested cmake prefix path to the install tree.
     mkdir -p ${prefix}/logs
-    cp ${build_dir}/build-deps/lbann_sb_suggested_cmake_install_prefix.sh ${prefix}/logs
+    cp ${build_dir}/build-deps/lbann_sb_suggested_cmake_prefix_path.sh ${prefix}/logs
 
     # Stamp these commits
     cd ${build_dir}/build-deps/aluminum/src && git rev-parse HEAD > ${prefix}/al-prebuilt-hash.txt
