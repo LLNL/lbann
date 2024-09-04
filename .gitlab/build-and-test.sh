@@ -180,7 +180,7 @@ then
     ninja -C build-deps gather-all
 
     # Copy the suggested cmake prefix path to the install tree.
-    mkdir ${prefix}/logs
+    mkdir -p ${prefix}/logs
     cp ${build_dir}/build-deps/lbann_sb_suggested_cmake_install_prefix.sh ${prefix}/logs
 
     # Stamp these commits
