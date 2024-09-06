@@ -109,8 +109,8 @@ def test_metric_with_callback():
     tester.extra_callbacks.extend([
         lbann.CallbackDumpWeights(directory='.', epoch_interval=1),
         lbann.CallbackCheckMetric(metric='pymetric',
-                                  lower_bound=w[0] + 1 - 1e-8,
-                                  upper_bound=w[0] + 1 + 1e-8,
+                                  lower_bound=w[0] + 1 - np.finfo(np.float32).eps,
+                                  upper_bound=w[0] + 1 + np.finfo(np.float32).eps,
                                   error_on_failure=True,
                                   execution_modes='test'),
     ])
