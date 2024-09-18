@@ -228,9 +228,9 @@ model:
         data_reader = make_data_reader(os.path.realpath('./mnist_data/'))
 
 This reader assumes that the files `train-images-idx3-ubyte
-<http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz>`_,
+<https://ossci-datasets.s3.amazonaws.com/mnist/train-images-idx3-ubyte.gz>`_,
 `train-labels-idx1-ubyte
-<http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz>`_, and
+<https://ossci-datasets.s3.amazonaws.com/mnist/train-labels-idx1-ubyte.gz>`_, and
 :code:`data_reader.prototext` are located in the :bash:`./mnist_data`
 directory.  The :code:`data_read.prototext` file contains the following:
 
