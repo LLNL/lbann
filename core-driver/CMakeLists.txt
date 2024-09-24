@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.21.0)
-project(my_lbann_test CXX)
+project(lbann-test-driver CXX)
 find_package(LBANN 0.102.0 REQUIRED)
-find_package(Conduit CONFIG REQUIRED)
 add_executable(lbann-core main.cpp)
 target_link_libraries(lbann-core PRIVATE LBANN::lbann)
 

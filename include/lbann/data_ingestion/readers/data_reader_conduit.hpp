@@ -61,7 +61,7 @@ public:
     return label_size;
   }
 
-protected:
+private:
   std::vector<int> m_data_dims;
   std::vector<int> m_label_dims;
 
