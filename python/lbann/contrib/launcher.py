@@ -109,6 +109,7 @@ def run(
     nvprof=False,
     nvprof_output_name=None,
     binary_protobuf=False,
+    profiler_cmd=None,
     *args,
     **kwargs,
 ):
@@ -137,6 +138,8 @@ def run(
         lbann_command = nvprof_command(
             work_dir=script.work_dir,
             output_name=nvprof_output_name) + lbann_command
+    elif profiler_cmd is not None:
+        lbann_command=[profiler_cmd]+lbann_command
     lbann_command.extend(make_iterable(lbann_args))
     proto_file = os.path.join(script.work_dir, proto_file_name)
     lbann.proto.save_prototext(proto_file,

@@ -42,11 +42,10 @@ def create_cosmoflow_data_reader(
     reader_args = []
     if train_path:
         reader_args.append({"role": "train", "data_filename": train_path})
-    if val_path:
+    if val_path and val_path != '__none__':
         reader_args.append({"role": "validate", "data_filename": val_path})
-    if test_path:
+    if test_path and test_path != '__none__':
         reader_args.append({"role": "test", "data_filename": test_path})
-
     for reader_arg in reader_args:
         reader_arg["data_file_pattern"] = "{}/*.hdf5".format(
             reader_arg["data_filename"])
@@ -143,13 +142,10 @@ if __name__ == "__main__":
     parser.add_argument(
         '--local-batchnorm', action='store_true',
         help='Use local batch normalization mode')
-    default_lc_dataset = '/p/gpfs1/brainusr/datasets/cosmoflow/cosmoUniverse_2019_05_4parE/hdf5_transposed_dim128_float/batch8'
-    for role in ['train', 'val', 'test']:
-        default_dir = '{}/{}'.format(default_lc_dataset, role)
-        parser.add_argument(
-            '--{}-dir'.format(role), action='store', type=str,
-            default=default_dir if role == 'train' else None,
-            help='the directory of the {} dataset'.format(role))
+    for role in ['train','val','test']:
+        parser.add_argument(f"--{role}-dir", action='store', type=lambda value: None if value == "None" else value
+                            default=None, required=(role=='train'),
+                            help=f'the directory of the {role} dataset') 
     parser.add_argument(
         '--synthetic', action='store_true',
         help='Use synthetic data')
@@ -217,6 +213,46 @@ if __name__ == "__main__":
     
     parser.add_argument(
         '--work-dir', action='store', type=str, default=None)
+    parser.add_argument(
+        '--progress', action=argparse.BooleanOptionalAction, default=True,
+        help='Display progress bar output (default: true)')
+
+    parser.add_argument('--pbar-newline-interval',
+                        type=int,
+                        default=100,
+                        help='Number of iterations in progress bar before '
+                        'printing a newline (default: 100)')
+
+    parser.add_argument('--pbar-width',
+                        type=int,
+                        default=30,
+                        help='Progress bar width, if enabled (default: 30)')
+
+    parser.add_argument('--pbar-moving-avg',
+                        type=int,
+                        default=10,
+                        help='Progress bar iteration time moving average '
+                        'length in iterations. Disable moving average with 1 '
+                        '(default: 10)')
+
+    parser.add_argument('--pbar-scientific',
+                        action='store_true',
+                        default=False,
+                        help='Use scientific notation for objective value '
+                        'printouts in progress bar (default: false)')
+
+    parser.add_argument(
+        "--profiler-cmd",
+        type=str,
+        default=None,
+        help="Prefix the lbann command in batch.sh with the specified profiler command. Default no command.")
+
+    parser.add_argument(
+        "--pre",
+        type=str,
+        action="append",
+        default=None,
+        help="Preamble commands")
 
     lbann.contrib.args.add_optimizer_arguments(
         parser,
@@ -264,6 +300,16 @@ if __name__ == "__main__":
                                                       dropout_keep_prob=args.dropout_keep_prob,
                                                       cosine_schedule=cosine_scheduler_args)
 
+    # Print a progress bar
+    if args.progress:
+        model.callbacks.append(
+            lbann.CallbackProgressBar(
+                newline_interval=args.pbar_newline_interval,
+                print_mem_usage=True,
+                moving_average_length=args.pbar_moving_avg,
+                bar_width=args.pbar_width,
+                scientific_notation=args.pbar_scientific))
+
     # Add profiling callbacks if needed.
     model.callbacks.extend(lbann.contrib.args.create_profile_callbacks(args))
 
@@ -303,15 +349,27 @@ if __name__ == "__main__":
 
     # Setup DaCe kernels if requested
     if args.use_distconv and args.dace:
-        environment['DISTCONV_JIT_VERBOSE'] = 1
+        environment['DISTCONV_JIT_VERBOSE'] = os.getenv('DISTCONV_JIT_VERBOSE',1)
         application_path=os.path.abspath(os.path.dirname(__file__))
-        environment['DISTCONV_JIT_CACHEPATH'] = f'{application_path}/DaCe_kernels/.dacecache'
+        environment['DISTCONV_JIT_CACHEPATH'] = \
+            os.getenv('DISTCONV_JIT_CACHEPATH',f'{application_path}/DaCe_kernels/.dacecache')
 
     if args.synthetic or args.no_datastore:
         lbann_args = ['--num_io_threads=8']
     else:
         lbann_args = ['--use_data_store']
     lbann_args += lbann.contrib.args.get_profile_args(args)
+    profiler_cmd=args.profiler_cmd
+    # Was an empty or blank string passed in?
+    if profiler_cmd.strip() == '': profiler_cmd=None
+    # Remove profiler_cmd from args so that it doesn't get stuck into kwargs.
+    del args.profiler_cmd
+    if args.pre is not None and len(args.pre)>0:
+        preamble_cmds=[c.strip() for c in args.pre if len(c.strip())>0]
+        if len(preamble_cmds)==0: preamble_cmds=[]
+    else:
+        preamble_cmds=[]
+
 
     # Run experiment
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
@@ -319,7 +377,9 @@ if __name__ == "__main__":
         trainer, model, data_reader, optimizer,
         job_name=args.job_name,
         environment=environment,
+        preamble_cmds=preamble_cmds,
         lbann_args=lbann_args,
         batch_job=args.batch_job,
         work_dir=args.work_dir,
+        profiler_cmd=profiler_cmd,
         **kwargs)

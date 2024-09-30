@@ -131,7 +131,7 @@ def _generate_class(message_descriptor,
         # Make sure arguments are valid
         for arg in kwargs:
             if arg not in field_names:
-                raise ValueError('Unknown argument {0}'.format(arg))
+                raise ValueError(f'Unknown argument {arg}')
 
         # Set field values
         for arg in field_names:

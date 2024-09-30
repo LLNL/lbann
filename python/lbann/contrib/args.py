@@ -14,7 +14,7 @@ def add_scheduler_arguments(parser, default_job_name):
 
     Adds the following options: `--nodes`, `--procs-per-node`,
     `--partition`, `--account`, `--time-limit`, `--reservation`,
-    `--launcher`, `--launcher-args`.
+    `--launcher`, `--launcher-args --scheduler`.
     The caller is responsible for using them.
     `get_scheduler_kwargs` can assist with extracting them.
 
@@ -39,6 +39,13 @@ def add_scheduler_arguments(parser, default_job_name):
                         action='store',
                         type=str,
                         help='scheduler partition',
+                        metavar='NAME')
+    parser.add_argument('--scheduler',
+                        action='store',
+                        type=str,
+                        default=None,
+                        choices=['slurm','lsf','flux'],
+                        help='job scheduler: slurm|lsf|flux - override check',
                         metavar='NAME')
     parser.add_argument('--account',
                         action='store',
@@ -103,6 +110,7 @@ def get_scheduler_kwargs(args):
     if args.time_limit: kwargs['time_limit'] = args.time_limit
     if args.setup_only: kwargs['setup_only'] = True
     if args.launcher: kwargs['launcher'] = args.launcher
+    if args.scheduler: kwargs['scheduler'] = args.scheduler
     if args.launcher_args:
         kwargs['launcher_args'] = shlex.split(args.launcher_args)
     return kwargs
@@ -211,7 +219,7 @@ def create_optimizer(args):
                                          beta1=0.9,
                                          beta2=0.99,
                                          eps=1e-8,
-                                         weight_decay=1e-2)
+                                         adamw_weight_decay=1e-2)
     elif opt == 'adagrad':
         return lbann.core.optimizer.AdaGrad(learn_rate=lr, eps=1e-8)
     elif opt == 'rmsprop':

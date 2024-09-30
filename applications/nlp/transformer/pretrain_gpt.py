@@ -55,8 +55,7 @@ def main():
     lbann.contrib.args.add_scheduler_arguments(parser, 'lbann_gpt')
     lbann.contrib.args.add_profiling_arguments(parser)
     lbann.contrib.args.add_training_arguments(parser,
-                                              default_minibatch_size=32,
-                                              default_epochs=1)
+                                              default_minibatch_size=32)
     lbann.contrib.args.add_amp_arguments(parser)
     parallelism.add_transformer_parallelism_arguments(parser)
     trainer.add_training_arguments(parser)
@@ -100,6 +99,22 @@ def main():
         help="Use dataset fraction to determine hyperparameter schedule"
         " (default: False)")
     parser.add_argument(
+        "--learning-rate",
+        type=float,
+        default=None,
+        help="Override the learning rate for GPTConfig. (default: None (not overridden)")
+    parser.add_argument(
+        "--profiler-cmd",
+        type=str,
+        default=None,
+        help="Prefix the lbann command in batch.sh with the specified profiler command. Default no command.")
+    parser.add_argument(
+        "--pre",
+        type=str,
+        action="append",
+        default=None,
+        help="Preamble commands")
+    parser.add_argument(
         '--positional-encoding',
         type=str,
         default='learned',
@@ -141,6 +156,18 @@ def main():
     total_steps = math.ceil(sched_mult * dataset.num_train_samples() /
                             args.mini_batch_size)
 
+    if args.learning_rate is not None: chosen_config.lr=args.learning_rate
+    profiler_cmd=args.profiler_cmd
+    # Was an empty or blank string passed in?
+    if profiler_cmd.strip() == '': profiler_cmd=None
+    # Remove profiler_cmd from args so that it doesn't get stuck into kwargs.
+    del args.profiler_cmd
+    if args.pre is not None and len(args.pre)>0:
+        preamble_cmds=[c.strip() for c in args.pre if len(c.strip())>0]
+        if len(preamble_cmds)==0: preamble_cmds=[]
+    else:
+        preamble_cmds=[]
+
     train_script: BatchScript = trainer.construct_training_task(
         model,
         args,
@@ -155,6 +182,8 @@ def main():
         end_learning_rate=chosen_config.lr / 10,
         warmup_steps=int(warmup_ratio * total_steps),
         adamw_decay=0.1,
+        profiler_cmd=profiler_cmd,
+        preamble_cmds=preamble_cmds
     )
 
     # Run trainer

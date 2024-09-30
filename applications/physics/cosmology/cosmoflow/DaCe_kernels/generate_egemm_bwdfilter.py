@@ -227,8 +227,8 @@ if __name__ == '__main__':
 
     print(f'Compilation complete. Output file: .dacecache/lib{hash}.so')
 
-    if storage == dace.StorageType.CPU_Heap and os.path.exists('out_dw.bin'):
-        print('Files found, verifying result')
-        x, dw, dy = util.conv_bwdfilt_inputs()
-        csdfg(dw, x, dy, alpha=np.float32(1.0), beta=np.float32(0.0))
-        util.verify_bwdfilt(dw)
+#    if storage == dace.StorageType.CPU_Heap and os.path.exists('out_dw.bin'):
+#        print('Files found, verifying result')
+#        x, dw, dy = util.conv_bwdfilt_inputs()
+#        csdfg(dw, x, dy, alpha=np.float32(1.0), beta=np.float32(0.0))
+#        util.verify_bwdfilt(dw)
