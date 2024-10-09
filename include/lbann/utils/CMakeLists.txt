@@ -52,6 +52,7 @@ set_full_path(THIS_DIR_HEADERS
   im2col.hpp
   jag_utils.hpp
   lbann_library.hpp
+  logging.hpp
   make_abstract.hpp
   memory.hpp
   mild_exception.hpp

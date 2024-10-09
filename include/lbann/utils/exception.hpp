@@ -28,6 +28,7 @@
 #define LBANN_UTILS_EXCEPTION_HPP_INCLUDED
 
 #include "lbann/comm.hpp"
+#include "lbann/utils/logging.hpp"
 
 #include <exception>
 #include <iostream>
@@ -50,22 +51,7 @@
   } while (0)
 
 // Macro to print a warning to standard error stream.
-#define LBANN_WARNING(...)                                                     \
-  do {                                                                         \
-    const int rank_LBANN_WARNING = lbann::get_rank_in_world();                 \
-    std::cerr << lbann::build_string(                                          \
-                   "LBANN warning",                                            \
-                   (rank_LBANN_WARNING >= 0                                    \
-                      ? " on rank " + std::to_string(rank_LBANN_WARNING)       \
-                      : std::string()),                                        \
-                   " (",                                                       \
-                   __FILE__,                                                   \
-                   ":",                                                        \
-                   __LINE__,                                                   \
-                   "): ",                                                      \
-                   __VA_ARGS__)                                                \
-              << std::endl;                                                    \
-  } while (0)
+#define LBANN_WARNING(...) LBANN_WARN(lbann::logging::LBANN_Logger_ID::LOG_RT, __VA_ARGS__)
 
 #define LBANN_WARNING_WORLD_ROOT(...)                                          \
   do {                                                                         \

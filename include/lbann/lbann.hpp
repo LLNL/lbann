@@ -235,5 +235,6 @@
 #include "lbann/utils/peek_map.hpp"
 #include "lbann/utils/stack_trace.hpp"
 #include "lbann/utils/summary.hpp"
+#include "lbann/utils/logging.hpp"
 
 #endif // LBANN_LBANN_HPP_INCLUDED
