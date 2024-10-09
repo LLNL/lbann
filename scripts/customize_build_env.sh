@@ -157,7 +157,7 @@ set_center_specific_modules()
                 MODULE_CMD="module purge; module load cgpu modules/3.2.11.4 gcc/8.3.0 cuda/11.1.1 openmpi/4.0.3 cmake/3.18.2"
                 ;;
             "zen3") # Perlmutter
-		MODULE_CMD="module load PrgEnv-cray/8.4.0 craype-x86-milan libfabric/1.11.0.4.116 craype-network-ofi cmake/3.22.0 cce/13.0.2 craype/2.7.15 cray-mpich/8.1.15 cray-libsci/21.08.1.2 nccl/2.11.4 cudnn/8.3.2 cray-python/3.9.7.1 craype-accel-host cudatoolkit/11.5"
+		MODULE_CMD="module load craype-x86-milan libfabric/1.15.2.0 craype-network-ofi cmake/3.22.0 cce/16.0.1 craype/2.7.20 cray-mpich/8.1.25 PrgEnv-cray/8.4.0 cray-libsci/23.09.1.1 nccl/2.17.1-ofi cudnn/8.9.1_cuda11 cray-python/3.9.13.1 cudatoolkit/11.5 cray-hdf5/1.12.2.3"
                 ;;
             *)
                 echo "No pre-specified modules found for this system. Make sure to setup your own"
@@ -261,8 +261,8 @@ set_center_specific_spack_dependencies()
                 CENTER_DEPENDENCIES="^openmpi"
                 ;;
             "zen3") # Perlmutter
-                CENTER_COMPILER="%cce@13.0.2"
-                CENTER_DEPENDENCIES="^cray-mpich@8.1.15~wrappers ^python@3.9.7 ^cuda+allow-unsupported-compilers"
+                CENTER_COMPILER="%cce@16.0.1"
+                CENTER_DEPENDENCIES="^cray-mpich@8.1.25~wrappers ^python@3.9.7 ^cuda+allow-unsupported-compilers"
                 CENTER_BLAS_LIBRARY="blas=libsci"
                 # Override the conduit variants for the cray compilers
                 CONDUIT_VARIANTS="~hdf5_compat~fortran~parmetis~blt_find_mpi"
@@ -610,35 +610,35 @@ cat <<EOF  >> ${yaml}
     cudnn:
       buildable: false
       version:
-      - '8.3.2'
+      - '8.9.1'
       externals:
-      - spec: cudnn@8.3.2 arch=${spack_arch}
+      - spec: cudnn@8.9.1 arch=${spack_arch}
         modules:
-        - cudnn/8.3.2
+        - cudnn/8.9.1_cuda11
     cray-libsci:
       buildable: false
       version:
-      - '21.08.1.2'
+      - '23.09.1.1'
       externals:
-      - spec: cray-libsci@21.08.1.2 arch=${spack_arch}
+      - spec: cray-libsci@23.09.1.1 arch=${spack_arch}
         modules:
-        - cray-libsci/21.08.1.2
+        - cray-libsci/23.09.1.1
     cray-mpich:
       buildable: false
       version:
-      - '8.1.15'
+      - '8.1.25'
       externals:
-      - spec: "cray-mpich@8.1.15~wrappers arch=${spack_arch}"
+      - spec: "cray-mpich@8.1.25~wrappers arch=${spack_arch}"
         modules:
-        - cray-mpich/8.1.15
+        - cray-mpich/8.1.25
     nccl:
       buildable: false
       version:
-      - '2.11.4'
+      - '2.17.1'
       externals:
-      - spec: nccl@2.11.4 arch=${spack_arch}
+      - spec: nccl@2.17.1 arch=${spack_arch}
         modules:
-        - nccl/2.11.4
+        - nccl/2.17.1-ofi
 EOF
                 ;;
             *)
