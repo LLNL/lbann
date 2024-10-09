@@ -33,6 +33,10 @@
 #include <iomanip>
 #include <sstream>
 
+#ifdef LBANN_HAS_GPU
+#include <h2/gpu/memory_utils.hpp>
+#endif
+
 #include "lbann/proto/callbacks.pb.h"
 
 namespace {
@@ -79,13 +83,7 @@ void gpu_memory_usage::write_specific_proto(lbann_data::Callback& proto) const
 void gpu_memory_usage::on_epoch_begin(model* m)
 {
 #ifdef LBANN_HAS_GPU
-  size_t available;
-  size_t total;
-#ifdef LBANN_HAS_CUDA
-  FORCE_CHECK_CUDA(cudaMemGetInfo(&available, &total));
-#elif defined(LBANN_HAS_ROCM)
-  FORCE_CHECK_ROCM(hipMemGetInfo(&available, &total));
-#endif
+  auto const [available, total] = h2::gpu::mem_info();
   size_t used = total - available;
   auto comm = m->get_comm();
   if (comm->am_trainer_master()) {
