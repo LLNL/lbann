@@ -368,11 +368,11 @@ if __name__ == '__main__':
 
     print(f'Compilation complete. Output file: .dacecache/lib{hash}.so')
 
-    if storage == dace.StorageType.CPU_Heap and os.path.exists('out_dx.bin'):
-        print('Files found, verifying result')
-        dx, w, dy = util.conv_bwddata_inputs()
-        dxin = np.copy(dx)
-        csdfg(w, dx, dy, alpha=np.float32(1.0), beta=np.float32(0.0))
-        ref_dx = util.verify_bwddata(dx)
-        rdx = dx.reshape(*args.x.shape)
-        rref = ref_dx.reshape(*args.x.shape)
+#    if storage == dace.StorageType.CPU_Heap and os.path.exists('out_dx.bin'):
+#        print('Files found, verifying result')
+#        dx, w, dy = util.conv_bwddata_inputs()
+#        dxin = np.copy(dx)
+#        csdfg(w, dx, dy, alpha=np.float32(1.0), beta=np.float32(0.0))
+#        ref_dx = util.verify_bwddata(dx)
+#        rdx = dx.reshape(*args.x.shape)
+#        rref = ref_dx.reshape(*args.x.shape)

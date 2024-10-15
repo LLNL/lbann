@@ -70,6 +70,7 @@ def run(
     lbann_args=[],
     procs_per_trainer=None,
     environment={},
+    preamble_cmds=[],
     overwrite_script=False,
     setup_only=False,
     batch_job=False,
@@ -77,6 +78,7 @@ def run(
     nvprof_output_name=None,
     binary_protobuf=False,
     experiment_dir=None,
+    profiler_cmd=None,
 ):
     """Run LBANN.
 
@@ -150,7 +152,8 @@ def run(
                                reservation=reservation,
                                launcher=launcher,
                                launcher_args=launcher_args,
-                               environment=environment)
+                               environment=environment,
+                               preamble_cmds=preamble_cmds)
 
     # Batch script prints start time
     script.add_command('echo "Started at $(date)"')
@@ -159,7 +162,10 @@ def run(
     lbann_command = [lbann_exe]
     if nvprof:
         lbann_command = nvprof_command(
-            work_dir=work_dir, output_name=nvprof_output_name) + lbann_command
+            work_dir=script.work_dir,
+            output_name=nvprof_output_name) + lbann_command
+    elif profiler_cmd is not None:
+        lbann_command=[profiler_cmd]+lbann_command
     lbann_command.extend(make_iterable(lbann_args))
 
     # Set default file name and extension

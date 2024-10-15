@@ -1,33 +1,46 @@
 #!/bin/sh
-
-# Frontier environment setup
 source $LMOD_PKG/init/sh
-module load amd/5.5.1
 export CC=`which amdclang`
 export CXX=`which amdclang++`
 export DACE_compiler_extra_cmake_args="-DHIP_CLANG_PATH=${ROCM_PATH}/llvm/bin"
-
+export DACE_CONFIG=$(realpath $(dirname "$0"))/dace.conf
+export LIBRARY_PATH=$LIBRARY_PATH:$ROCM_PATH/lib
+export WSPSIZE=2048
+export CPATH=$CPATH:${ROCM_PATH}/include/rocblas
+CLUSTER=$(hostname | sed 's/[0-9]*//g')
+case "${CLUSTER}" in
+    rzvernal|tioga)
+        DACE_compiler_cuda_hip_arch=gfx90a
+        ;;
+    corona)
+        DACE_compiler_cuda_hip_arch=gfx906
+        ;;
+    tuolumne|elcap|rzadams)
+        DACE_compiler_cuda_hip_arch=gfx942
+        ;;
+    *)
+        ;;
+esac
 
 generate_conv3d_fwd() {
     # Explicit GEMM
-    python generate_egemm_fwd.py explicit 2048 conv $*
+    python3 generate_egemm_fwd.py explicit $WSPSIZE conv $*
 }
 
 generate_conv3d_bwddata() {
     # Explicit GEMM
-    python generate_egemm_bwddata.py explicit 2048 conv $*
+    python3 generate_egemm_bwddata.py explicit $WSPSIZE conv $*
 }
 
 generate_conv3d_bwdfilt() {
     # Explicit GEMM
-    python generate_egemm_bwdfilter.py explicit 2048 conv $*
+    python3 generate_egemm_bwdfilter.py explicit $WSPSIZE conv $*
 }
 
-# Dynamic
 #B="-1"
-B=2
+#B=2
 
-
+for B in 1 2;do
 # 512 MLPerf + distconv + depth-groups=8
 generate_conv3d_fwd $B 4 66 512 512 69206016 17301504 262144 512 1 32 4 3 3 3 $B 32 64 512 512 553648128 17301504 262144 512 1 0 1 1 1 1 1 1 1 1 1 fwd
 generate_conv3d_fwd $B 32 34 256 256 71303168 2228224 65536 256 1 64 32 3 3 3 $B 64 32 256 256 142606336 2228224 65536 256 1 0 1 1 1 1 1 1 1 1 1 fwd
@@ -79,3 +92,5 @@ generate_conv3d_bwdfilt $B 32 66 256 256 138412032 4325376 65536 256 1 64 32 3 3
 generate_conv3d_bwddata $B 32 66 256 256 138412032 4325376 65536 256 1 64 32 3 3 3 $B 64 66 256 256 276824064 4325376 65536 256 1 1 1 1 1 1 1 1 1 1 1 bwddata
 generate_conv3d_bwdfilt $B 4 130 512 512 136314880 34078720 262144 512 1 32 4 3 3 3 $B 32 130 512 512 1090519040 34078720 262144 512 1 1 1 1 1 1 1 1 1 1 1 bwdfilt
 generate_conv3d_bwddata $B 4 130 512 512 136314880 34078720 262144 512 1 32 4 3 3 3 $B 32 130 512 512 1090519040 34078720 262144 512 1 1 1 1 1 1 1 1 1 1 1 bwddata
+done
+exit 0

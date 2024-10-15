@@ -12,6 +12,7 @@ import lbann.contrib.args
 import lbann.contrib.launcher
 from lbann.launcher.batch_script import BatchScript
 from lbann.util.data import Dataset, construct_python_dataset_reader
+from lbann.launcher import make_timestamped_work_dir
 
 import utils.paths
 import parallelism
@@ -31,7 +32,9 @@ def construct_training_task(
         warmup_steps: int = 0,
         adamw_decay: float = 0.1,
         dataset: Optional[Dataset] = None,
-        validation_dataset: Optional[Dataset] = None) -> BatchScript:
+        validation_dataset: Optional[Dataset] = None,
+        profiler_cmd: str = None,
+        preamble_cmds: list = []) -> BatchScript:
     """
     Construct an LBANN trainer batch script for training transformers.
 
@@ -48,6 +51,7 @@ def construct_training_task(
     :param end_learning_rate: Learning rate after decay.
     :param warmup_steps: Learning rate warmup steps.
     :param adamw_decay: Weight decay if using the AdamW optimizer.
+    :param profiler_cmd: profiler command and arguments to prepend to the lbann command.
     :param dataset: An optional Dataset object to use in training. If not given,
                     uses the ``--dataset`` argument string.
     :param validation_dataset: An optional Dataset object to use in validation.
@@ -56,10 +60,14 @@ def construct_training_task(
     """
 
     # Setup working directory
-    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    work_dir = f'{timestamp}_{args.job_name}'
-    work_dir = os.path.abspath(work_dir)
-    os.makedirs(work_dir, exist_ok=True)
+    #timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    #work_dir = f'{timestamp}_{args.job_name}'
+    #work_dir = os.path.abspath(work_dir)
+    #os.makedirs(work_dir, exist_ok=True)
+
+    nodes=args.nodes
+    ppn=args.procs_per_node
+    work_dir = make_timestamped_work_dir(job_name=args.job_name, nodes=nodes, procs_per_node=ppn)
 
     # Create batch script
     train_script = make_batch_script(
@@ -78,6 +86,8 @@ def construct_training_task(
         warmup_steps,
         adamw_decay,
         validation_dataset=validation_dataset,
+        profiler_cmd=profiler_cmd,
+        preamble_cmds=preamble_cmds
     )
 
     return train_script
@@ -137,7 +147,9 @@ def make_batch_script(model: lbann.Model,
                       end_learning_rate: float = 1e-5,
                       warmup_steps: int = 0,
                       adamw_decay: float = 0.1,
-                      validation_dataset: Optional[Dataset] = None):
+                      validation_dataset: Optional[Dataset] = None,
+                      profiler_cmd: str = None,
+                      preamble_cmds: list = []):
     # Setup training algorithm
     algo = lbann.BatchedIterativeOptimizer("sgd", epoch_count=args.num_epochs)
     if hasattr(args, 'kfac') and args.kfac:
@@ -260,6 +272,8 @@ def make_batch_script(model: lbann.Model,
         "LBANN_NO_INPLACE": 1,
         "LBANN_DISABLE_DISTCONV": 1,
     }
+    script_params['preamble_cmds']=preamble_cmds
+    script_params['scheduler']=args.scheduler
 
     # Set FSDP ranks, if given, by changing the trainer grid height
     if args.fsdp_ranks > 0:
@@ -282,11 +296,16 @@ def make_batch_script(model: lbann.Model,
     script_params.pop('setup_only', None)  # Drop this argument.
     script = lbann.contrib.launcher.make_batch_script(**script_params)
     script.add_command('echo "Started training at $(date)"')
-    script.add_parallel_command([
-        lbann.lbann_exe(),
-        f'--prototext={protobuf_file}',
-    ] + (lbann.contrib.args.get_profile_args(args) +
-         parallelism.get_layer_parallel_args()))
+
+    lbann_command=[]
+    if profiler_cmd is not None:
+        lbann_command.append(profiler_cmd)
+    lbann_command.append(lbann.lbann_exe())
+    lbann_command.append(f'--prototext={protobuf_file}')
+    script.add_parallel_command(lbann_command + 
+            lbann.contrib.args.get_profile_args(args) + \
+            parallelism.get_layer_parallel_args())
+
     script.add_command('status=$?')
     script.add_command('echo "Finished training at $(date)"')
     script.add_command('exit ${status}')
