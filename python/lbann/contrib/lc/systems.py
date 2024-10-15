@@ -25,8 +25,8 @@ _system_params = {
     'sierra':   SystemParams(44, 4, 'lsf'),
     'tioga':    SystemParams(64, 8, 'flux'),
     'elcap':    SystemParams(48, 4, 'flux'),
-    'tuolumne': SystemParams(48, 4, 'flux'),
-    'rzadams':  SystemParams(48, 4, 'flux')
+    'tuolumne': SystemParams(96, 4, 'flux'),
+    'rzadams':  SystemParams(96, 4, 'flux'),
 }
 
 # Detect system
