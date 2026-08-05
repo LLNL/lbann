@@ -8,7 +8,6 @@
 
 #include "lbannv2/utils/errors.hpp"
 
-#include <ATen/NamedTensorUtils.h>
 #include <ATen/Tensor.h>
 #include <c10/util/ArrayRef.h>
 
@@ -41,11 +40,6 @@ inline void sync_metadata(at::Tensor const& src, at::Tensor& dst)
   auto* dst_tensor_info = dst.unsafeGetTensorImpl();
   dst_tensor_info->set_storage_offset(src.storage_offset());
   dst_tensor_info->set_sizes_and_strides(src.sizes(), src.strides());
-
-  // I assume this restores named dimensions? Not sure if it
-  // should be here or not. See "alias_with_sizes_and_strides"
-  // in <pytorch>/aten/src/ATen/native/TensorShape.cpp
-  at::namedinference::propagate_names(dst, src);
 }
 
 /** @brief Make an alias of the tensor on a new backend
